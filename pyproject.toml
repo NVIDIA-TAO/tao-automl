@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nvidia-tao-automl"
+version = "0.1.0"
+description = "NVIDIA TAO AutoML — standalone hyperparameter optimization for TAO networks"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+
+dependencies = [
+    "numpy",
+    "scikit-learn",
+    "scipy",
+    "pandas",
+    "omegaconf",
+    "requests",
+    "PyYAML>=6.0",
+    "nvidia-tao-sdk @ git+https://github.com/NVIDIA-TAO/tao-sdks.git",
+]
+
+[project.optional-dependencies]
+# Platform extras — match the SDK's extras pattern. Users install only the
+# platform handler they need: pip install 'nvidia-tao-automl[lepton]' pulls
+# nvidia-tao-sdk[lepton] transitively.
+lepton     = ["nvidia-tao-sdk[lepton] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
+slurm      = ["nvidia-tao-sdk[slurm] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
+kubernetes = ["nvidia-tao-sdk[kubernetes] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
+docker     = ["nvidia-tao-sdk[docker] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
+brev       = ["nvidia-tao-sdk[brev] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
+
+llm = [
+    "openai>=1.0",
+]
+wandb = [
+    "wandb>=0.15",
+]
+all = [
+    "nvidia-tao-automl[lepton,slurm,kubernetes,docker,brev,llm,wandb]",
+]
+dev = [
+    "nvidia-tao-automl[all]",
+    "pytest>=7.0",
+    "pytest-cov",
+]
+
+[project.urls]
+Repository = "https://github.com/NVIDIA-TAO/tao-automl"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["tao_automl*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
