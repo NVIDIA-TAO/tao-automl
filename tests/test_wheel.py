@@ -202,6 +202,415 @@ def test_controller_failure_skipped_in_best():
         assert ctrl.get_best() is None
 
 
+def test_controller_accepts_resume_recommendations():
+    from tao_automl.controller.controller import Controller
+    from tao_automl.state.state_store import StateStore
+    from tao_automl.types import AutoMLContext, JobStates, ResumeRecommendation
+
+    class ResumeBrain(MockBrain):
+        def generate_recommendations(self, history):
+            if not history:
+                return [{"lr": 0.1}]
+            return [ResumeRecommendation(0, {"lr": 0.1}, "job-previous")]
+
+    with tempfile.TemporaryDirectory() as d:
+        store = StateStore(d)
+        ctx = AutoMLContext(id="resume-test", network="fake")
+        settings = type("P", (), {"automl_max_recommendations": 2})()
+        ctrl = Controller(
+            brain=ResumeBrain(1), context=ctx, state_store=store,
+            settings=settings, metric="loss", algorithm="hyperband",
+        )
+
+        first = ctrl.next_recommendation()
+        assert first[0].id == 0
+        ctrl.report_result(0, 1.0, status="success")
+
+        resumed = ctrl.next_recommendation()
+        assert resumed[0].id == 0
+        assert resumed[0].status == JobStates.pending
+        assert resumed[0].resume_from_job_id == "job-previous"
+
+
+def test_hyperband_two_two_one_stop_compare_resume_flow():
+    """Hyperband max_epochs=2/reduction_factor=2/epoch_multiplier=1 should:
+
+    - issue two first-rung trials capped at 1 epoch,
+    - compare their metrics,
+    - promote only the better trial,
+    - resume it from the first-rung job,
+    - run the promoted trial to epoch 2.
+    """
+    from tao_automl import AutoML
+
+    base_specs = {
+        "train": {
+            "epoch": 10,
+            "optm_lr": 1e-6,
+        }
+    }
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs=base_specs,
+            settings={
+                "algorithm": "hyperband",
+                "metric": "val/avg_loss",
+                "automl_max_epochs": 2,
+                "automl_reduction_factor": 2,
+                "epoch_multiplier": 1,
+            },
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        first_rung = automl.next_recommendation()
+        assert len(first_rung) == 2
+        assert {rec.id for rec in first_rung} == {0, 1}
+        assert all(rec.specs["train.epoch"] == 1 for rec in first_rung)
+        first_rung_specs = {rec.id: dict(rec.specs) for rec in first_rung}
+
+        first_rung[0].assign_job_id("job-rec0-epoch1")
+        first_rung[1].assign_job_id("job-rec1-epoch1")
+
+        # Lower is better for val/avg_loss, so rec 1 should be promoted.
+        automl.report_result(first_rung[0].id, 0.9, status="success")
+        automl.report_result(first_rung[1].id, 0.4, status="success")
+
+        promoted = automl.next_recommendation()
+        assert len(promoted) == 1
+        assert promoted[0].id == 1
+        assert promoted[0].specs["train.epoch"] == 2
+        assert promoted[0].specs["train.optm_lr"] == first_rung_specs[1]["train.optm_lr"]
+        assert promoted[0].resume_from_job_id == "job-rec1-epoch1"
+
+        promoted[0].assign_job_id("job-rec1-epoch2")
+        automl.report_result(promoted[0].id, 0.3, status="success")
+
+        assert automl.next_recommendation() == []
+        assert automl.is_complete()
+        best = automl.get_best()
+        assert best.id == 1
+        assert best.result == 0.3
+
+
+@pytest.mark.parametrize("algorithm", ["bayesian", "bfbo"])
+def test_max_recommendation_algorithms_select_best(algorithm):
+    """Bayesian-style algorithms should honor max recs and best metric."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={"train": {"epoch": 1, "optm_lr": 1e-6}},
+            settings={
+                "algorithm": algorithm,
+                "metric": "val/avg_loss",
+                "automl_max_recommendations": 2,
+            },
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        rec0 = automl.next_recommendation()
+        assert len(rec0) == 1
+        automl.report_result(rec0[0].id, 0.9, status="success")
+
+        rec1 = automl.next_recommendation()
+        assert len(rec1) == 1
+        assert rec1[0].id == 1
+        automl.report_result(rec1[0].id, 0.4, status="success")
+
+        assert automl.is_complete()
+        best = automl.get_best()
+        assert best.id == 1
+        assert best.result == 0.4
+
+
+@pytest.mark.parametrize("algorithm", ["bohb", "asha", "dehb", "hyperband_es"])
+def test_budgeted_algorithms_emit_stop_compare_resume_budgets(algorithm):
+    """Budgeted algorithms must carry rung epoch budgets into launched specs."""
+    from tao_automl import AutoML
+
+    settings = {
+        "algorithm": algorithm,
+        "metric": "val/avg_loss",
+        "automl_max_epochs": 2,
+        "automl_reduction_factor": 2,
+        "epoch_multiplier": 1,
+    }
+    if algorithm == "asha":
+        settings.update({
+            "automl_max_concurrent": 2,
+            "automl_max_trials": 2,
+            "automl_min_top_configs": 1,
+        })
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={"train": {"epoch": 10, "optm_lr": 1e-6}},
+            settings=settings,
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        first_rung = automl.next_recommendation()
+        assert len(first_rung) == 2
+        assert {rec.id for rec in first_rung} == {0, 1}
+        assert all(rec.specs["train.epoch"] == 1 for rec in first_rung)
+        first_rung_specs = {rec.id: dict(rec.specs) for rec in first_rung}
+
+        first_rung[0].assign_job_id("job-rec0-epoch1")
+        first_rung[1].assign_job_id("job-rec1-epoch1")
+
+        automl.report_result(first_rung[0].id, 0.9, status="success")
+        automl.report_result(first_rung[1].id, 0.4, status="success")
+
+        promoted = automl.next_recommendation()
+        assert len(promoted) == 1
+        assert promoted[0].id == 1
+        assert promoted[0].specs["train.epoch"] == 2
+        assert promoted[0].specs["train.optm_lr"] == first_rung_specs[1]["train.optm_lr"]
+        assert promoted[0].resume_from_job_id == "job-rec1-epoch1"
+
+        promoted[0].assign_job_id("job-rec1-epoch2")
+        automl.report_result(promoted[0].id, 0.3, status="success")
+
+        assert automl.next_recommendation() == []
+        assert automl.is_complete()
+        assert automl.get_best().id == 1
+
+
+@pytest.mark.parametrize("algorithm", ["hyperband", "bohb", "asha", "dehb", "hyperband_es"])
+def test_budgeted_algorithms_pick_best_at_largest_budget(algorithm):
+    """Final handoff should not choose an unpromoted lower-fidelity checkpoint."""
+    from tao_automl import AutoML
+
+    settings = {
+        "algorithm": algorithm,
+        "metric": "val/avg_loss",
+        "automl_max_epochs": 2,
+        "automl_reduction_factor": 2,
+        "epoch_multiplier": 1,
+    }
+    if algorithm == "asha":
+        settings.update({
+            "automl_max_concurrent": 2,
+            "automl_max_trials": 2,
+            "automl_min_top_configs": 1,
+        })
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={"train": {"epoch": 10, "optm_lr": 1e-6}},
+            settings=settings,
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        first_rung = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        assert len(first_rung) == 2
+        first_rung[0].assign_job_id("job-rec0-epoch1")
+        first_rung[1].assign_job_id("job-rec1-epoch1")
+
+        automl.report_result(first_rung[0].id, 0.4, status="success")
+        automl.report_result(first_rung[1].id, 0.5, status="success")
+
+        promoted = automl.next_recommendation()
+        assert len(promoted) == 1
+        assert promoted[0].id == 0
+        promoted[0].assign_job_id("job-rec0-epoch2")
+        automl.report_result(promoted[0].id, 0.6, status="success")
+
+        assert automl.next_recommendation() == []
+        assert automl.is_complete()
+        assert automl.get_best().id == 0
+        assert automl.get_best().specs["train.epoch"] == 2
+
+
+def test_asha_all_failed_first_rung_completes_without_hanging():
+    """ASHA should stop once max_trials is exhausted with no promotable configs."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={"train": {"epoch": 10, "optm_lr": 1e-6}},
+            settings={
+                "algorithm": "asha",
+                "metric": "val/avg_loss",
+                "automl_max_epochs": 2,
+                "automl_reduction_factor": 2,
+                "epoch_multiplier": 1,
+                "automl_max_concurrent": 2,
+                "automl_max_trials": 2,
+                "automl_min_top_configs": 1,
+            },
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        first_rung = automl.next_recommendation()
+        assert len(first_rung) == 2
+
+        for rec in first_rung:
+            rec.assign_job_id(f"job-rec{rec.id}-epoch1")
+            automl.report_result(rec.id, 0.0, status="failure")
+
+        assert automl.next_recommendation() == []
+        assert automl.is_complete()
+        assert automl.get_best() is None
+
+
+def test_hyperband_es_uses_metric_direction_for_promotion():
+    """HyperBandES must not treat maximize metrics as losses."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={"train": {"epoch": 10, "optm_lr": 1e-6}},
+            settings={
+                "algorithm": "hyperband_es",
+                "metric": "val_mAP",
+                "automl_max_epochs": 2,
+                "automl_reduction_factor": 2,
+                "epoch_multiplier": 1,
+                "automl_early_stop_threshold": 0.0,
+                "automl_min_early_stop_epochs": 1,
+            },
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        first_rung = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        assert len(first_rung) == 2
+        first_rung[0].assign_job_id("job-rec0-epoch1")
+        first_rung[1].assign_job_id("job-rec1-epoch1")
+
+        automl.report_result(first_rung[0].id, 0.1, status="success")
+        automl.report_result(first_rung[1].id, 0.9, status="success")
+
+        promoted = automl.next_recommendation()
+        assert len(promoted) == 1
+        assert promoted[0].id == 1
+        assert promoted[0].resume_from_job_id == "job-rec1-epoch1"
+
+
+def test_dehb_keeps_successful_zero_metric_in_population():
+    """A valid 0.0 metric should still seed DEHB's DE population."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="dino",
+            train_specs={"train": {"num_epochs": 10, "optim": {"lr": 1e-5}}},
+            settings={
+                "algorithm": "dehb",
+                "metric": "val_mAP50",
+                "automl_max_epochs": 4,
+                "automl_reduction_factor": 2,
+                "epoch_multiplier": 1,
+                "automl_mutation_factor": 0.5,
+                "automl_crossover_prob": 0.5,
+            },
+            automl_hyperparameters=["train.optim.lr"],
+            custom_param_ranges={
+                "train.optim.lr": {"valid_min": 1e-6, "valid_max": 1e-4},
+            },
+        )
+
+        first_rung = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        assert len(first_rung) == 4
+
+        for rec in first_rung:
+            rec.assign_job_id(f"job-rec{rec.id}-epoch1")
+            automl.report_result(rec.id, 0.0, status="success")
+
+        promoted = automl.next_recommendation()
+        assert len(promoted) == 2
+        assert len(automl._controller.brain.population) == 4
+
+
+def test_pbt_two_generation_budget_and_resume_flow():
+    """PBT should train a population for one interval, then resume to the next."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={
+                "train": {
+                    "epoch": 10,
+                    "optm_lr": 1e-6,
+                    "checkpoint_interval": 5,
+                    "validation_interval": 5,
+                }
+            },
+            settings={
+                "algorithm": "pbt",
+                "metric": "val/avg_loss",
+                "automl_population_size": 2,
+                "automl_max_generations": 2,
+                "automl_eval_interval": 1,
+            },
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        population = automl.next_recommendation()
+        assert len(population) == 2
+        assert all(rec.specs["train.epoch"] == 1 for rec in population)
+        assert all(rec.specs["train.checkpoint_interval"] == 1 for rec in population)
+        assert all(rec.specs["train.validation_interval"] == 1 for rec in population)
+
+        population[0].assign_job_id("job-member0-epoch1")
+        population[1].assign_job_id("job-member1-epoch1")
+        automl.report_result(population[0].id, 0.9, status="success")
+        automl.report_result(population[1].id, 0.4, status="success")
+
+        resumed = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        assert len(resumed) == 2
+        assert all(rec.specs["train.epoch"] == 2 for rec in resumed)
+        assert all(rec.specs["train.checkpoint_interval"] == 1 for rec in resumed)
+        assert all(rec.specs["train.validation_interval"] == 1 for rec in resumed)
+        assert resumed[1].resume_from_job_id == "job-member1-epoch1"
+        assert resumed[0].resume_from_job_id in {"job-member0-epoch1", "job-member1-epoch1"}
+
+        for rec in resumed:
+            rec.assign_job_id(f"job-member{rec.id}-epoch2")
+            automl.report_result(rec.id, 0.2 if rec.id == 1 else 0.8, status="success")
+
+        assert automl.next_recommendation() == []
+        assert automl.is_complete()
+        assert automl.get_best().id == 1
+
+
 # ---------------------------------------------------------------
 # 5. AlgorithmParams tests
 # ---------------------------------------------------------------

@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 """DEHB (Differential Evolution HyperBand) AutoML algorithm modules"""
+import copy
 import numpy as np
 import math
 import logging
@@ -90,6 +91,12 @@ class DEHB(AutoMLAlgorithmBase):
         """Convert a configuration dict to normalized vector [0, 1]^d"""
         vector = []
         for param in self.parameters:
+            param = copy.deepcopy(param)
+            param_name = param["parameter"]
+            if self.custom_ranges and param_name in self.custom_ranges:
+                for override_key, override_value in self.custom_ranges[param_name].items():
+                    if override_value is not None:
+                        param[override_key] = override_value
             param_name = param["parameter"]
             value = specs.get(param_name)
             param_type = param.get("value_type")
@@ -111,7 +118,12 @@ class DEHB(AutoMLAlgorithmBase):
         """Convert normalized vector to configuration dict"""
         specs = {}
         for i, param in enumerate(self.parameters):
+            param = copy.deepcopy(param)
             param_name = param["parameter"]
+            if self.custom_ranges and param_name in self.custom_ranges:
+                for override_key, override_value in self.custom_ranges[param_name].items():
+                    if override_value is not None:
+                        param[override_key] = override_value
             normalized_value = np.clip(vector[i], 0.0, 1.0)
 
             param_type = param.get("value_type")
@@ -299,6 +311,9 @@ class DEHB(AutoMLAlgorithmBase):
         if self.sh_iter == 0:
             specs = self._differential_evolution_mutation()
             self.epoch_number = self.ri[self.bracket][self.sh_iter] * self.epoch_multiplier
+            final_epoch = self.ri[self.bracket][-1] * self.epoch_multiplier
+            self.override_num_epochs(final_epoch)
+            specs.update(self._epoch_spec_overrides(self.epoch_number))
             to_return = specs
         else:
             lower = -1 * self.ni.get(self.bracket, [0])[0]
@@ -320,10 +335,19 @@ class DEHB(AutoMLAlgorithmBase):
                     )[0:self.ni[self.bracket][self.sh_iter]]
 
             self.epoch_number = self.ri[self.bracket][self.sh_iter] * self.epoch_multiplier
+            final_epoch = self.ri[self.bracket][-1] * self.epoch_multiplier
+            resume_from_epoch = (
+                self.ri[self.bracket][self.sh_iter - 1] * self.epoch_multiplier
+                if self.sh_iter > 0 else 0
+            )
+            self.override_num_epochs(final_epoch)
+            specs = copy.deepcopy(self.experiments_considered[self.expt_iter].specs)
+            specs.update(self._epoch_spec_overrides(self.epoch_number))
             resumerec = ResumeRecommendation(
                 self.experiments_considered[self.expt_iter].id,
-                self.experiments_considered[self.expt_iter].specs,
-                self.experiments_considered[self.expt_iter].job_id
+                specs,
+                self.experiments_considered[self.expt_iter].job_id,
+                resume_from_epoch=resume_from_epoch,
             )
             to_return = resumerec
         self.expt_iter += 1
@@ -363,7 +387,7 @@ class DEHB(AutoMLAlgorithmBase):
 
         # Update DE population
         for rec in history:
-            if rec.status == JobStates.success and rec.result != 0.0:
+            if rec.status == JobStates.success and rec.result is not None:
                 config_vector = self._normalize_config_to_vector(rec.specs)
                 is_duplicate = any(np.allclose(config_vector, p) for p in self.population)
                 if not is_duplicate:

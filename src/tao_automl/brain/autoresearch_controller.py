@@ -32,6 +32,22 @@ from tao_automl.utils.math_utils import get_valid_options
 logger = logging.getLogger(__name__)
 
 
+def _metric_is_minimized(metric: str) -> bool:
+    return "loss" in (metric or "").lower()
+
+
+def _finite_numeric_bound(bound: Any) -> Optional[float]:
+    if bound in (None, "", "inf", "-inf"):
+        return None
+    try:
+        value = float(bound)
+    except (ValueError, TypeError, OverflowError):
+        return None
+    if not np.isfinite(value):
+        return None
+    return value
+
+
 class AutoresearchBrain:
     """Autonomous research brain for TAO AutoML.
 
@@ -72,7 +88,7 @@ class AutoresearchBrain:
         self.llm_client = LLMClient(params=llm_params)
 
         self.tracker = ExperimentTracker(
-            metric_direction="minimize" if metric == "loss" else "maximize"
+            metric_direction="minimize" if _metric_is_minimized(metric) else "maximize"
         )
         self.knowledge_retriever = KnowledgeRetriever(llm_client=self.llm_client)
         self.prescreener = SpecPrescreener(llm_client=self.llm_client)
@@ -80,7 +96,8 @@ class AutoresearchBrain:
         self.analyzer = LLMAnalyzer(llm_client=self.llm_client, analysis_interval=5)
 
         self.external_knowledge: Optional[str] = None
-        self.reverse_sort = metric != "loss"
+        self._initialized = False
+        self.reverse_sort = not _metric_is_minimized(metric)
         self.num_epochs_per_experiment = 0
         self.spec_schema: Dict[str, Any] = {}
         self._consecutive_failures = 0
@@ -97,9 +114,18 @@ class AutoresearchBrain:
         )
         if self.external_knowledge:
             logger.info("Retrieved external knowledge for %s", self.network)
+        self._initialized = True
+
+    def _ensure_initialized(self):
+        """Initialize from the persisted base train spec exactly once."""
+        if self._initialized:
+            return
+        base_spec = self.state_store.get_job_specs(self.context.id) or {}
+        self.initialize(base_spec)
 
     def generate_recommendations(self, history):
         """Generate next spec modification using LLM reasoning."""
+        self._ensure_initialized()
         self._sync_from_controller(history)
 
         if history and history[-1].status not in [JobStates.success, JobStates.failure]:
@@ -294,27 +320,27 @@ class AutoresearchBrain:
             if dtype == "float":
                 try:
                     value = float(value)
-                    if v_min not in (None, '', "", "inf", "-inf"):
-                        hard_min = float(v_min)
-                        if not np.isinf(hard_min) and value < hard_min:
-                            value = hard_min
-                    if v_max not in (None, '', "", "inf", "-inf"):
-                        hard_max = float(v_max)
-                        if not np.isinf(hard_max) and value > hard_max:
-                            value = hard_max
+                    hard_min = _finite_numeric_bound(v_min)
+                    if hard_min is not None and value < hard_min:
+                        value = hard_min
+                    hard_max = _finite_numeric_bound(v_max)
+                    if hard_max is not None and value > hard_max:
+                        value = hard_max
                 except (ValueError, TypeError):
                     continue
 
             elif dtype in ("int", "integer"):
                 try:
                     value = int(round(float(value)))
-                    if v_min not in (None, '', ""):
-                        value = max(int(v_min), value)
-                    if v_max not in (None, '', "", "inf"):
-                        hard_max = int(v_max)
-                        if value > hard_max:
-                            value = hard_max
-                except (ValueError, TypeError):
+                    hard_min = _finite_numeric_bound(v_min)
+                    if hard_min is not None:
+                        value = max(int(np.ceil(hard_min)), value)
+                    hard_max = _finite_numeric_bound(v_max)
+                    if hard_max is not None:
+                        hard_max_int = int(np.floor(hard_max))
+                        if value > hard_max_int:
+                            value = hard_max_int
+                except (ValueError, TypeError, OverflowError):
                     continue
 
             elif dtype in ("categorical", "ordered"):
@@ -431,6 +457,7 @@ class AutoresearchBrain:
         state = {
             "tracker": self.tracker.to_dict(),
             "external_knowledge": self.external_knowledge,
+            "initialized": self._initialized,
             "consecutive_failures": self._consecutive_failures,
             "llm_usage": self.llm_client.get_usage_summary(),
             "analyses": self.analyzer.format_for_metadata(),
@@ -454,6 +481,7 @@ class AutoresearchBrain:
             if tracker_data:
                 brain.tracker = ExperimentTracker.from_dict(tracker_data)
             brain.external_knowledge = state.get("external_knowledge")
+            brain._initialized = state.get("initialized", bool(brain.tracker.best_spec))
             brain._consecutive_failures = state.get("consecutive_failures", 0)
             logger.info(
                 "Loaded autoresearch state: %d experiments, best_metric=%s",

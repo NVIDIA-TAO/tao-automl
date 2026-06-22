@@ -106,11 +106,13 @@ def build_recommendation_with_reasoning_prompt(
         "Return ONLY the JSON object, no explanation.",
         """Return a JSON object with two keys:
 - "reasoning": A brief explanation of why you chose these values (2-3 sentences).
+  If experiment history is present, explicitly cite the prior metric value(s)
+  or current best metric you used to decide the change.
 - "config": The proposed hyperparameter configuration.
 
 Example:
 {
-  "reasoning": "Increasing LR since the last 3 experiments show the model can handle higher rates...",
+  "reasoning": "The best prior val_loss was 0.73, so I am increasing LR because recent lower-LR trials converged too slowly...",
   "config": {"train.optim.lr": 0.003, "train.optim.weight_decay": 0.0001}
 }"""
     )

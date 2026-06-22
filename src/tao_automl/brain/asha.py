@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 """ASHA (Asynchronous Successive Halving Algorithm) AutoML algorithm modules"""
+import copy
 import numpy as np
 import math
 import logging
@@ -306,6 +307,8 @@ class ASHA(AutoMLAlgorithmBase):
                 if self.max_trials is not None and self.total_configs_started >= self.max_trials:
                     break
                 specs = self._generate_random_parameters()
+                self.epoch_number = self.rungs[0]
+                specs.update(self._epoch_spec_overrides(self.epoch_number))
                 self.config_specs[self.next_config_id] = specs
                 self.config_to_rung[self.next_config_id] = 0
                 self.active_configs.add(self.next_config_id)
@@ -313,7 +316,7 @@ class ASHA(AutoMLAlgorithmBase):
                 self.next_config_id += 1
                 recommendations.append(specs)
             self.track_id = 0
-            return recommendations if recommendations else [self._generate_random_parameters()]
+            return recommendations
 
         active_by_rung = defaultdict(list)
         for rec in history:
@@ -354,7 +357,7 @@ class ASHA(AutoMLAlgorithmBase):
                             self.promoted_from_rung[rung_epochs].add(config_id)
                             self.rung_promotions[rung_epochs] += 1
                             self.config_to_rung[config_id] = next_rung_idx
-                            self.pending_promotions.append((config_id, next_epochs))
+                            self.pending_promotions.append((config_id, rung_epochs, next_epochs))
 
                             if self.rung_promotions[rung_epochs] >= quota:
                                 break
@@ -363,16 +366,36 @@ class ASHA(AutoMLAlgorithmBase):
 
         max_trials_reached = self.max_trials is not None and self.total_configs_started >= self.max_trials
         enough_final_results = len(self.completed_configs) >= self.min_top_configs
+        exhausted = (
+            max_trials_reached
+            and not self.active_configs
+            and not self.pending_promotions
+        )
 
-        if enough_final_results and (max_trials_reached or self.max_trials is None):
+        if (enough_final_results and (max_trials_reached or self.max_trials is None)) or exhausted:
+            if exhausted and not enough_final_results:
+                logger.warning(
+                    "ASHA exhausted all %d trial(s) with only %d final-rung "
+                    "completion(s); stopping with no further recommendations",
+                    self.total_configs_started,
+                    len(self.completed_configs),
+                )
             self.complete = True
             return []
 
         new_recommendations = []
         while len(self.active_configs) + len(new_recommendations) < self.max_concurrent:
             if self.pending_promotions:
-                config_id, epochs = self.pending_promotions.pop(0)
-                specs = self.config_specs[config_id]
+                promotion = self.pending_promotions.pop(0)
+                if len(promotion) == 3:
+                    config_id, resume_from_epoch, epochs = promotion
+                else:
+                    config_id, epochs = promotion
+                    previous_idx = max(self.config_to_rung.get(config_id, 1) - 1, 0)
+                    resume_from_epoch = self.rungs[previous_idx]
+                specs = copy.deepcopy(self.config_specs[config_id])
+                specs.update(self._epoch_spec_overrides(epochs))
+                self.config_specs[config_id] = specs
                 config_job_id = None
                 for rec in reversed(history):
                     if rec.id == config_id:
@@ -380,17 +403,23 @@ class ASHA(AutoMLAlgorithmBase):
                         break
                 self.active_configs.add(config_id)
                 self.epoch_number = epochs
-                resume_rec = ResumeRecommendation(config_id, specs, config_job_id)
+                resume_rec = ResumeRecommendation(
+                    config_id,
+                    specs,
+                    config_job_id,
+                    resume_from_epoch=resume_from_epoch,
+                )
                 self.track_id = config_id
                 new_recommendations.append(resume_rec)
 
             elif self.max_trials is None or self.total_configs_started < self.max_trials:
                 specs = self._generate_random_parameters()
+                self.epoch_number = self.rungs[0]
+                specs.update(self._epoch_spec_overrides(self.epoch_number))
                 self.config_specs[self.next_config_id] = specs
                 self.config_to_rung[self.next_config_id] = 0
                 self.active_configs.add(self.next_config_id)
                 self.total_configs_started += 1
-                self.epoch_number = self.rungs[0]
                 self.track_id = self.next_config_id
                 self.next_config_id += 1
                 new_recommendations.append(specs)

@@ -11,7 +11,7 @@ Optionally integrates with Weights & Biases (wandb) for experiment tracking.
 import logging
 import os
 
-from tao_automl.types import Recommendation, JobStates
+from tao_automl.types import Recommendation, ResumeRecommendation, JobStates
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +21,24 @@ _BRAIN_DONE_ALGORITHMS = frozenset({
     "hybrid", "autoresearch",
 })
 
+# Multi-fidelity algorithms compare low-budget trials to decide promotion, but
+# downstream model handoff should prefer the best trial at the largest observed
+# budget once such trials exist.
+_MULTI_FIDELITY_ALGORITHMS = frozenset({
+    "hyperband", "h", "bohb", "asha", "dehb", "hyperband_es", "hes", "pbt",
+})
+
 # Algorithms whose completion is determined by max recommendations count
 _MAX_REC_ALGORITHMS = frozenset({"bayesian", "b", "bfbo", "llm"})
+
+_BUDGET_KEY_NAMES = frozenset({
+    "num_epochs",
+    "epochs",
+    "n_epochs",
+    "max_iters",
+    "epoch",
+    "max_epochs",
+})
 
 
 class Controller:
@@ -90,12 +106,35 @@ class Controller:
         raw_recs = self.brain.generate_recommendations(self.history)
 
         if not raw_recs:
+            self.brain.save_state()
+            self.save_state()
             return []
 
         recommendations = []
-        for spec_dict in raw_recs:
-            if not spec_dict:
+        for raw_rec in raw_recs:
+            if not raw_rec:
                 continue
+
+            if isinstance(raw_rec, ResumeRecommendation):
+                rec = self._find_rec(raw_rec.id)
+                if rec is None:
+                    rec = Recommendation(
+                        identifier=int(raw_rec.id),
+                        specs=raw_rec.specs,
+                        metric=self.metric,
+                    )
+                    self.history.append(rec)
+                    self._next_id = max(self._next_id, rec.id + 1)
+                else:
+                    rec.specs = raw_rec.specs
+                rec.status = JobStates.pending
+                rec.resume_from_job_id = raw_rec.resume_from_job_id or raw_rec.job_id
+                rec.resume_from_epoch = getattr(raw_rec, "resume_from_epoch", None)
+                rec.resume_from_step = getattr(raw_rec, "resume_from_step", None)
+                recommendations.append(rec)
+                continue
+
+            spec_dict = raw_rec
             rec = Recommendation(
                 identifier=self._next_id,
                 specs=spec_dict,
@@ -156,6 +195,9 @@ class Controller:
         if not completed:
             return None
 
+        if self.algorithm in _MULTI_FIDELITY_ALGORITHMS:
+            completed = self._largest_budget_candidates(completed)
+
         lower_is_better = "loss" in self.metric.lower()
         if lower_is_better:
             return min(completed, key=lambda r: r.result)
@@ -205,6 +247,8 @@ class Controller:
                 "job_id": r.job_id,
                 "status": r.status,
                 "metric_value": r.result,
+                "failure_reason": getattr(r, "failure_reason", None),
+                "adjustments": getattr(r, "adjustments", []),
                 "created_on": r.created_on,
                 "last_modified": r.last_modified,
             })
@@ -418,6 +462,8 @@ class Controller:
                 rec.result = float(rec_dict.get("result", 0.0))
                 rec.best_epoch_number = rec_dict.get("best_epoch_number", "")
                 rec.resume_from_job_id = rec_dict.get("resume_from_job_id")
+                rec.resume_from_epoch = rec_dict.get("resume_from_epoch")
+                rec.resume_from_step = rec_dict.get("resume_from_step")
                 rec.early_stop_epoch = rec_dict.get("early_stop_epoch")
                 rec.created_on = rec_dict.get("created_on", "")
                 rec.last_modified = rec_dict.get("last_modified", "")
@@ -443,6 +489,40 @@ class Controller:
                 return r
         return None
 
+    @staticmethod
+    def _recommendation_budget(rec):
+        """Return the largest explicit training budget in a recommendation."""
+        budgets = []
+        if rec.early_stop_epoch is not None:
+            budgets.append(rec.early_stop_epoch)
+        for key, value in rec.specs.items():
+            name = str(key).split(".")[-1]
+            if name not in _BUDGET_KEY_NAMES:
+                continue
+            if isinstance(value, bool):
+                continue
+            try:
+                budgets.append(float(value))
+            except (TypeError, ValueError):
+                continue
+        return max(budgets) if budgets else None
+
+    def _largest_budget_candidates(self, completed):
+        """Filter completed recommendations to the largest observed budget."""
+        budgeted = []
+        for rec in completed:
+            budget = self._recommendation_budget(rec)
+            if budget is not None:
+                budgeted.append((budget, rec))
+        if not budgeted:
+            return completed
+        max_budget = max(budget for budget, _rec in budgeted)
+        largest_budget_recs = [
+            rec for budget, rec in budgeted
+            if budget == max_budget
+        ]
+        return largest_budget_recs or completed
+
     def _estimate_total(self):
         """Estimate total number of recommendations for progress reporting."""
         if self.algorithm in _MAX_REC_ALGORITHMS:
@@ -464,7 +544,11 @@ class Controller:
             "best_epoch_number": rec.best_epoch_number,
             "metric": rec.metric,
             "resume_from_job_id": rec.resume_from_job_id,
+            "resume_from_epoch": rec.resume_from_epoch,
+            "resume_from_step": rec.resume_from_step,
             "early_stop_epoch": rec.early_stop_epoch,
+            "failure_reason": getattr(rec, "failure_reason", None),
+            "adjustments": getattr(rec, "adjustments", []),
             "created_on": rec.created_on,
             "last_modified": rec.last_modified,
         }

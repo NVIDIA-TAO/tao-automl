@@ -15,6 +15,7 @@ dependencies = [
     "scipy",
     "pandas",
     "omegaconf",
+    "openai>=1.0",
     "requests",
     "PyYAML>=6.0",
     "nvidia-tao-sdk @ git+https://github.com/NVIDIA-TAO/tao-sdks.git",

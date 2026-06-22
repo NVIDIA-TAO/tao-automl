@@ -42,7 +42,11 @@ class Recommendation:
         self.best_epoch_number = ""
         self.metric = metric
         self.resume_from_job_id = None  # For PBT: job ID to resume checkpoint from
+        self.resume_from_epoch = None
+        self.resume_from_step = None
         self.early_stop_epoch = None  # For PBT/Hyperband: epoch limit when this rec was launched
+        self.failure_reason = None
+        self.adjustments = []
 
         # Add timestamps for timeout tracking
         current_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
@@ -87,7 +91,15 @@ class Recommendation:
 class ResumeRecommendation:
     """Recommendation class for Hyperband resume experiments"""
 
-    def __init__(self, identity, specs, job_id, resume_from_job_id=None):
+    def __init__(
+        self,
+        identity,
+        specs,
+        job_id,
+        resume_from_job_id=None,
+        resume_from_epoch=None,
+        resume_from_step=None,
+    ):
         """Initialize the ResumeRecommendation class
 
         Args:
@@ -95,11 +107,15 @@ class ResumeRecommendation:
             specs: the specs/config of the recommendation
             job_id: the job id of the recommendation
             resume_from_job_id: (PBT) the job id to resume checkpoint from if member was replaced
+            resume_from_epoch: epoch checkpoint to resume from
+            resume_from_step: step checkpoint to resume from
         """
         self.id = identity
         self.specs = specs
         self.job_id = job_id
         self.resume_from_job_id = resume_from_job_id
+        self.resume_from_epoch = resume_from_epoch
+        self.resume_from_step = resume_from_step
 
 
 # below code was changed from FTMS version - to remove flask/mongo db related fields

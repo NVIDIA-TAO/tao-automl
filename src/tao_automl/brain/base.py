@@ -70,6 +70,66 @@ class AutoMLAlgorithmBase:
 
         logger.info(f"Initialized random seed: {seed} for job {context.id}")
 
+    def _training_budget_spec_overrides(self, num_epochs=None, interval=None):
+        """Return dotted spec overrides for train budget keys.
+
+        Budgeted algorithms such as Hyperband, BOHB, ASHA, DEHB, and PBT make
+        per-rung/per-generation resource decisions. The runner merges each
+        recommendation with a base train spec, so those budget decisions must
+        be present in the recommendation specs themselves.
+        """
+        spec = self.state_store.get_job_specs(self.context.id) or {}
+        epoch_names = {"num_epochs", "epochs", "n_epochs", "max_iters", "epoch"}
+        training_sections = {"training_config", "train_config", "train"}
+        interval_names = {
+            "validation_interval",
+            "val_interval",
+            "validation_freq",
+            "checkpoint_interval",
+            "ckpt_interval",
+            "checkpoint_freq",
+            "save_interval",
+            "save_freq",
+            "save_freq_in_epoch",
+        }
+        overrides = {}
+
+        def walk(node, prefix="", in_training=False):
+            if not isinstance(node, dict):
+                return
+            prefix_parts = prefix.split(".") if prefix else []
+            for key, value in node.items():
+                full = f"{prefix}.{key}" if prefix else str(key)
+                child_in_training = in_training or key in training_sections
+
+                if num_epochs is not None:
+                    is_epoch_key = (
+                        (child_in_training and key in epoch_names)
+                        or (not prefix and key in epoch_names)
+                        or (key == "max_epochs" and "runner" in prefix_parts)
+                    )
+                    if is_epoch_key:
+                        overrides[full] = num_epochs
+                        continue
+
+                if interval is not None:
+                    is_interval_key = key in interval_names
+                    is_validation_freq = key == "freq_in_epoch" and (
+                        "validation" in prefix_parts or "val" in prefix_parts
+                    )
+                    if is_interval_key or is_validation_freq:
+                        overrides[full] = interval
+                        continue
+
+                walk(value, full, child_in_training)
+
+        walk(spec)
+        return overrides
+
+    def _epoch_spec_overrides(self, num_epochs):
+        """Return dotted spec overrides for epoch-like train keys."""
+        return self._training_budget_spec_overrides(num_epochs=num_epochs)
+
     def _apply_power_constraint_with_equal_priority(self, v_min, v_max, factor, fallback_value=None):
         """Apply power constraint by sampling directly from valid powers to give equal priority.
 
@@ -194,8 +254,6 @@ class AutoMLAlgorithmBase:
     def generate_automl_param_rec_value(self, parameter_config):
         """Generate a random value for the parameter passed"""
         parameter_name = parameter_config.get("parameter")
-        data_type = parameter_config.get("value_type")
-        default_value = parameter_config.get("default_value", None)
 
         # Apply custom overrides if provided
         if self.custom_ranges and parameter_name in self.custom_ranges:
@@ -212,6 +270,8 @@ class AutoMLAlgorithmBase:
                         )
 
         # Get potentially overridden values
+        data_type = parameter_config.get("value_type")
+        default_value = parameter_config.get("default_value", None)
         math_cond = parameter_config.get("math_cond", None)
         parent_param = parameter_config.get("parent_param", None)
 
