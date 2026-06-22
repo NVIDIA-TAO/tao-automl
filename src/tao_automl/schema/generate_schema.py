@@ -10,22 +10,39 @@ from tao_automl.schema import enum_constants
 logger = logging.getLogger(__name__)
 
 
+_CONFIG_MODULE_ALIASES = {
+    "depth_net_mono": "depth_net",
+    "depth_net_stereo": "depth_net",
+    "depth-net-mono": "depth_net",
+    "depth-net-stereo": "depth_net",
+}
+
+
 def generate_schema(neural_network_name, action=""):
     """Generates JSON schema for network"""
+    module_network_name = neural_network_name
     if neural_network_name == "cosmos-rl":
         imported_module = dataclass2json_converter.import_module_from_path(
             f"tao_automl.config.{neural_network_name}.{action}"
         )
         expConfig = imported_module.ExperimentConfig()
     else:
-        imported_module = dataclass2json_converter.import_module_from_path(
-            f"tao_automl.config.{neural_network_name}.default_config"
+        module_network_name = _CONFIG_MODULE_ALIASES.get(
+            neural_network_name, neural_network_name.replace("-", "_")
         )
+        imported_module = dataclass2json_converter.import_module_from_path(
+            f"tao_automl.config.{module_network_name}.default_config"
+        )
+        if imported_module is None and module_network_name != neural_network_name:
+            imported_module = dataclass2json_converter.import_module_from_path(
+                f"tao_automl.config.{neural_network_name}.default_config"
+            )
+            module_network_name = neural_network_name
         if neural_network_name == "bevfusion" and action == "dataset_convert":
             expConfig = imported_module.BEVFusionDataConvertExpConfig()
         elif neural_network_name == "stylegan_xl" and action == "dataset_convert":
             imported_module = dataclass2json_converter.import_module_from_path(
-                f"tao_automl.config.{neural_network_name}.dataset"
+                f"tao_automl.config.{module_network_name}.dataset"
             )
             expConfig = imported_module.DataConvertExpConfig()
         elif neural_network_name == "clip":

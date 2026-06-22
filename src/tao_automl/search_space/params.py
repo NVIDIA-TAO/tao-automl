@@ -119,6 +119,15 @@ def generate_hyperparams_to_search(
                 p for p in format_json_schema.keys() if p.startswith("policy.lora.")
             )
             logger.info("Excluding %d LoRA parameters: %s", len(params_to_exclude), params_to_exclude)
+        if (
+            "custom.vision.nframes" in updated_spec_with_keys_flattened
+            and "custom.vision.fps" not in set(automl_hyperparameters or [])
+        ):
+            params_to_exclude.add("custom.vision.fps")
+            logger.info(
+                "custom.vision.nframes is present - excluding custom.vision.fps "
+                "from default Cosmos-RL AutoML search"
+            )
 
     # ---- Build DataFrame and filter ----
     data_frame = pd.DataFrame.from_dict(format_json_schema, orient="index").reset_index()

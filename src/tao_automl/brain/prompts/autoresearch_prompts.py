@@ -166,15 +166,33 @@ def build_hybrid_strategy_prompt(
     metric_name: str,
     metric_direction: str,
     completed_phases: List[Dict[str, Any]],
+    enable_range_narrowing: bool = False,
 ) -> List[Dict[str, str]]:
     """Build prompt for the hybrid strategist to plan the next phase."""
     history_summary = _summarize_history(full_history, metric_name)
     param_names = [p.get("parameter", "") for p in available_parameters]
+    parameter_summary = _format_parameter_schema(available_parameters)
+    range_narrowing_instructions = ""
+    if enable_range_narrowing:
+        range_narrowing_instructions = """
+7. **"parameter_overrides"**: Optional result-informed narrowing for the next phase only.
+   - Use this only after at least one completed phase has successful results.
+   - For numeric parameters, provide `{"valid_min": value, "valid_max": value}`.
+     Either bound may be omitted; omitted bounds keep the original limit.
+   - For option parameters, provide `{"valid_options": [subset...]}`.
+     The subset must contain only values from the listed parameter constraints.
+   - Do not expand ranges, invent options, or narrow a parameter that is not
+     included in this phase's "parameters" list.
+   - Example: `"parameter_overrides": {"train.train_batch_per_replica":
+     {"valid_options": [8, 16]}}`.
+"""
 
     user_content = f"""## Network: {network}
 ## Metric: {metric_name} ({metric_direction})
 ## Available algorithms: {', '.join(available_algorithms)}
 ## Available parameters: {', '.join(param_names)}
+## Parameter constraints
+{parameter_summary}
 ## Total experiments run: {len(full_history)}
 
 ## History Summary
@@ -190,9 +208,20 @@ Plan the next optimization phase. Return JSON with:
    "single_trial" (test one specific config) or "stop" (search has converged)
 2. **"algorithm"**: Which algorithm to use (from available list)
 3. **"parameters"**: Which parameters to focus on (subset of available)
+   - Keep dependent parameters together. If a parameter lists `depends_on`,
+     include both that parameter and the dependency in the same phase.
+   - If choosing a parent parameter, include any available child parameters
+     that depend on it so the generated train spec remains valid.
+   - In the first phase, do not prune core train controls such as epoch,
+     batch size, learning rate, weight decay, or warmup when they are tunable.
+   - If LoRA parameters are available in the first phase, include rank, alpha,
+     and dropout along with the core train controls.
 4. **"trials"**: How many experiments to run in this phase
+   - Do not spend the full remaining experiment budget in the first phase;
+     leave budget for at least one result-informed refinement phase.
 5. **"algorithm_params"**: Algorithm-specific settings (e.g., automl_max_recommendations)
 6. **"reasoning"**: Why this strategy
+{range_narrowing_instructions}
 """
 
     return [

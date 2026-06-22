@@ -50,6 +50,20 @@ class MetricsConfig:
         display_name="BERTScore language",
         description="Language for BERTScore computation"
     )
+    bertscore_device: Optional[str] = STR_FIELD(
+        default_value="cpu",
+        value="cpu",
+        display_name="BERTScore device",
+        description="Device for BERTScore computation (use cpu to avoid competing with the eval model for GPU memory)"
+    )
+    bertscore_batch_size: Optional[int] = INT_FIELD(
+        default_value=1,
+        value=1,
+        valid_min=1,
+        valid_max=1024,
+        display_name="BERTScore batch size",
+        description="Optional BERTScore batch size; lower values reduce peak memory"
+    )
 
 
 @dataclass

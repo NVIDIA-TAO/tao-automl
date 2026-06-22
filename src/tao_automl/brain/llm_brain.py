@@ -23,6 +23,10 @@ from tao_automl.utils.spec_utils import get_flatten_specs
 logger = logging.getLogger(__name__)
 
 
+def _metric_is_minimized(metric: str) -> bool:
+    return "loss" in (metric or "").lower()
+
+
 class LLMBrain(AutoMLAlgorithmBase):
     """LLM-powered AutoML algorithm that uses an LLM to generate hyperparameter recommendations."""
 
@@ -43,7 +47,7 @@ class LLMBrain(AutoMLAlgorithmBase):
         self.best_config: Optional[Dict[str, Any]] = None
         self.best_metric: Optional[float] = None
         self.external_knowledge: Optional[str] = None
-        self.reverse_sort = True
+        self.reverse_sort = not _metric_is_minimized(metric)
         self.llm_params = llm_params
 
     def _parameters_with_custom_ranges(self):

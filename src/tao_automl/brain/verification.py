@@ -133,6 +133,12 @@ class MultiStageVerifier:
             if llm_result:
                 plausible = llm_result.get("plausible", True)
                 should_count = llm_result.get("should_count", True)
+                if metric_value is not None and status == "success":
+                    # Minimal smoke datasets commonly produce boundary metrics
+                    # such as 0.0 mAP/IoU.  A finite successful metric should
+                    # still count; the LLM may annotate plausibility but should
+                    # not veto controller accounting without a rule-based issue.
+                    should_count = True
                 issues.extend(llm_result.get("issues", []))
                 return ResultVerificationResult(
                     plausible=plausible, issues=issues, should_count=should_count

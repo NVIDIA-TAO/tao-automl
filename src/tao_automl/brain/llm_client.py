@@ -35,15 +35,24 @@ class LLMConfig:
         return cls(
             endpoint=params.get(
                 "llm_endpoint",
-                os.getenv("AUTOML_LLM_ENDPOINT", "https://integrate.api.nvidia.com/v1")
+                params.get(
+                    "base_url",
+                    os.getenv("AUTOML_LLM_ENDPOINT", "https://inference-api.nvidia.com"),
+                ),
             ),
             model=params.get(
                 "llm_model",
-                os.getenv("AUTOML_LLM_MODEL", "meta/llama-3.1-70b-instruct")
+                params.get(
+                    "model",
+                    os.getenv("AUTOML_LLM_MODEL", "gcp/google/gemini-3.1-pro-preview"),
+                ),
             ),
             api_key=params.get(
                 "llm_api_key",
-                os.getenv("AUTOML_LLM_API_KEY", os.getenv("NVIDIA_API_KEY", ""))
+                params.get(
+                    "api_key",
+                    os.getenv("AUTOML_LLM_API_KEY", os.getenv("NVIDIA_API_KEY", "")),
+                ),
             ),
             temperature=float(params.get(
                 "llm_temperature",
@@ -132,10 +141,10 @@ class LLMClient:
             try:
                 from openai import OpenAI
                 logger.info(
-                    "Initializing OpenAI client: endpoint=%s, model=%s, api_key=%s, timeout=%d",
+                    "Initializing OpenAI client: endpoint=%s, model=%s, api_key_present=%s, timeout=%d",
                     self.config.endpoint,
                     self.config.model,
-                    ("***" + self.config.api_key[-6:]) if len(self.config.api_key) > 6 else "(unset)",
+                    bool(self.config.api_key),
                     self.config.timeout,
                 )
                 self._client = OpenAI(

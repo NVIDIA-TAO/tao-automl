@@ -20,6 +20,15 @@ from tao_automl.brain.autoresearch_controller import AutoresearchBrain
 logger = logging.getLogger(__name__)
 
 
+def _as_bool(value: Any) -> bool:
+    """Parse bool-like values from runner settings."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "y", "on")
+    return bool(value)
+
+
 # Constants for algorithm names
 class AlgorithmType:
     """Constants for AutoML algorithm types"""
@@ -68,6 +77,7 @@ class AlgorithmParams:
     llm_max_tokens: int = 4096
     automl_max_experiments: int = 50  # autoresearch budget
     research_program: Optional[str] = None
+    hybrid_enable_llm_range_narrowing: bool = False
 
     @classmethod
     def from_dict(cls, params_dict: Dict[str, Any]) -> 'AlgorithmParams':
@@ -91,13 +101,19 @@ class AlgorithmParams:
             automl_min_points_in_model=params_dict.get("automl_min_points_in_model", 10),
             automl_max_trials=params_dict.get("automl_max_trials", None),
             automl_min_top_configs=params_dict.get("automl_min_top_configs", 5),
-            llm_endpoint=params_dict.get("llm_endpoint", ""),
-            llm_model=params_dict.get("llm_model", ""),
-            llm_api_key=params_dict.get("llm_api_key", ""),
+            llm_endpoint=params_dict.get("llm_endpoint", params_dict.get("base_url", "")),
+            llm_model=params_dict.get("llm_model", params_dict.get("model", "")),
+            llm_api_key=params_dict.get("llm_api_key", params_dict.get("api_key", "")),
             llm_temperature=float(params_dict.get("llm_temperature", 0.7)),
             llm_max_tokens=int(params_dict.get("llm_max_tokens", 4096)),
             automl_max_experiments=int(params_dict.get("automl_max_experiments", 50)),
             research_program=params_dict.get("research_program"),
+            hybrid_enable_llm_range_narrowing=_as_bool(
+                params_dict.get(
+                    "hybrid_enable_llm_range_narrowing",
+                    params_dict.get("enable_llm_range_narrowing", False),
+                )
+            ),
         )
 
     def get_llm_params(self) -> Dict[str, Any]:
@@ -240,7 +256,8 @@ class BrainFactory:
                 "reduction_factor": int(params.automl_reduction_factor),
                 "epoch_multiplier": int(params.epoch_multiplier),
                 "early_stop_threshold": float(params.automl_early_stop_threshold),
-                "min_early_stop_epochs": int(params.automl_min_early_stop_epochs)
+                "min_early_stop_epochs": int(params.automl_min_early_stop_epochs),
+                "metric": metric
             }
         elif algo_lower in AlgorithmType.LLM:
             brain_class = LLMBrain
@@ -261,6 +278,8 @@ class BrainFactory:
                 "parameters": parameters,
                 "llm_params": params.get_llm_params(),
                 "metric": metric,
+                "max_experiments": int(params.automl_max_experiments),
+                "enable_llm_range_narrowing": params.hybrid_enable_llm_range_narrowing,
             }
         elif algo_lower in AlgorithmType.AUTORESEARCH:
             brain_class = AutoresearchBrain

@@ -115,7 +115,12 @@ class PBT(AutoMLAlgorithmBase):
 
     def _perturb_parameter(self, param_config, current_value):
         """Perturb a parameter value using resample or perturb strategy"""
+        param_config = copy.deepcopy(param_config)
         param_name = param_config.get("parameter")
+        if self.custom_ranges and param_name in self.custom_ranges:
+            for override_key, override_value in self.custom_ranges[param_name].items():
+                if override_value is not None:
+                    param_config[override_key] = override_value
         data_type = param_config.get("value_type")
 
         if np.random.rand() < 0.2:
@@ -257,6 +262,12 @@ class PBT(AutoMLAlgorithmBase):
             recommendations = []
             for _ in range(self.population_size):
                 specs = self._generate_random_parameters()
+                specs.update(
+                    self._training_budget_spec_overrides(
+                        num_epochs=self.eval_interval,
+                        interval=self.eval_interval,
+                    )
+                )
                 member_id = self.next_member_id
                 self.population[member_id] = {
                     "specs": specs,
@@ -314,11 +325,37 @@ class PBT(AutoMLAlgorithmBase):
 
                 self.population[member_id]["specs"] = new_specs
                 self.population[member_id]["result"] = 0.0
-                resume_rec = ResumeRecommendation(member_id, new_specs, member_job_id, resume_from_job_id=source_job_id)
+                resume_from_epoch = self.population[source_id].get("epochs")
+                new_specs.update(
+                    self._training_budget_spec_overrides(
+                        num_epochs=self.epoch_number,
+                        interval=self.eval_interval,
+                    )
+                )
+                resume_rec = ResumeRecommendation(
+                    member_id,
+                    new_specs,
+                    member_job_id,
+                    resume_from_job_id=source_job_id,
+                    resume_from_epoch=resume_from_epoch,
+                )
                 recommendations.append(resume_rec)
             else:
-                specs = self.population[member_id]["specs"]
-                resume_rec = ResumeRecommendation(member_id, specs, member_job_id, resume_from_job_id=None)
+                specs = copy.deepcopy(self.population[member_id]["specs"])
+                resume_from_epoch = self.population[member_id].get("epochs")
+                specs.update(
+                    self._training_budget_spec_overrides(
+                        num_epochs=self.epoch_number,
+                        interval=self.eval_interval,
+                    )
+                )
+                self.population[member_id]["specs"] = specs
+                resume_rec = ResumeRecommendation(
+                    member_id,
+                    specs,
+                    member_job_id,
+                    resume_from_epoch=resume_from_epoch,
+                )
                 recommendations.append(resume_rec)
 
         self.track_id = list(self.population.keys())[0]
