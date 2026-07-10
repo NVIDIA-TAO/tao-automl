@@ -15,6 +15,32 @@ from tao_automl.config.utils.types import (
 )
 
 
+METROPOLIS_SYSTEM_PROMPT_OPTIONS = [
+    (
+        "You are a helpful assistant that can answer questions about a "
+        "street-view CCTV footage. The vehicles that need attention are "
+        "marked with bounding boxes and IDs."
+    ),
+    (
+        "You are a careful video event verification assistant for traffic "
+        "and security CCTV. Answer only from visible evidence, track object "
+        "IDs and bounding boxes, and state yes/no when the question asks "
+        "whether an event occurred."
+    ),
+    (
+        "You are a Metropolis VLM assistant for surveillance video QA. Focus "
+        "on temporal order, object interactions, near misses, direction of "
+        "travel, and safety-relevant evidence. Prefer concise factual answers."
+    ),
+    (
+        "You are an event-verification assistant. Inspect the full clip before "
+        "answering, compare the question with observed actions, ignore "
+        "unsupported assumptions, and return the most specific answer allowed "
+        "by the evidence."
+    ),
+]
+
+
 @dataclass
 class TaskConfig:
     """Task configuration for evaluation."""
@@ -108,7 +134,14 @@ class DatasetConfig:
         value="You are a helpful assistant that can answer questions about a street-view CCTV footage. "
               "The vehicles that need attention are marked with bounding boxes and IDs.",
         display_name="System prompt",
-        description="System prompt for the evaluation tasks"
+        description=(
+            "System prompt for the evaluation tasks. AutoML treats this as a "
+            "bounded prompt-candidate search for zero-shot Metropolis/VSS "
+            "evaluation."
+        ),
+        valid_options=METROPOLIS_SYSTEM_PROMPT_OPTIONS,
+        option_weights=[0.4, 0.25, 0.2, 0.15],
+        automl_enabled="TRUE",
     )
 
 
@@ -260,8 +293,10 @@ class VisionConfig:
         default_value=8,
         valid_min=1,
         valid_max=8,
+        valid_options=[4, 8],
         display_name="Number of frames",
-        description="Number of frames for vision processing."
+        description="Number of frames for vision processing.",
+        automl_enabled="TRUE",
     )
 
 
@@ -282,40 +317,46 @@ class GenerationConfig:
         value=1024,
         valid_min=1,
         valid_max=8192,
+        valid_options=[256, 512, 1024, 2048],
         display_name="Maximum tokens",
-        description="Maximum number of tokens in the generated response"
+        description="Maximum number of tokens in the generated response",
+        automl_enabled="TRUE",
     )
     temperature: float = FLOAT_FIELD(
         default_value=0.0,
         value=0.0,
         valid_min=0.0,
-        valid_max=2.0,
+        valid_max=0.4,
         display_name="Temperature",
-        description="Temperature for sampling (0.0 for greedy decoding)"
+        description="Temperature for sampling (0.0 for greedy decoding)",
+        automl_enabled="TRUE",
     )
     repetition_penalty: float = FLOAT_FIELD(
         default_value=1.0,
         value=1.0,
-        valid_min=0.1,
-        valid_max=2.0,
+        valid_min=0.8,
+        valid_max=1.2,
         display_name="Repetition penalty",
-        description="Repetition penalty for generation"
+        description="Repetition penalty for generation",
+        automl_enabled="TRUE",
     )
     presence_penalty: float = FLOAT_FIELD(
         default_value=0.0,
         value=0.0,
-        valid_min=-2.0,
-        valid_max=2.0,
+        valid_min=-0.5,
+        valid_max=0.5,
         display_name="Presence penalty",
-        description="Presence penalty for generation"
+        description="Presence penalty for generation",
+        automl_enabled="TRUE",
     )
     frequency_penalty: float = FLOAT_FIELD(
         default_value=0.0,
         value=0.0,
-        valid_min=-2.0,
-        valid_max=2.0,
+        valid_min=-0.5,
+        valid_max=0.5,
         display_name="Frequency penalty",
-        description="Frequency penalty for generation"
+        description="Frequency penalty for generation",
+        automl_enabled="TRUE",
     )
 
 

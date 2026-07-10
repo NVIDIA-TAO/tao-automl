@@ -600,6 +600,40 @@ def test_non_train_action_defaults_include_action_native_params():
     assert "quantize.backend" not in quantize_names
 
 
+def test_cosmos_evaluate_defaults_include_autoprompt_search_space():
+    from tao_automl.schema.generate_schema import generate_schema
+    from tao_automl.search_space import params
+
+    schema = generate_schema("cosmos-rl", "evaluate")
+    records, names = params.generate_hyperparams_to_search(
+        network="cosmos-rl",
+        action="evaluate",
+        train_specs=schema["default"],
+        automl_hyperparameters=None,
+    )
+    records_by_name = {record["parameter"]: record for record in records}
+
+    expected = {
+        "dataset.system_prompt",
+        "vision.nframes",
+        "generation.max_tokens",
+        "generation.temperature",
+        "generation.repetition_penalty",
+        "generation.presence_penalty",
+        "generation.frequency_penalty",
+    }
+    assert expected.issubset(set(names))
+    assert "vision.fps" not in names
+
+    prompt_record = records_by_name["dataset.system_prompt"]
+    assert prompt_record["value_type"] == "categorical"
+    assert len(prompt_record["valid_options"]) >= 4
+    assert prompt_record["default_value"] in prompt_record["valid_options"]
+
+    assert records_by_name["vision.nframes"]["value_type"] == "ordered_int"
+    assert records_by_name["vision.nframes"]["valid_options"] == [4, 8]
+
+
 def test_custom_valid_options_cannot_reopen_schema_excluded_options():
     from tao_automl.utils.math_utils import get_valid_options
 
