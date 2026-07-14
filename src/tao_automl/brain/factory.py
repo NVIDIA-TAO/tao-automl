@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """AutoML brain factory"""
 import logging
-from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
 from tao_automl.brain.bayesian import Bayesian
 from tao_automl.brain.hyperband import HyperBand
@@ -27,6 +27,19 @@ def _as_bool(value: Any) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in ("1", "true", "yes", "y", "on")
     return bool(value)
+
+
+def _as_string_list(value: Any) -> List[str]:
+    """Normalize a setting that accepts one or more dotted parameter names."""
+    if value in (None, ""):
+        return []
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    if isinstance(value, (list, tuple, set)):
+        return [str(item).strip() for item in value if str(item).strip()]
+    raise TypeError(
+        "evolvable_text_parameters must be a string or a list of strings"
+    )
 
 
 # Constants for algorithm names
@@ -77,6 +90,7 @@ class AlgorithmParams:
     llm_max_tokens: int = 4096
     automl_max_experiments: int = 50  # autoresearch budget
     research_program: Optional[str] = None
+    evolvable_text_parameters: List[str] = field(default_factory=list)
     hybrid_enable_llm_range_narrowing: bool = False
     automl_delete_intermediate_ckpt: bool = True
 
@@ -112,6 +126,9 @@ class AlgorithmParams:
             llm_max_tokens=int(params_dict.get("llm_max_tokens", 4096)),
             automl_max_experiments=int(params_dict.get("automl_max_experiments", 50)),
             research_program=params_dict.get("research_program"),
+            evolvable_text_parameters=_as_string_list(
+                params_dict.get("evolvable_text_parameters")
+            ),
             hybrid_enable_llm_range_narrowing=_as_bool(
                 params_dict.get(
                     "hybrid_enable_llm_range_narrowing",
@@ -296,6 +313,7 @@ class BrainFactory:
                 "metric": metric,
                 "max_experiments": int(params.automl_max_experiments),
                 "research_program": params.research_program,
+                "evolvable_text_parameters": params.evolvable_text_parameters,
             }
         else:
             raise ValueError(f"AutoML Algorithm {algorithm} is not valid")

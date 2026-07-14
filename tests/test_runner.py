@@ -632,6 +632,7 @@ def test_cosmos_evaluate_defaults_include_autoprompt_search_space():
 
     assert records_by_name["vision.nframes"]["value_type"] == "ordered_int"
     assert records_by_name["vision.nframes"]["valid_options"] == [4, 8]
+    assert records_by_name["generation.max_tokens"]["value_type"] == "ordered_int"
 
 
 def test_custom_valid_options_cannot_reopen_schema_excluded_options():
@@ -4038,6 +4039,72 @@ def test_execution_parameter_is_appended_after_existing_positional_callbacks():
 
     parameters = list(inspect.signature(AutoMLRunner.run).parameters)
     assert parameters.index("execution") > parameters.index("on_result")
+    assert parameters.index("feedback_fn") > parameters.index("execution")
+
+
+def test_runner_passes_diagnostic_feedback_to_automl(tmp_path, monkeypatch):
+    from tao_automl.runner import AutoMLRunner
+    from tao_automl.types import JobStates, Recommendation
+
+    skill_dir = _write_fake_skill(tmp_path)
+    captured = {}
+
+    class FakeAutoML:
+        def __init__(self, *args, **kwargs):
+            self.rec = Recommendation(0, {"train.num_epochs": 2}, "accuracy")
+            self.complete = False
+
+        def is_complete(self):
+            return self.complete
+
+        def next_recommendation(self):
+            return [self.rec]
+
+        def report_result(
+            self, rec_id, metric_value, best_epoch=None, status="success", feedback=None
+        ):
+            captured["feedback"] = feedback
+            self.rec.feedback = feedback
+            self.rec.update_result(metric_value)
+            self.rec.update_status(status)
+            self.complete = True
+
+        def get_best(self):
+            return self.rec if self.rec.status == JobStates.success else None
+
+        def get_progress(self):
+            return {"completed": int(self.complete), "best_metric": self.rec.result}
+
+        def get_history(self):
+            return [self.rec]
+
+    def fake_run_one_job(self, *args, **kwargs):
+        kwargs["rec"].assign_job_id("job-1")
+        return 0.75, "success"
+
+    monkeypatch.setattr("tao_automl.AutoML", FakeAutoML)
+    monkeypatch.setattr(AutoMLRunner, "_run_one_job", fake_run_one_job)
+
+    runner = AutoMLRunner(sdk=MagicMock(), skill_dir=skill_dir, action="train")
+    result = runner.run(
+        image="nvcr.io/test:1",
+        automl_settings={
+            "algorithm": "autoresearch",
+            "metric": "accuracy",
+            "run_baseline": False,
+            "run_final_evaluation": False,
+        },
+        feedback_fn=lambda rec, job_id: {
+            "job_id": job_id,
+            "incorrect_sample_ids": ["sample-2"],
+        },
+        workspace_path=str(tmp_path / "workspace"),
+    )
+
+    expected = {"job_id": "job-1", "incorrect_sample_ids": ["sample-2"]}
+    assert captured["feedback"] == expected
+    assert result["best"]["feedback"] == expected
+    assert result["history"][0]["feedback"] == expected
 
 
 def test_container_run_prefers_packaged_search_schema(tmp_path, monkeypatch):

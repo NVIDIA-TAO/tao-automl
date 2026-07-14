@@ -55,6 +55,7 @@ from typing import Any
 import numpy as np
 import yaml
 from tao_automl.objectives import is_latency_metric, parse_objective_config
+from tao_automl.utils.value_utils import normalize_json_value
 from tao_sdk.checkpoints import (
     build_checkpoint_candidate,
     checkpoint_epoch as sdk_checkpoint_epoch,
@@ -462,6 +463,33 @@ def _callback_metric_payload(value: Any, source: str):
             return None
         metrics[key] = metric
     return metrics
+
+
+def _callback_feedback(feedback_fn, rec, job_id: str | None, source: str):
+    """Run and normalize an optional diagnostic-feedback callback."""
+    if feedback_fn is None:
+        return None
+    try:
+        feedback = feedback_fn(rec, job_id)
+    except Exception as exc:
+        logger.warning("%s raised for rec %s: %s", source, rec.id, exc)
+        return None
+    if feedback is None:
+        return None
+    try:
+        return normalize_json_value(feedback, path="recommendation.feedback")
+    except (TypeError, ValueError) as exc:
+        logger.warning("%s returned invalid feedback for rec %s: %s", source, rec.id, exc)
+        return None
+
+
+def _parameter_name_set(value: Any) -> set[str]:
+    """Normalize a comma-separated or iterable parameter-name setting."""
+    if value in (None, ""):
+        return set()
+    if isinstance(value, str):
+        return {item.strip() for item in value.split(",") if item.strip()}
+    return {str(item).strip() for item in value if str(item).strip()}
 
 
 def _iter_terminal_log_chunks(sdk, job_id: str):
@@ -1526,6 +1554,7 @@ def _validate_specs_against_schema(
     *,
     require_all: bool,
     source: str = "spec",
+    evolvable_text_parameters: set[str] | None = None,
 ) -> None:
     """Validate concrete direct-script specs against their declared schema."""
     if not isinstance(specs, dict):
@@ -1561,6 +1590,13 @@ def _validate_specs_against_schema(
                     )
                 validate_object(value, child, dotted)
             else:
+                if dotted in (evolvable_text_parameters or set()):
+                    if not isinstance(value, str) or not value.strip():
+                        raise TypeError(
+                            f"{source}.{dotted}: evolvable text must be a non-empty string"
+                        )
+                    metadata = dict(metadata)
+                    metadata.pop("enum", None)
                 _validate_schema_value(
                     value, value_type, metadata, nullable, f"{source}.{dotted}"
                 )
@@ -2588,16 +2624,20 @@ class AutoMLRunner:
         metric_value,
         status: str,
         workspace_path: str | None,
+        feedback=None,
         report_result: bool = True,
         require_failure: bool = False,
     ) -> None:
         """Durably report, ledger, clear, then prune one terminal job."""
         if report_result:
-            automl.report_result(
+            report_kwargs = dict(
                 rec_id=rec.id,
                 metric_value=metric_value if metric_value is not None else 0.0,
                 status=status,
             )
+            if feedback is not None:
+                report_kwargs["feedback"] = feedback
+            automl.report_result(**report_kwargs)
             if require_failure and str(getattr(rec, "status", "")) != "failure":
                 raise RuntimeError(
                     f"recommendation {rec.id} was not persisted as failure"
@@ -3044,6 +3084,7 @@ class AutoMLRunner:
             baseline_fn=None,
             final_eval_fn=None,
             on_recommendation=None, on_result=None, execution=None,
+            feedback_fn=None,
             **platform_kwargs) -> dict:
         """Run a full AutoML optimization loop.
 
@@ -3096,6 +3137,12 @@ class AutoMLRunner:
                 via ``report_result``. Return ``None`` to fall back to the
                 extractor. Raised exceptions are caught and logged; the rec
                 is reported with the extractor's value (or None + failure).
+            feedback_fn: Optional callable ``(rec, job_id: str | None) -> JSON-safe value``
+                invoked after each terminal job. Return compact diagnostic
+                details such as incorrect sample IDs, expected/predicted
+                labels, and evaluator comments. Reflective algorithms include
+                this feedback in the next proposal; scalar metric selection is
+                unchanged. Exceptions or invalid values are logged and ignored.
             baseline_fn: Optional callable ``(base_specs: dict) -> float | None``.
                 When provided and ``automl_settings.run_baseline`` is not False,
                 run a base/pretrained evaluation before tuning and include the
@@ -3381,6 +3428,7 @@ class AutoMLRunner:
                     self._recover_pending_job(
                         entry=entry, automl=automl, metric_name=metric_name,
                         metric_extractor=metric_extractor, eval_fn=eval_fn,
+                        feedback_fn=feedback_fn,
                         workspace_path=workspace_path, on_result=on_result,
                         objective_names=objective_names,
                         platform_kwargs=platform_kwargs,
@@ -3519,6 +3567,9 @@ class AutoMLRunner:
                         schema_path,
                         require_all=True,
                         source=f"recommendation {rec.id} merged spec",
+                        evolvable_text_parameters=_parameter_name_set(
+                            automl_settings.get("evolvable_text_parameters")
+                        ),
                     )
                 metric_value, status = self._run_one_job(
                     image=resolved_image, action_cfg=action_cfg,
@@ -3563,6 +3614,12 @@ class AutoMLRunner:
                 metric_error = self._consecutive_none_metrics >= (
                     self._MAX_CONSECUTIVE_NONE_METRICS
                 )
+                feedback = _callback_feedback(
+                    feedback_fn,
+                    rec,
+                    getattr(rec, "job_id", None),
+                    "feedback_fn",
+                )
                 # Keep active_jobs durable until controller state and the
                 # terminal artifact ledger have both been committed.
                 self._finalize_terminal_job(
@@ -3572,6 +3629,7 @@ class AutoMLRunner:
                     metric_value=metric_value,
                     status=status,
                     workspace_path=workspace_path,
+                    feedback=feedback,
                 )
                 if on_result:
                     on_result(rec, metric_value, status)
@@ -3681,6 +3739,7 @@ class AutoMLRunner:
                 "objective_score": getattr(best, "objective_score", None),
                 "objective_values": _recommendation_objective_values(best),
                 "adjustments": getattr(best, "adjustments", []) if best else [],
+                "feedback": getattr(best, "feedback", None) if best else None,
             },
             "progress": progress,
             "baseline": baseline,
@@ -3694,6 +3753,7 @@ class AutoMLRunner:
                     "status": r.status,
                     "failure_reason": getattr(r, "failure_reason", None),
                     "adjustments": getattr(r, "adjustments", []),
+                    "feedback": getattr(r, "feedback", None),
                 }
                 for r in history
             ],
@@ -4096,7 +4156,7 @@ class AutoMLRunner:
         return True
 
     def _recover_pending_job(self, entry, automl, metric_name,
-                              metric_extractor, eval_fn, workspace_path,
+                              metric_extractor, eval_fn, feedback_fn, workspace_path,
                               on_result, objective_names=None,
                               platform_kwargs=None) -> None:
         """Poll an in-flight job (recovered on resume), extract its result,
@@ -4386,6 +4446,9 @@ class AutoMLRunner:
             )
             report_status = "success" if metric_value is not None else "failure"
 
+        feedback = _callback_feedback(
+            feedback_fn, rec, job_id, "feedback_fn during resume"
+        )
         self._finalize_terminal_job(
             automl=automl,
             rec=rec,
@@ -4393,6 +4456,7 @@ class AutoMLRunner:
             metric_value=metric_value,
             status=report_status,
             workspace_path=workspace_path,
+            feedback=feedback,
         )
         if on_result:
             try:

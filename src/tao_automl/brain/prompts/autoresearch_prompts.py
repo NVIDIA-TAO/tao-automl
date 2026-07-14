@@ -16,13 +16,15 @@ AUTORESEARCH_SYSTEM = """\
 You are an autonomous ML research agent for NVIDIA TAO Toolkit.
 You operate in a loop: propose spec modifications -> run experiment -> evaluate -> keep/discard.
 
-Your goal is to find the best training configuration for the given network and metric.
+Your goal is to find the best experiment configuration for the given network and metric.
 
 CRITICAL RULES:
 1. You MUST ONLY use parameter names from the "Tunable Parameters" list provided.
    Do NOT invent parameter names or use alternative key formats.
    For example, if the parameter is "train.optim.lr", do NOT use "train_config.optimizer.lr".
-2. Every proposed value MUST respect the type and range for that parameter.
+2. Every proposed value MUST respect the type and range for that parameter, except
+   parameters marked "free-form evolvable text", whose seed options are examples
+   rather than an exhaustive enum.
 3. Be conservative with expensive changes -- each experiment costs GPU-hours.
 4. Prefer small, targeted changes over sweeping modifications.
 5. Learn from failures -- if a direction doesn't work, try something different.
@@ -415,12 +417,17 @@ def _format_parameter_schema(parameters: List[Dict[str, Any]]) -> str:
         v_min = p.get("valid_min", "")
         v_max = p.get("valid_max", "")
         options = p.get("valid_options", "")
+        evolvable_text = p.get("evolvable_text", False)
 
-        desc = f"- **{name}** (type: {dtype})"
-        if v_min != "" and v_max != "":
+        if evolvable_text:
+            desc = f"- **{name}** (free-form evolvable text)"
+        else:
+            desc = f"- **{name}** (type: {dtype})"
+        if not evolvable_text and v_min != "" and v_max != "":
             desc += f" range: [{v_min}, {v_max}]"
         if options and options != "":
-            desc += f" options: {options}"
+            label = " seed examples" if evolvable_text else " options"
+            desc += f"{label}: {options}"
         if default != "":
             desc += f" default: {default}"
         lines.append(desc)
@@ -435,12 +442,19 @@ def _format_autoresearch_history(history: List[Dict[str, Any]], metric_name: str
         status = entry.get("status", "unknown")
         metric = entry.get("metric", "N/A")
         reasoning = entry.get("reasoning", "")
+        feedback = entry.get("feedback")
         mods = entry.get("modifications", {})
         mods_str = ", ".join(f"{k}={v}" for k, v in list(mods.items())[:3])
-        lines.append(
+        line = (
             f"[{i + 1}] [{status.upper()}] {metric_name}={metric} | {mods_str}" +
             (f" | {reasoning}" if reasoning else "")
         )
+        if feedback is not None:
+            feedback_text = json.dumps(feedback, ensure_ascii=True, default=str)
+            if len(feedback_text) > 4000:
+                feedback_text = feedback_text[:4000] + "... [truncated]"
+            line += f"\n  Evaluation feedback: {feedback_text}"
+        lines.append(line)
     return "\n".join(lines)
 
 
