@@ -67,6 +67,7 @@ class AutoresearchBrain:
         metric: str = "kpi",
         max_experiments: int = 50,
         research_program: Optional[str] = None,
+        evolvable_text_parameters: Optional[List[str]] = None,
     ):
         """Initialize the AutoresearchBrain."""
         self.context = context
@@ -77,6 +78,33 @@ class AutoresearchBrain:
         self.max_experiments = max_experiments
         self.research_program = research_program
         self.llm_params = llm_params
+        self.evolvable_text_parameters = set(evolvable_text_parameters or [])
+
+        parameter_names = {p.get("parameter") for p in parameters}
+        unknown_text_parameters = self.evolvable_text_parameters - parameter_names
+        if unknown_text_parameters:
+            raise ValueError(
+                "evolvable_text_parameters must also be searchable parameters: "
+                f"{sorted(unknown_text_parameters)}"
+            )
+        parameter_lookup = {p.get("parameter"): p for p in parameters}
+        invalid_text_parameters = []
+        for name in self.evolvable_text_parameters:
+            parameter = parameter_lookup[name]
+            dtype = parameter.get("value_type")
+            options = parameter.get("valid_options") or []
+            if dtype == "string":
+                continue
+            if dtype in ("categorical", "ordered") and options and all(
+                isinstance(option, str) for option in options
+            ):
+                continue
+            invalid_text_parameters.append(name)
+        if invalid_text_parameters:
+            raise TypeError(
+                "evolvable_text_parameters must reference string-valued parameters: "
+                f"{sorted(invalid_text_parameters)}"
+            )
 
         self.custom_ranges = state_store.get_custom_param_ranges(context.handler_id) or {}
         if self.custom_ranges:
@@ -110,7 +138,7 @@ class AutoresearchBrain:
         self.external_knowledge = self.knowledge_retriever.retrieve_knowledge(
             network=self.network,
             metric_name=self.metric,
-            task_description=self.research_program or f"Training {self.network}",
+            task_description=self.research_program or f"Optimizing {self.network}",
         )
         if self.external_knowledge:
             logger.info("Retrieved external knowledge for %s", self.network)
@@ -242,7 +270,7 @@ class AutoresearchBrain:
             return True
         return False
 
-    def record_result(self, spec, metric_value, status, job_id=None):
+    def record_result(self, spec, metric_value, status, job_id=None, feedback=None):
         """Record an experiment result and make keep/discard decision."""
         modifications = self._extract_modifications(spec)
 
@@ -253,17 +281,22 @@ class AutoresearchBrain:
             status="success" if status == "success" else "failure",
             reasoning="",
             job_id=job_id,
+            feedback=feedback,
         )
 
         if status == "success" and metric_value is not None:
             reasoning = self._get_keep_discard_reasoning(
-                current_result={"metric": metric_value, "status": status},
+                current_result={
+                    "metric": metric_value,
+                    "status": status,
+                    "feedback": feedback,
+                },
                 modifications=modifications,
             )
             entry.reasoning = reasoning
 
         result_verification = self.verifier.verify_result(
-            result={"metric": metric_value, "status": status},
+            result={"metric": metric_value, "status": status, "feedback": feedback},
             expected_range=None,
             metric_name=self.metric,
             network=self.network,
@@ -276,13 +309,15 @@ class AutoresearchBrain:
 
     def _parameters_with_custom_ranges(self):
         """Return a copy of self.parameters with custom range overrides applied."""
-        if not self.custom_ranges:
+        if not self.custom_ranges and not self.evolvable_text_parameters:
             return self.parameters
 
         from copy import deepcopy
         params = deepcopy(self.parameters)
         for p in params:
             name = p["parameter"]
+            if name in self.evolvable_text_parameters:
+                p["evolvable_text"] = True
             if name in self.custom_ranges:
                 custom = self.custom_ranges[name]
                 for key in ("valid_min", "valid_max", "valid_options"):
@@ -317,7 +352,18 @@ class AutoresearchBrain:
             dtype = param_dict.get("value_type", "")
             v_min, v_max = self._get_effective_bounds(param_dict)
 
-            if dtype == "float":
+            if name in self.evolvable_text_parameters:
+                if not isinstance(value, str) or not value.strip():
+                    continue
+                if len(value) > 16384:
+                    logger.warning(
+                        "Dropping oversized text proposal for %s (%d characters)",
+                        name, len(value),
+                    )
+                    continue
+                value = value.strip()
+
+            elif dtype == "float":
                 try:
                     value = float(value)
                     hard_min = _finite_numeric_bound(v_min)
@@ -430,6 +476,7 @@ class AutoresearchBrain:
                         metric_value=rec.result,
                         status="success" if rec.status == JobStates.success else "failure",
                         job_id=rec.job_id if hasattr(rec, 'job_id') else None,
+                        feedback=getattr(rec, "feedback", None),
                     )
 
     def _get_schema_summary(self) -> str:
@@ -440,7 +487,10 @@ class AutoresearchBrain:
             dtype = p.get("value_type", "")
             v_min = p.get("valid_min", "")
             v_max = p.get("valid_max", "")
-            lines.append(f"{name} ({dtype}): [{v_min}, {v_max}]")
+            if name in self.evolvable_text_parameters:
+                lines.append(f"{name} (free-form evolvable text)")
+            else:
+                lines.append(f"{name} ({dtype}): [{v_min}, {v_max}]")
         return "\n".join(lines)
 
     def _random_fallback(self) -> List[Dict[str, Any]]:
@@ -467,13 +517,15 @@ class AutoresearchBrain:
     @staticmethod
     def load_state(
         context, state_store, network, parameters,
-        llm_params=None, metric="kpi", max_experiments=50, research_program=None
+        llm_params=None, metric="kpi", max_experiments=50, research_program=None,
+        evolvable_text_parameters=None,
     ):
         """Load autoresearch state from StateStore."""
         state = state_store.get_brain_info(context.id)
         brain = AutoresearchBrain(
             context, state_store, network, parameters,
             llm_params, metric, max_experiments, research_program,
+            evolvable_text_parameters,
         )
 
         if state:
