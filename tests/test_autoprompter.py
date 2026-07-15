@@ -79,11 +79,10 @@ def test_autoresearch_prompt_includes_actionable_evaluation_feedback():
             "metric": 0.7,
             "modifications": {"dataset.system_prompt": "seed prompt"},
             "feedback": {
-                "incorrect_samples": [{
-                    "id": "near-miss-17",
-                    "expected": "yes",
-                    "predicted": "no",
-                    "comment": "The prompt ignored temporal order.",
+                "failures": [{
+                    "query": "Did the forklift yield before entering the aisle?",
+                    "generated_output": "No",
+                    "comment": "The response ignored temporal order.",
                 }],
             },
         }],
@@ -102,7 +101,7 @@ def test_autoresearch_prompt_includes_actionable_evaluation_feedback():
     assert "free-form evolvable text" in prompt
     assert "seed examples" in prompt
     assert "Evaluation feedback" in prompt
-    assert "near-miss-17" in prompt
+    assert "ignored temporal order" in prompt
 
 
 def test_experiment_feedback_round_trips_through_tracker_state():
@@ -114,16 +113,15 @@ def test_experiment_feedback_round_trips_through_tracker_state():
         modifications={"dataset.system_prompt": "prompt"},
         metric=0.75,
         status="success",
-        feedback={"incorrect_sample_ids": ["sample-2"]},
+        feedback={"failures": [{"query": "Was the aisle blocked?", "feedback": "Missed occlusion."}]},
     )
 
     restored = ExperimentTracker.from_dict(tracker.to_dict())
-    assert restored.history[0].feedback == {
-        "incorrect_sample_ids": ["sample-2"]
+    expected = {
+        "failures": [{"query": "Was the aisle blocked?", "feedback": "Missed occlusion."}]
     }
-    assert restored.get_history_for_llm()[0]["feedback"] == {
-        "incorrect_sample_ids": ["sample-2"]
-    }
+    assert restored.history[0].feedback == expected
+    assert restored.get_history_for_llm()[0]["feedback"] == expected
 
 
 def test_algorithm_params_parse_evolvable_text_parameters():

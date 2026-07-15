@@ -465,8 +465,36 @@ def _callback_metric_payload(value: Any, source: str):
     return metrics
 
 
+_REFLECTION_PRIVATE_FIELDS = frozenset({
+    "id", "sample_id", "video_id", "dataset_id", "path", "video", "image",
+    "gold", "gold_answer", "expected", "expected_answer", "reference",
+    "reference_answer", "label", "target_label",
+})
+
+
+def _sanitize_reflective_feedback(value: Any):
+    """Remove common identifiers and ground-truth fields before LLM reflection.
+
+    The callback contract is intentionally narrower than arbitrary experiment metadata: reflective
+    feedback may describe the input, generated output, and failure mode, but it must not identify an
+    evaluation item or reveal its answer. Text values remain the caller's responsibility, because a
+    generic sanitizer cannot reliably detect labels embedded in prose.
+    """
+    if isinstance(value, dict):
+        clean = {}
+        for key, item in value.items():
+            normalized = str(key).strip().lower().replace("-", "_").replace(" ", "_")
+            if normalized in _REFLECTION_PRIVATE_FIELDS:
+                continue
+            clean[key] = _sanitize_reflective_feedback(item)
+        return clean
+    if isinstance(value, list):
+        return [_sanitize_reflective_feedback(item) for item in value]
+    return value
+
+
 def _callback_feedback(feedback_fn, rec, job_id: str | None, source: str):
-    """Run and normalize an optional diagnostic-feedback callback."""
+    """Run, normalize, and de-identify an optional reflective-feedback callback."""
     if feedback_fn is None:
         return None
     try:
@@ -477,7 +505,8 @@ def _callback_feedback(feedback_fn, rec, job_id: str | None, source: str):
     if feedback is None:
         return None
     try:
-        return normalize_json_value(feedback, path="recommendation.feedback")
+        normalized = normalize_json_value(feedback, path="recommendation.feedback")
+        return _sanitize_reflective_feedback(normalized)
     except (TypeError, ValueError) as exc:
         logger.warning("%s returned invalid feedback for rec %s: %s", source, rec.id, exc)
         return None
@@ -3138,11 +3167,14 @@ class AutoMLRunner:
                 extractor. Raised exceptions are caught and logged; the rec
                 is reported with the extractor's value (or None + failure).
             feedback_fn: Optional callable ``(rec, job_id: str | None) -> JSON-safe value``
-                invoked after each terminal job. Return compact diagnostic
-                details such as incorrect sample IDs, expected/predicted
-                labels, and evaluator comments. Reflective algorithms include
-                this feedback in the next proposal; scalar metric selection is
-                unchanged. Exceptions or invalid values are logged and ignored.
+                invoked after each terminal job. Return compact, training-split-only
+                records containing the input/query, generated output, and leak-free
+                evaluator comment. Common item identifiers, media paths, and
+                ground-truth fields are removed before persistence and reflection;
+                callers must also avoid embedding answers in free-form text.
+                Reflective algorithms include this feedback in the next proposal;
+                scalar validation-metric selection is unchanged. Exceptions or
+                invalid values are logged and ignored.
             baseline_fn: Optional callable ``(base_specs: dict) -> float | None``.
                 When provided and ``automl_settings.run_baseline`` is not False,
                 run a base/pretrained evaluation before tuning and include the
