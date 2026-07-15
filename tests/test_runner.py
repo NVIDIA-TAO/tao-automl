@@ -4096,12 +4096,25 @@ def test_runner_passes_diagnostic_feedback_to_automl(tmp_path, monkeypatch):
         },
         feedback_fn=lambda rec, job_id: {
             "job_id": job_id,
-            "incorrect_sample_ids": ["sample-2"],
+            "failures": [{
+                "sample_id": "sample-2",
+                "expected": "yes",
+                "generated_output": "no",
+                "query": "Did the person cross the gate?",
+                "feedback": "The response missed the gate-open interval.",
+            }],
         },
         workspace_path=str(tmp_path / "workspace"),
     )
 
-    expected = {"job_id": "job-1", "incorrect_sample_ids": ["sample-2"]}
+    expected = {
+        "job_id": "job-1",
+        "failures": [{
+            "generated_output": "no",
+            "query": "Did the person cross the gate?",
+            "feedback": "The response missed the gate-open interval.",
+        }],
+    }
     assert captured["feedback"] == expected
     assert result["best"]["feedback"] == expected
     assert result["history"][0]["feedback"] == expected
