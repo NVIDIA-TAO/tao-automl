@@ -35,6 +35,13 @@ import uuid
 
 from tao_automl.formatting import format_result  # noqa: F401  (public API)
 from tao_automl.objectives import parse_objective_config
+from tao_automl.gepa_autoprompter import (
+    AutoPrompterResult,
+    GEPAutoPrompter,
+    GEPAReflectionLM,
+    TAOActionBatchRunner,
+    TAOGEPAAdapter,
+)
 from tao_automl.types import AutoMLContext, JobStates
 
 logger = logging.getLogger(__name__)
