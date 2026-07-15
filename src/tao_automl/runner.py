@@ -55,6 +55,7 @@ from typing import Any
 import numpy as np
 import yaml
 from tao_automl.objectives import is_latency_metric, parse_objective_config
+from tao_automl.reflection import sanitize_reflective_feedback
 from tao_automl.utils.value_utils import normalize_json_value
 from tao_sdk.checkpoints import (
     build_checkpoint_candidate,
@@ -465,34 +466,6 @@ def _callback_metric_payload(value: Any, source: str):
     return metrics
 
 
-_REFLECTION_PRIVATE_FIELDS = frozenset({
-    "id", "sample_id", "video_id", "dataset_id", "path", "video", "image",
-    "gold", "gold_answer", "expected", "expected_answer", "reference",
-    "reference_answer", "label", "target_label",
-})
-
-
-def _sanitize_reflective_feedback(value: Any):
-    """Remove common identifiers and ground-truth fields before LLM reflection.
-
-    The callback contract is intentionally narrower than arbitrary experiment metadata: reflective
-    feedback may describe the input, generated output, and failure mode, but it must not identify an
-    evaluation item or reveal its answer. Text values remain the caller's responsibility, because a
-    generic sanitizer cannot reliably detect labels embedded in prose.
-    """
-    if isinstance(value, dict):
-        clean = {}
-        for key, item in value.items():
-            normalized = str(key).strip().lower().replace("-", "_").replace(" ", "_")
-            if normalized in _REFLECTION_PRIVATE_FIELDS:
-                continue
-            clean[key] = _sanitize_reflective_feedback(item)
-        return clean
-    if isinstance(value, list):
-        return [_sanitize_reflective_feedback(item) for item in value]
-    return value
-
-
 def _callback_feedback(feedback_fn, rec, job_id: str | None, source: str):
     """Run, normalize, and de-identify an optional reflective-feedback callback."""
     if feedback_fn is None:
@@ -506,7 +479,7 @@ def _callback_feedback(feedback_fn, rec, job_id: str | None, source: str):
         return None
     try:
         normalized = normalize_json_value(feedback, path="recommendation.feedback")
-        return _sanitize_reflective_feedback(normalized)
+        return sanitize_reflective_feedback(normalized)
     except (TypeError, ValueError) as exc:
         logger.warning("%s returned invalid feedback for rec %s: %s", source, rec.id, exc)
         return None
