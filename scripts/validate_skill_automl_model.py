@@ -9,8 +9,10 @@ reported independently.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
+import math
 import os
 import re
 import shutil
@@ -18,7 +20,7 @@ import subprocess
 import sys
 import tarfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -33,6 +35,7 @@ from tao_sdk.script_runner import build_entrypoint
 LOG = logging.getLogger("tao_automl_validation")
 BUCKET_ROOT = "s3://nvcf-storage-handling/data"
 VISUAL_CHANGENET_BACKBONE_CONTAINER_PATH = "/data/pretrained_models/C-RADIOv2_B.safetensors"
+COSMOS_MODEL_CONTAINER_PATH = "/data/automl_datasets/cosmos-rl/model-vlm"
 
 
 @dataclass(frozen=True)
@@ -57,15 +60,14 @@ MODEL_PROFILES: dict[str, ModelProfile] = {
     ),
     "bevfusion": ModelProfile(
         f"{BUCKET_ROOT}/purpose_built_models_bevfusion_train",
-        blocked="dataset_convert must be run before train; not yet implemented in this validator",
     ),
     "centerpose": ModelProfile(
         f"{BUCKET_ROOT}/purpose_built_models_centerpose_train",
         f"{BUCKET_ROOT}/purpose_built_models_centerpose_val",
     ),
     "classification-pyt": ModelProfile(
-        f"{BUCKET_ROOT}/classification_train",
-        f"{BUCKET_ROOT}/classification_val",
+        "/data/image-classification-mini/train",
+        "/data/image-classification-mini/val",
         num_classes=20,
     ),
     "clip": ModelProfile(f"{BUCKET_ROOT}/auto_label_train", f"{BUCKET_ROOT}/auto_label_val"),
@@ -105,54 +107,61 @@ MODEL_PROFILES: dict[str, ModelProfile] = {
         captions=("head", "helmet", "person"),
     ),
     "mae": ModelProfile(
-        f"{BUCKET_ROOT}/classification_train",
-        f"{BUCKET_ROOT}/classification_val",
+        "/data/image-classification-mini/train",
+        "/data/image-classification-mini/val",
         num_classes=20,
     ),
-    "mal": ModelProfile(f"{BUCKET_ROOT}/auto_label_train", f"{BUCKET_ROOT}/auto_label_val"),
+    "mal": ModelProfile("/data/mal-mini/train", "/data/mal-mini/val"),
     "mask-grounding-dino": ModelProfile(
-        f"{BUCKET_ROOT}/segmentation_mask_grounding_dino_train",
-        f"{BUCKET_ROOT}/segmentation_mask_grounding_dino_val",
+        "/data/mask-grounding-dino-mini/train",
+        "/data/mask-grounding-dino-mini/val",
         num_classes=6,
         captions=("person", "bicycle", "car"),
     ),
     "mask2former": ModelProfile(
-        f"{BUCKET_ROOT}/segmentation_mask2former_train",
-        f"{BUCKET_ROOT}/segmentation_mask2former_val",
+        "/data/mask2former-mini/train",
+        "/data/mask2former-mini/val",
         num_classes=201,
     ),
     "ml-recog": ModelProfile(
-        f"{BUCKET_ROOT}/purpose_built_models_ml_recog_train",
-        f"{BUCKET_ROOT}/purpose_built_models_ml_recog_train",
+        "/data/ml-recog",
+        "/data/ml-recog",
     ),
     "nvdinov2": ModelProfile(
         "/data/nvdinov2-mini",
         f"{BUCKET_ROOT}/nvdinov2_val_cats_dogs",
     ),
     "nvpanoptix3d": ModelProfile(
-        f"{BUCKET_ROOT}/purpose_built_models_nvpanoptix3d_train",
-        f"{BUCKET_ROOT}/purpose_built_models_nvpanoptix3d_val",
-        blocked="requires converted 3D assets/checkpoints not yet mapped by this validator",
+        "/data/nvpanoptix3d/train",
+        "/data/nvpanoptix3d/val",
+        "/data/nvpanoptix3d/val",
+        num_classes=13,
     ),
     "ocdnet": ModelProfile(
-        f"{BUCKET_ROOT}/purpose_built_models_ocdnet_train",
-        f"{BUCKET_ROOT}/purpose_built_models_ocdnet_val",
+        "/data/ocdnet/train/train",
+        "/data/ocdnet/val/test",
+        "/data/ocdnet/val/test/img",
     ),
     "ocrnet": ModelProfile(
-        f"{BUCKET_ROOT}/purpose_built_models_ocrnet_train",
-        f"{BUCKET_ROOT}/purpose_built_models_ocrnet_val",
+        "/data/ocrnet/train/train",
+        "/data/ocrnet/val/test",
+        "/data/ocrnet/val/test",
     ),
     "oneformer": ModelProfile(
-        f"{BUCKET_ROOT}/segmentation_oneformer_train",
-        f"{BUCKET_ROOT}/segmentation_oneformer_val",
+        "/data/oneformer/train",
+        "/data/oneformer/val",
+        "/data/oneformer/val/images",
         num_classes=133,
     ),
     "optical-inspection": ModelProfile(
-        f"{BUCKET_ROOT}/purpose_built_models_optical_inspection_train",
-        f"{BUCKET_ROOT}/purpose_built_models_optical_inspection_val",
+        "/data/optical-inspection/train",
+        "/data/optical-inspection/val",
+        "/data/optical-inspection/val",
     ),
     "pointpillars": ModelProfile(
-        f"{BUCKET_ROOT}/purpose_built_models_pointpillars_train",
+        "/data/pointpillars",
+        "/data/pointpillars",
+        "/data/pointpillars",
     ),
     "pose-classification": ModelProfile(
         f"{BUCKET_ROOT}/purpose_built_models_pose_classification_train/nvidia",
@@ -164,14 +173,16 @@ MODEL_PROFILES: dict[str, ModelProfile] = {
         num_classes=100,
     ),
     "rtdetr": ModelProfile(
-        f"{BUCKET_ROOT}/object_detection_pyt_train",
-        f"{BUCKET_ROOT}/object_detection_pyt_val",
-        num_classes=6,
+        "/data/rtdetr/train",
+        "/data/rtdetr/val",
+        "/data/rtdetr/val",
+        num_classes=5,
     ),
     "segformer": ModelProfile(
-        f"{BUCKET_ROOT}/segmentation_segformer_train",
-        f"{BUCKET_ROOT}/segmentation_segformer_val",
-        num_classes=6,
+        "/data/segformer",
+        "/data/segformer",
+        "/data/segformer",
+        num_classes=2,
     ),
     "sparse4d": ModelProfile(
         f"{BUCKET_ROOT}/purpose_built_models_sparse4d_train",
@@ -200,6 +211,49 @@ CHECKPOINT_SUFFIXES = (
 
 def _read_yaml(path: Path) -> dict[str, Any]:
     return yaml.safe_load(path.read_text()) or {}
+
+
+def _resolve_model_dir(skill_bank: Path, requested_model: str) -> Path:
+    """Resolve either a canonical model-skill name or a network alias."""
+    models_root = skill_bank / "skills" / "models"
+    direct = models_root / requested_model
+    if (direct / "references" / "skill_info.yaml").exists():
+        return direct
+
+    normalized = requested_model.replace("_", "-").lower()
+    matches: list[Path] = []
+    for candidate in sorted(models_root.iterdir()):
+        info_path = candidate / "references" / "skill_info.yaml"
+        if not candidate.is_dir() or not info_path.exists():
+            continue
+        info = _read_yaml(info_path)
+        network_arch = str(info.get("network_arch", ""))
+        aliases = {
+            candidate.name.lower(),
+            network_arch.lower(),
+            network_arch.replace("_", "-").lower(),
+        }
+        if normalized in {alias.replace("_", "-") for alias in aliases}:
+            matches.append(candidate)
+    if len(matches) == 1:
+        return matches[0]
+    if not matches:
+        raise KeyError(f"No packaged model skill resolves {requested_model!r}")
+    raise KeyError(
+        f"Model alias {requested_model!r} is ambiguous: "
+        + ", ".join(path.name for path in matches)
+    )
+
+
+def _model_profile_key(model_dir: Path) -> str:
+    info = _read_yaml(model_dir / "references" / "skill_info.yaml")
+    network_arch = str(info.get("network_arch", ""))
+    key = network_arch.replace("_", "-").lower()
+    if key in MODEL_PROFILES:
+        return key
+    raise KeyError(
+        f"No validation data profile for {model_dir.name} (network_arch={network_arch!r})"
+    )
 
 
 def _set_nested(target: dict[str, Any], dotted_key: str, value: Any) -> None:
@@ -284,15 +338,69 @@ def _schema_keys(skill_dir: Path, action: str = "train") -> set[str]:
 
 
 def _monitoring_metric(skill_text: str) -> str:
-    match = re.search(r"\*\*Monitoring metric:\*\*\s*([^\n]+)", skill_text)
+    match = re.search(
+        r"\*\*(?:AutoML training metrics?|Training monitoring metrics?|Monitoring metric):\*\*\s*([^\n]+)",
+        skill_text,
+    )
     if not match:
         return "loss"
-    metric = match.group(1).strip()
+    value = match.group(1).strip()
+    quoted = re.search(r"`([^`]+)`", value)
+    metric = quoted.group(1) if quoted else value.replace("`", "")
     return metric.split(",", 1)[0].strip()
 
 
+def _evaluation_metric(model: str, training_metric: str) -> str:
+    """Return the task metric emitted by the packaged evaluate action."""
+    return {
+        "action-recognition": "accuracy",
+        "centerpose": "test_3DIoU",
+        "cosmos-rl": "BERTScore",
+        "deformable-detr": "test_mAP50",
+        "dino": "test_mAP50",
+        "depth-net-stereo": "val/epe",
+        "grounding-dino": "test_mAP50",
+        "mae": "ACC_all",
+        "ocdnet": "train_loss",
+        "ocrnet": "val_acc",
+    }.get(model, training_metric)
+
+
+def _checkpoint_evaluation_metric(model: str, automl_metric: str) -> str:
+    """Return a standalone evaluator KPI when it differs from AutoML's train KPI."""
+    return {
+        "mask-grounding-dino": "[segm] test_mAP50",
+        "ml-recog": "test Precision at Rank 1",
+        "nvpanoptix3d": "PRQ",
+        "ocdnet": "hmean",
+        "ocrnet": "test_acc",
+        "oneformer": "test_mIoU",
+        "optical-inspection": "test_acc",
+        "pointpillars": "3d mAP",
+        "pose-classification": "accuracy",
+        "re-identification": "mAP",
+        "rtdetr": "test_mAP50",
+        "segformer": "test_miou",
+        "visual-changenet": "test_acc",
+    }.get(model, automl_metric)
+
+
 def _direction(metric: str) -> str:
-    return "minimize" if "loss" in metric.lower() else "maximize"
+    lower = metric.lower()
+    error_metrics = ("loss", "epe", "rmse", "bp1", "bp2", "bp3", "d1")
+    return "minimize" if any(name in lower for name in error_metrics) else "maximize"
+
+
+def _gpu_device_ids(args: argparse.Namespace, gpu_count: int | None = None) -> list[str] | None:
+    effective_count = args.num_gpus if gpu_count is None else gpu_count
+    if effective_count == 0 or not args.gpu_device_id:
+        return None
+    ids = [item.strip() for item in str(args.gpu_device_id).split(",") if item.strip()]
+    if len(ids) != effective_count:
+        raise ValueError(
+            f"Requested {effective_count} GPU(s), but --gpu-device-id resolved to {ids}"
+        )
+    return ids
 
 
 def _parse_action_rows(skill_text: str, action: str) -> list[dict[str, str]]:
@@ -466,7 +574,7 @@ def _minimal_train_overrides(
     }
     if model == "cosmos-rl":
         candidates.update({
-            "policy.model_name_or_path": "hf_model://nvidia/Cosmos-Reason2-8B",
+            "policy.model_name_or_path": COSMOS_MODEL_CONTAINER_PATH,
             "policy.parallelism.dp_shard_size": 1,
             "policy.parallelism.dp_replicate_size": 1,
             "train.train_batch_per_replica": 1,
@@ -476,16 +584,67 @@ def _minimal_train_overrides(
             "validation.enable_dataset_cache": False,
             "logging.logger": ["console", "tao"],
         })
+    if model == "deformable-detr":
+        # The schema requires at least one worker; the generic zero-worker
+        # baseline is intentionally overridden for this model.
+        candidates["dataset.workers"] = 1
     if model == "mae":
         candidates.update({
             "dataset.batch_size": 2,
             "train.stage": "finetune",
+            "model.arch": "convnextv2_atto",
+        })
+    if model == "ml-recog":
+        candidates.update({
+            "train.batch_size": 4,
+            "train.val_batch_size": 4,
+            "dataset.num_instance": 4,
+            "dataset.workers": 0,
+        })
+    if model == "mal":
+        candidates.update({
+            "dataset.crop_size": 256,
+            "dataset.num_workers_per_gpu": 1,
+            "model.arch": "vit-deit-small/16",
+            "train.warmup_epochs": 0,
+        })
+    if model == "bevfusion":
+        candidates.update({
+            "train.num_gpus": 2,
+            "train.gpu_ids": [0, 1],
+            "dataset.train_dataset.batch_size": 1,
+            "dataset.val_dataset.batch_size": 1,
+            "dataset.test_dataset.batch_size": 1,
+            "dataset.train_dataset.num_workers": 1,
+            "dataset.val_dataset.num_workers": 1,
+            "dataset.test_dataset.num_workers": 1,
+            "wandb.enable": False,
         })
     if model == "optical-inspection":
         candidates["dataset.batch_size"] = 2
+    if model == "ocdnet":
+        candidates.update({
+            "train.lr_scheduler.args.warmup_epoch": 0,
+            "dataset.train_dataset.loader.batch_size": 1,
+            "dataset.validate_dataset.loader.batch_size": 1,
+            "dataset.train_dataset.loader.num_workers": 0,
+            "dataset.validate_dataset.loader.num_workers": 0,
+        })
     if model == "re-identification":
         candidates["dataset.batch_size"] = 16
         candidates["dataset.num_instances"] = 4
+    if model == "segformer":
+        candidates.update({
+            "dataset.segment.num_classes": 2,
+            "dataset.segment.batch_size": 1,
+            "dataset.segment.workers": 0,
+            "train.tensorboard.enabled": False,
+        })
+    if model == "pose-classification":
+        candidates.update({
+            "dataset.label_map": {f"class_{index}": index for index in range(6)},
+            "model.graph_layout": "nvidia",
+        })
     if model == "visual-changenet":
         candidates.update({
             "model.backbone.pretrained_backbone_path": VISUAL_CHANGENET_BACKBONE_CONTAINER_PATH,
@@ -514,6 +673,7 @@ def _minimal_train_overrides(
     if model == "depth-net-stereo":
         candidates.update({
             "model.model_type": "FoundationStereo",
+            "model.encoder": "vits",
             "dataset.dataset_name": "StereoDataset",
             "dataset.train_dataset.augmentation.crop_size": [128, 128],
             "dataset.val_dataset.augmentation.crop_size": [128, 128],
@@ -540,6 +700,12 @@ def _minimal_train_overrides(
         })
     if model == "oneformer":
         candidates.update({
+            "train.num_gpus": 2,
+            "train.gpu_ids": [0, 1],
+            "train.precision": "32",
+            "dataset.train.batch_size": 1,
+            "dataset.val.batch_size": 1,
+            "dataset.test.batch_size": 1,
             "dataset.augmentation.train_min_size": [128],
             "dataset.augmentation.train_crop_size": [128, 128],
             "dataset.augmentation.test_min_size": 128,
@@ -555,6 +721,22 @@ def _minimal_train_overrides(
             "train.num_prototypes": 1024,
             "train.precision": "32-true",
             "train.use_custom_attention": False,
+        })
+    if model == "nvpanoptix3d":
+        candidates.update({
+            "train.num_gpus": 2,
+            "train.gpu_ids": [0, 1],
+            "train.precision": "fp32",
+            "train.distributed_strategy": "ddp",
+            "train.optim.monitor_name": "train_loss",
+            "dataset.enable_3d": True,
+            "dataset.contiguous_id": True,
+            "dataset.train.batch_size": 1,
+            "dataset.val.batch_size": 1,
+            "dataset.test.batch_size": 1,
+            "dataset.train.num_workers": 1,
+            "dataset.val.num_workers": 1,
+            "dataset.test.num_workers": 1,
         })
     if model == "sparse4d":
         candidates.update({
@@ -692,6 +874,25 @@ def _latest_kpi(job_root: Path) -> dict[str, Any]:
     return latest
 
 
+def _metric_from_job(logs: str, kpi: dict[str, Any], metric_name: str) -> float | None:
+    """Resolve the requested metric from TAO status KPI first, then logs."""
+    candidates = (
+        metric_name,
+        metric_name.replace("/", "_"),
+        metric_name.rsplit("/", 1)[-1],
+    )
+    for key in candidates:
+        value = kpi.get(key)
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                pass
+    return _extract_metric_from_logs(logs, metric_name)
+
+
 def _minimal_action_overrides(
     specs: dict[str, Any],
     schema_keys: set[str],
@@ -728,41 +929,183 @@ def _build_action_specs(
     trial_specs: dict[str, Any] | None = None,
     extra_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    model = _model_profile_key(model_dir)
     specs = _read_yaml(model_dir / "references" / f"spec_template_{action}.yaml")
     schema_keys = _schema_keys(model_dir, action)
     overrides: dict[str, Any] = {}
     _add_data_source_overrides(overrides, profile, _parse_action_rows(skill_text, action))
+    if model == "grounding-dino":
+        if action == "evaluate":
+            overrides["dataset.test_data_sources.image_dir"] = f"{profile.eval_uri}/images"
+        elif action == "inference":
+            overrides["dataset.infer_data_sources.image_dir"] = [f"{profile.eval_uri}/images"]
+    if model == "classification-pyt" and action in {"evaluate", "inference"}:
+        overrides.update({
+            "dataset.val_dataset.images_dir": f"{profile.eval_uri}/images_val",
+            "dataset.test_dataset.images_dir": f"{profile.eval_uri}/images_val",
+            "dataset.classes_file": f"{profile.eval_uri}/classes.txt",
+        })
+    if model == "rtdetr":
+        overrides.update({
+            "dataset.num_classes": 5,
+            "dataset.eval_class_ids": [1, 2, 3, 4],
+        })
+        if action == "evaluate":
+            overrides.update({
+                "dataset.test_data_sources.image_dir": f"{profile.eval_uri}/images",
+                "dataset.test_data_sources.json_file": f"{profile.eval_uri}/annotations.json",
+            })
+        elif action == "inference":
+            overrides["dataset.infer_data_sources"] = {
+                "image_dir": [f"{profile.inference_uri}/images"],
+                "classmap": f"{profile.inference_uri}/label_map.txt",
+            }
+    if model == "segformer":
+        overrides.update({
+            "dataset.segment.root_dir": (
+                profile.eval_uri if action == "evaluate" else profile.inference_uri
+            ),
+            "dataset.segment.num_classes": 2,
+            "dataset.segment.batch_size": 1,
+            "dataset.segment.workers": 0,
+        })
+    if model == "mae":
+        split = "val" if action == "evaluate" else "test"
+        overrides.update({
+            "train.stage": "finetune",
+            "model.arch": "convnextv2_atto",
+            f"dataset.{split}_data_sources": (
+                f"{profile.eval_uri}/images_val"
+            ),
+        })
+    if model == "mal":
+        overrides.update({
+            "dataset.val_img_dir": f"{profile.eval_uri}/images",
+            "dataset.val_ann_path": f"{profile.eval_uri}/annotations.json",
+            "dataset.crop_size": 256,
+            "dataset.num_workers_per_gpu": 1,
+            "model.arch": "vit-deit-small/16",
+        })
+        if action == "inference":
+            overrides.update({
+                "inference.img_dir": f"{profile.eval_uri}/images",
+                "inference.ann_path": f"{profile.eval_uri}/annotations.json",
+            })
+    if model == "cosmos-rl":
+        if action == "evaluate":
+            overrides.update({
+                "dataset.annotation_path": _join_uri(profile.eval_uri, "annotations.json"),
+                "dataset.media_dir": profile.eval_uri,
+                "evaluation.num_processes": 1,
+                "evaluation.limit": 2,
+                "evaluation.batch_size": 1,
+                "generation.max_tokens": 32,
+                "model.model_name": COSMOS_MODEL_CONTAINER_PATH,
+                "model.base_model_path": COSMOS_MODEL_CONTAINER_PATH,
+            })
+            if checkpoint_container_path:
+                overrides.update({
+                    "model.model_name": checkpoint_container_path,
+                    "model.enable_lora": True,
+                })
+        elif action == "inference":
+            overrides.update({
+                "media": profile.eval_uri,
+                "base_model_path": COSMOS_MODEL_CONTAINER_PATH,
+            })
+            if checkpoint_container_path:
+                overrides.update({
+                    "model_path": checkpoint_container_path,
+                    "enable_lora": True,
+                })
     overrides.update(_minimal_action_overrides(specs, schema_keys, action, num_classes))
+    if model == "rtdetr":
+        overrides.update({
+            "dataset.num_classes": 5,
+            "dataset.eval_class_ids": [1, 2, 3, 4],
+        })
+    if model == "deformable-detr" and "dataset.workers" in schema_keys:
+        overrides["dataset.workers"] = 1
     if profile.model_type and "model.model_type" in (schema_keys | _flatten_keys(specs)):
         overrides["model.model_type"] = profile.model_type
     if profile.dataset_name and "dataset.dataset_name" in (schema_keys | _flatten_keys(specs)):
         overrides["dataset.dataset_name"] = profile.dataset_name
-    if model_dir.name == "action-recognition" and "dataset.label_map" in (schema_keys | _flatten_keys(specs)):
+    if model == "depth-net-stereo":
+        source_root = profile.eval_uri if action in {"evaluate", "inference"} else profile.train_uri
+        split = {"evaluate": "test", "inference": "infer"}.get(action, action)
+        overrides.update({
+            "model.encoder": "vits",
+            "model.max_disparity": 128,
+            "dataset.max_disparity": 128,
+            f"dataset.{split}_dataset.augmentation.crop_size": [128, 128],
+            f"dataset.{split}_dataset.data_sources": [{
+                "data_file": _join_uri(source_root, "annotations.txt"),
+                "dataset_name": "Middlebury",
+            }],
+        })
+    if model == "action-recognition" and "dataset.label_map" in (schema_keys | _flatten_keys(specs)):
         overrides["dataset.label_map"] = {"catch": 0, "smile": 1}
-    if model_dir.name == "mask-grounding-dino":
+    if model == "mask-grounding-dino":
         overrides.update({
             "dataset.val_data_sources.data_type": "OD",
             "dataset.test_data_sources.data_type": "OD",
             "dataset.infer_data_sources.data_type": "OD",
         })
-    if model_dir.name == "mask2former":
+        if action == "evaluate":
+            overrides.update({
+                "dataset.test_data_sources.image_dir": f"{profile.eval_uri}/images",
+                "dataset.test_data_sources.json_file": f"{profile.eval_uri}/annotations.json",
+            })
+        elif action == "inference":
+            overrides["dataset.infer_data_sources.image_dir"] = f"{profile.eval_uri}/images"
+    if model == "mask2former":
         overrides.update({
             "dataset.train.type": "coco_panoptic",
             "dataset.val.type": "coco_panoptic",
             "dataset.test.type": "coco_panoptic",
             "dataset.contiguous_id": False,
+            "dataset.train.img_dir": f"{profile.train_uri}/images",
+            "dataset.label_map": f"{profile.train_uri}/label_map_panoptic.json",
+            "dataset.train.instance_json": f"{profile.train_uri}/annotations.json",
+            "dataset.train.panoptic_json": f"{profile.train_uri}/annotations_panoptic.json",
+            "dataset.train.panoptic_dir": f"{profile.train_uri}/images_panoptic",
+            "dataset.val.img_dir": f"{profile.eval_uri}/images",
+            "dataset.val.instance_json": f"{profile.eval_uri}/annotations.json",
+            "dataset.val.panoptic_json": f"{profile.eval_uri}/annotations_panoptic.json",
+            "dataset.val.panoptic_dir": f"{profile.eval_uri}/images_panoptic",
+            "dataset.test.img_dir": f"{profile.eval_uri}/images",
         })
-    if model_dir.name == "pose-classification" and action == "inference":
+    if model == "pose-classification" and action == "inference":
         overrides["inference.output_file"] = "/results/pose_classification_inference.txt"
-    if model_dir.name == "re-identification":
+    if model == "pose-classification":
+        overrides.update({
+            "dataset.label_map": {f"class_{index}": index for index in range(6)},
+            "model.graph_layout": "nvidia",
+        })
+    if model == "re-identification":
         if action == "evaluate":
             overrides["evaluate.output_cmc_curve_plot"] = "/results/reid_cmc_curve.png"
             overrides["evaluate.output_sampled_matches_plot"] = "/results/reid_sampled_matches.png"
         if action == "inference":
             overrides["inference.output_file"] = "/results/reid_inference.json"
-    if model_dir.name == "visual-changenet":
+    if model == "ml-recog":
+        if action == "evaluate":
+            overrides.update({
+                "dataset.val_dataset": {
+                    "reference": "/data/ml-recog/unknown/reference/reference",
+                    "query": "/data/ml-recog/unknown/test/test",
+                },
+            })
+        elif action == "inference":
+            overrides.update({
+                "dataset.val_dataset": {
+                    "reference": "/data/ml-recog/unknown/reference/reference",
+                },
+                "inference.input_path": "/data/ml-recog/unknown/test/test",
+            })
+    if model == "visual-changenet":
         overrides["model.backbone.pretrained_backbone_path"] = VISUAL_CHANGENET_BACKBONE_CONTAINER_PATH
-    if model_dir.name == "nvdinov2":
+    if model == "nvdinov2":
         overrides.update({
             "wandb.enable": False,
             "model.backbone.teacher_type": "vit_s",
@@ -773,19 +1116,79 @@ def _build_action_specs(
             "train.use_custom_attention": False,
         })
         if action == "inference":
-            overrides["dataset.test_dataset.images_dir"] = "/data/nvdinov2-mini/images_train"
+            overrides["dataset.test_dataset.images_dir"] = "/data/nvdinov2-mini/images_train/images_train"
+    if model == "nvpanoptix3d":
+        overrides.update({
+            "dataset.enable_3d": True,
+            "dataset.contiguous_id": True,
+            "dataset.frustum_mask_path": f"{profile.eval_uri}/meta/frustum_mask.npz",
+            "dataset.label_map": f"{profile.eval_uri}/meta/colormap.json",
+        })
+        if action == "evaluate":
+            overrides.update({
+                "dataset.val.json_path": f"{profile.eval_uri}/meta/val.json",
+                "dataset.val.base_dir": profile.eval_uri,
+                "dataset.test.json_path": f"{profile.eval_uri}/meta/test.json",
+                "dataset.test.base_dir": profile.eval_uri,
+            })
+        elif action == "inference":
+            overrides["inference.images_dir"] = f"{profile.eval_uri}/inference_flat"
+    if model == "ocdnet":
+        overrides["dataset.validate_dataset.data_path"] = [profile.eval_uri]
+        if action == "inference":
+            overrides["inference.input_folder"] = profile.inference_uri
+    if model == "ocrnet":
+        overrides["dataset.character_list_file"] = "/data/ocrnet/character_list"
+        if action == "evaluate":
+            overrides.update({
+                "evaluate.test_dataset_dir": profile.eval_uri,
+                "evaluate.test_dataset_gt_file": f"{profile.eval_uri}/gt_new.txt",
+            })
+        elif action == "inference":
+            overrides["inference.inference_dataset_dir"] = profile.inference_uri
+    if model == "oneformer":
+        overrides.update({
+            "model.sem_seg_head.num_classes": 133,
+            "dataset.contiguous_id": True,
+            "dataset.train.images": f"{profile.train_uri}/images",
+            "dataset.train.annotations": f"{profile.train_uri}/annotations.json",
+            "dataset.label_map": f"{profile.train_uri}/label_map.json",
+            "dataset.train.panoptic": f"{profile.train_uri}/images_panoptic",
+            "dataset.val.images": f"{profile.eval_uri}/images",
+            "dataset.val.annotations": f"{profile.eval_uri}/annotations.json",
+            "dataset.val.panoptic": f"{profile.eval_uri}/images_panoptic",
+            "dataset.test.images": f"{profile.eval_uri}/images",
+        })
+        if action == "evaluate":
+            overrides.update({
+                "dataset.test.annotations": f"{profile.eval_uri}/annotations.json",
+                "dataset.test.panoptic": f"{profile.eval_uri}/images_panoptic",
+            })
+        elif action == "inference":
+            overrides["inference.images_dir"] = profile.inference_uri
+    if model == "optical-inspection":
+        if action == "evaluate":
+            overrides.update({
+                "dataset.test_dataset.images_dir": f"{profile.eval_uri}/images",
+                "dataset.test_dataset.csv_path": f"{profile.eval_uri}/dataset.csv",
+            })
+        elif action == "inference":
+            overrides.update({
+                "dataset.infer_dataset.images_dir": f"{profile.inference_uri}/images",
+                "dataset.infer_dataset.csv_path": f"{profile.inference_uri}/dataset.csv",
+            })
     if trial_specs:
         overrides.update(_valid_set(trial_specs, specs, schema_keys))
     if extra_overrides:
         overrides.update(_valid_set(extra_overrides, specs, schema_keys))
-    if model_dir.name == "mae" and action in {"evaluate", "inference"}:
+    if model == "mae" and action in {"evaluate", "inference"}:
         overrides["train.stage"] = "finetune"
     for key in (f"{action}.checkpoint", f"{action}.model_path", f"{action}.pretrained_model_path"):
         if key in (schema_keys | _flatten_keys(specs)):
             overrides[key] = checkpoint_container_path
             break
     overrides = _valid_set(overrides, specs, schema_keys)
-    if model_dir.name == "mask-grounding-dino" and action == "inference":
+    if model == "mask-grounding-dino" and action == "inference":
         overrides["dataset.infer_data_sources.captions"] = list(profile.captions or ("object",))
     for dotted_key, value in overrides.items():
         _set_nested(specs, dotted_key, value)
@@ -812,6 +1215,7 @@ def _run_action_job(
     mounts: list[dict[str, str]],
     env_vars: dict[str, str] | None = None,
     gpu_count: int | None = None,
+    metric_name: str | None = None,
 ) -> dict[str, Any]:
     ep = build_entrypoint(
         command=action_cfg["command"],
@@ -825,11 +1229,7 @@ def _run_action_job(
         image=image,
         command=ep["command"],
         gpu_count=args.num_gpus if gpu_count is None else gpu_count,
-        gpu_device_ids=(
-            [args.gpu_device_id]
-            if (gpu_count is None or gpu_count != 0) and args.gpu_device_id
-            else None
-        ),
+        gpu_device_ids=_gpu_device_ids(args, gpu_count),
         env_vars=env_vars,
         mounts=mounts,
     )
@@ -842,13 +1242,17 @@ def _run_action_job(
     logs = sdk.get_job_logs(job.id)
     job_root = out_dir / "results" / job.id
     success = status.status == "Complete" and "Execution status: FAIL" not in logs
+    kpi = _latest_kpi(job_root)
     return {
         "action": action,
         "status": "success" if success else "failed",
         "job_id": job.id,
         "docker_status": status.status,
         "checkpoint_spec": _get_nested(specs, f"{action}.checkpoint"),
-        "kpi": _latest_kpi(job_root),
+        "kpi": kpi,
+        "metric_name": metric_name,
+        "metric_value": _metric_from_job(logs, kpi, metric_name) if metric_name else None,
+        "logs_tail": logs.splitlines()[-80:],
         "status_files": [str(path) for path in sorted(job_root.rglob("status.json"))],
     }
 
@@ -863,7 +1267,13 @@ def _build_dataset_convert_specs(
     schema_keys = _schema_keys(model_dir, "dataset_convert")
     overrides: dict[str, Any] = {}
     _add_data_source_overrides(overrides, profile, _parse_action_rows(skill_text, "dataset_convert"))
-    if model_dir.name == "sparse4d":
+    if _model_profile_key(model_dir) == "bevfusion":
+        overrides.update({
+            "root_dir": "/data/bevfusion",
+            "results_dir": "/data/bevfusion",
+            "mode": "training",
+        })
+    if _model_profile_key(model_dir) == "sparse4d":
         overrides.update({
             "aicity.num_frames": 3,
             "aicity.anchor_init_config.num_anchor": 72,
@@ -915,6 +1325,7 @@ def _run_dataset_convert_preflight(
     sdk: DockerSDK,
     mounts: list[dict[str, str]],
 ) -> dict[str, Any]:
+    model = _model_profile_key(model_dir)
     actions = skill_info.get("actions") or {}
     action_cfg = actions.get("dataset_convert")
     template = model_dir / "references" / "spec_template_dataset_convert.yaml"
@@ -924,11 +1335,74 @@ def _run_dataset_convert_preflight(
             "reason": "dataset_convert action/template is not packaged by skill",
         }
 
+    if model == "ocrnet":
+        image = _resolve_action_image(skill_info, action_cfg)
+        conversion_jobs: dict[str, dict[str, Any]] = {}
+        lmdb_roots: dict[str, Path] = {}
+        for split, image_dir, gt_file in (
+            ("train", profile.train_uri, f"{profile.train_uri}/gt_new.txt"),
+            ("val", profile.eval_uri, f"{profile.eval_uri}/gt_new.txt"),
+        ):
+            split_specs = _read_yaml(template)
+            _set_nested(split_specs, "dataset_convert.input_img_dir", image_dir)
+            _set_nested(split_specs, "dataset_convert.gt_file", gt_file)
+            result = _run_action_job(
+                sdk=sdk,
+                image=image,
+                action_cfg=action_cfg,
+                specs=split_specs,
+                action=f"dataset_convert_{split}",
+                out_dir=out_dir,
+                args=args,
+                mounts=mounts,
+                gpu_count=0,
+            )
+            conversion_jobs[split] = result
+            if result["status"] != "success":
+                return {
+                    "status": "failed",
+                    "reason": f"OCRNet {split} dataset_convert job failed",
+                    "jobs": conversion_jobs,
+                }
+            job_root = out_dir / "results" / result["job_id"]
+            data_file = next(iter(sorted(job_root.rglob("data.mdb"))), None)
+            lock_file = next(iter(sorted(job_root.rglob("lock.mdb"))), None)
+            if not data_file or not lock_file or data_file.parent != lock_file.parent:
+                return {
+                    "status": "failed",
+                    "reason": f"OCRNet {split} dataset_convert completed without a usable LMDB folder",
+                    "jobs": conversion_jobs,
+                }
+            lmdb_roots[split] = data_file.parent
+
+        train_lmdb = _host_to_container_path(str(lmdb_roots["train"]), out_dir / "results")
+        val_lmdb = _host_to_container_path(str(lmdb_roots["val"]), out_dir / "results")
+        return {
+            "status": "passed",
+            "jobs": conversion_jobs,
+            "artifacts": {
+                "train_lmdb": str(lmdb_roots["train"]),
+                "val_lmdb": str(lmdb_roots["val"]),
+            },
+            "train_overrides": {
+                "dataset.train_dataset_dir": [train_lmdb],
+                "dataset.val_dataset_dir": val_lmdb,
+                "dataset.train_gt_file": "",
+                "dataset.val_gt_file": "",
+                "dataset.character_list_file": "/data/ocrnet/character_list",
+            },
+        }
+
     specs = _build_dataset_convert_specs(
         model_dir=model_dir,
         skill_text=skill_text,
         profile=profile,
     )
+    if model == "bevfusion":
+        # BEVFusion 5.5 requires results_dir == root_dir while reducing points.
+        # Keep the mounted path instead of letting output materialization replace it.
+        action_cfg = dict(action_cfg)
+        action_cfg["outputs"] = {}
     image = _resolve_action_image(skill_info, action_cfg)
     job_result = _run_action_job(
         sdk=sdk,
@@ -939,7 +1413,7 @@ def _run_dataset_convert_preflight(
         out_dir=out_dir,
         args=args,
         mounts=mounts,
-        gpu_count=args.num_gpus if model_dir.name in {"pointpillars", "sparse4d"} else 0,
+        gpu_count=args.num_gpus if model in {"pointpillars", "sparse4d"} else 0,
     )
     if job_result["status"] != "success":
         return {
@@ -955,7 +1429,7 @@ def _run_dataset_convert_preflight(
     missing: list[str] = []
     extra: dict[str, Any] = {}
 
-    if model_dir.name == "pointpillars":
+    if model == "pointpillars":
         data_info = convert_root / "data_info"
         required = {
             "dbinfos_train": data_info / "dbinfos_train.pkl",
@@ -973,7 +1447,49 @@ def _run_dataset_convert_preflight(
                 out_dir / "results",
             )
 
-    elif model_dir.name == "sparse4d":
+    elif model == "bevfusion":
+        data_root = out_dir / "data_mount" / "bevfusion"
+        train_ann = next(iter(sorted(data_root.rglob("kitti_person_infos_train.pkl"))), None)
+        val_ann = next(iter(sorted(data_root.rglob("kitti_person_infos_val.pkl"))), None)
+        reduced = data_root / "training" / "velodyne_reduced"
+        required_bevfusion = {
+            "train_ann": train_ann,
+            "val_ann": val_ann,
+            "velodyne_reduced": reduced if reduced.exists() else None,
+        }
+        for name, path in required_bevfusion.items():
+            if path and path.exists():
+                artifacts[name] = str(path)
+            else:
+                missing.append(name)
+        if not missing:
+            data_prefix = {
+                "pts": "training/velodyne_reduced",
+                "img": "training/image_2",
+            }
+            train_overrides.update({
+                "dataset.root_dir": "/data/bevfusion",
+                "dataset.train_dataset": {
+                    "ann_file": f"/data/bevfusion/{train_ann.relative_to(data_root).as_posix()}",
+                    "data_prefix": data_prefix,
+                    "batch_size": 1,
+                    "num_workers": 1,
+                },
+                "dataset.val_dataset": {
+                    "ann_file": f"/data/bevfusion/{val_ann.relative_to(data_root).as_posix()}",
+                    "data_prefix": data_prefix,
+                    "batch_size": 1,
+                    "num_workers": 1,
+                },
+                "dataset.test_dataset": {
+                    "ann_file": f"/data/bevfusion/{val_ann.relative_to(data_root).as_posix()}",
+                    "data_prefix": data_prefix,
+                    "batch_size": 1,
+                    "num_workers": 1,
+                },
+            })
+
+    elif model == "sparse4d":
         extra["depth_path_normalization"] = _normalize_sparse4d_depth_paths(
             model_dir=model_dir,
             out_dir=out_dir,
@@ -983,11 +1499,18 @@ def _run_dataset_convert_preflight(
         train_ann = sorted(convert_root.rglob("*_infos_train.pkl"))
         val_ann = sorted(convert_root.rglob("*_infos_val.pkl"))
         test_ann = sorted(convert_root.rglob("*_infos_test.pkl"))
+        # The packaged AICity smoke conversion emits three random camera-group
+        # training annotations and no dedicated val/test files.  Use distinct
+        # current-job groups for smoke validation rather than rejecting the
+        # successful Data Services output or searching another job directory.
+        train_path = train_ann[0] if train_ann else None
+        val_path = val_ann[0] if val_ann else (train_ann[1] if len(train_ann) > 1 else None)
+        test_path = test_ann[0] if test_ann else (train_ann[2] if len(train_ann) > 2 else None)
         required_sparse = {
             "anchor": anchor,
-            "train_ann": train_ann[0] if train_ann else None,
-            "val_ann": val_ann[0] if val_ann else None,
-            "test_ann": test_ann[0] if test_ann else None,
+            "train_ann": train_path,
+            "val_ann": val_path,
+            "test_ann": test_path,
         }
         for name, path in required_sparse.items():
             if path and path.exists():
@@ -1055,8 +1578,9 @@ def _run_post_checks(
     sdk: DockerSDK,
     num_classes: int | None,
 ) -> dict[str, Any]:
+    model = _model_profile_key(model_dir)
     checkpoints = payload.get("best_checkpoint_paths") or []
-    checkpoint_path = _prefer_epoch_or_step_checkpoint(checkpoints, model=model_dir.name)
+    checkpoint_path = _prefer_epoch_or_step_checkpoint(checkpoints, model=model)
     if not checkpoint_path:
         payload["checkpoint_validation"] = {
             "status": "failed",
@@ -1072,10 +1596,10 @@ def _run_post_checks(
     dataset_convert_overrides = (
         (payload.get("dataset_convert") or {}).get("train_overrides") or {}
     )
-    mounts = _mounts_for_model(out_dir, model_dir.name, profile)
+    mounts = _mounts_for_model(out_dir, model, profile)
     action_env_vars = (
         {"TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"}
-        if model_dir.name in {"ml-recog", "oneformer", "re-identification"}
+        if model in {"ml-recog", "ocrnet", "oneformer", "optical-inspection", "re-identification"}
         else None
     )
     for action in ("evaluate", "inference"):
@@ -1141,7 +1665,7 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _supported_automl_parameters(skill_bank: Path, model: str) -> list[str] | None:
-    schema_path = skill_bank / "models" / model / "schemas" / "train.schema.json"
+    schema_path = skill_bank / "skills" / "models" / model / "schemas" / "train.schema.json"
 
     def schema_defaults() -> list[str] | None:
         if not schema_path.exists():
@@ -1152,7 +1676,7 @@ def _supported_automl_parameters(skill_bank: Path, model: str) -> list[str] | No
             return None
         return params if isinstance(params, list) else None
 
-    support_path = skill_bank / "models" / "automl_support.json"
+    support_path = skill_bank / "skills" / "models" / "automl_support.json"
     if not support_path.exists():
         return schema_defaults()
     try:
@@ -1169,12 +1693,15 @@ def _supported_automl_parameters(skill_bank: Path, model: str) -> list[str] | No
 def _minimal_custom_ranges(
     params: list[str] | None,
     model: str | None = None,
+    schema_path: Path | None = None,
 ) -> dict[str, dict[str, Any]] | None:
     ranges: dict[str, dict[str, Any]] = {}
     for param in params or []:
         lower = param.lower()
         if "epoch" in lower:
             ranges[param] = {"valid_min": 1, "valid_max": 1}
+        elif model == "ml-recog" and lower == "train.batch_size":
+            ranges[param] = {"valid_min": 4, "valid_max": 4}
         elif "batch_size" in lower or lower.endswith("mini_batch") or ".mini_batch" in lower:
             ranges[param] = {"valid_min": 1, "valid_max": 2}
         elif model == "nvdinov2" and lower == "dataset.workers":
@@ -1193,6 +1720,8 @@ def _minimal_custom_ranges(
             ranges[param] = {"valid_min": 8, "valid_max": 8}
         elif lower == "model.volume_dim":
             ranges[param] = {"valid_min": 32, "valid_max": 32}
+        elif model in {"dino", "grounding-dino"} and lower.endswith("num_queries"):
+            ranges[param] = {"valid_min": 100, "valid_max": 100}
         elif lower.endswith("num_queries"):
             ranges[param] = {"valid_min": 20, "valid_max": 50}
         elif lower.endswith("num_select"):
@@ -1215,6 +1744,36 @@ def _minimal_custom_ranges(
             ranges[param] = {"valid_min": 0.000001, "valid_max": 0.0001}
         elif lower == "train.optim.lr_linear_proj_mult":
             ranges[param] = {"valid_min": 0.01, "valid_max": 0.1}
+
+    # The built-in AutoML config can be older or more permissive than the
+    # selected skill schema. Clamp every validation range to the real skill
+    # bounds so the optimizer never proposes a value that the workflow itself
+    # declares invalid.
+    if schema_path and schema_path.exists():
+        schema = json.loads(schema_path.read_text())
+        for param, custom_range in ranges.items():
+            node: Any = schema
+            for part in param.replace("[0]", "").split("."):
+                properties = node.get("properties", {}) if isinstance(node, dict) else {}
+                node = properties.get(part)
+                if not isinstance(node, dict):
+                    break
+            if not isinstance(node, dict):
+                continue
+            minimum = node.get("minimum")
+            maximum = node.get("maximum")
+            low = custom_range["valid_min"]
+            high = custom_range["valid_max"]
+            if isinstance(minimum, (int, float)) and math.isfinite(minimum):
+                low = max(low, minimum)
+                if high < minimum:
+                    high = minimum
+            if isinstance(maximum, (int, float)) and math.isfinite(maximum):
+                high = min(high, maximum)
+                if low > maximum:
+                    low = maximum
+            custom_range["valid_min"] = low
+            custom_range["valid_max"] = high
     return ranges or None
 
 
@@ -1252,7 +1811,7 @@ def _download_s3_file(uri: str, destination: Path) -> None:
         client.download_fileobj(parsed.netloc, parsed.path.lstrip("/"), fh)
 
 
-def _prepare_depth_data_mount(profile: ModelProfile, out_dir: Path) -> Path:
+def _prepare_depth_data_mount(profile: ModelProfile, out_dir: Path, model: str) -> Path:
     data_root = out_dir / "data_mount"
     for uri in (profile.train_uri, profile.eval_uri):
         dataset_name = uri.rstrip("/").rsplit("/", 1)[-1]
@@ -1262,6 +1821,35 @@ def _prepare_depth_data_mount(profile: ModelProfile, out_dir: Path) -> Path:
         if not (target / "left").exists():
             with tarfile.open(archive) as tar:
                 tar.extractall(target)
+        if model == "depth-net-stereo":
+            _download_s3_file(_join_uri(uri, "annotations.txt"), target / "annotations.txt")
+        if model == "depth-net-mono":
+            source_annotations = target / "annotations_stereo.txt"
+            _download_s3_file(_join_uri(uri, "annotations.txt"), source_annotations)
+            mono_lines = []
+            for line in source_annotations.read_text().splitlines():
+                fields = line.split()
+                if len(fields) < 3:
+                    raise ValueError(
+                        f"Expected stereo depth annotation with at least 3 fields in {uri}: {line!r}"
+                    )
+                mono_lines.append(f"{fields[0]} {fields[-1]}")
+            (target / "annotations.txt").write_text("\n".join(mono_lines) + "\n")
+    return data_root
+
+
+def _prepare_bevfusion_data_mount(profile: ModelProfile, out_dir: Path) -> Path:
+    data_root = out_dir / "data_mount" / "bevfusion"
+    for filename, extracted_dir in (
+        ("ImageSets.tar.gz", "ImageSets"),
+        ("training.tar.gz", "training"),
+        ("testing.tar.gz", "testing"),
+    ):
+        archive = data_root / filename
+        _download_s3_file(_join_uri(profile.train_uri, filename), archive)
+        if not (data_root / extracted_dir).exists():
+            with tarfile.open(archive) as tar:
+                tar.extractall(data_root)
     return data_root
 
 
@@ -1284,22 +1872,111 @@ def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
 
 def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[dict[str, str]]:
     mounts = [{"host_path": str(out_dir / "results"), "container_path": "/results"}]
+    if model == "bevfusion":
+        mounts.append({
+            "host_path": str(_prepare_bevfusion_data_mount(profile, out_dir)),
+            "container_path": "/data/bevfusion",
+        })
     if model in {"depth-net-mono", "depth-net-stereo"}:
         mounts.append({
-            "host_path": str(_prepare_depth_data_mount(profile, out_dir)),
+            "host_path": str(_prepare_depth_data_mount(MODEL_PROFILES[model], out_dir, model)),
             "container_path": "/data",
         })
     if model == "grounding-dino":
-        dataset_root = out_dir.parent.parent / "datasets" / "grounding-dino-mini"
+        dataset_root = out_dir.parent / "datasets" / "grounding-dino-mini"
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/grounding-dino-mini",
         })
+    if model == "classification-pyt":
+        dataset_root = out_dir.parent / "datasets" / "image-classification-mini"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/image-classification-mini",
+        })
+    if model == "mae":
+        dataset_root = out_dir.parent / "datasets" / "image-classification-mini"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/image-classification-mini",
+        })
+    if model == "mal":
+        dataset_root = out_dir.parent / "datasets" / "mal-mini"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/mal-mini",
+        })
+    if model == "mask-grounding-dino":
+        dataset_root = out_dir.parent / "datasets" / "mask-grounding-dino-mini"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/mask-grounding-dino-mini",
+        })
+    if model == "mask2former":
+        dataset_root = out_dir.parent / "datasets" / "mask2former-mini"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/mask2former-mini",
+        })
+    if model == "ml-recog":
+        dataset_root = out_dir.parent / "datasets" / "ml-recog"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/ml-recog",
+        })
     if model == "nvdinov2":
-        dataset_root = out_dir.parent.parent / "datasets" / "nvdinov2-mini"
+        dataset_root = out_dir.parent / "datasets" / "nvdinov2-mini"
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/nvdinov2-mini",
+        })
+    if model == "nvpanoptix3d":
+        dataset_root = out_dir.parent / "datasets" / "nvpanoptix3d"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/nvpanoptix3d",
+        })
+    if model == "ocdnet":
+        dataset_root = out_dir.parent / "datasets" / "ocdnet"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/ocdnet",
+        })
+    if model == "ocrnet":
+        dataset_root = out_dir.parent / "datasets" / "ocrnet"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/ocrnet",
+        })
+    if model == "oneformer":
+        dataset_root = out_dir.parent / "datasets" / "oneformer"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/oneformer",
+        })
+    if model == "optical-inspection":
+        dataset_root = out_dir.parent / "datasets" / "optical-inspection"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/optical-inspection",
+        })
+    if model == "rtdetr":
+        dataset_root = out_dir.parent / "datasets" / "rtdetr"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/rtdetr",
+        })
+    if model == "segformer":
+        dataset_root = out_dir.parent / "datasets" / "segformer" / "root"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/segformer",
+        })
+    if model == "pointpillars":
+        dataset_root = out_dir.parent / "datasets" / "pointpillars"
+        mounts.append({
+            "host_path": str(dataset_root),
+            "container_path": "/data/pointpillars",
         })
     if model == "visual-changenet":
         mounts.append({
@@ -1313,6 +1990,14 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "host_path": str(data_root),
             "container_path": "/data/aicity_root",
         })
+    if model == "cosmos-rl":
+        dataset_root = out_dir.parent / "datasets" / "cosmos-rl"
+        if dataset_root.exists():
+            mounts.append({
+                "host_path": str(dataset_root),
+                "container_path": "/data/automl_datasets/cosmos-rl",
+                "read_only": True,
+            })
     return mounts
 
 
@@ -1355,13 +2040,21 @@ def _cosmos_video_fps_preflight(profile: ModelProfile) -> dict[str, Any]:
 
 
 def run_model(args: argparse.Namespace) -> int:
-    model = args.model
-    profile = MODEL_PROFILES.get(model)
-    if profile is None:
-        raise KeyError(f"No validation profile for {model}")
-
-    model_dir = args.skill_bank / "models" / model
+    model_dir = _resolve_model_dir(args.skill_bank, args.model)
+    model = _model_profile_key(model_dir)
+    profile = MODEL_PROFILES[model]
+    staged_data_root = args.run_root / "datasets" / model
+    if model == "cosmos-rl" and staged_data_root.exists():
+        profile = replace(
+            profile,
+            train_uri="/data/automl_datasets/cosmos-rl/train",
+            eval_uri="/data/automl_datasets/cosmos-rl/eval",
+        )
     skill_text = (model_dir / "SKILL.md").read_text()
+    if model == "dino":
+        # DINO's compact skill delegates the mandatory per-action dataset
+        # table to this reference. Parse both as the real skill workflow does.
+        skill_text += "\n" + (model_dir / "references" / "dino-data-specs.md").read_text()
     skill_info = _read_yaml(model_dir / "references" / "skill_info.yaml")
     train_specs = _read_yaml(model_dir / "references" / "spec_template_train.yaml")
     if profile.data_format:
@@ -1370,13 +2063,62 @@ def run_model(args: argparse.Namespace) -> int:
     out_dir = args.run_root / model
     out_dir.mkdir(parents=True, exist_ok=True)
     report_path = out_dir / "result.json"
+    if model == "depth-net-mono":
+        # The available smoke dataset annotations contain left, right, and GT
+        # fields. The mono skill explicitly requires a derived left+GT file.
+        # The staged files are mounted at /data by _mounts_for_model().
+        source_profile = MODEL_PROFILES[model]
+        profile = replace(
+            profile,
+            train_uri=f"/data/{source_profile.train_uri.rstrip('/').rsplit('/', 1)[-1]}",
+            eval_uri=f"/data/{source_profile.eval_uri.rstrip('/').rsplit('/', 1)[-1]}",
+        )
+    if model == "cosmos-rl" and staged_data_root.exists():
+        staged_files = [path for path in staged_data_root.rglob("*") if path.is_file()]
+        _write_json(out_dir / "evaluations" / "data_staging.json", {
+            "source": {
+                "train": MODEL_PROFILES[model].train_uri,
+                "eval": MODEL_PROFILES[model].eval_uri,
+            },
+            "staged_path": str(staged_data_root),
+            "container_path": "/data/automl_datasets/cosmos-rl",
+            "file_count": len(staged_files),
+            "bytes": sum(path.stat().st_size for path in staged_files),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        })
 
     effective_num_classes = max(
         [value for value in (args.num_classes, profile.num_classes) if value is not None],
         default=None,
     )
 
-    supported_params = _supported_automl_parameters(args.skill_bank, model)
+    supported_params = _supported_automl_parameters(args.skill_bank, model_dir.name)
+    if model == "depth-net-stereo" and supported_params:
+        # The generated catalog includes non-train split augmentation fields
+        # and model.volume_dim, which the current FoundationStereo train path
+        # does not consume. Validate only effective train hyperparameters.
+        supported_params = [
+            param for param in supported_params
+            if param in {"train.optim.lr", "train.optim.weight_decay"}
+        ]
+    if model == "classification-pyt" and supported_params:
+        # Distillation teacher fields share the generated schema but are not
+        # consumed by the ordinary classification_pyt train action.
+        supported_params = [
+            param for param in supported_params if not param.startswith("distill.")
+        ]
+    if model == "nvpanoptix3d" and supported_params:
+        supported_params = [
+            param for param in supported_params if param == "train.optim.lr"
+        ]
+    if model == "oneformer" and supported_params:
+        # Keep the smoke search on effective optimizer parameters. The generated
+        # catalog also exposes validation/test resize fields whose large sampled
+        # values defeat the documented compact local workflow.
+        supported_params = [
+            param for param in supported_params
+            if param in {"train.optim.lr", "train.optim.weight_decay"}
+        ]
     if supported_params == [] and not args.post_check_only:
         payload = {
             "model": model,
@@ -1395,22 +2137,6 @@ def run_model(args: argparse.Namespace) -> int:
                 "algorithm": args.algorithm,
                 "status": "blocked",
                 "blocker": "HF_TOKEN is required for the gated Cosmos-Reason2-8B model",
-            }
-            _write_json(report_path, payload)
-            print(json.dumps(payload))
-            return 2
-        preflight = _cosmos_video_fps_preflight(profile)
-        if preflight["status"] != "passed":
-            payload = {
-                "model": model,
-                "algorithm": args.algorithm,
-                "status": "blocked",
-                "blocker": "Cosmos-RL annotations are missing video_fps in sampled records; SFT loader fails before checkpoint creation",
-                "preflight": preflight,
-                "attempted_training_evidence": (
-                    "A real train attempt reached the Cosmos-RL process and failed with "
-                    "Error processing sample: 'video_fps'."
-                ),
             }
             _write_json(report_path, payload)
             print(json.dumps(payload))
@@ -1454,17 +2180,141 @@ def run_model(args: argparse.Namespace) -> int:
     rows = _parse_train_rows(skill_text)
     overrides: dict[str, Any] = {}
     _add_data_source_overrides(overrides, profile, rows)
+    if model == "grounding-dino":
+        overrides.update({
+            "dataset.train_data_sources[0].image_dir": f"{profile.train_uri}/images",
+            "dataset.val_data_sources.image_dir": f"{profile.eval_uri}/images",
+        })
+    if model == "classification-pyt":
+        overrides.update({
+            "dataset.train_dataset.images_dir": f"{profile.train_uri}/images_train",
+            "dataset.val_dataset.images_dir": f"{profile.eval_uri}/images_val",
+            "dataset.classes_file": f"{profile.train_uri}/classes.txt",
+        })
+    if model == "mae":
+        overrides.update({
+            "dataset.train_data_sources": f"{profile.train_uri}/images_train",
+            "dataset.val_data_sources": f"{profile.eval_uri}/images_val",
+        })
+    if model == "ml-recog":
+        overrides.update({
+            "dataset.train_dataset": "/data/ml-recog/known/train/train",
+            "dataset.val_dataset": {
+                "reference": "/data/ml-recog/known/reference/reference",
+                "query": "/data/ml-recog/known/val/val",
+            },
+        })
+    if model == "mal":
+        overrides.update({
+            "dataset.train_img_dir": f"{profile.train_uri}/images",
+            "dataset.train_ann_path": f"{profile.train_uri}/annotations.json",
+            "dataset.val_img_dir": f"{profile.eval_uri}/images",
+            "dataset.val_ann_path": f"{profile.eval_uri}/annotations.json",
+        })
+    if model == "depth-net-stereo":
+        overrides.update({
+            "dataset.train_dataset.data_sources": [{
+                "data_file": _join_uri(profile.train_uri, "annotations.txt"),
+                "dataset_name": "Middlebury",
+            }],
+            "dataset.val_dataset.data_sources": [{
+                "data_file": _join_uri(profile.eval_uri, "annotations.txt"),
+                "dataset_name": "Middlebury",
+            }],
+        })
+    if model == "cosmos-rl":
+        overrides.update({
+            "custom.train_dataset.annotation_path": _join_uri(profile.train_uri, "annotations.json"),
+            "custom.train_dataset.media_path": profile.train_uri,
+            "custom.val_dataset.annotation_path": _join_uri(profile.eval_uri, "annotations.json"),
+            "custom.val_dataset.media_path": profile.eval_uri,
+        })
     overrides.update(_minimal_train_overrides(train_specs, schema_keys, effective_num_classes, model))
     if model == "nvdinov2":
-        overrides["dataset.train_dataset.images_dir"] = "/data/nvdinov2-mini/images_train"
+        overrides["dataset.train_dataset.images_dir"] = "/data/nvdinov2-mini/images_train/images_train"
+    if model == "nvpanoptix3d":
+        overrides.update({
+            "dataset.frustum_mask_path": f"{profile.train_uri}/meta/frustum_mask.npz",
+            "dataset.label_map": f"{profile.train_uri}/meta/colormap.json",
+            "dataset.train.json_path": f"{profile.train_uri}/meta/train.json",
+            "dataset.train.base_dir": profile.train_uri,
+            "dataset.val.json_path": f"{profile.eval_uri}/meta/val.json",
+            "dataset.val.base_dir": profile.eval_uri,
+            "dataset.test.json_path": f"{profile.eval_uri}/meta/test.json",
+            "dataset.test.base_dir": profile.eval_uri,
+        })
+    if model == "ocdnet":
+        overrides.update({
+            "dataset.train_dataset.data_path": [profile.train_uri],
+            "dataset.validate_dataset.data_path": [profile.eval_uri],
+        })
+    if model == "oneformer":
+        overrides.update({
+            "model.sem_seg_head.num_classes": 133,
+            "dataset.contiguous_id": True,
+            "dataset.train.images": f"{profile.train_uri}/images",
+            "dataset.train.annotations": f"{profile.train_uri}/annotations.json",
+            "dataset.label_map": f"{profile.train_uri}/label_map.json",
+            "dataset.train.panoptic": f"{profile.train_uri}/images_panoptic",
+            "dataset.val.images": f"{profile.eval_uri}/images",
+            "dataset.val.annotations": f"{profile.eval_uri}/annotations.json",
+            "dataset.val.panoptic": f"{profile.eval_uri}/images_panoptic",
+            "dataset.test.images": f"{profile.eval_uri}/images",
+        })
+    if model == "optical-inspection":
+        overrides.update({
+            "dataset.train_dataset.images_dir": f"{profile.train_uri}/images",
+            "dataset.train_dataset.csv_path": f"{profile.train_uri}/dataset.csv",
+            "dataset.validation_dataset.images_dir": f"{profile.eval_uri}/images",
+            "dataset.validation_dataset.csv_path": f"{profile.eval_uri}/dataset.csv",
+            "dataset.test_dataset.images_dir": f"{profile.eval_uri}/images",
+            "dataset.test_dataset.csv_path": f"{profile.eval_uri}/dataset.csv",
+        })
+    if model == "rtdetr":
+        overrides.update({
+            "dataset.num_classes": 5,
+            "dataset.eval_class_ids": [1, 2, 3, 4],
+            "dataset.train_data_sources[0].image_dir": f"{profile.train_uri}/images",
+            "dataset.train_data_sources[0].json_file": f"{profile.train_uri}/annotations.json",
+            "dataset.val_data_sources.image_dir": f"{profile.eval_uri}/images",
+            "dataset.val_data_sources.json_file": f"{profile.eval_uri}/annotations.json",
+        })
+    if model == "segformer":
+        overrides.update({
+            "dataset.segment.root_dir": profile.train_uri,
+            "dataset.segment.num_classes": 2,
+            "dataset.segment.batch_size": 1,
+            "dataset.segment.workers": 0,
+            "train.tensorboard.enabled": False,
+        })
     if model == "mask-grounding-dino":
-        overrides["dataset.val_data_sources.data_type"] = "OD"
+        overrides.update({
+            "dataset.train_data_sources[0].image_dir": f"{profile.train_uri}/images",
+            "dataset.train_data_sources[0].json_file": f"{profile.train_uri}/annotations_odvg.jsonl",
+            "dataset.train_data_sources[0].label_map": f"{profile.train_uri}/annotations_odvg_labelmap.json",
+            "dataset.val_data_sources.image_dir": f"{profile.eval_uri}/images",
+            "dataset.val_data_sources.json_file": f"{profile.eval_uri}/annotations.json",
+            "dataset.val_data_sources.data_type": "OD",
+        })
+    if model == "mask2former":
+        overrides.update({
+            "dataset.train.img_dir": f"{profile.train_uri}/images",
+            "dataset.label_map": f"{profile.train_uri}/label_map_panoptic.json",
+            "dataset.train.instance_json": f"{profile.train_uri}/annotations.json",
+            "dataset.train.panoptic_json": f"{profile.train_uri}/annotations_panoptic.json",
+            "dataset.train.panoptic_dir": f"{profile.train_uri}/images_panoptic",
+            "dataset.val.img_dir": f"{profile.eval_uri}/images",
+            "dataset.val.instance_json": f"{profile.eval_uri}/annotations.json",
+            "dataset.val.panoptic_json": f"{profile.eval_uri}/annotations_panoptic.json",
+            "dataset.val.panoptic_dir": f"{profile.eval_uri}/images_panoptic",
+            "dataset.test.img_dir": f"{profile.eval_uri}/images",
+        })
     overrides = _valid_set(overrides, train_specs, schema_keys)
 
-    metric = args.metric or _monitoring_metric(skill_text)
-    if model == "dino" and metric == "val_mAP50":
-        metric = "mAP50"
-
+    training_metric = _monitoring_metric(skill_text)
+    metric = args.metric or _evaluation_metric(model, training_metric)
+    checkpoint_evaluation_metric = _checkpoint_evaluation_metric(model, metric)
+    selection_uses_training_kpi = checkpoint_evaluation_metric != metric or model == "nvdinov2"
     jobs: dict[int, dict[str, Any]] = {}
 
     def on_recommendation(rec) -> None:
@@ -1489,7 +2339,7 @@ def run_model(args: argparse.Namespace) -> int:
     )
     mounts = _mounts_for_model(out_dir, model, profile)
     dataset_convert_preflight = None
-    if model in {"pointpillars", "sparse4d"}:
+    if model in {"bevfusion", "ocrnet", "pointpillars", "sparse4d"}:
         dataset_convert_preflight = _run_dataset_convert_preflight(
             args=args,
             model_dir=model_dir,
@@ -1522,6 +2372,290 @@ def run_model(args: argparse.Namespace) -> int:
             return 2 if payload["status"] == "blocked" else 1
         overrides.update(dataset_convert_preflight.get("train_overrides") or {})
         overrides = _valid_set(overrides, train_specs, schema_keys)
+
+    actions = skill_info.get("actions") or {}
+    evaluate_cfg = actions.get("evaluate")
+    evaluate_template = model_dir / "references" / "spec_template_evaluate.yaml"
+    checkpoint_action_env = (
+        {"TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"}
+        if model in {"ml-recog", "ocrnet", "oneformer", "optical-inspection", "re-identification"}
+        else None
+    )
+    if (not evaluate_cfg or not evaluate_template.exists()) and model != "nvdinov2":
+        payload = {
+            "model": model,
+            "algorithm": args.algorithm,
+            "status": "blocked",
+            "stage": "baseline_evaluation",
+            "metric_documented": _monitoring_metric(skill_text),
+            "metric_used_by_automl": metric,
+            "blocker": "The model has no packaged runnable evaluate action/template for the required pre-AutoML baseline.",
+        }
+        _write_json(report_path, payload)
+        print(json.dumps(payload))
+        return 2
+
+    baseline_train_result = None
+    baseline_checkpoint_path = None
+    if model != "cosmos-rl":
+        baseline_train_specs = copy.deepcopy(train_specs)
+        for dotted_key, value in overrides.items():
+            _set_nested(baseline_train_specs, dotted_key, value)
+        baseline_train_result = _run_action_job(
+            sdk=sdk,
+            image=_resolve_action_image(skill_info, actions["train"]),
+            action_cfg=actions["train"],
+            specs=baseline_train_specs,
+            action="baseline_train",
+            out_dir=out_dir,
+            args=args,
+            mounts=mounts,
+            metric_name=training_metric,
+        )
+        baseline_checkpoints = _find_checkpoints(
+            out_dir / "results" / baseline_train_result["job_id"], model
+        )
+        baseline_checkpoint_path = _prefer_epoch_or_step_checkpoint(
+            baseline_checkpoints, model=model
+        )
+        if baseline_train_result["status"] != "success" or not baseline_checkpoint_path:
+            payload = {
+                "model": model,
+                "algorithm": args.algorithm,
+                "status": "blocked",
+                "stage": "baseline_training",
+                "metric_documented": training_metric,
+                "metric_used_by_automl": metric,
+                "baseline_training": baseline_train_result,
+                "baseline_checkpoint_paths": baseline_checkpoints,
+                "dataset_convert": dataset_convert_preflight,
+                "blocker": (
+                    "Scratch AutoML requires a successful minimal default train and a concrete "
+                    "epoch/step checkpoint before the baseline evaluate action can run."
+                ),
+            }
+            _write_json(report_path, payload)
+            print(json.dumps({"model": model, "status": "blocked", "report": str(report_path)}))
+            return 2
+
+    baseline_checkpoint_container_path = (
+        _host_to_container_path(baseline_checkpoint_path, out_dir / "results")
+        if baseline_checkpoint_path
+        else ""
+    )
+    if evaluate_cfg and evaluate_template.exists():
+        baseline_specs = _build_action_specs(
+            model_dir=model_dir,
+            skill_text=skill_text,
+            profile=profile,
+            action="evaluate",
+            checkpoint_container_path=baseline_checkpoint_container_path,
+            num_classes=effective_num_classes,
+            extra_overrides=(dataset_convert_preflight or {}).get("train_overrides") or {},
+        )
+        baseline_result = _run_action_job(
+            sdk=sdk,
+            image=_resolve_action_image(skill_info, evaluate_cfg),
+            action_cfg=evaluate_cfg,
+            specs=baseline_specs,
+            action="baseline_evaluate",
+            out_dir=out_dir,
+            args=args,
+            mounts=mounts,
+            metric_name=checkpoint_evaluation_metric,
+            env_vars=checkpoint_action_env,
+        )
+    else:
+        baseline_result = {
+            "action": "baseline_evaluate",
+            "status": "skipped",
+            "reason": "the packaged model skill has no evaluate action; selection uses the train KPI",
+            "metric_name": metric,
+            "metric_value": baseline_train_result.get("metric_value") if baseline_train_result else None,
+        }
+    if (
+        baseline_result["status"] not in (
+            {"success", "skipped"} if selection_uses_training_kpi else {"success"}
+        )
+        or (
+            not selection_uses_training_kpi
+            and baseline_result.get("metric_value") is None
+        )
+    ):
+        payload = {
+            "model": model,
+            "algorithm": args.algorithm,
+            "status": "blocked",
+            "stage": "baseline_evaluation",
+            "metric_documented": _monitoring_metric(skill_text),
+            "metric_used_by_automl": metric,
+            "baseline_training": baseline_train_result,
+            "baseline_checkpoint_path": baseline_checkpoint_path,
+            "baseline_evaluation": baseline_result,
+            "blocker": (
+                "The required baseline evaluate job failed or did not emit the selected AutoML metric; "
+                "the skill workflow forbids falling back silently to a training-only proxy."
+            ),
+        }
+        _write_json(report_path, payload)
+        print(json.dumps({"model": model, "status": "blocked", "report": str(report_path)}))
+        return 2
+
+    baseline_selection_metric = (
+        baseline_train_result.get("metric_value")
+        if selection_uses_training_kpi and baseline_train_result
+        else baseline_result["metric_value"]
+    )
+    if baseline_selection_metric is None:
+        payload = {
+            "model": model,
+            "algorithm": args.algorithm,
+            "status": "blocked",
+            "stage": "baseline_training_metric",
+            "metric_documented": training_metric,
+            "metric_used_by_automl": metric,
+            "metric_emitted_by_evaluate": checkpoint_evaluation_metric,
+            "baseline_training": baseline_train_result,
+            "baseline_evaluation": baseline_result,
+            "blocker": "The baseline train job did not emit the documented AutoML selection metric.",
+        }
+        _write_json(report_path, payload)
+        print(json.dumps({"model": model, "status": "blocked", "report": str(report_path)}))
+        return 2
+
+    settings = _automl_settings(args.algorithm, metric, args)
+    settings.update({
+        "baseline_metric": baseline_selection_metric,
+        "baseline_training": baseline_train_result,
+        "baseline_evaluation": baseline_result,
+        "run_final_evaluation": True,
+    })
+
+    recommendation_eval_jobs: list[dict[str, Any]] = []
+    final_eval_jobs: list[dict[str, Any]] = []
+
+    def eval_fn(rec, train_job_id):
+        checkpoint_paths = _find_checkpoints(out_dir / "results" / str(train_job_id), model)
+        checkpoint_path = _prefer_epoch_or_step_checkpoint(checkpoint_paths, model=model)
+        if not checkpoint_path:
+            raise RuntimeError(f"No real checkpoint found for recommendation train job {train_job_id}")
+        if not evaluate_cfg or not evaluate_template.exists():
+            train_kpi = _latest_kpi(out_dir / "results" / str(train_job_id))
+            selection_metric = _metric_from_job("", train_kpi, metric)
+            recommendation_eval_jobs.append({
+                "action": "recommendation_train_metric",
+                "status": "success" if selection_metric is not None else "failed",
+                "recommendation_id": getattr(rec, "id", None),
+                "train_job_id": train_job_id,
+                "checkpoint_path": checkpoint_path,
+                "metric_name": metric,
+                "metric_value": selection_metric,
+                "reason": "no evaluate action is packaged; checkpoint usability is verified by inference",
+            })
+            return selection_metric
+        specs = _build_action_specs(
+            model_dir=model_dir,
+            skill_text=skill_text,
+            profile=profile,
+            action="evaluate",
+            checkpoint_container_path=_host_to_container_path(
+                checkpoint_path, out_dir / "results"
+            ),
+            num_classes=effective_num_classes,
+            trial_specs=getattr(rec, "specs", None),
+            extra_overrides=(dataset_convert_preflight or {}).get("train_overrides") or {},
+        )
+        evaluated = _run_action_job(
+            sdk=sdk,
+            image=_resolve_action_image(skill_info, evaluate_cfg),
+            action_cfg=evaluate_cfg,
+            specs=specs,
+            action="recommendation_evaluate",
+            out_dir=out_dir,
+            args=args,
+            mounts=mounts,
+            metric_name=checkpoint_evaluation_metric,
+            env_vars=checkpoint_action_env,
+        )
+        evaluated["recommendation_id"] = getattr(rec, "id", None)
+        evaluated["train_job_id"] = train_job_id
+        evaluated["checkpoint_path"] = checkpoint_path
+        recommendation_eval_jobs.append(evaluated)
+        if selection_uses_training_kpi:
+            train_kpi = _latest_kpi(out_dir / "results" / str(train_job_id))
+            selection_metric = _metric_from_job("", train_kpi, metric)
+            evaluated["checkpoint_evaluation_metric"] = evaluated.get("metric_value")
+            evaluated["selection_metric_from_training"] = selection_metric
+            return selection_metric
+        return evaluated.get("metric_value")
+
+    def final_eval_fn(best_rec, train_job_id):
+        checkpoint_paths = _find_checkpoints(out_dir / "results" / str(train_job_id), model)
+        checkpoint_path = _prefer_epoch_or_step_checkpoint(checkpoint_paths, model=model)
+        if not checkpoint_path:
+            raise RuntimeError(f"No real checkpoint found for best train job {train_job_id}")
+        if not evaluate_cfg or not evaluate_template.exists():
+            train_kpi = _latest_kpi(out_dir / "results" / str(train_job_id))
+            selection_metric = _metric_from_job("", train_kpi, metric)
+            evaluated = {
+                "action": "final_train_metric",
+                "status": "success" if selection_metric is not None else "failed",
+                "checkpoint_path": checkpoint_path,
+                "metric_name": metric,
+                "metric_value": selection_metric,
+                "reason": "no evaluate action is packaged; checkpoint usability is verified by inference",
+            }
+            final_eval_jobs.append(evaluated)
+            record_path = out_dir / "evaluations" / "best_automl.json"
+            _write_json(record_path, evaluated)
+            return {
+                "metric_value": selection_metric,
+                "record_path": str(record_path),
+                "job_id": None,
+                "status": evaluated["status"],
+            }
+        checkpoint_container_path = _host_to_container_path(
+            checkpoint_path,
+            out_dir / "results",
+        )
+        specs = _build_action_specs(
+            model_dir=model_dir,
+            skill_text=skill_text,
+            profile=profile,
+            action="evaluate",
+            checkpoint_container_path=checkpoint_container_path,
+            num_classes=effective_num_classes,
+            trial_specs=getattr(best_rec, "specs", None),
+            extra_overrides=(dataset_convert_preflight or {}).get("train_overrides") or {},
+        )
+        evaluated = _run_action_job(
+            sdk=sdk,
+            image=_resolve_action_image(skill_info, evaluate_cfg),
+            action_cfg=evaluate_cfg,
+            specs=specs,
+            action="final_evaluate",
+            out_dir=out_dir,
+            args=args,
+            mounts=mounts,
+            metric_name=checkpoint_evaluation_metric,
+            env_vars=checkpoint_action_env,
+        )
+        final_eval_jobs.append(evaluated)
+        record_path = out_dir / "evaluations" / "best_automl.json"
+        _write_json(record_path, evaluated)
+        selection_metric = evaluated.get("metric_value")
+        if selection_uses_training_kpi:
+            train_kpi = _latest_kpi(out_dir / "results" / str(train_job_id))
+            selection_metric = _metric_from_job("", train_kpi, metric)
+            evaluated["checkpoint_evaluation_metric"] = evaluated.get("metric_value")
+            evaluated["selection_metric_from_training"] = selection_metric
+        return {
+            "metric_value": selection_metric,
+            "record_path": str(record_path),
+            "job_id": evaluated.get("job_id"),
+            "status": evaluated.get("status"),
+        }
+
     runner = AutoMLRunner(
         sdk=sdk,
         skill_dir=model_dir,
@@ -1533,16 +2667,23 @@ def run_model(args: argparse.Namespace) -> int:
         result = runner.run(
             train_dataset_uri=profile.train_uri,
             eval_dataset_uri=profile.eval_uri,
-            automl_settings=_automl_settings(args.algorithm, metric, args),
-            automl_hyperparameters=None,
-            custom_param_ranges=_minimal_custom_ranges(supported_params, model=model),
+            image=_resolve_action_image(skill_info, actions["train"]),
+            automl_settings=settings,
+            automl_hyperparameters=supported_params,
+            custom_param_ranges=_minimal_custom_ranges(
+                supported_params,
+                model=model,
+                schema_path=(model_dir / "schemas" / "train.schema.json"),
+            ),
             workspace_path=str(out_dir / "workspace"),
             spec_overrides=overrides,
             metric_extractor=_metric_extractor_for(model),
+            eval_fn=eval_fn,
+            final_eval_fn=final_eval_fn,
             on_recommendation=on_recommendation,
             on_result=on_result,
             gpu_count=args.num_gpus,
-            gpu_device_ids=[args.gpu_device_id] if args.gpu_device_id else None,
+            gpu_device_ids=_gpu_device_ids(args),
             mounts=mounts,
         )
     except Exception as exc:
@@ -1576,6 +2717,7 @@ def run_model(args: argparse.Namespace) -> int:
         "status": "passed" if passed else "failed",
         "metric_documented": _monitoring_metric(skill_text),
         "metric_used_by_automl": metric,
+        "metric_emitted_by_evaluate": checkpoint_evaluation_metric,
         "direction": _direction(metric),
         "train_dataset_uri": profile.train_uri,
         "eval_dataset_uri": profile.eval_uri,
@@ -1585,6 +2727,11 @@ def run_model(args: argparse.Namespace) -> int:
         "jobs": jobs,
         "best_checkpoint_paths": best_job.get("checkpoint_paths", []),
         "dataset_convert": dataset_convert_preflight,
+        "baseline_training": baseline_train_result,
+        "baseline_checkpoint_path": baseline_checkpoint_path,
+        "baseline_evaluation": baseline_result,
+        "recommendation_evaluation_jobs": recommendation_eval_jobs,
+        "final_evaluation_jobs": final_eval_jobs,
         "resume_behavior": [
             {
                 "rec_id": rid,
