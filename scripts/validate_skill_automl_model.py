@@ -77,8 +77,8 @@ MODEL_PROFILES: dict[str, ModelProfile] = {
         data_format="llava",
     ),
     "deformable-detr": ModelProfile(
-        f"{BUCKET_ROOT}/object_detection_pyt_train",
-        f"{BUCKET_ROOT}/object_detection_pyt_val",
+        "/data/deformable-detr-mini/train",
+        "/data/deformable-detr-mini/val",
         num_classes=6,
     ),
     "depth-net-mono": ModelProfile(
@@ -1277,6 +1277,10 @@ def _build_dataset_convert_specs(
         overrides.update({
             "aicity.num_frames": 3,
             "aicity.anchor_init_config.num_anchor": 72,
+            # Data Services 7.0.1 hardcodes random groups to 5-10 cameras.
+            # The validation fixture has three real cameras, so grouping would
+            # produce empty annotations and make anchor initialization fail.
+            "aicity.camera_grouping_mode": "",
         })
     overrides = _valid_set(overrides, specs, schema_keys)
     for dotted_key, value in overrides.items():
@@ -1499,13 +1503,13 @@ def _run_dataset_convert_preflight(
         train_ann = sorted(convert_root.rglob("*_infos_train.pkl"))
         val_ann = sorted(convert_root.rglob("*_infos_val.pkl"))
         test_ann = sorted(convert_root.rglob("*_infos_test.pkl"))
-        # The packaged AICity smoke conversion emits three random camera-group
-        # training annotations and no dedicated val/test files.  Use distinct
-        # current-job groups for smoke validation rather than rejecting the
-        # successful Data Services output or searching another job directory.
+        # The three-camera smoke fixture cannot use Data Services' random groups
+        # (which require 5-10 cameras) and emits one current-job training file.
+        # Reuse that freshly converted annotation for smoke val/test rather than
+        # searching another job directory or accepting stale converted pickles.
         train_path = train_ann[0] if train_ann else None
-        val_path = val_ann[0] if val_ann else (train_ann[1] if len(train_ann) > 1 else None)
-        test_path = test_ann[0] if test_ann else (train_ann[2] if len(train_ann) > 2 else None)
+        val_path = val_ann[0] if val_ann else train_path
+        test_path = test_ann[0] if test_ann else train_path
         required_sparse = {
             "anchor": anchor,
             "train_ann": train_path,
@@ -1870,6 +1874,26 @@ def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     return destination
 
 
+def _prepare_cosmos_model_mounts() -> tuple[Path, Path]:
+    """Resolve the real gated Cosmos snapshot and its symlink target folder."""
+    from huggingface_hub import snapshot_download
+
+    kwargs = {
+        "repo_id": "nvidia/Cosmos-Reason2-8B",
+        "token": os.environ.get("HF_TOKEN") or None,
+    }
+    try:
+        snapshot = Path(snapshot_download(local_files_only=True, **kwargs))
+    except FileNotFoundError:
+        snapshot = Path(snapshot_download(**kwargs))
+    blobs = snapshot.parents[1] / "blobs"
+    if not (snapshot / "model.safetensors.index.json").is_file():
+        raise FileNotFoundError(f"Cosmos model index is missing from {snapshot}")
+    if not blobs.is_dir():
+        raise FileNotFoundError(f"Cosmos Hugging Face blob folder is missing from {blobs}")
+    return snapshot, blobs
+
+
 def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[dict[str, str]]:
     mounts = [{"host_path": str(out_dir / "results"), "container_path": "/results"}]
     if model == "bevfusion":
@@ -1888,6 +1912,32 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "host_path": str(dataset_root),
             "container_path": "/data/grounding-dino-mini",
         })
+    if model == "deformable-detr":
+        dataset_root = out_dir.parent / "datasets" / "rtdetr"
+        mounts.extend([
+            {
+                # Local mounted inputs are not archive-materialized by the
+                # runner. Bind the extracted folders at the paths produced by
+                # the skill's images.tar.gz data-source contract.
+                "host_path": str(dataset_root / "train" / "images"),
+                "container_path": "/data/deformable-detr-mini/train/images.tar.gz",
+                "read_only": True,
+            },
+            {
+                "host_path": str(dataset_root / "val" / "images"),
+                "container_path": "/data/deformable-detr-mini/val/images.tar.gz",
+                "read_only": True,
+            },
+            *[
+                {
+                    "host_path": str(dataset_root / split / filename),
+                    "container_path": f"/data/deformable-detr-mini/{split}/{filename}",
+                    "read_only": True,
+                }
+                for split in ("train", "val")
+                for filename in ("annotations.json", "label_map.txt")
+            ],
+        ])
     if model == "classification-pyt":
         dataset_root = out_dir.parent / "datasets" / "image-classification-mini"
         mounts.append({
@@ -1991,6 +2041,20 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/aicity_root",
         })
     if model == "cosmos-rl":
+        model_snapshot, model_blobs = _prepare_cosmos_model_mounts()
+        mounts.extend([
+            {
+                "host_path": str(model_snapshot),
+                "container_path": COSMOS_MODEL_CONTAINER_PATH,
+                "read_only": True,
+            },
+            {
+                # Snapshot weight symlinks use ../../blobs from model-vlm.
+                "host_path": str(model_blobs),
+                "container_path": "/data/automl_datasets/blobs",
+                "read_only": True,
+            },
+        ])
         dataset_root = out_dir.parent / "datasets" / "cosmos-rl"
         if dataset_root.exists():
             mounts.append({
