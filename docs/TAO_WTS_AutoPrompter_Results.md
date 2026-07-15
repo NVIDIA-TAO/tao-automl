@@ -45,6 +45,36 @@ full-run validation slice scored 309/530.
 Local artifacts are under
 `/localhome/local-rarunachalam/tao_automl_runs/cosmos3_wts_eval_autoprompt_full/gepa_run_20260715_002721/`.
 
+## Fine-tuned checkpoint follow-up
+
+A second experiment tested whether Auto-Prompter adds value after supervised
+fine-tuning. TAO job `cb3491f4-052c-4e12-bb67-bb74d01f9f3b` trained Cosmos3
+Nano for one epoch on all 5,555 WTS training records from 341 videos. Slurm job
+`29072640` completed on eight GPUs in 38 minutes 12 seconds. The 171 evaluation
+videos have zero overlap with the training videos.
+
+Prompt development used a video-disjoint split: 1,079 records / 68 videos for
+reflection, 550 / 35 for validation selection, and 1,047 / 68 for untouched
+test. The expanded GEPA run allowed equal minibatch candidates to reach complete
+validation so a high-accuracy seed could be challenged fairly.
+
+| Fine-tuned checkpoint prompt | Validation (550) | Video-disjoint test (1,047) | Full eval (2,676) |
+|---|---:|---:|---:|
+| Default | 506 / 550 (92.00%) | 970 / 1,047 (92.65%) | 2,489 / 2,676 (93.01%) |
+| TAO Auto-Prompter selected | 506 / 550 (92.00%) | 970 / 1,047 (92.65%) | 2,489 / 2,676 (93.01%) |
+
+Four generated prompts reached full validation. Two tied the seed at 506/550
+and two scored 505/550, so TAO correctly retained the default prompt. The
+incremental Auto-Prompter gain was therefore **0.00 percentage points**, with no
+test regression. For context, the base checkpoint scored 1,456/2,676 (54.41%)
+under the same full-eval family, so full-data SFT itself supplied a 38.60-point
+gain. This shows that Auto-Prompter works with fine-tuned checkpoints but does
+not guarantee additional lift after the task and output format are already
+strongly learned.
+
+Artifacts are under
+`/localhome/local-rarunachalam/tao_automl_runs/cosmos3_wts_sft_autoprompt/gepa_sft_run_20260715_224234/`.
+
 ## Remaining production validation
 
 WTS uses accuracy and this run tuned only the prompt. Production acceptance for
