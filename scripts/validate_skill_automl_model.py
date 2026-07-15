@@ -221,6 +221,18 @@ def _resolve_model_dir(skill_bank: Path, requested_model: str) -> Path:
         return direct
 
     normalized = requested_model.replace("_", "-").lower()
+    # Multiple packaged skills may intentionally share a TAO network_arch. Keep
+    # the canonical validation alias stable while still allowing either skill to
+    # be selected explicitly by its directory name above.
+    canonical_skill_aliases = {
+        "depth-net-stereo": "tao-train-foundation-stereo",
+    }
+    canonical_dir = models_root / canonical_skill_aliases.get(normalized, "")
+    if canonical_dir.name and (
+        canonical_dir / "references" / "skill_info.yaml"
+    ).exists():
+        return canonical_dir
+
     matches: list[Path] = []
     for candidate in sorted(models_root.iterdir()):
         info_path = candidate / "references" / "skill_info.yaml"
