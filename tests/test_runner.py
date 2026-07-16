@@ -4540,6 +4540,45 @@ def test_apply_resume_checkpoint_does_not_use_latest_for_requested_epoch(tmp_pat
     assert rec.resume_checkpoint_path is None
 
 
+def test_apply_resume_checkpoint_advances_nvpanoptix3d_terminal_epoch(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    info = skill_dir / "references/skill_info.yaml"
+    info.write_text(info.read_text().replace("network_arch: fake-net", "network_arch: nvpanoptix3d"))
+    (skill_dir / "references/spec_template_train.yaml").write_text(
+        "train:\n"
+        "  num_epochs: 1\n"
+        "  resume_training_checkpoint_path: ''\n"
+    )
+
+    results_root = tmp_path / "results"
+    checkpoint = (
+        results_root / "parent-job" / "results_dir" / "train"
+        / "model_epoch_000_step_00010.pth"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_text("checkpoint")
+
+    runner = AutoMLRunner(sdk=MagicMock(), skill_dir=skill_dir, action="train")
+    rec = MagicMock(id=2, resume_from_job_id="parent-job", resume_from_epoch=1)
+    updated = runner._apply_resume_checkpoint(
+        {
+            "train": {
+                "num_epochs": 2,
+                "resume_training_checkpoint_path": "",
+            }
+        },
+        rec,
+        {"mounts": [{"host_path": str(results_root), "container_path": "/results"}]},
+    )
+
+    assert updated["train"]["num_epochs"] == 3
+    assert updated["train"]["resume_training_checkpoint_path"].endswith(
+        "model_epoch_000_step_00010.pth"
+    )
+
+
 def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
     from tao_automl.runner import AutoMLRunner
 
