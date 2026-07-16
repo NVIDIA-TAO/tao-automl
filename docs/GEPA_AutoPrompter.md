@@ -20,6 +20,24 @@ For a joint free-form prompt plus bounded inference-config search, TAO's existin
 `autoresearch` path remains the supported controller. Fixed inference settings
 must not be included in the GEPA text candidate.
 
+For an already fine-tuned checkpoint, establish the checkpoint's unchanged
+prompt/config score first, then search only on a separate validation role. A
+practical bounded composition is:
+
+1. use `autoresearch` or an exhaustive action-native grid to select live
+   perception settings such as `vision.nframes`;
+2. rerank the complete GEPA prompt pool under the selected setting because
+   prompt and perception settings can interact; and
+3. freeze the prompt/config pair before launching the untouched test or full
+   evaluation.
+
+Cosmos evaluate exposes 4, 8, and 16 evenly sampled frames. Eight remains the
+default. Sixteen should be treated as a higher-cost option: the evaluator
+currently materializes processed video inputs before inference, so large
+corpora may need video-disjoint execution shards even when GPU memory is
+sufficient. `vision.fps` is mutually exclusive with `vision.nframes` and is not
+a bounded substitute for frame-count sampling on variable-duration videos.
+
 ## Installation
 
 ```bash

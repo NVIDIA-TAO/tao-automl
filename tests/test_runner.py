@@ -631,7 +631,7 @@ def test_cosmos_evaluate_defaults_include_autoprompt_search_space():
     assert prompt_record["default_value"] in prompt_record["valid_options"]
 
     assert records_by_name["vision.nframes"]["value_type"] == "ordered_int"
-    assert records_by_name["vision.nframes"]["valid_options"] == [4, 8]
+    assert records_by_name["vision.nframes"]["valid_options"] == [4, 8, 16]
     assert records_by_name["generation.max_tokens"]["value_type"] == "ordered_int"
 
 
