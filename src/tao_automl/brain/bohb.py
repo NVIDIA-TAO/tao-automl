@@ -587,6 +587,31 @@ class BOHB(AutoMLAlgorithmBase):
             hyperparam_dict[name] = rec
         return hyperparam_dict
 
+    def _generate_unique_recommendation(self, history, existing, max_attempts=32):
+        """Generate a distinct configuration within a warm-up batch when possible."""
+        existing_signatures = {
+            tuple(json.dumps(rec.get(param["parameter"]), sort_keys=True, default=str)
+                  for param in self.parameters)
+            for rec in existing if isinstance(rec, dict)
+        }
+        last_rec = None
+        for attempt in range(max_attempts):
+            rec = self._generate_one_recommendation(history)
+            if not isinstance(rec, dict):
+                return rec
+            last_rec = rec
+            signature = tuple(
+                json.dumps(rec.get(param["parameter"]), sort_keys=True, default=str)
+                for param in self.parameters
+            )
+            if signature not in existing_signatures:
+                return rec
+            if attempt < max_attempts - 1:
+                self.expt_iter = max(0, self.expt_iter - 1)
+                logger.info("BOHB generated a duplicate warm-up configuration; retrying")
+        logger.warning("BOHB could not generate a distinct warm-up configuration after %d attempts", max_attempts)
+        return last_rec
+
     def generate_recommendations(self, history):
         """Generates recommendations for the controller to run (supports parallel execution)"""
         get_flatten_specs(self.default_train_spec, self.default_train_spec_flattened)
@@ -627,7 +652,7 @@ class BOHB(AutoMLAlgorithmBase):
             num_configs_in_rung = self.ni[self.bracket][self.sh_iter]
             recommendations = []
             for _ in range(num_configs_in_rung):
-                rec = self._generate_one_recommendation(history)
+                rec = self._generate_unique_recommendation(history, recommendations)
                 if type(rec) is dict:
                     recommendations.append(rec)
             self.last_launched_count = len(recommendations)
@@ -646,7 +671,7 @@ class BOHB(AutoMLAlgorithmBase):
 
         recommendations = []
         for _ in range(max(num_configs_before, 1)):
-            rec = self._generate_one_recommendation(history)
+            rec = self._generate_unique_recommendation(history, recommendations)
             if rec is None:
                 break
             recommendations.append(rec)
@@ -655,7 +680,7 @@ class BOHB(AutoMLAlgorithmBase):
                 num_configs_in_new_rung = self.ni[self.bracket][self.sh_iter] if not self.complete else 0
                 if num_configs_in_new_rung != num_configs_before:
                     for _ in range(num_configs_in_new_rung - 1):
-                        rec = self._generate_one_recommendation(history)
+                        rec = self._generate_unique_recommendation(history, recommendations)
                         if rec:
                             recommendations.append(rec)
                         else:
