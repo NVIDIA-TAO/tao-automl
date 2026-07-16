@@ -59,3 +59,16 @@ def test_kde_sampling_still_resamples_and_clips():
     samples = _brain()._sample_from_kde(FakeKDE(), 2)
 
     np.testing.assert_array_equal(samples, [[0.0, 0.25], [1.0, 0.75]])
+
+
+def test_warmup_batch_retries_duplicate_configuration():
+    brain = _brain()
+    brain.parameters = [{"parameter": "steps", "value_type": "list"}]
+    brain.expt_iter = 2
+    generated = iter([{"steps": [1, 1, 1, 1]}, {"steps": [1, 1, 1]}])
+    brain._generate_one_recommendation = lambda history: next(generated)
+
+    rec = brain._generate_unique_recommendation([], [{"steps": [1, 1, 1, 1]}])
+
+    assert rec == {"steps": [1, 1, 1]}
+    assert brain.expt_iter == 1
