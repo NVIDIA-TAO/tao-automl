@@ -2222,6 +2222,18 @@ def run_model(args: argparse.Namespace) -> int:
             param for param in supported_params
             if param in {"train.optim.lr", "train.optim.weight_decay"}
         ]
+    if args.algorithm == "pbt" and supported_params:
+        # PBT resumes checkpoints after exploit/explore.  Perturbing structural
+        # model fields (for example decoder depth or hidden dimensions) makes
+        # the source checkpoint incompatible with the resumed model.  Keep the
+        # validation search on optimizer controls, which are checkpoint-safe
+        # and still exercise PBT's copy/perturb/resume behavior.
+        resume_safe_params = [
+            param for param in supported_params
+            if param.startswith(("train.optim.", "train.optimizer."))
+            or param in {"train.optm_lr", "train.lr", "train.learning_rate"}
+        ]
+        supported_params = resume_safe_params
     if supported_params == [] and not args.post_check_only:
         payload = {
             "model": model,
