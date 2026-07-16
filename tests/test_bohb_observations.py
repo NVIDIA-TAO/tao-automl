@@ -1,8 +1,11 @@
 """Regression tests for BOHB observation encoding."""
 
+from types import SimpleNamespace
+
 import numpy as np
 
 from tao_automl.brain.bohb import BOHB
+from tao_automl.types import JobStates
 
 
 def _brain():
@@ -72,3 +75,18 @@ def test_warmup_batch_retries_duplicate_configuration():
 
     assert rec == {"steps": [1, 1, 1]}
     assert brain.expt_iter == 1
+
+
+def test_successful_zero_metrics_are_recorded_as_observations():
+    brain = _brain()
+    brain.parameters = [{"parameter": "queries", "value_type": "int", "valid_min": 10, "valid_max": 50}]
+    brain.observations = []
+    history = [
+        SimpleNamespace(status=JobStates.success, result=0.0, specs={"queries": 20}),
+        SimpleNamespace(status=JobStates.success, result=0.0, specs={"queries": 40}),
+    ]
+
+    brain._update_observations(history)
+
+    assert len(brain.observations) == 2
+    assert [observation[1] for observation in brain.observations] == [0.0, 0.0]

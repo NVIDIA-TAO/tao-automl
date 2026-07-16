@@ -612,6 +612,22 @@ class BOHB(AutoMLAlgorithmBase):
         logger.warning("BOHB could not generate a distinct warm-up configuration after %d attempts", max_attempts)
         return last_rec
 
+    def _update_observations(self, history):
+        """Add completed, finite trial results to the TPE observation set."""
+        for rec in history:
+            if rec.status != JobStates.success or rec.result is None or is_nan_value(rec.result):
+                continue
+            config_array = np.array([
+                self._normalize_observation_value(param, rec.specs.get(param["parameter"]))
+                for param in self.parameters
+            ])
+            is_duplicate = any(
+                np.allclose(observation[0], config_array) for observation in self.observations
+            )
+            if not is_duplicate:
+                self.observations.append((config_array, rec.result))
+                logger.info(f"Added observation: config with result={rec.result}")
+
     def generate_recommendations(self, history):
         """Generates recommendations for the controller to run (supports parallel execution)"""
         get_flatten_specs(self.default_train_spec, self.default_train_spec_flattened)
@@ -631,22 +647,7 @@ class BOHB(AutoMLAlgorithmBase):
                     self.last_launched_count = 0
             return []
 
-        # Update observations with completed experiments
-        for rec in history:
-            if rec.status == JobStates.success and rec.result != 0.0:
-                config = []
-                for param in self.parameters:
-                    value = rec.specs.get(param["parameter"])
-                    config.append(self._normalize_observation_value(param, value))
-
-                if len(config) == len(self.parameters):
-                    config_array = np.array(config)
-                    is_duplicate = any(
-                        np.allclose(obs[0], config_array) for obs in self.observations
-                    )
-                    if not is_duplicate:
-                        self.observations.append((config_array, rec.result))
-                        logger.info(f"Added observation: config with result={rec.result}")
+        self._update_observations(history)
 
         if history == []:
             num_configs_in_rung = self.ni[self.bracket][self.sh_iter]
