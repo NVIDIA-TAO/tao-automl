@@ -1716,6 +1716,11 @@ def _minimal_custom_ranges(
         lower = param.lower()
         if "epoch" in lower:
             ranges[param] = {"valid_min": 1, "valid_max": 1}
+        elif model == "rtdetr" and lower == "dataset.batch_size":
+            # RT-DETR's AutoML search space includes batch size 2, which can
+            # exhaust a single validation GPU for otherwise valid model
+            # configurations. Keep the one-GPU validation workflow minimal.
+            ranges[param] = {"valid_min": 1, "valid_max": 1}
         elif model == "ml-recog" and lower == "train.batch_size":
             ranges[param] = {"valid_min": 4, "valid_max": 4}
         elif "batch_size" in lower or lower.endswith("mini_batch") or ".mini_batch" in lower:
