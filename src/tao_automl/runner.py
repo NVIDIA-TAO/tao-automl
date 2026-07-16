@@ -65,6 +65,16 @@ from tao_automl.utils.spec_utils import resolve_schema_leaf
 logger = logging.getLogger(__name__)
 
 
+# TAO NV-Panoptix3D Lightning checkpoints store the completed epoch using a
+# one-based internal counter while their filenames remain zero-based.  Passing
+# the next Hyperband-family resource budget verbatim therefore makes Lightning
+# stop immediately after restore (for example, epoch-0 checkpoint +
+# ``num_epochs=2`` executes no epoch-1 batches).  The terminal budget must be
+# advanced by one for resumed jobs so the requested additional epoch actually
+# runs and emits a fresh metric/checkpoint.
+_RESUME_EPOCH_BUDGET_OFFSETS = {"nvpanoptix3d": 1}
+
+
 # ---------------------------------------------------------------------------
 # SkillContext — replaces the deleted SkillBank. Reads skill_info.yaml and
 # spec_template_<action>.yaml directly from the skill bank dir, the same way
@@ -4547,6 +4557,22 @@ class AutoMLRunner:
                 "(epoch=%s step=%s)",
                 rec.id, parent_job_id, bool_or_path_key, artifact,
                 resume_epoch, resume_step,
+            )
+
+        epoch_offset = _RESUME_EPOCH_BUDGET_OFFSETS.get(
+            self.skill_ctx.network_arch, 0
+        )
+        requested_epochs = self._get_nested(specs, "train.num_epochs")
+        if epoch_offset and isinstance(requested_epochs, int):
+            effective_epochs = requested_epochs + epoch_offset
+            self._set_nested(specs, "train.num_epochs", effective_epochs)
+            logger.info(
+                "Rec %d adjusted resumed %s epoch budget from %d to %d so "
+                "the requested terminal epoch executes",
+                rec.id,
+                self.skill_ctx.network_arch,
+                requested_epochs,
+                effective_epochs,
             )
         return specs
 
