@@ -678,6 +678,36 @@ def test_pbt_two_generation_budget_and_resume_flow():
         assert automl.get_best().id == 1
 
 
+def test_pbt_integer_perturbation_supports_unbounded_limits(monkeypatch):
+    """PBT must not cast open-ended integer bounds to int."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={"train": {"epoch": 2, "checkpoint_interval": 1}},
+            settings={
+                "algorithm": "pbt",
+                "metric": "loss",
+                "automl_population_size": 2,
+                "automl_max_generations": 2,
+                "automl_eval_interval": 1,
+            },
+            automl_hyperparameters=["train.epoch"],
+        )
+        brain = automl._controller.brain
+        monkeypatch.setattr("tao_automl.brain.pbt.np.random.rand", lambda: 0.9)
+
+        config = {
+            "parameter": "train.epoch",
+            "value_type": "int",
+            "valid_min": 1,
+            "valid_max": float("inf"),
+        }
+        assert brain._perturb_parameter(config, 10) == 9
+
+
 # ---------------------------------------------------------------
 # 5. AlgorithmParams tests
 # ---------------------------------------------------------------

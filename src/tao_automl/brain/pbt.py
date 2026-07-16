@@ -154,7 +154,13 @@ class PBT(AutoMLAlgorithmBase):
             else:
                 new_value = current_value - delta
 
-            new_value = max(int(v_min), min(int(v_max), new_value))
+            # Integer parameters may legitimately have an open-ended bound (for
+            # example, Grounding DINO's lr_step_size has valid_max=+inf).  Clamp
+            # only against finite limits instead of attempting int(inf).
+            if np.isfinite(float(v_min)):
+                new_value = max(int(v_min), new_value)
+            if np.isfinite(float(v_max)):
+                new_value = min(int(v_max), new_value)
             return new_value
 
         if data_type == "ordered_int":
