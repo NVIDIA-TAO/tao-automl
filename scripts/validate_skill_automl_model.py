@@ -779,6 +779,14 @@ def _automl_settings(algorithm: str, metric: str, args: argparse.Namespace) -> d
         "automl_eval_interval": 1,
         "automl_max_experiments": 2,
     }
+    if algorithm == "pbt":
+        # One generation only evaluates the initial population and exits before
+        # PBT can exploit, perturb, or resume a member.  Two population members
+        # over two generations is the smallest end-to-end PBT validation.
+        settings.update({
+            "automl_max_recommendations": 4,
+            "automl_max_generations": 2,
+        })
     if algorithm in {"llm", "hybrid", "autoresearch"}:
         key = os.environ.get("AUTOML_LLM_API_KEY") or os.environ.get("NVIDIA_API_KEY")
         if not key:
