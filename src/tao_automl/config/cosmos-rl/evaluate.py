@@ -293,10 +293,13 @@ class VisionConfig:
         value=8,
         default_value=8,
         valid_min=1,
-        valid_max=8,
-        valid_options=[4, 8],
+        valid_max=16,
+        valid_options=[4, 8, 16],
         display_name="Number of frames",
-        description="Number of frames for vision processing.",
+        description=(
+            "Number of evenly sampled frames for vision processing. Higher values "
+            "increase host memory, preprocessing time, and inference cost."
+        ),
         automl_enabled="TRUE",
     )
 
