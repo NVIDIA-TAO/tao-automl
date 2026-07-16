@@ -853,14 +853,28 @@ def _prefer_epoch_or_step_checkpoint(
         if "latest" in name:
             fallback.append(path)
             continue
-        if model == "nvdinov2" and name.startswith("student_epoch_"):
-            exact.insert(0, path)
-            continue
         if re.search(r"(?:^|[_-])(epoch|step)[_-]?\d+", name) or re.search(r"/(?:epoch|step)_\d+", path):
             exact.append(path)
         else:
             fallback.append(path)
-    return (exact or fallback or [None])[0]
+
+    if exact:
+        if model == "nvdinov2":
+            student = [path for path in exact if Path(path).name.lower().startswith("student_epoch_")]
+            if student:
+                exact = student
+
+        def checkpoint_rank(path: str) -> tuple[int, int, str]:
+            epochs = re.findall(r"(?:^|[_/-])epoch[_-]?(\d+)", path, flags=re.IGNORECASE)
+            steps = re.findall(r"(?:^|[_/-])step[_-]?(\d+)", path, flags=re.IGNORECASE)
+            return (
+                max((int(value) for value in epochs), default=-1),
+                max((int(value) for value in steps), default=-1),
+                path,
+            )
+
+        return max(exact, key=checkpoint_rank)
+    return (fallback or [None])[0]
 
 
 def _host_to_container_path(host_path: str, host_root: Path, container_root: str = "/results") -> str:
