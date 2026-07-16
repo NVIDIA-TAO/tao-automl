@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """BOHB (Bayesian Optimization and HyperBand) AutoML algorithm modules"""
 import copy
+import hashlib
+import json
 import numpy as np
 import math
 import logging
@@ -120,6 +122,34 @@ class BOHB(AutoMLAlgorithmBase):
         except Exception as e:
             logger.warning(f"Failed to sample from KDE: {e}")
             return None
+
+    def _normalize_observation_value(self, parameter, value):
+        """Map any supported parameter value to a stable scalar for the TPE model."""
+        value_type = parameter.get("value_type")
+
+        options = get_valid_options(parameter, self.custom_ranges)
+        if options not in (None, "", []):
+            options = list(options) if isinstance(options, (list, tuple)) else [options]
+            for index, option in enumerate(options):
+                if value == option:
+                    return index / max(1, len(options) - 1)
+
+        if value_type in ("float", "int"):
+            v_min, v_max = get_valid_range(parameter, self.parent_params, self.custom_ranges)
+            if np.isscalar(v_min) and np.isscalar(v_max) and np.isfinite(v_min) and np.isfinite(v_max):
+                if v_max > v_min:
+                    return float(np.clip((float(value) - v_min) / (v_max - v_min), 0.0, 1.0))
+                return 0.5
+
+        if value_type == "bool" or isinstance(value, bool):
+            return float(bool(value))
+
+        # Lists, collections, and free-form categorical values do not necessarily
+        # have an ordered numeric range. A stable digest keeps distinct proposals
+        # distinct without relying on Python's process-randomized hash().
+        canonical = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+        digest = int.from_bytes(hashlib.sha256(canonical.encode("utf-8")).digest()[:8], "big")
+        return digest / float((1 << 64) - 1)
 
     def _tpe_suggest(self):
         """Use Tree-structured Parzen Estimator to suggest next configuration"""
@@ -581,17 +611,8 @@ class BOHB(AutoMLAlgorithmBase):
             if rec.status == JobStates.success and rec.result != 0.0:
                 config = []
                 for param in self.parameters:
-                    param_name = param["parameter"]
-                    value = rec.specs.get(param_name)
-                    if param["value_type"] == "float":
-                        v_min, v_max = get_valid_range(param, self.parent_params, self.custom_ranges)
-                        if v_max > v_min:
-                            normalized = (value - v_min) / (v_max - v_min)
-                            config.append(np.clip(normalized, 0.0, 1.0))
-                        else:
-                            config.append(0.5)
-                    else:
-                        config.append(0.5)
+                    value = rec.specs.get(param["parameter"])
+                    config.append(self._normalize_observation_value(param, value))
 
                 if len(config) == len(self.parameters):
                     config_array = np.array(config)
