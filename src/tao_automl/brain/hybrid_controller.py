@@ -64,6 +64,7 @@ class HybridStrategist:
         self.enable_range_narrowing = enable_range_narrowing
         self.completed_phases: List[Dict[str, Any]] = []
         self.full_history: List[Dict[str, Any]] = []
+        self._restored_llm_usage: Dict[str, Any] = {}
 
     def plan_next_phase(
         self,
@@ -113,11 +114,25 @@ class HybridStrategist:
         reverse_sort: bool = False,
     ):
         """Record results of a completed phase for history tracking."""
+        annotated_results = []
+        for result in results:
+            annotated = copy.deepcopy(result)
+            if annotated.get("status") == "success" and annotated.get("metric") is not None:
+                annotated["decision"] = (
+                    "keep" if best_metric is not None and annotated["metric"] == best_metric
+                    else "discard"
+                )
+            else:
+                annotated["decision"] = "discard"
+            annotated_results.append(annotated)
+
         successes = [
-            result for result in results
+            result for result in annotated_results
             if result.get("status") == "success" and result.get("metric") is not None
         ]
-        failures = [result for result in results if result.get("status") == "failure"]
+        failures = [
+            result for result in annotated_results if result.get("status") == "failure"
+        ]
         ordered_successes = sorted(
             successes,
             key=lambda result: result["metric"],
@@ -136,7 +151,7 @@ class HybridStrategist:
             "failed_results": failures[:5],
         }
         self.completed_phases.append(phase_record)
-        self.full_history.extend(results)
+        self.full_history.extend(annotated_results)
 
     def should_stop(self) -> bool:
         """Check if the strategist recommends stopping."""
@@ -430,7 +445,23 @@ class HybridStrategist:
             "enable_range_narrowing": self.enable_range_narrowing,
             "completed_phases": self.completed_phases,
             "full_history": self.full_history,
+            "llm_usage": self._combined_llm_usage(),
         }
+
+    def _combined_llm_usage(self) -> Dict[str, Any]:
+        """Return cumulative usage, including calls made before a resume."""
+        usage = getattr(getattr(self, "llm_client", None), "usage", None)
+        current = usage.to_dict() if usage is not None and hasattr(usage, "to_dict") else {}
+        keys = (
+            "prompt_tokens", "completion_tokens", "total_tokens", "num_calls",
+            "total_latency_ms", "errors",
+        )
+        combined = {
+            key: self._restored_llm_usage.get(key, 0) + current.get(key, 0)
+            for key in keys
+        }
+        combined["total_latency_ms"] = round(combined["total_latency_ms"], 1)
+        return combined
 
     @classmethod
     def from_dict(
@@ -448,6 +479,7 @@ class HybridStrategist:
         )
         strategist.completed_phases = data.get("completed_phases", [])
         strategist.full_history = data.get("full_history", [])
+        strategist._restored_llm_usage = data.get("llm_usage", {})
         return strategist
 
 
@@ -669,6 +701,8 @@ class HybridBrain:
         if remaining_budget >= 6:
             return 2
         if remaining_budget >= 4:
+            return 1
+        if remaining_budget >= 2:
             return 1
         return 0
 
