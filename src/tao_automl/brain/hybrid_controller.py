@@ -114,12 +114,25 @@ class HybridStrategist:
         reverse_sort: bool = False,
     ):
         """Record results of a completed phase for history tracking."""
+        prior_metrics = [
+            result["metric"] for result in self.full_history
+            if result.get("status") == "success" and result.get("metric") is not None
+        ]
+        current_metrics = [
+            result["metric"] for result in results
+            if result.get("status") == "success" and result.get("metric") is not None
+        ]
+        all_metrics = prior_metrics + current_metrics
+        global_best_metric = None
+        if all_metrics:
+            global_best_metric = (max if reverse_sort else min)(all_metrics)
+
         annotated_results = []
         for result in results:
             annotated = copy.deepcopy(result)
             if annotated.get("status") == "success" and annotated.get("metric") is not None:
                 annotated["decision"] = (
-                    "keep" if best_metric is not None and annotated["metric"] == best_metric
+                    "keep" if annotated["metric"] == global_best_metric
                     else "discard"
                 )
             else:
@@ -146,6 +159,7 @@ class HybridStrategist:
             "num_failure": len(failures),
             "best_config": best_config,
             "best_metric": best_metric,
+            "global_best_metric": global_best_metric,
             "top_results": ordered_successes[:5],
             "bottom_results": ordered_successes[-5:],
             "failed_results": failures[:5],
