@@ -95,6 +95,33 @@ result = prompter.optimize(
 print(result.to_dict())
 ```
 
+For a vision-capable reflector, pass a platform-owned evidence callback and
+mark the prompt components that consume visual input:
+
+```python
+from gepa.image import Image
+
+def failure_frames(item, candidate):
+    return {
+        timestamp: Image(path=path)
+        for timestamp, path in sample_candidate_frames(item, candidate).items()
+    }
+
+adapter = TAOGEPAAdapter(
+    runner,
+    binary_metric,
+    reflection_evidence_fn=failure_frames,
+    vision_components=["dataset.system_prompt"],
+)
+```
+
+Evidence is requested only for failed reflection examples. It is attached to
+the selected vision components without adding gold answers, item IDs, or media
+paths to the rendered reflection record. Use a strong system message on
+`GEPAReflectionLM` that permits only reusable visual/temporal strategy and
+forbids facts or answers from any particular example. The reflector proposes;
+the task metric still decides whether GEPA accepts the proposal.
+
 `budget` is GEPA's maximum metric-call count, not its number of prompt
 proposals. A proposal consumes metric calls for both the incumbent and proposed
 prompt on the reflection minibatch; every accepted proposal also consumes a

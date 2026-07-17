@@ -37,6 +37,10 @@ except Exception:  # pragma: no cover - exercised in environments without the op
 
 MetricFn = Callable[[Any, Any], Any]
 AggregateMetricFn = Callable[[Sequence[Any], Sequence[Any]], float | Mapping[str, Any]]
+ReflectionEvidenceFn = Callable[
+    [Mapping[str, Any], Mapping[str, Any]],
+    Mapping[str, Any] | None,
+]
 
 
 def _set_dotted_value(target: dict[str, Any], dotted_key: str, value: Any) -> None:
@@ -118,12 +122,20 @@ class TAOGEPAAdapter:
         fixed_candidate: Mapping[str, Any] | None = None,
         metric_context_fn: Callable[[dict[str, Any]], Mapping[str, Any]] | None = None,
         cache_outputs: bool = True,
+        reflection_evidence_fn: ReflectionEvidenceFn | None = None,
+        vision_components: Sequence[str] | None = None,
     ):
         self.runner = runner
         self.metric_fn = metric_fn
         self.fixed_candidate = dict(fixed_candidate or {})
         self.metric_context_fn = metric_context_fn
         self.cache_outputs = cache_outputs
+        self.reflection_evidence_fn = reflection_evidence_fn
+        self.vision_components = (
+            {str(component) for component in vision_components}
+            if vision_components is not None
+            else None
+        )
         self._output_cache: dict[str, list[Any]] = {}
 
     def full_candidate(self, candidate: Mapping[str, Any]) -> dict[str, Any]:
@@ -203,6 +215,7 @@ class TAOGEPAAdapter:
             objectives.append(objective)
             if trajectories is not None:
                 trajectories.append({
+                    "item": item,
                     "query": item.get("query") or "(video analysis task)",
                     "output": output,
                     "feedback": feedback,
@@ -223,7 +236,7 @@ class TAOGEPAAdapter:
         eval_batch: EvaluationBatch,
         components_to_update: Sequence[str],
     ) -> dict[str, list[dict[str, Any]]]:
-        del candidate
+        full_candidate = self.full_candidate(candidate)
         records = {component: [] for component in components_to_update}
         for trajectory in eval_batch.trajectories or []:
             feedback = trajectory.get("feedback", "")
@@ -234,8 +247,25 @@ class TAOGEPAAdapter:
                 "Generated Outputs": str(trajectory.get("output", ""))[:800],
                 "Feedback": feedback,
             }
+            evidence = None
+            if (
+                self.reflection_evidence_fn is not None
+                and float(trajectory.get("score", 0.0)) < 1.0
+            ):
+                evidence = self.reflection_evidence_fn(
+                    trajectory.get("item", {}),
+                    full_candidate,
+                )
+                if evidence is not None and not isinstance(evidence, Mapping):
+                    raise TypeError("reflection_evidence_fn must return a mapping or None")
             for component in components_to_update:
-                records[component].append(copy.deepcopy(record))
+                component_record = copy.deepcopy(record)
+                if evidence and (
+                    self.vision_components is None
+                    or component in self.vision_components
+                ):
+                    component_record["Visual Evidence"] = copy.deepcopy(dict(evidence))
+                records[component].append(component_record)
         return records
 
 
