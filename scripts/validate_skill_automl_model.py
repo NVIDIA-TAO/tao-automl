@@ -1702,6 +1702,24 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, default=str))
 
 
+def _select_best_job(
+    job_runs: list[dict[str, Any]],
+    best: dict[str, Any],
+    latest_jobs: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    """Resolve the best run by job ID before falling back to member ID.
+
+    PBT reuses recommendation/member IDs across generations, so the latest run
+    for a member is not necessarily the globally best checkpoint.
+    """
+    best_job_id = best.get("job_id")
+    if best_job_id:
+        for run in reversed(job_runs):
+            if run.get("job_id") == best_job_id:
+                return run
+    return latest_jobs.get(best.get("rec_id"), {})
+
+
 def _supported_automl_parameters(skill_bank: Path, model: str) -> list[str] | None:
     schema_path = skill_bank / "skills" / "models" / model / "schemas" / "train.schema.json"
 
@@ -2431,13 +2449,16 @@ def run_model(args: argparse.Namespace) -> int:
     checkpoint_evaluation_metric = _checkpoint_evaluation_metric(model, metric)
     selection_uses_training_kpi = checkpoint_evaluation_metric != metric or model == "nvdinov2"
     jobs: dict[int, dict[str, Any]] = {}
+    job_runs: list[dict[str, Any]] = []
 
     def on_recommendation(rec) -> None:
         jobs.setdefault(rec.id, {})["specs"] = rec.specs
         LOG.info("model=%s rec=%s recommendation generated", model, rec.id)
 
     def on_result(rec, metric_value, status) -> None:
-        jobs.setdefault(rec.id, {}).update({
+        run_data = {
+            "rec_id": rec.id,
+            "specs": copy.deepcopy(rec.specs),
             "job_id": getattr(rec, "job_id", None),
             "metric": metric_value,
             "status": status,
@@ -2445,7 +2466,9 @@ def run_model(args: argparse.Namespace) -> int:
             "resume_from_epoch": getattr(rec, "resume_from_epoch", None),
             "resume_from_step": getattr(rec, "resume_from_step", None),
             "resume_checkpoint_path": getattr(rec, "resume_checkpoint_path", None),
-        })
+        }
+        jobs[rec.id] = run_data
+        job_runs.append(run_data)
         LOG.info("model=%s rec=%s status=%s metric=%s", model, rec.id, status, metric_value)
 
     sdk = DockerSDK(
@@ -2811,7 +2834,7 @@ def run_model(args: argparse.Namespace) -> int:
             "error": run_error,
         }
 
-    for rec_id, data in jobs.items():
+    for data in job_runs:
         job_id = data.get("job_id")
         job_root = out_dir / "results" / str(job_id) if job_id else Path("")
         data["checkpoint_paths"] = _find_checkpoints(job_root, model) if job_id else []
@@ -2819,10 +2842,10 @@ def run_model(args: argparse.Namespace) -> int:
 
     best = result.get("best") or {}
     best_rec_id = best.get("rec_id")
-    best_job = jobs.get(best_rec_id, {})
+    best_job = _select_best_job(job_runs, best, jobs)
     passed = (
-        bool(jobs)
-        and all(data.get("status") == "success" for data in jobs.values())
+        bool(job_runs)
+        and all(data.get("status") == "success" for data in job_runs)
         and best.get("metric_value") is not None
         and bool(best_job.get("checkpoint_paths"))
     )
@@ -2840,6 +2863,7 @@ def run_model(args: argparse.Namespace) -> int:
         "result": result,
         "run_error": run_error,
         "jobs": jobs,
+        "job_runs": job_runs,
         "best_checkpoint_paths": best_job.get("checkpoint_paths", []),
         "dataset_convert": dataset_convert_preflight,
         "baseline_training": baseline_train_result,
