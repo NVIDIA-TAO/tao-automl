@@ -245,6 +245,7 @@ class AutoresearchBrain:
     def record_result(self, spec, metric_value, status, job_id=None):
         """Record an experiment result and make keep/discard decision."""
         modifications = self._extract_modifications(spec)
+        previous_best_metric = self.tracker.best_metric
 
         entry = self.tracker.record_experiment(
             spec=spec,
@@ -259,6 +260,8 @@ class AutoresearchBrain:
             reasoning = self._get_keep_discard_reasoning(
                 current_result={"metric": metric_value, "status": status},
                 modifications=modifications,
+                previous_best_metric=previous_best_metric,
+                expected_decision=entry.decision,
             )
             entry.reasoning = reasoning
 
@@ -378,10 +381,16 @@ class AutoresearchBrain:
         return response.json_content
 
     def _get_keep_discard_reasoning(
-        self, current_result: Dict[str, Any], modifications: Dict[str, Any]
+        self,
+        current_result: Dict[str, Any],
+        modifications: Dict[str, Any],
+        previous_best_metric: Optional[float],
+        expected_decision: str,
     ) -> str:
         """Get LLM reasoning for keep/discard decision."""
-        best_result = {"metric": self.tracker.best_metric or 0.0}
+        best_result = {
+            "metric": previous_best_metric if previous_best_metric is not None else 0.0
+        }
         messages = build_keep_discard_prompt(
             current_result=current_result,
             best_result=best_result,
@@ -392,6 +401,17 @@ class AutoresearchBrain:
 
         response = self.llm_client.chat(messages, json_mode=True, temperature=0.2)
         if response.ok and response.json_content:
+            llm_decision = str(response.json_content.get("decision", "")).lower()
+            if llm_decision and llm_decision != expected_decision:
+                logger.warning(
+                    "Ignoring inconsistent LLM decision %s; tracker decision is %s",
+                    llm_decision,
+                    expected_decision,
+                )
+                return (
+                    f"{expected_decision.title()} based on the measured {self.metric} "
+                    f"relative to the previous best ({best_result['metric']})."
+                )
             return response.json_content.get("reasoning", "")
         return ""
 
