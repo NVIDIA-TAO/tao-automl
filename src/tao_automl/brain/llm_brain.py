@@ -104,26 +104,44 @@ class LLMBrain(AutoMLAlgorithmBase):
 
     def _sync_history(self, recommendations):
         """Sync experiment history from controller's recommendation objects."""
+        known_ids = {
+            entry.get("rec_id", index)
+            for index, entry in enumerate(self.experiment_history)
+        }
         for rec in recommendations:
             if rec.status in [JobStates.success, JobStates.failure]:
                 rec_id = rec.id
-                if rec_id >= len(self.experiment_history):
-                    entry = {
-                        "config": rec.specs if hasattr(rec, 'specs') else {},
-                        "metric": rec.result if rec.result is not None else 0.0,
-                        "status": "success" if rec.status == JobStates.success else "failure",
-                    }
-                    self.experiment_history.append(entry)
-
+                if rec_id not in known_ids:
+                    is_better = False
                     if rec.status == JobStates.success:
                         is_better = (
                             self.best_metric is None
                             or (self.reverse_sort and rec.result > self.best_metric)
                             or (not self.reverse_sort and rec.result < self.best_metric)
                         )
-                        if is_better:
-                            self.best_metric = rec.result
-                            self.best_config = rec.specs if hasattr(rec, 'specs') else {}
+
+                    entry = {
+                        "rec_id": rec_id,
+                        "config": rec.specs if hasattr(rec, 'specs') else {},
+                        "metric": rec.result if rec.result is not None else 0.0,
+                        "status": "success" if rec.status == JobStates.success else "failure",
+                        "decision": "keep" if is_better else "discard",
+                    }
+                    self.experiment_history.append(entry)
+                    known_ids.add(rec_id)
+
+                    if is_better:
+                        self.best_metric = rec.result
+                        self.best_config = rec.specs if hasattr(rec, 'specs') else {}
+
+                    logger.info(
+                        "LLM decision: %s recommendation %s (metric=%s, best_metric=%s)",
+                        entry["decision"], rec_id, rec.result, self.best_metric,
+                    )
+
+    def on_recommendation_result(self, recommendation, history):
+        """Persist every result, including the final recommendation's decision."""
+        self._sync_history(history)
 
     def _parse_llm_response(self, response) -> Optional[Dict[str, Any]]:
         """Extract configuration from LLM response."""

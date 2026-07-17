@@ -70,6 +70,14 @@ class AutoMLAlgorithmBase:
 
         logger.info(f"Initialized random seed: {seed} for job {context.id}")
 
+    def on_recommendation_result(self, recommendation, history):
+        """Observe a controller result before algorithm state is persisted.
+
+        Most algorithms derive their state directly from controller history and
+        do not need a callback. Stateful algorithms may override this hook when
+        their persisted state must include the result that was just reported.
+        """
+
     def _training_budget_spec_overrides(self, num_epochs=None, interval=None):
         """Return dotted spec overrides for train budget keys.
 
