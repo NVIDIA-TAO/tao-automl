@@ -324,13 +324,14 @@ def test_hybrid_applies_llm_phase_overrides_to_sub_brain_ranges(tmp_path, monkey
 
 
 def test_hybrid_uses_distinct_sub_brain_seed_context_per_phase(tmp_path, monkeypatch):
-    context_ids = []
+    contexts = []
 
     class DummyBrain:
         num_epochs_per_experiment = 0
 
     def fake_create_brain(**kwargs):
-        context_ids.append(kwargs["context"].id)
+        context = kwargs["context"]
+        contexts.append((context.id, context.automl_seed_identity))
         return DummyBrain()
 
     monkeypatch.setattr(
@@ -359,7 +360,7 @@ def test_hybrid_uses_distinct_sub_brain_seed_context_per_phase(tmp_path, monkeyp
     brain.strategist.completed_phases.append({"phase_number": 1})
     brain._create_sub_brain(plan)
 
-    assert context_ids == [
-        "hybrid-seeds-hybrid-phase-1",
-        "hybrid-seeds-hybrid-phase-2",
+    assert contexts == [
+        ("hybrid-seeds", "hybrid-seeds-hybrid-phase-1"),
+        ("hybrid-seeds", "hybrid-seeds-hybrid-phase-2"),
     ]
