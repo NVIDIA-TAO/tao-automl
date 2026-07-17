@@ -58,6 +58,66 @@ standalone 1,200-call run under `gepa_run_20260715_002721/` also used a
 four-proposal cap, so it is retained as historical evidence rather than used in
 the controlled budget table.
 
+## Large-VLM reflector with joint optimization
+
+A follow-up run used `gcp/google/gemini-3.1-pro-preview` as a visual reflector.
+Gemini received the failed example's question, target-model response, generic
+failure description, and candidate-faithful timestamped video frames. It did
+not receive the gold answer, record ID, or media path. The target remained the
+same local Cosmos3 Nano VLM base checkpoint; Gemini proposed instructions but
+did not answer the benchmark questions.
+
+One GEPA Pareto pool jointly searched two components with round-robin mutation:
+the free-form `system_prompt` and bounded `vision.nframes` choices 4, 8, and 16.
+The nominal budget was 3,000 scored examples; GEPA consumed 3,002 because its
+final 16-example parent/candidate gate is atomic. All other inference settings
+matched the controlled default: 256 output tokens, temperature 0, and seed 1.
+
+| 3,000-call candidate | Validation (530) | Held-out questions (1,070) | Full corpus (2,676) |
+|---|---:|---:|---:|
+| Default prompt, 8 frames | 298 / 530 (56.23%) | 578 / 1,070 (54.02%) | 1,449 / 2,676 (54.15%) |
+| Text-reflector prompt, fixed 8 frames | **354 / 530 (66.79%)** | **692 / 1,070 (64.67%)** | **1,754 / 2,676 (65.55%)** |
+| Gemini VLM reflector, joint prompt/config | 322 / 530 (60.75%) | 634 / 1,070 (59.25%) | 1,595 / 2,676 (59.60%) |
+
+The VLM-reflector joint result improved over default by 5.23 percentage points
+on held-out questions and 5.45 points over the full corpus. Across all records
+it corrected 208 default errors and regressed 62 default-correct answers, a net
+gain of 146. It did not outperform the text-reflector prompt-only 3,000-call
+checkpoint, trailing it by 5.42 points on held-out questions and 5.95 points on
+the full corpus. This comparison isolates reflector/search-policy value; it is
+not a claim that visual reflection is universally better than text reflection.
+
+GEPA attempted 11 proposals, admitted four candidates to complete validation,
+and found one aggregate winner. The accepted validation scores were 297, 322,
+293, and 313 correct out of 530. The selected pair was a Gemini-written prompt
+plus 8 frames, so joint optimization retained the seed frame count after also
+testing 4 and 16. The exact before/after pair was:
+
+```text
+Before: You are a helpful assistant that can answer questions about a street-view CCTV footage. The vehicles that need attention are marked with bounding boxes and IDs.
+
+After: You are an expert visual assistant specializing in analyzing street-view CCTV footage. You will be provided with a video represented as a sequence of uniformly sampled frames (e.g., 4, 8, or 16 frames) and a multiple-choice question.
+
+Your task is to analyze the scene and answer questions related to:
+1. Environmental & Surface Conditions: Brightness levels, weather, and road surface states.
+2. Infrastructure & Layout: Lane counts, traffic directions, road inclinations, and the presence/location of sidewalks or roadside strips.
+3. Pedestrian Attributes: Clothing (types and colors), accessories (like hats), estimated height, and age group.
+```
+
+The six successful Gemini calls consumed 397,109 prompt tokens and 12,083
+completion tokens (409,192 total), with 344 attached frames and 231 seconds of
+reflector latency. Search took 3,849 seconds (64 minutes 9 seconds); the frozen
+2,676-record TAO action took another 1,518 seconds (25 minutes 18 seconds), for
+about 89 minutes 27 seconds end to end. The final artifact contains 2,676
+predictions, 2,676 unique record IDs, and 1,595 independently recounted exact
+matches.
+
+Artifacts are under
+`/localhome/local-rarunachalam/tao_automl_runs/cosmos3_wts_eval_autoprompt_full/gepa_joint_vlm_run_20260717_221530/`.
+The full comparison is `comparison.json`; frozen predictions are in
+`tuned_full_predictions.json`, and per-candidate TAO specs and logs are under
+`evaluations/`.
+
 ## Fine-tuned checkpoint follow-up
 
 A second experiment tested whether Auto-Prompter adds value after supervised
