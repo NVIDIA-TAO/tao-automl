@@ -1,9 +1,9 @@
 # Full WTS Auto-Prompter integration result
 
-Run date: 2026-07-15. This experiment exercised exact GEPA prompt evolution
-through real TAO Cosmos `evaluate` jobs with fixed model weights and inference
-settings. It validates the batch-action contract now owned by
-`tao_automl.gepa_autoprompter`; it is not a VANTAGE benchmark.
+Run dates: 2026-07-15 and 2026-07-17 UTC. These experiments exercised exact
+GEPA prompt evolution through real TAO Cosmos `evaluate` jobs with fixed model
+weights and inference settings. They validate the batch-action contract now
+owned by `tao_automl.gepa_autoprompter`; they are not VANTAGE benchmarks.
 
 ## Before and after
 
@@ -15,13 +15,14 @@ used.
 |---|---:|---:|---:|
 | Default | 298 / 530 (56.23%) | 579 / 1,070 (54.11%) | 1,450 / 2,676 (54.19%) |
 | Best of four hand-written prompts | 303 / 530 (57.17%) | 592 / 1,070 (55.33%) | 1,479 / 2,676 (55.27%) |
-| GEPA Auto-Prompter | **310 / 530 (58.49%)** | **640 / 1,070 (59.81%)** | **1,574 / 2,676 (58.82%)** |
+| GEPA Auto-Prompter, 1,200 calls | 310 / 530 (58.49%) | 640 / 1,070 (59.81%) | 1,574 / 2,676 (58.82%) |
+| GEPA Auto-Prompter, 3,000 calls | **355 / 530 (66.98%)** | **689 / 1,070 (64.39%)** | **1,749 / 2,676 (65.36%)** |
 
-Compared with the default prompt, Auto-Prompter gained 5.70 percentage points
-on held-out questions and 4.63 points over the full corpus. Compared with the
-best hand-written prompt, it gained 4.49 and 3.55 points, respectively. Across
-the complete corpus it corrected 229 baseline errors and regressed 105 baseline
-correct answers, a net gain of 124.
+The 3,000-call run gained 10.28 percentage points on held-out questions and
+11.17 points over the full corpus relative to the default prompt. It gained
+4.58 and 6.54 points, respectively, over the 1,200-call result. Across the
+complete corpus it corrected 383 baseline errors and regressed 84
+baseline-correct answers, a net gain of 299.
 
 ## Controlled settings
 
@@ -31,19 +32,24 @@ correct answers, a net gain of 124.
 - Target: local Cosmos3 Nano VLM in
   `nvcr.io/nvstaging/tao/tao-toolkit:7.0.1-cosmos-rl-fix`, one A100 80 GB.
 - Fixed config: 8 frames, 256 output tokens, temperature 0, seed 1.
-- GEPA: commit `d750388`, budget 1,200, reflection minibatch 16, maximum four
-  proposals; Nemotron 3 Super V3 reflector.
+- GEPA: commit `d750388`, budget 3,000, reflection minibatch 16, no independent
+  proposal cap, 10,800-second timeout; Nemotron 3 Super V3 reflector.
+- The expanded search attempted 11 proposals and admitted four generated
+  candidates to complete validation. Their validation scores were 325, 344,
+  355, and 305 correct out of 530; the 355/530 candidate was frozen for final
+  evaluation.
 - Reflection: query, generated output, and generic failure mode only; no gold
   answer or dataset/media identifier.
 
 Record IDs are disjoint, but questions from the same videos occur across split
 roles. The held-out result therefore measures unseen questions, not unseen
-scenes. One of 530 validation outputs changed between candidate selection and
-the later full rerun despite temperature zero: selection scored 310/530 and the
-full-run validation slice scored 309/530.
+scenes. The selected 3,000-call prompt reproduced 355/530 in an independent
+validation rerun. One of 530 outputs changed in the later full-corpus rerun
+despite temperature zero, whose validation slice scored 354/530.
 
 Local artifacts are under
-`/localhome/local-rarunachalam/tao_automl_runs/cosmos3_wts_eval_autoprompt_full/gepa_run_20260715_002721/`.
+`/localhome/local-rarunachalam/tao_automl_runs/cosmos3_wts_eval_autoprompt_full/gepa_run_20260716_235501/`.
+The earlier 1,200-call run remains under `gepa_run_20260715_002721/`.
 
 ## Fine-tuned checkpoint follow-up
 
