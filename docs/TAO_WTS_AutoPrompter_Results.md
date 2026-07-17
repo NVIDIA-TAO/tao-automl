@@ -11,18 +11,19 @@ All results use normalized exact-match accuracy. The final evaluation contains
 all 2,676 WTS QA records from 171 videos; no evaluation subset or limit was
 used.
 
-| Prompt | Selection validation (530) | Held-out questions (1,070) | Full corpus (2,676) |
+| Prompt | Fresh validation (530) | Held-out questions (1,070) | Full corpus (2,676) |
 |---|---:|---:|---:|
-| Default | 298 / 530 (56.23%) | 579 / 1,070 (54.11%) | 1,450 / 2,676 (54.19%) |
-| Best of four hand-written prompts | 303 / 530 (57.17%) | 592 / 1,070 (55.33%) | 1,479 / 2,676 (55.27%) |
-| GEPA Auto-Prompter, 1,200 calls | 310 / 530 (58.49%) | 640 / 1,070 (59.81%) | 1,574 / 2,676 (58.82%) |
-| GEPA Auto-Prompter, 3,000 calls | **355 / 530 (66.98%)** | **689 / 1,070 (64.39%)** | **1,749 / 2,676 (65.36%)** |
+| Default | 298 / 530 (56.23%) | 578 / 1,070 (54.02%) | 1,449 / 2,676 (54.15%) |
+| GEPA Auto-Prompter, 1,200-call checkpoint | 343 / 530 (64.72%) | 676 / 1,070 (63.18%) | 1,721 / 2,676 (64.31%) |
+| GEPA Auto-Prompter, 3,000-call checkpoint | **354 / 530 (66.79%)** | **692 / 1,070 (64.67%)** | **1,754 / 2,676 (65.55%)** |
 
-The 3,000-call run gained 10.28 percentage points on held-out questions and
-11.17 points over the full corpus relative to the default prompt. It gained
-4.58 and 6.54 points, respectively, over the 1,200-call result. Across the
-complete corpus it corrected 383 baseline errors and regressed 84
-baseline-correct answers, a net gain of 299.
+This is a controlled budget comparison: default, 1,200, and 3,000 are
+checkpoints from one GEPA proposal trajectory, followed by fresh full-corpus
+runs whose specs differ only in prompt and output folder. The 3,000-call prompt
+gained 10.65 percentage points on held-out questions and 11.40 points over the
+full corpus relative to default. It gained 1.50 and 1.23 points, respectively,
+over the 1,200-call checkpoint. Across the complete corpus it corrected 386
+default errors and regressed 81 default-correct answers, a net gain of 305.
 
 ## Controlled settings
 
@@ -38,18 +39,24 @@ baseline-correct answers, a net gain of 299.
   candidates to complete validation. Their validation scores were 325, 344,
   355, and 305 correct out of 530; the 355/530 candidate was frozen for final
   evaluation.
+- At the 1,200-call cutoff, candidate 2 had been discovered at call 1,124 and
+  was the best available prompt. At the 3,000-call cutoff, candidate 3, first
+  discovered at call 1,750, remained best. Their fresh validation slices scored
+  343/530 and 354/530, respectively.
 - Reflection: query, generated output, and generic failure mode only; no gold
   answer or dataset/media identifier.
 
 Record IDs are disjoint, but questions from the same videos occur across split
 roles. The held-out result therefore measures unseen questions, not unseen
-scenes. The selected 3,000-call prompt reproduced 355/530 in an independent
-validation rerun. One of 530 outputs changed in the later full-corpus rerun
-despite temperature zero, whose validation slice scored 354/530.
+scenes. One validation output changed for each checkpoint between trajectory
+selection and the fresh full-corpus rerun despite temperature zero.
 
 Local artifacts are under
-`/localhome/local-rarunachalam/tao_automl_runs/cosmos3_wts_eval_autoprompt_full/gepa_run_20260716_235501/`.
-The earlier 1,200-call run remains under `gepa_run_20260715_002721/`.
+`/localhome/local-rarunachalam/tao_automl_runs/cosmos3_wts_eval_autoprompt_full/budget_apples_to_apples_20260717_192105/`.
+The source trajectory is under `gepa_run_20260716_235501/`. The earlier
+standalone 1,200-call run under `gepa_run_20260715_002721/` also used a
+four-proposal cap, so it is retained as historical evidence rather than used in
+the controlled budget table.
 
 ## Fine-tuned checkpoint follow-up
 

@@ -100,10 +100,13 @@ proposals. A proposal consumes metric calls for both the incumbent and proposed
 prompt on the reflection minibatch; every accepted proposal also consumes a
 complete validation pass. If `MaxCandidateProposalsStopper` is configured, set
 it high enough that it does not terminate a larger metric budget prematurely,
-or omit it and rely on the metric budget plus a wall-time guard. On the 530-item
-WTS validation split, increasing the budget from 1,200 calls with a four-
-proposal cap to 3,000 calls without that cap increased attempts from four to 11
-and accepted full-validation candidates from one to four.
+or omit it and rely on the metric budget plus a wall-time guard. The original
+WTS 1,200-call run also had a four-proposal cap, so it was not a controlled
+budget comparison with the uncapped 3,000-call run. A later comparison used one
+shared trajectory: the best candidate available by call 1,200 scored 64.31% on
+all 2,676 records, while the best candidate by call 3,000 scored 65.55%, under
+identical final inference settings. The shared search attempted 11 proposals
+and admitted four candidates to complete validation.
 
 `evaluate_action` is the platform boundary. It may use Docker, Lepton, SLURM,
 Kubernetes, Brev, or a virtual environment, but it must return exactly one
