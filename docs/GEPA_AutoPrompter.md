@@ -7,7 +7,8 @@ providers; TAO does not require feature changes in either repository.
 ## When to use it
 
 Use `GEPAutoPrompter` for a non-train TAO action when the model weights stay
-fixed and the goal is to improve one or more text prompt fields. It:
+fixed and the goal is to improve one or more text prompt fields, optionally
+together with bounded inference-config components. It:
 
 1. launches a batch evaluate action for a candidate prompt;
 2. retains aligned per-example scores for GEPA;
@@ -16,9 +17,13 @@ fixed and the goal is to improve one or more text prompt fields. It:
    metric; and
 5. runs the selected candidate once on the untouched test set.
 
-For a joint free-form prompt plus bounded inference-config search, TAO's existing
-`autoresearch` path remains the supported controller. Fixed inference settings
-must not be included in the GEPA text candidate.
+For joint optimization, pass `config_choices` to `TAOGEPAAdapter` and include
+those component values in the seed candidate. GEPA then owns one candidate pool
+over prompt and config values and updates components round-robin. Free-form text
+is proposed by the reflector; config proposals remain inside their declared
+discrete choices and use score-history UCB. The same minibatch and complete-
+validation acceptance gates score the resulting prompt/config pair. Use TAO's
+`autoresearch` controller instead for continuous or broad schema-derived HPO.
 
 For an already fine-tuned checkpoint, establish the checkpoint's unchanged
 prompt/config score first, then search only on a separate validation role. A
@@ -70,7 +75,11 @@ base_specs = {
     "vision": {"nframes": 8},
     "generation": {"max_tokens": 256, "temperature": 0.0},
 }
-runner = TAOActionBatchRunner(base_specs, evaluate_action)
+runner = TAOActionBatchRunner(
+    base_specs,
+    evaluate_action,
+    value_coercers={"vision.nframes": int},
+)
 adapter = TAOGEPAAdapter(runner, binary_metric)
 reflection_lm = GEPAReflectionLM(LLMClient(LLMConfig(
     endpoint=llm_endpoint,
@@ -110,6 +119,7 @@ def failure_frames(item, candidate):
 adapter = TAOGEPAAdapter(
     runner,
     binary_metric,
+    config_choices={"vision.nframes": [4, 8, 16]},
     reflection_evidence_fn=failure_frames,
     vision_components=["dataset.system_prompt"],
 )
@@ -121,6 +131,26 @@ paths to the rendered reflection record. Use a strong system message on
 `GEPAReflectionLM` that permits only reusable visual/temporal strategy and
 forbids facts or answers from any particular example. The reflector proposes;
 the task metric still decides whether GEPA accepts the proposal.
+
+The joint seed for that adapter must carry both components:
+
+```python
+result = prompter.optimize(
+    {
+        "dataset.system_prompt": seed_prompt,
+        "vision.nframes": "8",
+    },
+    train_items,
+    validation_items,
+    budget=3000,
+    testset=test_items,
+)
+```
+
+Every config choice is normalized to a string for GEPA and should have a
+corresponding `TAOActionBatchRunner.value_coercers` entry when the action spec
+requires a numeric value. Fixed settings belong in `fixed_candidate`, not in
+`config_choices` or the seed.
 
 `budget` is GEPA's maximum metric-call count, not its number of prompt
 proposals. A proposal consumes metric calls for both the incumbent and proposed

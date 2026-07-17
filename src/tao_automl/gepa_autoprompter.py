@@ -41,6 +41,7 @@ ReflectionEvidenceFn = Callable[
     [Mapping[str, Any], Mapping[str, Any]],
     Mapping[str, Any] | None,
 ]
+ConfigChoices = Mapping[str, Sequence[Any]]
 
 
 def _set_dotted_value(target: dict[str, Any], dotted_key: str, value: Any) -> None:
@@ -124,6 +125,7 @@ class TAOGEPAAdapter:
         cache_outputs: bool = True,
         reflection_evidence_fn: ReflectionEvidenceFn | None = None,
         vision_components: Sequence[str] | None = None,
+        config_choices: ConfigChoices | None = None,
     ):
         self.runner = runner
         self.metric_fn = metric_fn
@@ -136,7 +138,36 @@ class TAOGEPAAdapter:
             if vision_components is not None
             else None
         )
+        self.config_choices = {
+            str(component): tuple(str(choice) for choice in choices)
+            for component, choices in (config_choices or {}).items()
+        }
+        for component, choices in self.config_choices.items():
+            if not choices:
+                raise ValueError(f"Config component {component!r} must have at least one choice")
+            if len(set(choices)) != len(choices):
+                raise ValueError(f"Config component {component!r} contains duplicate choices")
+        self._component_reflection_lm = None
+        self._config_log: list[dict[str, Any]] = []
+        if self.config_choices:
+            self.propose_new_texts = self._propose_components
         self._output_cache: dict[str, list[Any]] = {}
+
+    def set_component_reflection_lm(self, reflection_lm) -> None:
+        """Set the text reflector used by the mixed prompt/config proposer."""
+        self._component_reflection_lm = reflection_lm
+
+    def validate_seed_candidate(self, candidate: Mapping[str, Any]) -> None:
+        for component, choices in self.config_choices.items():
+            if component not in candidate:
+                raise ValueError(
+                    f"Joint GEPA seed is missing config component {component!r}"
+                )
+            value = str(candidate[component])
+            if value not in choices:
+                raise ValueError(
+                    f"Config component {component!r} seed {value!r} is not in {list(choices)!r}"
+                )
 
     def full_candidate(self, candidate: Mapping[str, Any]) -> dict[str, Any]:
         return {**self.fixed_candidate, **dict(candidate)}
@@ -223,6 +254,15 @@ class TAOGEPAAdapter:
                 })
 
         any_objectives = any(objective is not None for objective in objectives)
+        if self.config_choices and scores:
+            full_candidate = self.full_candidate(candidate)
+            self._config_log.append({
+                "config": {
+                    component: str(full_candidate.get(component, ""))
+                    for component in self.config_choices
+                },
+                "score": sum(scores) / len(scores),
+            })
         return EvaluationBatch(
             outputs=outputs,
             scores=scores,
@@ -238,6 +278,13 @@ class TAOGEPAAdapter:
     ) -> dict[str, list[dict[str, Any]]]:
         full_candidate = self.full_candidate(candidate)
         records = {component: [] for component in components_to_update}
+        needs_visual_evidence = (
+            self.reflection_evidence_fn is not None
+            and (
+                self.vision_components is None
+                or bool(set(components_to_update) & self.vision_components)
+            )
+        )
         for trajectory in eval_batch.trajectories or []:
             feedback = trajectory.get("feedback", "")
             if not isinstance(feedback, str):
@@ -249,7 +296,7 @@ class TAOGEPAAdapter:
             }
             evidence = None
             if (
-                self.reflection_evidence_fn is not None
+                needs_visual_evidence
                 and float(trajectory.get("score", 0.0)) < 1.0
             ):
                 evidence = self.reflection_evidence_fn(
@@ -267,6 +314,65 @@ class TAOGEPAAdapter:
                     component_record["Visual Evidence"] = copy.deepcopy(dict(evidence))
                 records[component].append(component_record)
         return records
+
+    def _config_history(self, component: str) -> tuple[dict[str, float], dict[str, int]]:
+        scores: dict[str, list[float]] = {}
+        for record in self._config_log:
+            value = record["config"].get(component)
+            if value:
+                scores.setdefault(str(value), []).append(float(record["score"]))
+        means = {value: sum(values) / len(values) for value, values in scores.items()}
+        counts = {value: len(values) for value, values in scores.items()}
+        return means, counts
+
+    def _propose_config(self, component: str, current: Any, *, beta: float = 1.0) -> str:
+        choices = self.config_choices[component]
+        means, counts = self._config_history(component)
+        untried = [choice for choice in choices if choice not in means]
+        if untried:
+            return untried[0]
+
+        best, best_ucb = str(current), float("-inf")
+        for choice in choices:
+            ucb = means[choice] + beta / math.sqrt(1.0 + counts[choice])
+            if ucb > best_ucb:
+                best, best_ucb = choice, ucb
+        return best
+
+    def _propose_components(
+        self,
+        candidate: Mapping[str, Any],
+        reflective_dataset: Mapping[str, Sequence[Mapping[str, Any]]],
+        components_to_update: Sequence[str],
+    ) -> dict[str, str]:
+        """Route bounded configs to UCB and free-form components to reflection."""
+        from gepa.strategies.instruction_proposal import InstructionProposalSignature
+
+        proposals: dict[str, str] = {}
+        for component in components_to_update:
+            if component in self.config_choices:
+                proposals[component] = self._propose_config(
+                    component,
+                    candidate.get(component),
+                )
+                continue
+
+            records = reflective_dataset.get(component)
+            if not records:
+                continue
+            if self._component_reflection_lm is None:
+                raise RuntimeError(
+                    "Joint GEPA text proposal requires a reflection language model"
+                )
+            proposals[component] = InstructionProposalSignature.run(
+                lm=self._component_reflection_lm,
+                input_dict={
+                    "current_instruction_doc": candidate[component],
+                    "dataset_with_feedback": records,
+                    "prompt_template": None,
+                },
+            )["new_instruction"]
+        return proposals
 
 
 @dataclass
@@ -313,6 +419,8 @@ class GEPAutoPrompter:
         self.aggregate_metric_fn = aggregate_metric_fn
         self.aggregate_metric_key = aggregate_metric_key
         self.gepa_kwargs = dict(gepa_kwargs)
+        if self.adapter.config_choices:
+            self.adapter.set_component_reflection_lm(reflection_lm)
 
     def _aggregate(self, outputs: Sequence[Any], items: Sequence[dict[str, Any]]):
         if self.aggregate_metric_fn is None:
@@ -353,6 +461,7 @@ class GEPAutoPrompter:
             raise ValueError("GEPA Auto-Prompter requires non-empty train and validation sets")
         if budget <= 0:
             raise ValueError("GEPA Auto-Prompter budget must be positive")
+        self.adapter.validate_seed_candidate(seed_candidate)
 
         kwargs = dict(self.gepa_kwargs)
         for reserved in ("seed_candidate", "trainset", "valset", "adapter", "reflection_lm", "max_metric_calls"):
