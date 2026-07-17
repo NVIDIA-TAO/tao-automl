@@ -89,11 +89,21 @@ result = prompter.optimize(
     {"dataset.system_prompt": seed_prompt},
     train_items,
     validation_items,
-    budget=1200,
+    budget=3000,
     testset=test_items,
 )
 print(result.to_dict())
 ```
+
+`budget` is GEPA's maximum metric-call count, not its number of prompt
+proposals. A proposal consumes metric calls for both the incumbent and proposed
+prompt on the reflection minibatch; every accepted proposal also consumes a
+complete validation pass. If `MaxCandidateProposalsStopper` is configured, set
+it high enough that it does not terminate a larger metric budget prematurely,
+or omit it and rely on the metric budget plus a wall-time guard. On the 530-item
+WTS validation split, increasing the budget from 1,200 calls with a four-
+proposal cap to 3,000 calls without that cap increased attempts from four to 11
+and accepted full-validation candidates from one to four.
 
 `evaluate_action` is the platform boundary. It may use Docker, Lepton, SLURM,
 Kubernetes, Brev, or a virtual environment, but it must return exactly one
