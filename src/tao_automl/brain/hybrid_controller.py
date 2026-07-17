@@ -92,6 +92,22 @@ class HybridStrategist:
             return None
 
         plan = response.json_content
+        if isinstance(plan, list):
+            valid_plans = [item for item in plan if isinstance(item, dict)]
+            if not valid_plans:
+                logger.warning("Hybrid strategist returned a plan list without any objects")
+                return None
+            logger.warning(
+                "Hybrid strategist returned %d plans; using the first valid plan",
+                len(plan),
+            )
+            plan = valid_plans[0]
+        if not isinstance(plan, dict):
+            logger.warning(
+                "Hybrid strategist returned unsupported plan type: %s",
+                type(plan).__name__,
+            )
+            return None
         plan = self._validate_plan(plan, available_parameters)
 
         logger.info(

@@ -7,6 +7,14 @@ from tao_automl.state.state_store import StateStore
 from tao_automl.types import AutoMLContext, JobStates, Recommendation
 
 
+class _Response:
+    ok = True
+    error = None
+
+    def __init__(self, content):
+        self.json_content = content
+
+
 def _params(names):
     return [{"parameter": name, "value_type": "float"} for name in names]
 
@@ -46,6 +54,44 @@ def test_hybrid_first_phase_keeps_cosmos_lora_coverage():
         "train.optm_warmup_epochs",
         "policy.lora.lora_dropout",
     ]
+
+
+def test_hybrid_normalizes_list_response_to_first_valid_plan():
+    class Client:
+        @staticmethod
+        def chat(*_args, **_kwargs):
+            return _Response([
+                {"action": "sweep", "algorithm": "bayesian", "parameters": ["train.optim.lr"], "trials": 1},
+                {"action": "stop", "reasoning": "unused"},
+            ])
+
+    strategist = HybridStrategist(llm_client=Client())
+
+    plan = strategist.plan_next_phase(
+        available_parameters=_params(["train.optim.lr"]),
+        network="classification-pyt",
+        metric_name="val_acc_1",
+        metric_direction="maximize",
+    )
+
+    assert plan["action"] == "sweep"
+    assert plan["parameters"] == ["train.optim.lr"]
+
+
+def test_hybrid_rejects_plan_list_without_objects():
+    class Client:
+        @staticmethod
+        def chat(*_args, **_kwargs):
+            return _Response(["invalid"])
+
+    strategist = HybridStrategist(llm_client=Client())
+
+    assert strategist.plan_next_phase(
+        available_parameters=_params(["train.optim.lr"]),
+        network="classification-pyt",
+        metric_name="val_acc_1",
+        metric_direction="maximize",
+    ) is None
 
 
 def test_hybrid_first_phase_reserves_refinement_budget(tmp_path, monkeypatch):
