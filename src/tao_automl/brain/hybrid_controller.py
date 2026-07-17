@@ -781,9 +781,16 @@ class HybridBrain:
                         plan["applied_parameter_overrides"],
                     )
             algo_params = AlgorithmParams.from_dict(plan.get("algorithm_params", {}))
+            # BaseBrain derives its random seed from context.id. A fresh
+            # sub-brain with the parent context would therefore replay the same
+            # first proposal in every Hybrid phase. Keep the handler/workspace
+            # scope, but give each phase a stable distinct seed identity.
+            phase_context = copy.copy(self.context)
+            phase_number = len(self.strategist.completed_phases) + 1
+            phase_context.id = f"{self.context.id}-hybrid-phase-{phase_number}"
             self.current_sub_brain = BrainFactory.create_brain(
                 algorithm=algorithm,
-                context=self.context,
+                context=phase_context,
                 state_store=self.state_store,
                 network=self.network,
                 parameters=phase_params,

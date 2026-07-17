@@ -321,3 +321,45 @@ def test_hybrid_applies_llm_phase_overrides_to_sub_brain_ranges(tmp_path, monkey
     assert captured["custom_ranges"]["train.train_batch_per_replica"]["valid_options"] == [8]
     assert captured["parameters"][0]["valid_options"] == [8]
     assert brain.base_custom_ranges["train.train_batch_per_replica"]["valid_options"] == [8, 16, 32]
+
+
+def test_hybrid_uses_distinct_sub_brain_seed_context_per_phase(tmp_path, monkeypatch):
+    context_ids = []
+
+    class DummyBrain:
+        num_epochs_per_experiment = 0
+
+    def fake_create_brain(**kwargs):
+        context_ids.append(kwargs["context"].id)
+        return DummyBrain()
+
+    monkeypatch.setattr(
+        "tao_automl.brain.factory.BrainFactory.create_brain",
+        fake_create_brain,
+    )
+
+    store = StateStore(str(tmp_path))
+    ctx = AutoMLContext(id="hybrid-seeds", network="action-recognition", metric="accuracy")
+    brain = HybridBrain(
+        context=ctx,
+        state_store=store,
+        network="action-recognition",
+        parameters=_params(["train.optim.lr"]),
+        metric="accuracy",
+        max_experiments=2,
+    )
+    plan = {
+        "action": "sweep",
+        "algorithm": "bayesian",
+        "parameters": ["train.optim.lr"],
+        "algorithm_params": {},
+    }
+
+    brain._create_sub_brain(plan)
+    brain.strategist.completed_phases.append({"phase_number": 1})
+    brain._create_sub_brain(plan)
+
+    assert context_ids == [
+        "hybrid-seeds-hybrid-phase-1",
+        "hybrid-seeds-hybrid-phase-2",
+    ]
