@@ -3686,6 +3686,7 @@ class AutoMLRunner:
         result = {
             "best": {
                 "rec_id": best.id if best else None,
+                "job_id": getattr(best, "job_id", None) if best else None,
                 "specs": best.specs if best else {},
                 "metric_value": best_metric,
                 "objective_score": getattr(best, "objective_score", None),
@@ -3698,6 +3699,7 @@ class AutoMLRunner:
             "history": [
                 {
                     "rec_id": r.id,
+                    "job_id": getattr(r, "job_id", None),
                     "metric": _recommendation_primary_metric(r, metric_name),
                     "objective_score": getattr(r, "objective_score", None),
                     "objective_values": _recommendation_objective_values(r),

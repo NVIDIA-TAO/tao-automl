@@ -36,3 +36,25 @@ def test_nvdinov2_checkpoint_selection_prefers_latest_student_checkpoint():
         validator._prefer_epoch_or_step_checkpoint(checkpoints, model="nvdinov2")
         == checkpoints[3]
     )
+
+
+def test_pbt_best_job_selection_uses_archived_job_id_not_reused_member_id():
+    validator = _load_validator_module()
+    generation_one = {
+        "rec_id": 0,
+        "job_id": "best-generation-one",
+        "checkpoint_paths": ["/results/best-generation-one/model_epoch_000.pth"],
+    }
+    generation_two = {
+        "rec_id": 0,
+        "job_id": "latest-generation-two",
+        "checkpoint_paths": ["/results/latest-generation-two/model_epoch_001.pth"],
+    }
+
+    selected = validator._select_best_job(
+        [generation_one, generation_two],
+        {"rec_id": 0, "job_id": "best-generation-one"},
+        {0: generation_two},
+    )
+
+    assert selected is generation_one
