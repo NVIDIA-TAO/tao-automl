@@ -78,7 +78,7 @@ def test_hybrid_normalizes_list_response_to_first_valid_plan():
     assert plan["parameters"] == ["train.optim.lr"]
 
 
-def test_hybrid_rejects_plan_list_without_objects():
+def test_hybrid_falls_back_when_plan_list_has_no_objects():
     class Client:
         @staticmethod
         def chat(*_args, **_kwargs):
@@ -86,13 +86,19 @@ def test_hybrid_rejects_plan_list_without_objects():
 
     strategist = HybridStrategist(llm_client=Client())
 
-    assert strategist.plan_next_phase(
+    plan = strategist.plan_next_phase(
         available_parameters=_params(["train.optim.lr"]),
         network="classification-pyt",
         metric_name="val_acc_1",
         metric_direction="maximize",
-    ) is None
+    )
+    assert plan["action"] == "sweep"
+    assert plan["algorithm"] == "bayesian"
+    assert plan["parameters"] == ["train.optim.lr"]
+    assert plan["trials"] == 1
+    assert plan["fallback"] is True
     assert strategist.invalid_plan_responses == 2
+    assert strategist.fallback_plans == 1
 
 
 def test_hybrid_retries_semantically_invalid_plan_response():
