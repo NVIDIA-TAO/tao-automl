@@ -27,7 +27,7 @@ _BRAIN_DONE_ALGORITHMS = frozenset({
 # downstream model handoff should prefer the best trial at the largest observed
 # budget once such trials exist.
 _MULTI_FIDELITY_ALGORITHMS = frozenset({
-    "hyperband", "h", "bohb", "asha", "dehb", "hyperband_es", "hes", "pbt",
+    "hyperband", "h", "bohb", "asha", "dehb", "hyperband_es", "hes",
 })
 
 # Algorithms whose completion is determined by max recommendations count
@@ -237,6 +237,42 @@ class Controller:
             r for r in self.history
             if r.status in (JobStates.success, JobStates.done)
         ]
+
+        # PBT reuses stable population member IDs across generations.  The
+        # corresponding Recommendation objects are updated in place, so retain
+        # the persisted best snapshot as an additional candidate instead of
+        # forgetting a superior checkpoint from an earlier generation.
+        if self.algorithm == "pbt":
+            saved_best = self.state_store.get_best_rec_info(self.context.id)
+            if saved_best and saved_best.get("rec_data"):
+                rec_dict = saved_best["rec_data"]
+                archived = Recommendation(
+                    identifier=int(rec_dict["id"]),
+                    specs=rec_dict.get("specs", {}),
+                    metric=rec_dict.get("metric", self.metric),
+                )
+                archived.job_id = rec_dict.get("job_id")
+                archived.status = rec_dict.get("status", JobStates.success)
+                archived.result = float(rec_dict.get("result", 0.0))
+                archived.objective_values = {
+                    str(k): float(v)
+                    for k, v in rec_dict.get("objective_values", {}).items()
+                }
+                if not archived.objective_values:
+                    archived.objective_values = {self.metric: archived.result}
+                archived.objective_score = float(
+                    rec_dict.get("objective_score", archived.result)
+                )
+                archived.best_epoch_number = rec_dict.get("best_epoch_number", "")
+                archived.resume_from_job_id = rec_dict.get("resume_from_job_id")
+                archived.resume_from_epoch = rec_dict.get("resume_from_epoch")
+                archived.resume_from_step = rec_dict.get("resume_from_step")
+                archived.early_stop_epoch = rec_dict.get("early_stop_epoch")
+                archived.created_on = rec_dict.get("created_on", "")
+                archived.last_modified = rec_dict.get("last_modified", "")
+                if archived.status in (JobStates.success, JobStates.done):
+                    completed.insert(0, archived)
+
         if not completed:
             return None
 
