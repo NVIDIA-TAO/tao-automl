@@ -190,6 +190,70 @@ def test_adapter_attaches_visual_evidence_only_to_failed_vision_components():
     assert "'gold'" not in serialized
 
 
+def test_joint_adapter_uses_bounded_history_aware_config_proposals():
+    adapter = TAOGEPAAdapter(
+        SimpleNamespace(run_batch=lambda candidate, items: [candidate["vision.nframes"]]),
+        lambda output, gold: (float(output == gold), "generic feedback", None),
+        config_choices={"vision.nframes": [4, 8, 16]},
+    )
+    item = {"query": "How many frames?", "gold": "8"}
+
+    adapter.evaluate([item], {"system_prompt": "seed", "vision.nframes": "8"})
+    first = adapter.propose_new_texts(
+        {"system_prompt": "seed", "vision.nframes": "8"},
+        {"vision.nframes": []},
+        ["vision.nframes"],
+    )
+    adapter.evaluate([item], {"system_prompt": "seed", "vision.nframes": first["vision.nframes"]})
+    second = adapter.propose_new_texts(
+        {"system_prompt": "seed", "vision.nframes": first["vision.nframes"]},
+        {"vision.nframes": []},
+        ["vision.nframes"],
+    )
+
+    assert first == {"vision.nframes": "4"}
+    assert second == {"vision.nframes": "16"}
+
+
+def test_joint_adapter_does_not_extract_visual_evidence_for_config_component():
+    evidence_calls = []
+    adapter = TAOGEPAAdapter(
+        SimpleNamespace(run_batch=lambda candidate, items: ["B"]),
+        lambda output, gold: (0.0, "generic feedback", None),
+        reflection_evidence_fn=lambda item, candidate: evidence_calls.append(item) or {"t=0": "frame"},
+        vision_components=["system_prompt"],
+        config_choices={"vision.nframes": [4, 8, 16]},
+    )
+    item = {"id": "private", "query": "Question?", "gold": "A"}
+    evaluated = adapter.evaluate(
+        [item],
+        {"system_prompt": "seed", "vision.nframes": "8"},
+        capture_traces=True,
+    )
+
+    records = adapter.make_reflective_dataset(
+        {"system_prompt": "seed", "vision.nframes": "8"},
+        evaluated,
+        ["vision.nframes"],
+    )
+
+    assert evidence_calls == []
+    assert "Visual Evidence" not in records["vision.nframes"][0]
+
+
+def test_joint_adapter_validates_seed_config_choices():
+    adapter = TAOGEPAAdapter(
+        SimpleNamespace(run_batch=lambda candidate, items: []),
+        lambda output, gold: 0.0,
+        config_choices={"vision.nframes": [4, 8, 16]},
+    )
+
+    with pytest.raises(ValueError, match="missing config component"):
+        adapter.validate_seed_candidate({"system_prompt": "seed"})
+    with pytest.raises(ValueError, match="is not in"):
+        adapter.validate_seed_candidate({"system_prompt": "seed", "vision.nframes": 32})
+
+
 def test_adapter_rejects_unaligned_action_outputs():
     runner = SimpleNamespace(run_batch=lambda candidate, items: ["only one"])
     adapter = TAOGEPAAdapter(runner, lambda output, gold: (1.0, "ok", None))
