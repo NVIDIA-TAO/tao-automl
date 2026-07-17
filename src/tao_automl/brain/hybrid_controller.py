@@ -65,6 +65,7 @@ class HybridStrategist:
         self.completed_phases: List[Dict[str, Any]] = []
         self.full_history: List[Dict[str, Any]] = []
         self._restored_llm_usage: Dict[str, Any] = {}
+        self.invalid_plan_responses = 0
 
     def plan_next_phase(
         self,
@@ -85,28 +86,28 @@ class HybridStrategist:
             enable_range_narrowing=self.enable_range_narrowing,
         )
 
-        response = self.llm_client.chat(messages, json_mode=True, temperature=0.5)
-
-        if not response.ok or response.json_content is None:
-            logger.warning("Hybrid strategist LLM call failed: %s", response.error)
-            return None
-
-        plan = response.json_content
-        if isinstance(plan, list):
-            valid_plans = [item for item in plan if isinstance(item, dict)]
-            if not valid_plans:
-                logger.warning("Hybrid strategist returned a plan list without any objects")
+        plan = None
+        for semantic_attempt in range(2):
+            response = self.llm_client.chat(messages, json_mode=True, temperature=0.5)
+            if not response.ok or response.json_content is None:
+                logger.warning("Hybrid strategist LLM call failed: %s", response.error)
                 return None
+            plan = self._normalize_plan_payload(response.json_content)
+            if plan is not None:
+                break
+            self.invalid_plan_responses += 1
             logger.warning(
-                "Hybrid strategist returned %d plans; using the first valid plan",
-                len(plan),
+                "Hybrid strategist returned no valid plan object (semantic attempt %d/2)",
+                semantic_attempt + 1,
             )
-            plan = valid_plans[0]
-        if not isinstance(plan, dict):
-            logger.warning(
-                "Hybrid strategist returned unsupported plan type: %s",
-                type(plan).__name__,
-            )
+            messages = messages + [{
+                "role": "user",
+                "content": (
+                    "Your previous response was not a usable plan. Return exactly one JSON "
+                    "object with action, algorithm, parameters, trials, and reasoning fields."
+                ),
+            }]
+        if plan is None:
             return None
         plan = self._validate_plan(plan, available_parameters)
 
@@ -120,6 +121,36 @@ class HybridStrategist:
         )
 
         return plan
+
+    @staticmethod
+    def _normalize_plan_payload(payload: Any) -> Optional[Dict[str, Any]]:
+        """Extract the first plan object from common JSON response wrappers."""
+        if isinstance(payload, dict):
+            for key in ("plan", "phase", "next_phase"):
+                if key in payload and isinstance(payload[key], (dict, list)):
+                    nested = HybridStrategist._normalize_plan_payload(payload[key])
+                    if nested is not None:
+                        return nested
+            for key in ("plans", "phases"):
+                if key in payload and isinstance(payload[key], list):
+                    nested = HybridStrategist._normalize_plan_payload(payload[key])
+                    if nested is not None:
+                        return nested
+            return payload
+        if isinstance(payload, list):
+            valid_plans = []
+            for item in payload:
+                nested = HybridStrategist._normalize_plan_payload(item)
+                if nested is not None:
+                    valid_plans.append(nested)
+            if valid_plans:
+                if len(payload) != 1 or len(valid_plans) != 1:
+                    logger.warning(
+                        "Hybrid strategist returned %d plan entries; using the first valid plan",
+                        len(payload),
+                    )
+                return valid_plans[0]
+        return None
 
     def record_phase_results(
         self,
@@ -476,6 +507,7 @@ class HybridStrategist:
             "completed_phases": self.completed_phases,
             "full_history": self.full_history,
             "llm_usage": self._combined_llm_usage(),
+            "invalid_plan_responses": self.invalid_plan_responses,
         }
 
     def _combined_llm_usage(self) -> Dict[str, Any]:
@@ -510,6 +542,7 @@ class HybridStrategist:
         strategist.completed_phases = data.get("completed_phases", [])
         strategist.full_history = data.get("full_history", [])
         strategist._restored_llm_usage = data.get("llm_usage", {})
+        strategist.invalid_plan_responses = int(data.get("invalid_plan_responses", 0))
         return strategist
 
 
