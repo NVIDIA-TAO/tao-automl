@@ -217,6 +217,9 @@ class Controller:
                 rec.best_epoch_number = best_epoch
 
             # Persist brain and controller state (under lock)
+            result_observer = getattr(self.brain, "on_recommendation_result", None)
+            if result_observer is not None:
+                result_observer(rec, self.history)
             self.brain.save_state()
             self.save_state()
 
