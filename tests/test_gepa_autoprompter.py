@@ -40,6 +40,27 @@ def test_reflection_lm_raises_on_tao_client_failure():
         GEPAReflectionLM(client)("prompt")
 
 
+def test_reflection_lm_preserves_multimodal_content_parts():
+    calls = []
+
+    class Client:
+        def chat(self, messages, json_mode=False):
+            calls.append((messages, json_mode))
+            return SimpleNamespace(ok=True, content="proposal", error=None)
+
+    visual_prompt = [{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Review the failure."},
+            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,abc"}},
+        ],
+    }]
+    lm = GEPAReflectionLM(Client(), system_prompt="Stay general.")
+
+    assert lm(visual_prompt) == "proposal"
+    assert calls == [([{"role": "system", "content": "Stay general."}, *visual_prompt], False)]
+
+
 def test_action_batch_runner_applies_dotted_candidate_without_mutating_base_specs():
     base = {
         "dataset": {"system_prompt": "seed"},
@@ -120,6 +141,51 @@ def test_adapter_batches_once_and_builds_leak_free_reflection_records():
     serialized = repr(records)
     assert "private-a" not in serialized
     assert "private-video" not in serialized
+    assert "/secret" not in serialized
+    assert "'gold'" not in serialized
+
+
+def test_adapter_attaches_visual_evidence_only_to_failed_vision_components():
+    evidence_calls = []
+
+    def evidence(item, candidate):
+        evidence_calls.append((item["id"], dict(candidate)))
+        return {"t=1.0s": "frame-one", "t=2.0s": "frame-two"}
+
+    adapter = TAOGEPAAdapter(
+        SimpleNamespace(run_batch=lambda candidate, items: ["A", "B"]),
+        lambda output, gold: (float(output == gold), "generic feedback", None),
+        fixed_candidate={"vision.nframes": "8"},
+        reflection_evidence_fn=evidence,
+        vision_components=["dataset.system_prompt"],
+    )
+    items = [
+        {"id": "private-a", "video": "/secret/a.mp4", "query": "First?", "gold": "A"},
+        {"id": "private-b", "video": "/secret/b.mp4", "query": "Second?", "gold": "A"},
+    ]
+    evaluated = adapter.evaluate(
+        items,
+        {"dataset.system_prompt": "prompt"},
+        capture_traces=True,
+    )
+    records = adapter.make_reflective_dataset(
+        {"dataset.system_prompt": "prompt"},
+        evaluated,
+        ["dataset.system_prompt", "text.summary_prompt"],
+    )
+
+    assert evidence_calls == [(
+        "private-b",
+        {"vision.nframes": "8", "dataset.system_prompt": "prompt"},
+    )]
+    assert "Visual Evidence" not in records["dataset.system_prompt"][0]
+    assert records["dataset.system_prompt"][1]["Visual Evidence"] == {
+        "t=1.0s": "frame-one",
+        "t=2.0s": "frame-two",
+    }
+    assert "Visual Evidence" not in records["text.summary_prompt"][1]
+    serialized = repr(records)
+    assert "private-b" not in serialized
     assert "/secret" not in serialized
     assert "'gold'" not in serialized
 
