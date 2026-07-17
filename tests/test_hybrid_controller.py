@@ -171,6 +171,26 @@ def test_hybrid_persists_llm_usage_and_phase_decisions():
     assert state["completed_phases"][0]["top_results"][0]["decision"] == "keep"
 
 
+def test_hybrid_discards_phase_winner_when_worse_than_prior_global_best():
+    strategist = HybridStrategist(llm_client=object())
+    plan = {"action": "sweep", "algorithm": "bayesian"}
+    strategist.record_phase_results(
+        phase_plan=plan,
+        results=[{"rec_id": 0, "metric": 0.8, "status": "success"}],
+        best_metric=0.8,
+        reverse_sort=True,
+    )
+    strategist.record_phase_results(
+        phase_plan=plan,
+        results=[{"rec_id": 1, "metric": 0.5, "status": "success"}],
+        best_metric=0.5,
+        reverse_sort=True,
+    )
+
+    assert [item["decision"] for item in strategist.full_history] == ["keep", "discard"]
+    assert strategist.completed_phases[1]["global_best_metric"] == 0.8
+
+
 def test_hybrid_records_phase_when_budget_exhausted(tmp_path):
     store = StateStore(str(tmp_path))
     ctx = AutoMLContext(id="hybrid-record", network="cosmos-rl", metric="val/avg_loss")
