@@ -94,6 +94,83 @@ def test_hybrid_first_phase_reserves_refinement_budget(tmp_path, monkeypatch):
     assert brain.current_plan["reserved_refinement_budget"] == 2
 
 
+def test_hybrid_two_trial_budget_reserves_evidence_based_second_phase(tmp_path, monkeypatch):
+    class StaticStrategist:
+        def __init__(self):
+            self.completed_phases = []
+            self.full_history = []
+
+        def plan_next_phase(self, **_kwargs):
+            return {
+                "action": "sweep",
+                "algorithm": "bayesian",
+                "parameters": ["train.optm_lr"],
+                "trials": 10,
+                "algorithm_params": {},
+            }
+
+    class BurstBrain:
+        def generate_recommendations(self, _history):
+            return [{"train.optm_lr": i} for i in range(10)]
+
+    monkeypatch.setattr(
+        "tao_automl.brain.factory.BrainFactory.create_brain",
+        lambda **_kwargs: BurstBrain(),
+    )
+
+    store = StateStore(str(tmp_path))
+    ctx = AutoMLContext(id="hybrid-two-trial", network="cosmos-rl", metric="val/avg_loss")
+    brain = HybridBrain(
+        context=ctx,
+        state_store=store,
+        network="cosmos-rl",
+        parameters=_params(["train.optm_lr"]),
+        metric="val/avg_loss",
+        max_experiments=2,
+    )
+    brain.strategist = StaticStrategist()
+
+    recs = brain.generate_recommendations([])
+
+    assert len(recs) == 1
+    assert brain.current_plan["trials"] == 1
+    assert brain.current_plan["reserved_refinement_budget"] == 1
+
+
+def test_hybrid_persists_llm_usage_and_phase_decisions():
+    class Usage:
+        @staticmethod
+        def to_dict():
+            return {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "num_calls": 1,
+                "total_latency_ms": 12.3,
+                "errors": 0,
+            }
+
+    class Client:
+        usage = Usage()
+
+    strategist = HybridStrategist(llm_client=Client())
+    strategist.record_phase_results(
+        phase_plan={"action": "sweep", "algorithm": "bayesian"},
+        results=[
+            {"rec_id": 0, "metric": 0.5, "status": "success"},
+            {"rec_id": 1, "metric": 0.7, "status": "success"},
+        ],
+        best_metric=0.7,
+        reverse_sort=True,
+    )
+
+    state = strategist.to_dict()
+
+    assert state["llm_usage"]["num_calls"] == 1
+    assert [item["decision"] for item in state["full_history"]] == ["discard", "keep"]
+    assert state["completed_phases"][0]["top_results"][0]["decision"] == "keep"
+
+
 def test_hybrid_records_phase_when_budget_exhausted(tmp_path):
     store = StateStore(str(tmp_path))
     ctx = AutoMLContext(id="hybrid-record", network="cosmos-rl", metric="val/avg_loss")
