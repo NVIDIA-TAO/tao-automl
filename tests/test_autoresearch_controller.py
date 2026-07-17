@@ -64,3 +64,19 @@ def test_inconsistent_llm_decision_cannot_contradict_tracker():
 
     assert entry.decision == "keep"
     assert entry.reasoning.startswith("Keep based on the measured accuracy")
+
+
+def test_missing_llm_json_still_persists_decision_reasoning():
+    brain = _brain(None)
+
+    entry = brain.record_result(
+        spec={"train.optim.lr": 0.001},
+        metric_value=50.0,
+        status="success",
+        job_id="job-0",
+    )
+
+    assert entry.decision == "keep"
+    assert entry.reasoning == (
+        "Keep based on the measured accuracy relative to the previous best (10.0)."
+    )

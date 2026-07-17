@@ -391,6 +391,10 @@ class AutoresearchBrain:
         best_result = {
             "metric": previous_best_metric if previous_best_metric is not None else 0.0
         }
+        fallback_reasoning = (
+            f"{expected_decision.title()} based on the measured {self.metric} "
+            f"relative to the previous best ({best_result['metric']})."
+        )
         messages = build_keep_discard_prompt(
             current_result=current_result,
             best_result=best_result,
@@ -408,12 +412,9 @@ class AutoresearchBrain:
                     llm_decision,
                     expected_decision,
                 )
-                return (
-                    f"{expected_decision.title()} based on the measured {self.metric} "
-                    f"relative to the previous best ({best_result['metric']})."
-                )
-            return response.json_content.get("reasoning", "")
-        return ""
+                return fallback_reasoning
+            return response.json_content.get("reasoning") or fallback_reasoning
+        return fallback_reasoning
 
     def _extract_modifications(self, spec: Dict[str, Any]) -> Dict[str, Any]:
         """Extract modifications from a spec dict."""
