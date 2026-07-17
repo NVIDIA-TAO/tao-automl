@@ -66,6 +66,7 @@ class HybridStrategist:
         self.full_history: List[Dict[str, Any]] = []
         self._restored_llm_usage: Dict[str, Any] = {}
         self.invalid_plan_responses = 0
+        self.fallback_plans = 0
 
     def plan_next_phase(
         self,
@@ -108,7 +109,24 @@ class HybridStrategist:
                 ),
             }]
         if plan is None:
-            return None
+            self.fallback_plans += 1
+            plan = {
+                "action": "sweep",
+                "algorithm": "bayesian",
+                "parameters": [
+                    parameter["parameter"] for parameter in available_parameters[:5]
+                ],
+                "trials": 1,
+                "reasoning": (
+                    "Deterministic safety fallback after two successful LLM calls "
+                    "returned no usable plan object."
+                ),
+                "fallback": True,
+            }
+            logger.warning(
+                "Hybrid strategist exhausted semantic retries; using a one-trial "
+                "Bayesian safety plan"
+            )
         plan = self._validate_plan(plan, available_parameters)
 
         logger.info(
@@ -508,6 +526,7 @@ class HybridStrategist:
             "full_history": self.full_history,
             "llm_usage": self._combined_llm_usage(),
             "invalid_plan_responses": self.invalid_plan_responses,
+            "fallback_plans": self.fallback_plans,
         }
 
     def _combined_llm_usage(self) -> Dict[str, Any]:
@@ -543,6 +562,7 @@ class HybridStrategist:
         strategist.full_history = data.get("full_history", [])
         strategist._restored_llm_usage = data.get("llm_usage", {})
         strategist.invalid_plan_responses = int(data.get("invalid_plan_responses", 0))
+        strategist.fallback_plans = int(data.get("fallback_plans", 0))
         return strategist
 
 
