@@ -92,6 +92,36 @@ def test_hybrid_rejects_plan_list_without_objects():
         metric_name="val_acc_1",
         metric_direction="maximize",
     ) is None
+    assert strategist.invalid_plan_responses == 2
+
+
+def test_hybrid_retries_semantically_invalid_plan_response():
+    class Client:
+        def __init__(self):
+            self.responses = iter([
+                _Response(["invalid"]),
+                _Response({
+                    "action": "sweep",
+                    "algorithm": "bayesian",
+                    "parameters": ["train.optim.lr"],
+                    "trials": 1,
+                }),
+            ])
+
+        def chat(self, *_args, **_kwargs):
+            return next(self.responses)
+
+    strategist = HybridStrategist(llm_client=Client())
+
+    plan = strategist.plan_next_phase(
+        available_parameters=_params(["train.optim.lr"]),
+        network="depth-net-stereo",
+        metric_name="val/epe",
+        metric_direction="minimize",
+    )
+
+    assert plan["action"] == "sweep"
+    assert strategist.invalid_plan_responses == 1
 
 
 def test_hybrid_first_phase_reserves_refinement_budget(tmp_path, monkeypatch):
