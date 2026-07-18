@@ -397,8 +397,13 @@ def _checkpoint_evaluation_metric(model: str, automl_metric: str) -> str:
     }.get(model, automl_metric)
 
 
-def _direction(metric: str) -> str:
+def _direction(metric: str, model: str | None = None) -> str:
     lower = metric.lower()
+    # Mono depth d1 is Delta-1 accuracy (higher is better), while stereo d1 is
+    # the D1 outlier/error rate (lower is better).  The metric name alone is
+    # therefore insufficient to choose the optimization direction.
+    if model == "depth-net-mono" and lower in {"d1", "val/d1", "test/d1"}:
+        return "maximize"
     error_metrics = ("loss", "epe", "rmse", "bp1", "bp2", "bp3", "d1")
     return "minimize" if any(name in lower for name in error_metrics) else "maximize"
 
@@ -763,11 +768,16 @@ def _minimal_train_overrides(
     return {key: value for key, value in candidates.items() if key in keys}
 
 
-def _automl_settings(algorithm: str, metric: str, args: argparse.Namespace) -> dict[str, Any]:
+def _automl_settings(
+    algorithm: str,
+    metric: str,
+    model: str,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
     settings: dict[str, Any] = {
         "algorithm": algorithm,
         "metric": metric,
-        "direction": _direction(metric),
+        "direction": _direction(metric, model),
         "automl_max_recommendations": 2,
         "automl_max_epochs": 2,
         "automl_reduction_factor": 2,
@@ -2662,7 +2672,7 @@ def run_model(args: argparse.Namespace) -> int:
         print(json.dumps({"model": model, "status": "blocked", "report": str(report_path)}))
         return 2
 
-    settings = _automl_settings(args.algorithm, metric, args)
+    settings = _automl_settings(args.algorithm, metric, model, args)
     settings.update({
         "baseline_metric": baseline_selection_metric,
         "baseline_training": baseline_train_result,
@@ -2857,7 +2867,7 @@ def run_model(args: argparse.Namespace) -> int:
         "metric_documented": _monitoring_metric(skill_text),
         "metric_used_by_automl": metric,
         "metric_emitted_by_evaluate": checkpoint_evaluation_metric,
-        "direction": _direction(metric),
+        "direction": _direction(metric, model),
         "train_dataset_uri": profile.train_uri,
         "eval_dataset_uri": profile.eval_uri,
         "spec_overrides": overrides,

@@ -58,3 +58,11 @@ def test_pbt_best_job_selection_uses_archived_job_id_not_reused_member_id():
     )
 
     assert selected is generation_one
+
+
+def test_depth_d1_direction_is_model_specific():
+    validator = _load_validator_module()
+
+    assert validator._direction("val/d1", model="depth-net-mono") == "maximize"
+    assert validator._direction("val/d1", model="depth-net-stereo") == "minimize"
+    assert validator._direction("val/epe", model="depth-net-stereo") == "minimize"
