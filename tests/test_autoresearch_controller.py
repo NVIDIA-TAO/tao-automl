@@ -2,11 +2,22 @@ from types import SimpleNamespace
 
 from tao_automl.brain.autoresearch_controller import AutoresearchBrain
 from tao_automl.brain.experiment_tracker import ExperimentTracker
+from tao_automl.brain.llm_client import first_json_object
 
 
 class _Verifier:
     def verify_result(self, **_kwargs):
         return SimpleNamespace(should_count=True)
+
+
+def test_first_json_object_normalizes_supported_shapes():
+    expected = {"decision": "keep"}
+
+    assert first_json_object(expected) == expected
+    assert first_json_object([expected]) == expected
+    assert first_json_object([1, expected]) == expected
+    assert first_json_object([1, 2]) is None
+    assert first_json_object("not-json-object") is None
 
 
 def _brain(llm_response):

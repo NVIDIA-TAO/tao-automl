@@ -12,7 +12,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
 from tao_automl.brain.base import AutoMLAlgorithmBase
-from tao_automl.brain.llm_client import LLMClient
+from tao_automl.brain.llm_client import LLMClient, first_json_object
 from tao_automl.brain.prompts.llm_brain_prompts import (
     build_recommendation_with_reasoning_prompt,
 )
@@ -145,7 +145,7 @@ class LLMBrain(AutoMLAlgorithmBase):
 
     def _parse_llm_response(self, response) -> Optional[Dict[str, Any]]:
         """Extract configuration from LLM response."""
-        data = response.json_content
+        data = first_json_object(response.json_content)
         if data is None:
             return None
 
