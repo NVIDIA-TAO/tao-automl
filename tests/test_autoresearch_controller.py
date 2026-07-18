@@ -80,3 +80,35 @@ def test_missing_llm_json_still_persists_decision_reasoning():
     assert entry.reasoning == (
         "Keep based on the measured accuracy relative to the previous best (10.0)."
     )
+
+
+def test_list_wrapped_proposal_is_normalized(monkeypatch):
+    proposal = {
+        "modifications": {"train.optim.lr": 0.002},
+        "reasoning": "Try a larger learning rate.",
+    }
+    brain = _brain([proposal])
+    brain.spec_schema = {}
+    brain.research_program = None
+    brain.external_knowledge = None
+    brain.custom_ranges = {}
+    monkeypatch.setattr(
+        "tao_automl.brain.autoresearch_controller.build_autoresearch_prompt",
+        lambda **_kwargs: [],
+    )
+
+    assert brain._propose_modification() == proposal
+
+
+def test_list_wrapped_keep_discard_response_is_normalized():
+    brain = _brain([{"decision": "keep", "reasoning": "Measured improvement."}])
+
+    entry = brain.record_result(
+        spec={"train.optim.lr": 0.001},
+        metric_value=50.0,
+        status="success",
+        job_id="job-0",
+    )
+
+    assert entry.decision == "keep"
+    assert entry.reasoning == "Measured improvement."
