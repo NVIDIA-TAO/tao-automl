@@ -16,7 +16,7 @@ import numpy as np
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
-from tao_automl.brain.llm_client import LLMClient
+from tao_automl.brain.llm_client import LLMClient, first_json_object
 from tao_automl.brain.llm_analyzer import LLMAnalyzer
 from tao_automl.brain.knowledge_retriever import KnowledgeRetriever
 from tao_automl.brain.spec_prescreener import SpecPrescreener
@@ -30,15 +30,6 @@ from tao_automl.types import JobStates
 from tao_automl.utils.math_utils import get_valid_options
 
 logger = logging.getLogger(__name__)
-
-
-def _first_json_object(value: Any) -> Optional[Dict[str, Any]]:
-    """Return a JSON object, accepting common list-wrapped LLM responses."""
-    if isinstance(value, dict):
-        return value
-    if isinstance(value, list):
-        return next((item for item in value if isinstance(item, dict)), None)
-    return None
 
 
 def _metric_is_minimized(metric: str) -> bool:
@@ -387,7 +378,7 @@ class AutoresearchBrain:
         if not response.ok or response.json_content is None:
             return None
 
-        return _first_json_object(response.json_content)
+        return first_json_object(response.json_content)
 
     def _get_keep_discard_reasoning(
         self,
@@ -413,7 +404,7 @@ class AutoresearchBrain:
         )
 
         response = self.llm_client.chat(messages, json_mode=True, temperature=0.2)
-        response_data = _first_json_object(response.json_content) if response.ok else None
+        response_data = first_json_object(response.json_content) if response.ok else None
         if response_data:
             llm_decision = str(response_data.get("decision", "")).lower()
             if llm_decision and llm_decision != expected_decision:

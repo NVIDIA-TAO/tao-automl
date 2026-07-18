@@ -8,7 +8,7 @@ LLM recommendations. Summarizes findings into actionable tuning insights.
 import logging
 from typing import Any, Dict, Optional
 
-from tao_automl.brain.llm_client import LLMClient
+from tao_automl.brain.llm_client import LLMClient, first_json_object
 from tao_automl.brain.prompts.autoresearch_prompts import (
     build_knowledge_summary_prompt,
 )
@@ -153,7 +153,9 @@ class KnowledgeRetriever:
         if not response.ok or response.json_content is None:
             return raw_knowledge
 
-        data = response.json_content
+        data = first_json_object(response.json_content)
+        if data is None:
+            return raw_knowledge
         insights = data.get("insights", [])
         if insights:
             return "\n".join(f"- {insight}" for insight in insights)

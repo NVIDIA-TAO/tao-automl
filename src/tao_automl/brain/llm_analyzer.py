@@ -8,7 +8,7 @@ Works with ALL existing algorithms (Bayesian, BOHB, PBT, etc.).
 import logging
 from typing import Any, Dict, List, Optional
 
-from tao_automl.brain.llm_client import LLMClient
+from tao_automl.brain.llm_client import LLMClient, first_json_object
 from tao_automl.brain.prompts.analyzer_prompts import build_analysis_prompt
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ class LLMAnalyzer:
             logger.warning("LLM analysis failed: %s", response.error)
             return None
 
-        analysis = response.json_content
+        analysis = first_json_object(response.json_content)
         if analysis is None:
             logger.warning("Could not parse LLM analysis response")
             return None
