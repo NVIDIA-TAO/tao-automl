@@ -388,13 +388,17 @@ class AutoresearchBrain:
         expected_decision: str,
     ) -> str:
         """Get LLM reasoning for keep/discard decision."""
-        best_result = {
-            "metric": previous_best_metric if previous_best_metric is not None else 0.0
-        }
-        fallback_reasoning = (
-            f"{expected_decision.title()} based on the measured {self.metric} "
-            f"relative to the previous best ({best_result['metric']})."
-        )
+        best_result = {"metric": previous_best_metric}
+        if previous_best_metric is None:
+            fallback_reasoning = (
+                f"{expected_decision.title()} as the first measured {self.metric} result; "
+                "there is no previous best."
+            )
+        else:
+            fallback_reasoning = (
+                f"{expected_decision.title()} based on the measured {self.metric} "
+                f"relative to the previous best ({best_result['metric']})."
+            )
         messages = build_keep_discard_prompt(
             current_result=current_result,
             best_result=best_result,
