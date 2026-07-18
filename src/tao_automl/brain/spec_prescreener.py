@@ -63,6 +63,13 @@ class SpecPrescreener:
             return candidates
 
         data = response.json_content
+        if isinstance(data, list):
+            data = next((item for item in data if isinstance(item, dict)), None)
+        if not isinstance(data, dict):
+            logger.warning(
+                "Pre-screening returned an unsupported JSON shape. Returning all candidates."
+            )
+            return candidates
         recommended_indices = data.get("recommended_to_run", [])
         confidence = data.get("confidence", "low")
         reasoning = data.get("reasoning", "")
