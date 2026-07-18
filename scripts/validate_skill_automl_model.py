@@ -1150,6 +1150,7 @@ def _build_action_specs(
             "train.use_custom_attention": False,
         })
         if action == "inference":
+            overrides["dataset.workers"] = 2
             overrides["dataset.test_dataset.images_dir"] = "/data/nvdinov2-mini/images_train/images_train"
     if model == "nvpanoptix3d":
         overrides.update({
