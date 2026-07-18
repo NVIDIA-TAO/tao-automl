@@ -208,8 +208,8 @@ class AutoresearchBrain:
 
         if len(candidates) > 1:
             logger.info(
-                "Pre-screener selected candidate %d/%d from %d proposals",
-                best_idx + 1, len(recommended), len(candidates),
+                "Pre-screener selected candidate %d of %d proposals (%d recommended)",
+                best_idx + 1, len(candidates), len(recommended),
             )
 
         verification = self.verifier.verify_spec(
