@@ -123,3 +123,32 @@ def test_list_wrapped_keep_discard_response_is_normalized():
 
     assert entry.decision == "keep"
     assert entry.reasoning == "Measured improvement."
+
+
+def test_first_minimized_result_is_described_as_initial_best(monkeypatch):
+    brain = _brain(None)
+    brain.tracker.best_metric = None
+    brain.tracker.metric_direction = "minimize"
+    observed = {}
+
+    def prompt(**kwargs):
+        observed.update(kwargs)
+        return []
+
+    monkeypatch.setattr(
+        "tao_automl.brain.autoresearch_controller.build_keep_discard_prompt",
+        prompt,
+    )
+
+    entry = brain.record_result(
+        spec={"train.optim.lr": 0.001},
+        metric_value=11.75,
+        status="success",
+        job_id="job-0",
+    )
+
+    assert entry.decision == "keep"
+    assert entry.reasoning == (
+        "Keep as the first measured accuracy result; there is no previous best."
+    )
+    assert observed["best_result"] == {"metric": None}
