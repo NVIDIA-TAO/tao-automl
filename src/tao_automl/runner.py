@@ -4544,6 +4544,12 @@ class AutoMLRunner:
 
         if path_key:
             self._set_nested(specs, path_key, artifact)
+            if bool_or_path_key:
+                # Models such as BEVFusion expose both the checkpoint path and
+                # an explicit resume switch. Supplying only the path makes
+                # MMEngine load weights as initialization and restart epoch 1
+                # instead of restoring optimizer/epoch state.
+                self._set_nested(specs, bool_or_path_key, True)
             logger.info(
                 "Rec %d will resume from parent job %s via %s=%s "
                 "(epoch=%s step=%s)",
