@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from fractions import Fraction
 import json
 import logging
 import math
@@ -381,6 +382,7 @@ def _evaluation_metric(model: str, training_metric: str) -> str:
 def _checkpoint_evaluation_metric(model: str, automl_metric: str) -> str:
     """Return a standalone evaluator KPI when it differs from AutoML's train KPI."""
     return {
+        "clip": "test/t2i_mAP",
         "mask-grounding-dino": "[segm] test_mAP50",
         "ml-recog": "test Precision at Rank 1",
         "nvpanoptix3d": "PRQ",
@@ -600,6 +602,13 @@ def _minimal_train_overrides(
             "validation.batch_size": 1,
             "validation.enable_dataset_cache": False,
             "logging.logger": ["console", "tao"],
+        })
+    if model == "clip":
+        candidates.update({
+            "dataset.train.batch_size": 1,
+            "dataset.train.num_workers": 0,
+            "dataset.val.batch_size": 1,
+            "dataset.val.num_workers": 0,
         })
     if model == "deformable-detr":
         # The schema requires at least one worker; the generic zero-worker
@@ -976,7 +985,10 @@ def _build_action_specs(
     extra_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     model = _model_profile_key(model_dir)
-    specs = _read_yaml(model_dir / "references" / f"spec_template_{action}.yaml")
+    template = model_dir / "references" / f"spec_template_{action}.yaml"
+    if not template.exists():
+        template = model_dir / "references" / "spec_template.yaml"
+    specs = _read_yaml(template)
     schema_keys = _schema_keys(model_dir, action)
     overrides: dict[str, Any] = {}
     _add_data_source_overrides(overrides, profile, _parse_action_rows(skill_text, action))
@@ -1064,6 +1076,18 @@ def _build_action_specs(
                     "model_path": checkpoint_container_path,
                     "enable_lora": True,
                 })
+    if model == "clip" and action == "evaluate":
+        overrides.update({
+            "dataset.val.batch_size": 1,
+            "dataset.val.num_workers": 0,
+            "evaluate.batch_size": 1,
+            "evaluate.num_workers": 0,
+        })
+    if model == "clip" and action == "inference":
+        # The S3 validation source has images but no prompts file. Image-only
+        # inference is a supported CLIP workflow; clear the optional path that
+        # generic data-source mapping would otherwise synthesize.
+        overrides["inference.text_file"] = None
     overrides.update(_minimal_action_overrides(specs, schema_keys, action, num_classes))
     if model == "rtdetr":
         overrides.update({
@@ -1650,12 +1674,30 @@ def _run_post_checks(
     mounts = _mounts_for_model(out_dir, model, profile)
     action_env_vars = (
         {"TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"}
-        if model in {"ml-recog", "ocrnet", "oneformer", "optical-inspection", "re-identification"}
+        if model in {"clip", "ml-recog", "ocrnet", "oneformer", "optical-inspection", "re-identification"}
         else None
     )
     for action in ("evaluate", "inference"):
+        if action == "evaluate":
+            final_evaluation = next(
+                (
+                    item for item in payload.get("final_evaluation_jobs", [])
+                    if item.get("action") == "final_evaluate"
+                    and item.get("status") == "success"
+                    and item.get("checkpoint_path") == checkpoint_path
+                ),
+                None,
+            )
+            if final_evaluation:
+                reused = copy.deepcopy(final_evaluation)
+                reused["action"] = "evaluate"
+                reused["reused_from"] = "final_evaluate"
+                post_checks.append(reused)
+                continue
         action_cfg = actions.get(action)
         template = model_dir / "references" / f"spec_template_{action}.yaml"
+        if not template.exists():
+            template = model_dir / "references" / "spec_template.yaml"
         if not action_cfg or not template.exists():
             post_checks.append({
                 "action": action,
@@ -1941,6 +1983,73 @@ def _prepare_bevfusion_data_mount(profile: ModelProfile, out_dir: Path) -> Path:
     return data_root
 
 
+def _clip_captions_from_coco(payload: Any) -> dict[str, str]:
+    """Derive one deterministic retrieval caption per annotated COCO image."""
+    categories = {
+        item.get("id"): item.get("name")
+        for item in payload.get("categories", [])
+        if isinstance(item, dict) and item.get("id") is not None and item.get("name")
+    }
+    labels_by_image: dict[Any, set[str]] = {}
+    for annotation in payload.get("annotations", []):
+        if not isinstance(annotation, dict):
+            continue
+        label = categories.get(annotation.get("category_id"))
+        if label:
+            labels_by_image.setdefault(annotation.get("image_id"), set()).add(label)
+
+    captions = {}
+    for image in payload.get("images", []):
+        if not isinstance(image, dict) or not image.get("file_name"):
+            continue
+        labels = sorted(labels_by_image.get(image.get("id"), ()))
+        if labels:
+            captions[image["file_name"]] = "a photo containing " + ", ".join(labels)
+    return captions
+
+
+def _prepare_clip_data_mount(profile: ModelProfile, out_dir: Path) -> Path:
+    """Stage the real COCO inputs as the custom image-caption layout CLIP requires."""
+    data_root = out_dir / "data_mount" / "clip"
+    for split, uri in (("train", profile.train_uri), ("val", profile.eval_uri)):
+        target = data_root / split
+        image_dir = target / "images.tar.gz"
+        caption_dir = target / "captions.tar.gz"
+        annotation_path = target / "annotations.json"
+        archive = target / "_archives" / "images.tar.gz"
+        _download_s3_file(_join_uri(uri, "images.tar.gz"), archive)
+        _download_s3_file(_join_uri(uri, "annotations.json"), annotation_path)
+
+        if not image_dir.is_dir():
+            extract_root = target / "_extracted"
+            if extract_root.exists():
+                shutil.rmtree(extract_root)
+            extract_root.mkdir(parents=True)
+            with tarfile.open(archive) as tar:
+                tar.extractall(extract_root)
+            extracted_images = extract_root / "images"
+            if not extracted_images.is_dir():
+                raise FileNotFoundError(f"CLIP image archive did not contain images/: {archive}")
+            image_dir.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(extracted_images), str(image_dir))
+            shutil.rmtree(extract_root)
+
+        payload = json.loads(annotation_path.read_text())
+        captions = _clip_captions_from_coco(payload)
+        caption_dir.mkdir(parents=True, exist_ok=True)
+        image_names = []
+        for image_name, caption in captions.items():
+            image_path = image_dir / image_name
+            if not image_path.is_file():
+                continue
+            (caption_dir / Path(image_name).with_suffix(".txt")).write_text(caption + "\n")
+            image_names.append(image_name)
+        if not image_names:
+            raise ValueError(f"No annotated CLIP image-caption pairs were staged from {uri}")
+        (target / "image_list.txt").write_text("\n".join(sorted(image_names)) + "\n")
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -1978,12 +2087,86 @@ def _prepare_cosmos_model_mounts() -> tuple[Path, Path]:
     return snapshot, blobs
 
 
+def _video_fps(path: Path) -> float:
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error", "-select_streams", "v:0",
+            "-show_entries", "stream=avg_frame_rate", "-of", "default=nw=1:nk=1",
+            str(path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    value = result.stdout.strip()
+    fps = float(Fraction(value))
+    if fps <= 0:
+        raise ValueError(f"Invalid video frame rate {value!r} for {path}")
+    return fps
+
+
+def _stage_cosmos_split(
+    annotation_path: Path,
+    archive_path: Path,
+    target: Path,
+    limit: int = 2,
+) -> int:
+    """Extract referenced real videos and add measured FPS to a staged annotation."""
+    payload = json.loads(annotation_path.read_text())
+    if not isinstance(payload, list):
+        raise TypeError(f"Cosmos validation annotations must be a list: {annotation_path}")
+    records = [copy.deepcopy(record) for record in payload[:limit]]
+    target.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(archive_path) as tar:
+        for record in records:
+            relative_video = record.get("video")
+            if not relative_video:
+                raise ValueError(f"Cosmos record has no video path: {record.get('id')}")
+            member = tar.getmember(f"videos/{relative_video}")
+            source = tar.extractfile(member)
+            if source is None:
+                raise FileNotFoundError(f"Unable to extract {member.name} from {archive_path}")
+            destination = target / relative_video
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with source, destination.open("wb") as output:
+                shutil.copyfileobj(source, output)
+            record["video_fps"] = _video_fps(destination)
+    (target / "annotations.json").write_text(json.dumps(records, indent=2) + "\n")
+    return len(records)
+
+
+def _prepare_cosmos_data_mount(profile: ModelProfile, run_root: Path) -> Path:
+    """Materialize a bounded real S3 subset required by Cosmos train/evaluate."""
+    data_root = run_root / "datasets" / "cosmos-rl"
+    cache_root = Path(
+        os.environ.get("TAO_AUTOML_DATA_CACHE", str(Path.home() / "data"))
+    )
+    for split, uri in (("train", profile.train_uri), ("eval", profile.eval_uri)):
+        source_name = uri.rstrip("/").rsplit("/", 1)[-1]
+        source_root = cache_root / source_name
+        annotation_path = source_root / "annotations.json"
+        archive_path = source_root / "videos.tar.gz"
+        _download_s3_file(_join_uri(uri, "annotations.json"), annotation_path)
+        _download_s3_file(_join_uri(uri, "videos.tar.gz"), archive_path)
+        target = data_root / split
+        staged_annotation = target / "annotations.json"
+        if not staged_annotation.is_file():
+            _stage_cosmos_split(annotation_path, archive_path, target)
+    return data_root
+
+
 def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[dict[str, str]]:
     mounts = [{"host_path": str(out_dir / "results"), "container_path": "/results"}]
     if model == "bevfusion":
         mounts.append({
             "host_path": str(_prepare_bevfusion_data_mount(profile, out_dir)),
             "container_path": "/data/bevfusion",
+        })
+    if model == "clip":
+        mounts.append({
+            "host_path": str(_prepare_clip_data_mount(MODEL_PROFILES[model], out_dir)),
+            "container_path": "/data/clip",
+            "read_only": True,
         })
     if model in {"depth-net-mono", "depth-net-stereo"}:
         mounts.append({
@@ -2192,11 +2375,22 @@ def run_model(args: argparse.Namespace) -> int:
     model = _model_profile_key(model_dir)
     profile = MODEL_PROFILES[model]
     staged_data_root = args.run_root / "datasets" / model
+    if model == "cosmos-rl":
+        staged_data_root = _prepare_cosmos_data_mount(profile, args.run_root)
     if model == "cosmos-rl" and staged_data_root.exists():
         profile = replace(
             profile,
             train_uri="/data/automl_datasets/cosmos-rl/train",
             eval_uri="/data/automl_datasets/cosmos-rl/eval",
+        )
+    if model == "clip":
+        # The available validation source is COCO detection data. The CLIP
+        # skill explicitly permits a plumbing-only fallback that derives
+        # same-basename captions from class labels when documented.
+        profile = replace(
+            profile,
+            train_uri="/data/clip/train",
+            eval_uri="/data/clip/val",
         )
     skill_text = (model_dir / "SKILL.md").read_text()
     if model == "dino":
@@ -2538,7 +2732,7 @@ def run_model(args: argparse.Namespace) -> int:
     evaluate_template = model_dir / "references" / "spec_template_evaluate.yaml"
     checkpoint_action_env = (
         {"TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"}
-        if model in {"ml-recog", "ocrnet", "oneformer", "optical-inspection", "re-identification"}
+        if model in {"clip", "ml-recog", "ocrnet", "oneformer", "optical-inspection", "re-identification"}
         else None
     )
     if (not evaluate_cfg or not evaluate_template.exists()) and model != "nvdinov2":
@@ -2800,6 +2994,7 @@ def run_model(args: argparse.Namespace) -> int:
             metric_name=checkpoint_evaluation_metric,
             env_vars=checkpoint_action_env,
         )
+        evaluated["checkpoint_path"] = checkpoint_path
         final_eval_jobs.append(evaluated)
         record_path = out_dir / "evaluations" / "best_automl.json"
         _write_json(record_path, evaluated)
