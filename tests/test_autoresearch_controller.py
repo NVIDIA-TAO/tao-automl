@@ -152,3 +152,25 @@ def test_first_minimized_result_is_described_as_initial_best(monkeypatch):
         "Keep as the first measured accuracy result; there is no previous best."
     )
     assert observed["best_result"] == {"metric": None}
+
+
+def test_schema_summary_lists_categorical_options_instead_of_empty_bounds():
+    brain = _brain(None)
+    brain.custom_ranges = {}
+    brain.parameters = [
+        {
+            "parameter": "train.optm_decay_type",
+            "value_type": "categorical",
+            "valid_min": "",
+            "valid_max": "",
+            "valid_options": ["linear", "sqrt", "cosine", "none"],
+        },
+    ]
+
+    summary = brain._get_schema_summary()
+
+    assert summary == (
+        "train.optm_decay_type (categorical): "
+        "['linear', 'sqrt', 'cosine', 'none']"
+    )
+    assert "[, ]" not in summary
