@@ -36,7 +36,8 @@ from tao_sdk.script_runner import build_entrypoint
 LOG = logging.getLogger("tao_automl_validation")
 BUCKET_ROOT = "s3://nvcf-storage-handling/data"
 VISUAL_CHANGENET_BACKBONE_CONTAINER_PATH = "/data/pretrained_models/C-RADIOv2_B.safetensors"
-COSMOS_MODEL_CONTAINER_PATH = "/data/automl_datasets/cosmos-rl/model-vlm"
+COSMOS_MODEL_CONTAINER_PATH = "/models/snapshots/cosmos-reason2-8b"
+COSMOS_BLOBS_CONTAINER_PATH = "/models/blobs"
 
 
 @dataclass(frozen=True)
@@ -2316,9 +2317,11 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
                 "read_only": True,
             },
             {
-                # Snapshot weight symlinks use ../../blobs from model-vlm.
+                # Snapshot weight symlinks use ../../blobs. Keep this mount
+                # outside the read-only dataset tree so Docker can create both
+                # mountpoints before the container starts.
                 "host_path": str(model_blobs),
-                "container_path": "/data/automl_datasets/blobs",
+                "container_path": COSMOS_BLOBS_CONTAINER_PATH,
                 "read_only": True,
             },
         ])
