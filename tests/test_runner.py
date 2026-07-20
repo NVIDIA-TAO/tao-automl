@@ -2104,6 +2104,40 @@ def test_run_one_job_accepts_multi_objective_eval_callback(tmp_path):
     assert metric == {"val_mAP": pytest.approx(0.76), "latency": 20.0}
 
 
+def test_run_one_job_does_not_relabel_training_metric_when_eval_is_missing(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    fake_sdk = MagicMock()
+    fake_sdk.create_job.return_value = MagicMock(
+        id="job-eval-missing", backend_job_id="be-eval-missing",
+    )
+    fake_sdk.get_job_status.return_value = MagicMock(status="Complete")
+    fake_sdk.get_job_logs.return_value = "BERTScore_F1: 0.12\n"
+
+    runner = AutoMLRunner(sdk=fake_sdk, skill_dir=skill_dir, action="train")
+    runner._poll_interval = 0
+    rec = MagicMock(id=5)
+
+    with patch(
+        "tao_sdk.script_runner.build_entrypoint",
+        return_value={"command": "BAKED_HEREDOC_COMMAND", "args_template": ""},
+    ):
+        metric, status = runner._run_one_job(
+            image="nvcr.io/test:1",
+            action_cfg=runner.skill_ctx.action_cfg,
+            specs={"train": {"num_epochs": 1}},
+            rec=rec,
+            metric_name="BERTScore_F1",
+            eval_fn=lambda recommendation, job_id: None,
+            workspace_path=str(tmp_path),
+            platform_kwargs={},
+        )
+
+    assert metric is None
+    assert status == "metric_missing"
+
+
 def test_run_one_job_submits_nested_specs_to_python_script_sdk(tmp_path):
     """Python actions bypass the container entrypoint and image API."""
     from tao_automl.runner import AutoMLRunner
