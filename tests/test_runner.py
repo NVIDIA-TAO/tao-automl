@@ -4513,6 +4513,41 @@ def test_apply_resume_checkpoint_resolves_zero_indexed_bounded_best(tmp_path):
     assert rec.resume_checkpoint_missing is False
 
 
+def test_apply_resume_checkpoint_enables_companion_resume_flag(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    template = skill_dir / "references/spec_template_train.yaml"
+    template.write_text(
+        "train:\n"
+        "  num_epochs: 2\n"
+        "  resume: false\n"
+        "  resume_training_checkpoint_path: null\n"
+    )
+    results_root = tmp_path / "results"
+    checkpoint = (
+        results_root / "parent-job" / "results_dir" / "train" / "epoch_1.pth"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_text("checkpoint")
+
+    runner = AutoMLRunner(sdk=MagicMock(), skill_dir=skill_dir, action="train")
+    rec = MagicMock(id=2, resume_from_job_id="parent-job", resume_from_epoch=1)
+    updated = runner._apply_resume_checkpoint(
+        {
+            "train": {
+                "resume": False,
+                "resume_training_checkpoint_path": None,
+            }
+        },
+        rec,
+        {"mounts": [{"host_path": str(results_root), "container_path": "/results"}]},
+    )
+
+    assert updated["train"]["resume"] is True
+    assert updated["train"]["resume_training_checkpoint_path"].endswith("epoch_1.pth")
+
+
 def test_apply_resume_checkpoint_does_not_use_latest_for_requested_epoch(tmp_path):
     from tao_automl.runner import AutoMLRunner
 
