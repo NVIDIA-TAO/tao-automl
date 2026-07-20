@@ -627,8 +627,10 @@ def _minimal_train_overrides(
         })
     if model == "bevfusion":
         candidates.update({
-            "train.num_gpus": 2,
-            "train.gpu_ids": [0, 1],
+            # BEVFusion runs in its pinned TAO 5.5 container.  Keep this aligned
+            # with the model skill's documented single-GPU workflow.
+            "train.num_gpus": 1,
+            "train.gpu_ids": [0],
             "dataset.train_dataset.batch_size": 1,
             "dataset.val_dataset.batch_size": 1,
             "dataset.test_dataset.batch_size": 1,
@@ -1322,10 +1324,10 @@ def _build_dataset_convert_specs(
         overrides.update({
             "aicity.num_frames": 3,
             "aicity.anchor_init_config.num_anchor": 72,
-            # Data Services 7.0.1 hardcodes random groups to 5-10 cameras.
-            # The validation fixture has three real cameras, so grouping would
-            # produce empty annotations and make anchor initialization fail.
-            "aicity.camera_grouping_mode": "",
+            # Sparse4D anchor initialization needs camera-group annotations.
+            # The converter's supported default generates those annotations;
+            # disabling grouping leaves no arrays for anchor concatenation.
+            "aicity.camera_grouping_mode": "random",
         })
     overrides = _valid_set(overrides, specs, schema_keys)
     for dotted_key, value in overrides.items():
@@ -1755,6 +1757,20 @@ def _supported_automl_parameters(skill_bank: Path, model: str) -> list[str] | No
             params = item.get("automl_default_parameters", [])
             return params or schema_defaults() or []
     return schema_defaults()
+
+
+def _pbt_resume_safe_parameters(params: list[str], model: str) -> list[str]:
+    """Keep PBT perturbations compatible with checkpoints being resumed."""
+    resume_safe = [
+        param for param in params
+        if param.startswith(("train.optim.", "train.optimizer."))
+        or param in {"train.optm_lr", "train.lr", "train.learning_rate"}
+    ]
+    # NVDINOv2's generated search surface contains only data-loader controls.
+    # Worker count is checkpoint-neutral and therefore safe across generations.
+    if not resume_safe and model == "nvdinov2" and "dataset.workers" in params:
+        return ["dataset.workers"]
+    return resume_safe
 
 
 def _minimal_custom_ranges(
@@ -2257,12 +2273,7 @@ def run_model(args: argparse.Namespace) -> int:
         # the source checkpoint incompatible with the resumed model.  Keep the
         # validation search on optimizer controls, which are checkpoint-safe
         # and still exercise PBT's copy/perturb/resume behavior.
-        resume_safe_params = [
-            param for param in supported_params
-            if param.startswith(("train.optim.", "train.optimizer."))
-            or param in {"train.optm_lr", "train.lr", "train.learning_rate"}
-        ]
-        supported_params = resume_safe_params
+        supported_params = _pbt_resume_safe_parameters(supported_params, model)
     if supported_params == [] and not args.post_check_only:
         payload = {
             "model": model,
