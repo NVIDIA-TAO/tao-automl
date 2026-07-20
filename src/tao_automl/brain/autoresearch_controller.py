@@ -464,9 +464,13 @@ class AutoresearchBrain:
         for p in self._parameters_with_custom_ranges()[:20]:
             name = p.get("parameter", "")
             dtype = p.get("value_type", "")
-            v_min = p.get("valid_min", "")
-            v_max = p.get("valid_max", "")
-            lines.append(f"{name} ({dtype}): [{v_min}, {v_max}]")
+            if dtype in ("categorical", "ordered"):
+                options = get_valid_options(p, self.custom_ranges) or []
+                lines.append(f"{name} ({dtype}): {options}")
+            else:
+                v_min = p.get("valid_min", "")
+                v_max = p.get("valid_max", "")
+                lines.append(f"{name} ({dtype}): [{v_min}, {v_max}]")
         return "\n".join(lines)
 
     def _random_fallback(self) -> List[Dict[str, Any]]:
