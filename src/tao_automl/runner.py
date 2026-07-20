@@ -1232,6 +1232,20 @@ def _find_local_resume_artifact(
     if selected is None:
         return None
     selected = Path(selected)
+    # Cosmos-RL stores each epoch as ``checkpoints/epoch_N/policy``.  The
+    # epoch directory is useful grouping metadata, but the trainer's resume
+    # loader expects the policy directory that contains ``cosmos_config`` and
+    # the rank-specific model/optimizer/scheduler state.  Passing epoch_N
+    # makes Cosmos silently fall back to the base Hugging Face model and
+    # restart at epoch 1, which defeats ASHA/Hyperband promotion semantics.
+    if (
+        model_name.replace("_", "-") == "cosmos-rl"
+        and action in {"resume", "train"}
+        and selected.is_dir()
+    ):
+        policy_dir = selected / "policy"
+        if (policy_dir / "cosmos_config").is_file():
+            selected = policy_dir
     return _as_container_path(selected, host_root, container_root)
 
 
