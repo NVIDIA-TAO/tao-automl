@@ -2106,6 +2106,40 @@ def _video_fps(path: Path) -> float:
     return fps
 
 
+def _video_codec(path: Path) -> str:
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error", "-select_streams", "v:0",
+            "-show_entries", "stream=codec_name", "-of", "default=nw=1:nk=1",
+            str(path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    codec = result.stdout.strip()
+    if not codec:
+        raise ValueError(f"Unable to determine video codec for {path}")
+    return codec
+
+
+def _ensure_cosmos_video_codec(path: Path) -> Path:
+    """Transcode codecs absent from the Cosmos release image to bounded VP9."""
+    if _video_codec(path) in {"vp8", "vp9", "av1", "mjpeg", "h264", "hevc"}:
+        return path
+    destination = path.with_suffix(".webm")
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-v", "error", "-i", str(path), "-an",
+            "-c:v", "libvpx-vp9", "-deadline", "realtime", "-cpu-used", "8",
+            "-crf", "40", "-b:v", "0", str(destination),
+        ],
+        check=True,
+    )
+    path.unlink()
+    return destination
+
+
 def _stage_cosmos_split(
     annotation_path: Path,
     archive_path: Path,
@@ -2131,6 +2165,8 @@ def _stage_cosmos_split(
             destination.parent.mkdir(parents=True, exist_ok=True)
             with source, destination.open("wb") as output:
                 shutil.copyfileobj(source, output)
+            destination = _ensure_cosmos_video_codec(destination)
+            record["video"] = destination.relative_to(target).as_posix()
             record["video_fps"] = _video_fps(destination)
     (target / "annotations.json").write_text(json.dumps(records, indent=2) + "\n")
     return len(records)
