@@ -2958,7 +2958,8 @@ def run_model(args: argparse.Namespace) -> int:
             profile=profile,
             action="evaluate",
             checkpoint_container_path=_host_to_container_path(
-                checkpoint_path, out_dir / "results"
+                str(Path(checkpoint_path).parent) if model == "cosmos-rl" else checkpoint_path,
+                out_dir / "results"
             ),
             num_classes=effective_num_classes,
             trial_specs=getattr(rec, "specs", None),
@@ -3014,7 +3015,7 @@ def run_model(args: argparse.Namespace) -> int:
                 "status": evaluated["status"],
             }
         checkpoint_container_path = _host_to_container_path(
-            checkpoint_path,
+            str(Path(checkpoint_path).parent) if model == "cosmos-rl" else checkpoint_path,
             out_dir / "results",
         )
         specs = _build_action_specs(
