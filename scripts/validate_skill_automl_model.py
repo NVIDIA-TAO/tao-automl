@@ -602,6 +602,7 @@ def _minimal_train_overrides(
             "train.train_policy.dataset.test_size": 0,
             "validation.batch_size": 1,
             "validation.enable_dataset_cache": False,
+            "custom.vision.nframes": 2,
             "logging.logger": ["console", "tao"],
         })
     if model == "clip":
@@ -1059,6 +1060,7 @@ def _build_action_specs(
                 "evaluation.limit": 2,
                 "evaluation.batch_size": 1,
                 "generation.max_tokens": 32,
+                "vision.nframes": 2,
                 "model.model_name": COSMOS_MODEL_CONTAINER_PATH,
                 "model.base_model_path": COSMOS_MODEL_CONTAINER_PATH,
             })
