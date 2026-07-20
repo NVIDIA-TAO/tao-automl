@@ -4653,6 +4653,8 @@ def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
     from tao_automl.runner import AutoMLRunner
 
     skill_dir = _write_fake_skill(tmp_path)
+    info = skill_dir / "references/skill_info.yaml"
+    info.write_text(info.read_text().replace("network_arch: fake-net", "network_arch: cosmos-rl"))
     template = skill_dir / "references/spec_template_train.yaml"
     template.write_text("train:\n  resume: false\n  epoch: 2\n")
 
@@ -4662,6 +4664,7 @@ def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
         / "checkpoints" / "epoch_1"
     )
     (checkpoint_dir / "policy").mkdir(parents=True)
+    (checkpoint_dir / "policy" / "cosmos_config").write_text("config")
     (checkpoint_dir / "policy" / "model_rank_0.pth").write_text("checkpoint")
     safetensor_dir = (
         results_root / "parent-job" / "train_output_dir" / "run1"
@@ -4681,7 +4684,7 @@ def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
 
     assert (
         updated["train"]["resume"]
-        == "/results/parent-job/train_output_dir/run1/checkpoints/epoch_1"
+        == "/results/parent-job/train_output_dir/run1/checkpoints/epoch_1/policy"
     )
 
 
