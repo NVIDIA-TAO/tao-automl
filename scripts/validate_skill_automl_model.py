@@ -913,6 +913,35 @@ def _host_to_container_path(host_path: str, host_root: Path, container_root: str
     return f"{container_root.rstrip('/')}/{path.relative_to(host_root).as_posix()}"
 
 
+def _checkpoint_action_container_path(
+    checkpoint_path: str,
+    host_root: Path,
+    model: str,
+) -> str:
+    """Return the checkpoint argument expected by eval/inference actions."""
+    action_path = Path(checkpoint_path)
+    # The real Cosmos-RL checkpoint artifact is the LoRA safetensors file, but
+    # its PEFT merge utility accepts the adapter directory so it can read both
+    # adapter_config.json and adapter_model.safetensors.
+    if model == "cosmos-rl" and action_path.name == "adapter_model.safetensors":
+        action_path = action_path.parent
+    return _host_to_container_path(str(action_path), host_root)
+
+
+def _cosmos_inference_media_path(out_dir: Path) -> str:
+    """Resolve one real staged video because Cosmos inference is non-recursive."""
+    eval_root = out_dir.parent / "datasets" / "cosmos-rl" / "eval"
+    annotation_path = eval_root / "annotations.json"
+    records = json.loads(annotation_path.read_text())
+    if not records or not records[0].get("video"):
+        raise ValueError(f"No referenced Cosmos inference video in {annotation_path}")
+    relative_video = Path(records[0]["video"])
+    media_path = eval_root / relative_video
+    if not media_path.is_file():
+        raise FileNotFoundError(f"Referenced Cosmos inference video is missing: {media_path}")
+    return f"/data/automl_datasets/cosmos-rl/eval/{relative_video.as_posix()}"
+
+
 def _latest_kpi(job_root: Path) -> dict[str, Any]:
     latest: dict[str, Any] = {}
     for status_path in sorted(job_root.rglob("status.json")):
@@ -1667,7 +1696,9 @@ def _run_post_checks(
         return payload
 
     host_root = out_dir / "results"
-    checkpoint_container_path = _host_to_container_path(checkpoint_path, host_root)
+    checkpoint_container_path = _checkpoint_action_container_path(
+        checkpoint_path, host_root, model
+    )
     actions = skill_info.get("actions") or {}
     post_checks = []
     best_trial_specs = ((payload.get("result") or {}).get("best") or {}).get("specs") or {}
@@ -1719,6 +1750,8 @@ def _run_post_checks(
             trial_specs=best_trial_specs,
             extra_overrides=dataset_convert_overrides,
         )
+        if model == "cosmos-rl" and action == "inference":
+            specs["media"] = _cosmos_inference_media_path(out_dir)
         post_checks.append(_run_action_job(
             sdk=sdk,
             image=image,
@@ -2957,9 +2990,8 @@ def run_model(args: argparse.Namespace) -> int:
             skill_text=skill_text,
             profile=profile,
             action="evaluate",
-            checkpoint_container_path=_host_to_container_path(
-                str(Path(checkpoint_path).parent) if model == "cosmos-rl" else checkpoint_path,
-                out_dir / "results"
+            checkpoint_container_path=_checkpoint_action_container_path(
+                checkpoint_path, out_dir / "results", model
             ),
             num_classes=effective_num_classes,
             trial_specs=getattr(rec, "specs", None),
@@ -3014,9 +3046,8 @@ def run_model(args: argparse.Namespace) -> int:
                 "job_id": None,
                 "status": evaluated["status"],
             }
-        checkpoint_container_path = _host_to_container_path(
-            str(Path(checkpoint_path).parent) if model == "cosmos-rl" else checkpoint_path,
-            out_dir / "results",
+        checkpoint_container_path = _checkpoint_action_container_path(
+            checkpoint_path, out_dir / "results", model,
         )
         specs = _build_action_specs(
             model_dir=model_dir,
