@@ -1449,6 +1449,7 @@ def test_promoted_metric_missing_checkpoint_carries_forward_prior_metric(
     )
 
     assert result["best"]["metric_value"] == 0.42
+    assert result["history"][0]["job_id"] == "child-job"
     assert result["history"][0]["status"] == JobStates.success
 
 

@@ -66,3 +66,43 @@ def test_depth_d1_direction_is_model_specific():
     assert validator._direction("val/d1", model="depth-net-mono") == "maximize"
     assert validator._direction("val/d1", model="depth-net-stereo") == "minimize"
     assert validator._direction("val/epe", model="depth-net-stereo") == "minimize"
+
+
+def test_nvdinov2_pbt_keeps_checkpoint_neutral_worker_parameter():
+    validator = _load_validator_module()
+
+    assert validator._pbt_resume_safe_parameters(
+        ["dataset.workers", "dataset.batch_size"], "nvdinov2"
+    ) == ["dataset.workers"]
+
+
+def test_pbt_rejects_structural_parameters_when_no_safe_fallback_exists():
+    validator = _load_validator_module()
+
+    assert validator._pbt_resume_safe_parameters(
+        ["model.hidden_dim", "dataset.batch_size"], "dino"
+    ) == []
+
+
+def test_sparse4d_conversion_keeps_camera_group_generation_enabled(monkeypatch):
+    validator = _load_validator_module()
+    monkeypatch.setattr(validator, "_read_yaml", lambda _path: {})
+    monkeypatch.setattr(validator, "_model_profile_key", lambda _path: "sparse4d")
+    monkeypatch.setattr(
+        validator,
+        "_schema_keys",
+        lambda _path, _action: {
+            "aicity.num_frames",
+            "aicity.anchor_init_config.num_anchor",
+            "aicity.camera_grouping_mode",
+        },
+    )
+    monkeypatch.setattr(validator, "_add_data_source_overrides", lambda *_args: None)
+
+    specs = validator._build_dataset_convert_specs(
+        model_dir=Path("sparse4d"),
+        skill_text="",
+        profile=validator.MODEL_PROFILES["sparse4d"],
+    )
+
+    assert specs["aicity"]["camera_grouping_mode"] == "random"
