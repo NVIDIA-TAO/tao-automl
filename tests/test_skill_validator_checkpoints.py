@@ -25,6 +25,36 @@ def test_checkpoint_selection_prefers_highest_explicit_epoch_and_step():
     assert validator._prefer_epoch_or_step_checkpoint(checkpoints) == checkpoints[1]
 
 
+def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
+    validator = _load_validator_module()
+    checkpoint = (
+        tmp_path / "job" / "safetensors" / "epoch_2" / "adapter_model.safetensors"
+    )
+
+    assert validator._checkpoint_action_container_path(
+        str(checkpoint), tmp_path, "cosmos-rl"
+    ) == "/results/job/safetensors/epoch_2"
+    assert validator._checkpoint_action_container_path(
+        str(checkpoint), tmp_path, "dino"
+    ) == "/results/job/safetensors/epoch_2/adapter_model.safetensors"
+
+
+def test_cosmos_inference_uses_referenced_nested_video(tmp_path):
+    validator = _load_validator_module()
+    out_dir = tmp_path / "cosmos-rl"
+    eval_root = tmp_path / "datasets" / "cosmos-rl" / "eval"
+    video = eval_root / "scene" / "clips" / "sample.webm"
+    video.parent.mkdir(parents=True)
+    video.write_bytes(b"video")
+    (eval_root / "annotations.json").write_text(json.dumps([
+        {"video": "scene/clips/sample.webm"}
+    ]))
+
+    assert validator._cosmos_inference_media_path(out_dir) == (
+        "/data/automl_datasets/cosmos-rl/eval/scene/clips/sample.webm"
+    )
+
+
 def test_nvdinov2_checkpoint_selection_prefers_latest_student_checkpoint():
     validator = _load_validator_module()
     checkpoints = [
