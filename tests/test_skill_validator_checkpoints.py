@@ -1,5 +1,7 @@
 import importlib.util
+import json
 import sys
+import tarfile
 from pathlib import Path
 
 
@@ -68,6 +70,12 @@ def test_depth_d1_direction_is_model_specific():
     assert validator._direction("val/epe", model="depth-net-stereo") == "minimize"
 
 
+def test_clip_uses_training_metric_for_selection_and_test_metric_for_checkpoint_eval():
+    validator = _load_validator_module()
+
+    assert validator._checkpoint_evaluation_metric("clip", "val/t2i_mAP") == "test/t2i_mAP"
+
+
 def test_nvdinov2_pbt_keeps_checkpoint_neutral_worker_parameter():
     validator = _load_validator_module()
 
@@ -106,3 +114,51 @@ def test_sparse4d_conversion_keeps_camera_group_generation_enabled(monkeypatch):
     )
 
     assert specs["aicity"]["camera_grouping_mode"] == "random"
+
+
+def test_clip_caption_fallback_uses_sorted_coco_class_labels():
+    validator = _load_validator_module()
+    payload = {
+        "images": [
+            {"id": 7, "file_name": "sample.jpg"},
+            {"id": 8, "file_name": "unannotated.jpg"},
+        ],
+        "categories": [
+            {"id": 2, "name": "helmet"},
+            {"id": 1, "name": "person"},
+        ],
+        "annotations": [
+            {"image_id": 7, "category_id": 1},
+            {"image_id": 7, "category_id": 2},
+            {"image_id": 7, "category_id": 1},
+        ],
+    }
+
+    assert validator._clip_captions_from_coco(payload) == {
+        "sample.jpg": "a photo containing helmet, person",
+    }
+
+
+def test_cosmos_staging_extracts_referenced_video_and_measures_fps(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    source_video = tmp_path / "source.mp4"
+    source_video.write_bytes(b"real-video-bytes")
+    archive = tmp_path / "videos.tar.gz"
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(source_video, arcname="videos/scene/clips/sample.mp4")
+    annotations = tmp_path / "source_annotations.json"
+    annotations.write_text(json.dumps([
+        {
+            "id": "sample",
+            "video": "scene/clips/sample.mp4",
+            "conversations": [],
+        }
+    ]))
+    monkeypatch.setattr(validator, "_video_fps", lambda _path: 29.97)
+
+    target = tmp_path / "staged"
+    assert validator._stage_cosmos_split(annotations, archive, target) == 1
+
+    staged = json.loads((target / "annotations.json").read_text())
+    assert staged[0]["video_fps"] == 29.97
+    assert (target / "scene/clips/sample.mp4").read_bytes() == b"real-video-bytes"
