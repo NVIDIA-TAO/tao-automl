@@ -369,7 +369,7 @@ def _evaluation_metric(model: str, training_metric: str) -> str:
     return {
         "action-recognition": "accuracy",
         "centerpose": "test_3DIoU",
-        "cosmos-rl": "BERTScore",
+        "cosmos-rl": "BERTScore_F1",
         "deformable-detr": "test_mAP50",
         "dino": "test_mAP50",
         "depth-net-stereo": "val/epe",
