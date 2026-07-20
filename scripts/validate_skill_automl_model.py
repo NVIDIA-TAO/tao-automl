@@ -2131,6 +2131,10 @@ def _ensure_cosmos_video_codec(path: Path) -> Path:
     subprocess.run(
         [
             "ffmpeg", "-y", "-v", "error", "-i", str(path), "-an",
+            # The release image's torchvision backend decodes the entire clip
+            # before sampling. Keep this validation subset bounded at the same
+            # 2 FPS used by the evaluator and at a compact vision resolution.
+            "-vf", "fps=2,scale=448:-2",
             "-c:v", "libvpx-vp9", "-deadline", "realtime", "-cpu-used", "8",
             "-crf", "40", "-b:v", "0", str(destination),
         ],
