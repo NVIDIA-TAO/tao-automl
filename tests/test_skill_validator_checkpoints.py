@@ -426,6 +426,38 @@ def test_ocrnet_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch)
     assert any("purpose_built_models_ocrnet_val/test/gt_new.txt" in uri for uri in downloaded)
 
 
+def test_oneformer_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name.endswith(".tar.gz"):
+            directory = destination.name.removesuffix(".tar.gz")
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"image"
+                info = tarfile.TarInfo(f"{directory}/sample.png")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("{}\n")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "oneformer"
+    data_root = validator._prepare_oneformer_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "oneformer"
+    for split in ("train", "val"):
+        assert (data_root / split / "images/sample.png").is_file()
+        assert (data_root / split / "images_panoptic/sample.png").is_file()
+        assert (data_root / split / "annotations.json").is_file()
+        assert (data_root / split / "label_map.json").is_file()
+    assert any("segmentation_oneformer_train/images.tar.gz" in uri for uri in downloaded)
+    assert any("segmentation_oneformer_val/label_map.json" in uri for uri in downloaded)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
