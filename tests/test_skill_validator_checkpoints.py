@@ -27,6 +27,17 @@ def test_checkpoint_selection_prefers_highest_explicit_epoch_and_step():
     assert validator._prefer_epoch_or_step_checkpoint(checkpoints) == checkpoints[1]
 
 
+def test_hyperband_es_minimal_settings_enable_early_stop_prediction():
+    validator = _load_validator_module()
+
+    settings = validator._automl_settings(
+        "hyperband_es", "AP11", "bevfusion", SimpleNamespace()
+    )
+
+    assert settings["automl_max_epochs"] == 2
+    assert settings["automl_min_early_stop_epochs"] == 1
+
+
 def test_checkpoint_progress_detects_non_advancing_sparse4d_promotion():
     validator = _load_validator_module()
 
