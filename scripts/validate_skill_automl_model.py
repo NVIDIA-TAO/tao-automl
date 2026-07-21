@@ -2053,7 +2053,7 @@ def _prepare_depth_data_mount(profile: ModelProfile, out_dir: Path, model: str) 
         _download_s3_file(_join_uri(uri, "images.tar.gz"), archive)
         if not (target / "left").exists():
             with tarfile.open(archive) as tar:
-                tar.extractall(target)
+                tar.extractall(target, filter="data")
         if model == "depth-net-stereo":
             _download_s3_file(_join_uri(uri, "annotations.txt"), target / "annotations.txt")
         if model == "depth-net-mono":
@@ -2082,7 +2082,7 @@ def _prepare_bevfusion_data_mount(profile: ModelProfile, out_dir: Path) -> Path:
         _download_s3_file(_join_uri(profile.train_uri, filename), archive)
         if not (data_root / extracted_dir).exists():
             with tarfile.open(archive) as tar:
-                tar.extractall(data_root)
+                tar.extractall(data_root, filter="data")
     return data_root
 
 
@@ -2129,7 +2129,7 @@ def _prepare_clip_data_mount(profile: ModelProfile, out_dir: Path) -> Path:
                 shutil.rmtree(extract_root)
             extract_root.mkdir(parents=True)
             with tarfile.open(archive) as tar:
-                tar.extractall(extract_root)
+                tar.extractall(extract_root, filter="data")
             extracted_images = extract_root / "images"
             if not extracted_images.is_dir():
                 raise FileNotFoundError(f"CLIP image archive did not contain images/: {archive}")
