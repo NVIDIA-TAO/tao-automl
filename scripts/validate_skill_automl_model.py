@@ -1894,7 +1894,7 @@ def _run_post_checks(
         )
         if model == "cosmos-rl" and action == "inference":
             specs["media"] = _cosmos_inference_media_path(out_dir)
-        post_checks.append(_run_action_job(
+        post_check = _run_action_job(
             sdk=sdk,
             image=image,
             action_cfg=action_cfg,
@@ -1904,7 +1904,13 @@ def _run_post_checks(
             args=args,
             mounts=mounts,
             env_vars=action_env_vars,
-        ))
+        )
+        if model == "cosmos-rl":
+            checkpoint_relative = Path(checkpoint_path).relative_to(host_root)
+            post_check["cleaned_merged_artifacts"] = _cleanup_cosmos_merged_artifacts(
+                host_root / checkpoint_relative.parts[0]
+            )
+        post_checks.append(post_check)
 
     payload["checkpoint_validation"] = {
         "status": (
