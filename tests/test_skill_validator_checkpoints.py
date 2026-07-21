@@ -549,6 +549,34 @@ def test_rtdetr_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch)
     assert any("tao_od_synthetic_subset_val_no_convert/annotations.json" in uri for uri in downloaded)
 
 
+def test_segformer_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        split = destination.name.removesuffix(".tar.gz")
+        with tarfile.open(destination, "w:gz") as archive:
+            payload = b"png"
+            info = tarfile.TarInfo(f"{split}/sample.png")
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "segformer"
+    data_root = validator._prepare_segformer_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "segformer"
+    for kind, splits in (("images", ("train", "val", "test")), ("masks", ("train", "val"))):
+        for split in splits:
+            assert (data_root / kind / split / "sample.png").is_file()
+    assert any("segmentation_segformer_train/images/train.tar.gz" in uri for uri in downloaded)
+    assert any("segmentation_segformer_val/images/test.tar.gz" in uri for uri in downloaded)
+    assert any("segmentation_segformer_val/masks/val.tar.gz" in uri for uri in downloaded)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (

@@ -2628,6 +2628,32 @@ def _prepare_rtdetr_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_segformer_mount(out_dir: Path) -> Path:
+    """Stage the current run's real UNet-layout SegFormer dataset."""
+    data_root = out_dir / "data_mount" / "segformer"
+    archives = (
+        ("train", "images", "train"),
+        ("val", "images", "val"),
+        ("val", "images", "test"),
+        ("train", "masks", "train"),
+        ("val", "masks", "val"),
+    )
+    for source_split, kind, target_split in archives:
+        source = f"{BUCKET_ROOT}/segmentation_segformer_{source_split}/{kind}"
+        archive = data_root / "_archives" / kind / f"{target_split}.tar.gz"
+        _download_s3_file(_join_uri(source, f"{target_split}.tar.gz"), archive)
+        extracted = data_root / kind / target_split
+        if not extracted.is_dir():
+            extracted.parent.mkdir(parents=True, exist_ok=True)
+            with tarfile.open(archive) as tar:
+                tar.extractall(extracted.parent, filter="data")
+        if not extracted.is_dir() or not any(extracted.iterdir()):
+            raise FileNotFoundError(
+                f"SegFormer archive did not produce {kind}/{target_split}: {archive}"
+            )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2902,7 +2928,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/rtdetr",
         })
     if model == "segformer":
-        dataset_root = out_dir.parent / "datasets" / "segformer" / "root"
+        dataset_root = _prepare_segformer_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/segformer",
