@@ -977,6 +977,27 @@ def _cosmos_inference_media_path(out_dir: Path) -> str:
     return f"/data/automl_datasets/cosmos-rl/eval/{relative_video.as_posix()}"
 
 
+def _remove_container_owned_directory(directory: Path) -> None:
+    """Remove a run-local directory, crossing the Docker UID boundary if needed."""
+    try:
+        shutil.rmtree(directory)
+    except PermissionError:
+        cleanup_image = os.environ.get("TAO_AUTOML_CLEANUP_IMAGE", "alpine:3.20")
+        subprocess.run(
+            [
+                "docker", "run", "--rm", "--network", "none", "--pull", "never",
+                "-v", f"{directory.parent.resolve()}:/cleanup",
+                cleanup_image, "rm", "-rf", f"/cleanup/{directory.name}",
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    if directory.exists():
+        raise RuntimeError(f"Cleanup did not remove container-owned directory: {directory}")
+
+
 def _cleanup_cosmos_merged_artifacts(train_job_root: Path) -> list[str]:
     """Remove evaluation-only merged models while retaining real LoRA checkpoints."""
     if not train_job_root.is_dir():
@@ -986,9 +1007,28 @@ def _cleanup_cosmos_merged_artifacts(train_job_root: Path) -> list[str]:
     for merged_dir in list(train_job_root.rglob("merged")):
         if not merged_dir.is_dir() or merged_dir.is_symlink():
             continue
-        shutil.rmtree(merged_dir)
+        _remove_container_owned_directory(merged_dir)
         removed.append(str(merged_dir))
         LOG.info("Removed Cosmos-RL evaluation-only merged model: %s", merged_dir)
+    return removed
+
+
+def _cleanup_cosmos_prior_policy_artifacts(train_job_root: Path) -> list[str]:
+    """Remove a consumed full policy state while retaining its LoRA adapter."""
+    if not train_job_root.is_dir():
+        return []
+
+    removed: list[str] = []
+    for policy_dir in list(train_job_root.rglob("policy")):
+        if (
+            not policy_dir.is_dir()
+            or policy_dir.is_symlink()
+            or "checkpoints" not in policy_dir.relative_to(train_job_root).parts
+        ):
+            continue
+        _remove_container_owned_directory(policy_dir)
+        removed.append(str(policy_dir))
+        LOG.info("Removed consumed Cosmos-RL prior-rung policy state: %s", policy_dir)
     return removed
 
 
@@ -3623,6 +3663,20 @@ def run_model(args: argparse.Namespace) -> int:
         checkpoint_path = _prefer_epoch_or_step_checkpoint(checkpoint_paths, model=model)
         if not checkpoint_path:
             raise RuntimeError(f"No real checkpoint found for recommendation train job {train_job_id}")
+        cleaned_prior_policy_artifacts: list[str] = []
+        if model == "cosmos-rl" and getattr(rec, "resume_from_job_id", None):
+            # The promoted job has now completed and owns a new full policy
+            # checkpoint. Prior-rung policies have served their resume purpose;
+            # retain their LoRA adapters and metrics but release the large full
+            # states before materializing another evaluation merge.
+            for prior_run in job_runs:
+                prior_job_id = prior_run.get("job_id")
+                if prior_job_id and str(prior_job_id) != str(train_job_id):
+                    cleaned_prior_policy_artifacts.extend(
+                        _cleanup_cosmos_prior_policy_artifacts(
+                            out_dir / "results" / str(prior_job_id)
+                        )
+                    )
         if not evaluate_cfg or not evaluate_template.exists():
             train_kpi = _latest_kpi(out_dir / "results" / str(train_job_id))
             selection_metric = _metric_from_job("", train_kpi, metric)
@@ -3664,6 +3718,8 @@ def run_model(args: argparse.Namespace) -> int:
         evaluated["recommendation_id"] = getattr(rec, "id", None)
         evaluated["train_job_id"] = train_job_id
         evaluated["checkpoint_path"] = checkpoint_path
+        if cleaned_prior_policy_artifacts:
+            evaluated["cleaned_prior_policy_artifacts"] = cleaned_prior_policy_artifacts
         if model == "cosmos-rl":
             evaluated["cleaned_merged_artifacts"] = _cleanup_cosmos_merged_artifacts(
                 out_dir / "results" / str(train_job_id)
