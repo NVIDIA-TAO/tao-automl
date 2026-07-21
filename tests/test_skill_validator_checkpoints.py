@@ -240,6 +240,39 @@ def test_mal_segmentation_dataset_preserves_default_mask_loading():
     assert "dataset.load_mask" not in overrides
 
 
+def test_mask_grounding_dino_dataset_is_recreated_in_current_model_run(
+    tmp_path, monkeypatch
+):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("{}")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "mask-grounding-dino"
+    data_root = validator._prepare_mask_grounding_dino_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "mask-grounding-dino-mini"
+    assert (data_root / "train/images/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "val/images/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "train/annotations_odvg.jsonl").is_file()
+    assert (data_root / "train/annotations_odvg_labelmap.json").is_file()
+    assert (data_root / "val/annotations.json").is_file()
+    assert any("/segmentation_mask_grounding_dino_train/" in uri for uri in downloaded)
+    assert any("/segmentation_mask_grounding_dino_val/" in uri for uri in downloaded)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
