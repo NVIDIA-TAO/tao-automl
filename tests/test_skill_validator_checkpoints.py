@@ -338,6 +338,31 @@ def test_ml_recog_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatc
     assert len(downloaded) == 5
 
 
+def test_nvdinov2_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tarfile.open(destination, "w:gz") as archive:
+            payload = b"jpeg"
+            info = tarfile.TarInfo("images_train/class_a/sample.jpg")
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "nvdinov2"
+    data_root = validator._prepare_nvdinov2_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "nvdinov2-mini"
+    assert (data_root / "images_train/images_train/class_a/sample.jpg").is_file()
+    assert downloaded == [
+        f"{validator.BUCKET_ROOT}/classification_pyt/images_train.tar.gz"
+    ]
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
