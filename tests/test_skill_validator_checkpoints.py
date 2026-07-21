@@ -670,6 +670,56 @@ def test_cosmos_merged_cleanup_is_noop_when_job_root_is_missing(tmp_path):
     assert validator._cleanup_cosmos_merged_artifacts(tmp_path / "missing") == []
 
 
+def test_container_owned_cleanup_falls_back_to_isolated_docker_rm(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    directory = tmp_path / "merged"
+    directory.mkdir()
+    (directory / "root-owned.bin").write_bytes(b"data")
+    original_rmtree = validator.shutil.rmtree
+    calls = []
+
+    def permission_denied(_path):
+        raise PermissionError("container-owned")
+
+    def fake_run(command, **kwargs):
+        calls.append((command, kwargs))
+        original_rmtree(directory)
+
+    monkeypatch.setattr(validator.shutil, "rmtree", permission_denied)
+    monkeypatch.setattr(validator.subprocess, "run", fake_run)
+
+    validator._remove_container_owned_directory(directory)
+
+    command, kwargs = calls[0]
+    assert command[:7] == [
+        "docker", "run", "--rm", "--network", "none", "--pull", "never"
+    ]
+    assert command[-4:] == ["alpine:3.20", "rm", "-rf", "/cleanup/merged"]
+    assert kwargs["check"] is True
+    assert not directory.exists()
+
+
+def test_cosmos_prior_policy_cleanup_retains_lora_adapter(tmp_path):
+    validator = _load_validator_module()
+    job_root = tmp_path / "results" / "prior-rung"
+    policy = job_root / "train_output_dir" / "timestamp" / "checkpoints" / "epoch_1" / "policy"
+    lora = job_root / "train_output_dir" / "timestamp" / "safetensors" / "epoch_1"
+    unrelated = job_root / "metadata" / "policy"
+    policy.mkdir(parents=True)
+    lora.mkdir(parents=True)
+    unrelated.mkdir(parents=True)
+    (policy / "model.safetensors").write_bytes(b"policy")
+    (lora / "adapter_model.safetensors").write_bytes(b"lora")
+    (unrelated / "record.json").write_text("{}")
+
+    removed = validator._cleanup_cosmos_prior_policy_artifacts(job_root)
+
+    assert removed == [str(policy)]
+    assert not policy.exists()
+    assert (lora / "adapter_model.safetensors").read_bytes() == b"lora"
+    assert (unrelated / "record.json").read_text() == "{}"
+
+
 def test_nvdinov2_checkpoint_selection_prefers_latest_student_checkpoint():
     validator = _load_validator_module()
     checkpoints = [
