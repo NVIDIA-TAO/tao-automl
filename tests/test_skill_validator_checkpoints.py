@@ -720,6 +720,21 @@ def test_cosmos_prior_policy_cleanup_retains_lora_adapter(tmp_path):
     assert (unrelated / "record.json").read_text() == "{}"
 
 
+def test_noncompetitive_job_ids_honors_metric_direction_and_stable_ties():
+    validator = _load_validator_module()
+    evaluations = [
+        {"train_job_id": "first", "metric_value": 0.8},
+        {"train_job_id": "second", "metric_value": 0.4},
+    ]
+
+    assert validator._noncompetitive_job_ids(evaluations, "maximize") == ["second"]
+    assert validator._noncompetitive_job_ids(evaluations, "minimize") == ["first"]
+    assert validator._noncompetitive_job_ids([
+        {"train_job_id": "first", "metric_value": 0.8},
+        {"train_job_id": "second", "metric_value": 0.8},
+    ], "maximize") == ["second"]
+
+
 def test_nvdinov2_checkpoint_selection_prefers_latest_student_checkpoint():
     validator = _load_validator_module()
     checkpoints = [
