@@ -273,6 +273,41 @@ def test_mask_grounding_dino_dataset_is_recreated_in_current_model_run(
     assert any("/segmentation_mask_grounding_dino_val/" in uri for uri in downloaded)
 
 
+def test_mask2former_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name.endswith(".tar.gz"):
+            directory = (
+                "images_panoptic" if destination.name.startswith("images_panoptic") else "images"
+            )
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"data"
+                info = tarfile.TarInfo(f"{directory}/sample.png")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("{}")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "mask2former"
+    data_root = validator._prepare_mask2former_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "mask2former-mini"
+    for split in ("train", "val"):
+        assert (data_root / split / "images/sample.png").is_file()
+        assert (data_root / split / "images_panoptic/sample.png").is_file()
+        assert (data_root / split / "annotations.json").is_file()
+        assert (data_root / split / "annotations_panoptic.json").is_file()
+        assert (data_root / split / "label_map_panoptic.json").is_file()
+    assert any("/segmentation_mask2former_train/" in uri for uri in downloaded)
+    assert any("/segmentation_mask2former_val/" in uri for uri in downloaded)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
