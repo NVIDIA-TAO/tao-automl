@@ -2424,6 +2424,36 @@ def _prepare_mask2former_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_ml_recog_mount(out_dir: Path) -> Path:
+    """Stage the current run's real known/unknown retrieval datasets."""
+    data_root = out_dir / "data_mount" / "ml-recog"
+    source_root = (
+        f"{BUCKET_ROOT}/purpose_built_models_ml_recog_train/"
+        "metric_learning_recognition/"
+        "retail-product-checkout-dataset_classification_demo"
+    )
+    for scope, splits in (
+        ("known_classes", ("train", "reference", "val")),
+        ("unknown_classes", ("reference", "test")),
+    ):
+        target_scope = "known" if scope == "known_classes" else "unknown"
+        for split in splits:
+            target = data_root / target_scope / split
+            archive = target / f"{split}.tar.gz"
+            _download_s3_file(
+                _join_uri(_join_uri(source_root, scope), f"{split}.tar.gz"), archive
+            )
+            extracted = target / split
+            if not extracted.is_dir():
+                with tarfile.open(archive) as tar:
+                    tar.extractall(target, filter="data")
+            if not extracted.is_dir():
+                raise FileNotFoundError(
+                    f"ML-Recog archive did not contain {split}/: {archive}"
+                )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2650,7 +2680,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/mask2former-mini",
         })
     if model == "ml-recog":
-        dataset_root = out_dir.parent / "datasets" / "ml-recog"
+        dataset_root = _prepare_ml_recog_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/ml-recog",

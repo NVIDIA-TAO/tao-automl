@@ -308,6 +308,36 @@ def test_mask2former_dataset_is_recreated_in_current_model_run(tmp_path, monkeyp
     assert any("/segmentation_mask2former_val/" in uri for uri in downloaded)
 
 
+def test_ml_recog_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        split = destination.name.removesuffix(".tar.gz")
+        with tarfile.open(destination, "w:gz") as archive:
+            payload = b"jpeg"
+            info = tarfile.TarInfo(f"{split}/class_a/sample.jpg")
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "ml-recog"
+    data_root = validator._prepare_ml_recog_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "ml-recog"
+    for scope, splits in (
+        ("known", ("train", "reference", "val")),
+        ("unknown", ("reference", "test")),
+    ):
+        for split in splits:
+            assert (data_root / scope / split / split / "class_a/sample.jpg").is_file()
+    assert all("purpose_built_models_ml_recog_train" in uri for uri in downloaded)
+    assert len(downloaded) == 5
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
