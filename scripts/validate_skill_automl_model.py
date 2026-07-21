@@ -2605,6 +2605,29 @@ def _prepare_pointpillars_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_rtdetr_mount(out_dir: Path) -> Path:
+    """Stage the current run's real RT-DETR COCO train/validation data."""
+    data_root = out_dir / "data_mount" / "rtdetr"
+    for split, dataset_name in (
+        ("train", "tao_od_synthetic_subset_train_no_convert"),
+        ("val", "tao_od_synthetic_subset_val_no_convert"),
+    ):
+        target = data_root / split
+        source = f"{BUCKET_ROOT}/{dataset_name}"
+        for filename in ("images.tar.gz", "annotations.json", "label_map.txt"):
+            _download_s3_file(_join_uri(source, filename), target / filename)
+        archive = target / "images.tar.gz"
+        image_root = target / "images"
+        if not image_root.is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(target, filter="data")
+        if not image_root.is_dir():
+            raise FileNotFoundError(
+                f"RT-DETR image archive did not contain images/: {archive}"
+            )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2873,7 +2896,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/optical-inspection",
         })
     if model == "rtdetr":
-        dataset_root = out_dir.parent / "datasets" / "rtdetr"
+        dataset_root = _prepare_rtdetr_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/rtdetr",
