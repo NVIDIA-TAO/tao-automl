@@ -136,6 +136,56 @@ def test_deformable_detr_dataset_is_recreated_in_current_model_run(tmp_path, mon
     assert all("tao_od_synthetic_subset_" in uri for uri in downloaded)
 
 
+def test_grounding_dino_dataset_is_recreated_and_converted_to_odvg(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+
+    def fake_download(_uri, destination):
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text(json.dumps({
+                "images": [{"id": 7, "file_name": "sample.jpg"}],
+                "categories": [{"id": 2, "name": "helmet"}],
+                "annotations": [{
+                    "image_id": 7,
+                    "category_id": 2,
+                    "bbox": [2, 3, 4, 5],
+                }],
+            }))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "grounding-dino"
+    data_root = validator._prepare_grounding_dino_mount(out_dir)
+    record = json.loads(
+        (data_root / "train/annotations_odvg.jsonl").read_text().strip()
+    )
+
+    assert data_root == out_dir / "data_mount" / "grounding-dino-mini"
+    assert record == {
+        "detection": {
+            "instances": [{
+                "bbox": [2, 3, 6, 8],
+                "category": "helmet",
+                "label": 2,
+            }]
+        },
+        "file_name": "sample.jpg",
+    }
+    assert json.loads(
+        (data_root / "train/annotations_odvg_labelmap.json").read_text()
+    ) == {"2": "helmet"}
+    assert (data_root / "val/images/sample.jpg").read_bytes() == b"jpeg"
+    val_payload = json.loads((data_root / "val/annotations.json").read_text())
+    assert val_payload["categories"][0]["id"] == 0
+    assert val_payload["annotations"][0]["category_id"] == 0
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
