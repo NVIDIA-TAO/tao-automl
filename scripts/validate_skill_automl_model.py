@@ -2454,6 +2454,25 @@ def _prepare_ml_recog_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_nvdinov2_mount(out_dir: Path) -> Path:
+    """Stage the current run's real unlabeled image-classification data."""
+    data_root = out_dir / "data_mount" / "nvdinov2-mini"
+    target = data_root / "images_train"
+    archive = target / "images_train.tar.gz"
+    _download_s3_file(
+        f"{BUCKET_ROOT}/classification_pyt/images_train.tar.gz", archive
+    )
+    extracted = target / "images_train"
+    if not extracted.is_dir():
+        with tarfile.open(archive) as tar:
+            tar.extractall(target, filter="data")
+    if not extracted.is_dir():
+        raise FileNotFoundError(
+            f"NVDINOv2 archive did not contain images_train/: {archive}"
+        )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2686,7 +2705,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/ml-recog",
         })
     if model == "nvdinov2":
-        dataset_root = out_dir.parent / "datasets" / "nvdinov2-mini"
+        dataset_root = _prepare_nvdinov2_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/nvdinov2-mini",
