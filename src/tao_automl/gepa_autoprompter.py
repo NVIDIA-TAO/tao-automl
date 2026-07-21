@@ -37,6 +37,7 @@ except Exception:  # pragma: no cover - exercised in environments without the op
 
 MetricFn = Callable[[Any, Any], Any]
 AggregateMetricFn = Callable[[Sequence[Any], Sequence[Any]], float | Mapping[str, Any]]
+CandidateCostFn = Callable[[Mapping[str, Any]], float]
 ReflectionEvidenceFn = Callable[
     [Mapping[str, Any], Mapping[str, Any]],
     Mapping[str, Any] | None,
@@ -88,6 +89,53 @@ class TAOActionBatchRunner:
             value = coerce(raw_value) if coerce is not None else raw_value
             _set_dotted_value(specs, str(key), value)
         return list(self.evaluate_action(specs, list(items)))
+
+
+class RoutedTAOActionBatchRunner:
+    """Run route-specific candidate overrides while preserving item order.
+
+    The routing policy is intentionally supplied by the caller. This keeps
+    dataset-specific category logic outside AutoML while allowing a frozen
+    validation-selected policy to execute as normal TAO action batches.
+    """
+
+    def __init__(
+        self,
+        runner,
+        route_fn: Callable[[Mapping[str, Any]], str],
+        route_candidates: Mapping[str, Mapping[str, Any]],
+    ):
+        self.runner = runner
+        self.route_fn = route_fn
+        self.route_candidates = {
+            str(route): dict(overrides)
+            for route, overrides in route_candidates.items()
+        }
+        self.last_route_counts: dict[str, int] = {}
+
+    def run_batch(self, candidate: Mapping[str, Any], items: Sequence[dict[str, Any]]):
+        item_list = list(items)
+        routed: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+        for index, item in enumerate(item_list):
+            route = str(self.route_fn(item))
+            routed.setdefault(route, []).append((index, item))
+
+        outputs: list[Any] = [None] * len(item_list)
+        self.last_route_counts = {route: len(rows) for route, rows in routed.items()}
+        for route, rows in routed.items():
+            routed_candidate = dict(candidate)
+            routed_candidate.update(self.route_candidates.get(route, {}))
+            routed_outputs = list(
+                self.runner.run_batch(routed_candidate, [item for _, item in rows])
+            )
+            if len(routed_outputs) != len(rows):
+                raise ValueError(
+                    f"Route {route!r} returned {len(routed_outputs)} outputs "
+                    f"for {len(rows)} input items"
+                )
+            for (index, _), output in zip(rows, routed_outputs):
+                outputs[index] = output
+        return outputs
 
 
 class GEPAReflectionLM:
@@ -412,12 +460,20 @@ class GEPAutoPrompter:
         reflection_lm,
         aggregate_metric_fn: AggregateMetricFn | None = None,
         aggregate_metric_key: str = "macro_f1",
+        candidate_cost_fn: CandidateCostFn | None = None,
+        candidate_cost_weight: float = 0.0,
         **gepa_kwargs,
     ):
         self.adapter = adapter
         self.reflection_lm = reflection_lm
         self.aggregate_metric_fn = aggregate_metric_fn
         self.aggregate_metric_key = aggregate_metric_key
+        self.candidate_cost_fn = candidate_cost_fn
+        self.candidate_cost_weight = float(candidate_cost_weight)
+        if not math.isfinite(self.candidate_cost_weight) or self.candidate_cost_weight < 0:
+            raise ValueError("candidate_cost_weight must be finite and non-negative")
+        if self.candidate_cost_weight and self.candidate_cost_fn is None:
+            raise ValueError("candidate_cost_fn is required when candidate_cost_weight is set")
         self.gepa_kwargs = dict(gepa_kwargs)
         if self.adapter.config_choices:
             self.adapter.set_component_reflection_lm(reflection_lm)
@@ -492,15 +548,30 @@ class GEPAutoPrompter:
             for index, candidate in enumerate(candidates):
                 outputs = self.adapter.run_outputs(candidate, val_items)
                 score, metrics = self._aggregate(outputs, val_items)
-                candidate_metrics.append({
+                candidate_row = {
                     "candidate_index": index,
                     "score": score,
                     "metrics": metrics,
                     "gepa_proxy": float(result.val_aggregate_scores[index]),
-                })
+                }
+                if self.candidate_cost_fn is not None:
+                    cost = float(self.candidate_cost_fn(self.adapter.full_candidate(candidate)))
+                    if not math.isfinite(cost) or cost < 0:
+                        raise ValueError(
+                            f"Candidate cost must be finite and non-negative: {cost!r}"
+                        )
+                    candidate_row["cost"] = cost
+                    candidate_row["utility"] = score - self.candidate_cost_weight * cost
+                candidate_metrics.append(candidate_row)
             selected = max(
                 candidate_metrics,
-                key=lambda row: (row["score"], row["gepa_proxy"], -row["candidate_index"]),
+                key=lambda row: (
+                    row.get("utility", row["score"]),
+                    row["score"],
+                    -row.get("cost", 0.0),
+                    row["gepa_proxy"],
+                    -row["candidate_index"],
+                ),
             )
             selected_index = int(selected["candidate_index"])
             validation_score = float(selected["score"])

@@ -1,9 +1,10 @@
 # Full WTS Auto-Prompter integration result
 
-Run dates: 2026-07-15 and 2026-07-17 UTC. These experiments exercised exact
-GEPA prompt evolution through real TAO Cosmos `evaluate` jobs with fixed model
-weights and inference settings. They validate the batch-action contract now
-owned by `tao_automl.gepa_autoprompter`; they are not VANTAGE benchmarks.
+Run dates: 2026-07-15, 2026-07-17, and 2026-07-20 UTC. These experiments
+exercised exact GEPA prompt evolution through real TAO Cosmos `evaluate` jobs
+with fixed model weights and inference settings. They validate the batch-action
+contract now owned by `tao_automl.gepa_autoprompter`; they are not VANTAGE
+benchmarks.
 
 ## Before and after
 
@@ -168,6 +169,23 @@ FPS-based full validation and one monolithic 16-frame full action exhausted host
 memory because the evaluator materializes processed inputs. The successful full
 result used eight video-disjoint execution shards and rejected missing or
 duplicate prediction IDs before scoring.
+
+### Cost-aware conditional frame policy
+
+The same validation run found that only lower-body-clothing-color questions
+benefited from 16 frames. A policy frozen on validation therefore retained 8
+frames by default and routed only that question category to 16 frames. On the
+untouched video-disjoint test it scored **972/1,047 (92.84%)**, versus
+970/1,047 (92.65%) for global 8 frames and 971/1,047 (92.74%) for global 16
+frames. It corrected two baseline errors with no regressions.
+
+Only 67/1,047 test records used 16 frames, giving an average of 8.51 input
+frames per record. That is a 6.4% frame-input increase over global 8, compared
+with a 100% increase for global 16. TAO now exposes
+`RoutedTAOActionBatchRunner` for frozen route-specific candidate overrides and
+an optional candidate cost function/weight in `GEPAutoPrompter` final
+selection. The run artifact is
+`sft_routed_lower_body_color_test_20260720_231857/routed_policy_report.json`.
 
 ## Remaining production validation
 

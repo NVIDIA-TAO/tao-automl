@@ -39,6 +39,7 @@ from tao_automl.gepa_autoprompter import (
     AutoPrompterResult,
     GEPAutoPrompter,
     GEPAReflectionLM,
+    RoutedTAOActionBatchRunner,
     TAOActionBatchRunner,
     TAOGEPAAdapter,
 )

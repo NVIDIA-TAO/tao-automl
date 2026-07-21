@@ -9,6 +9,7 @@ import pytest
 from tao_automl.gepa_autoprompter import (
     GEPAutoPrompter,
     GEPAReflectionLM,
+    RoutedTAOActionBatchRunner,
     TAOActionBatchRunner,
     TAOGEPAAdapter,
 )
@@ -91,6 +92,47 @@ def test_action_batch_runner_applies_dotted_candidate_without_mutating_base_spec
         "dataset": {"system_prompt": "seed"},
         "vision": {"nframes": 8},
     }
+
+
+def test_routed_batch_runner_applies_overrides_and_restores_item_order():
+    calls = []
+
+    class Runner:
+        def run_batch(self, candidate, items):
+            calls.append((dict(candidate), [item["id"] for item in items]))
+            return [f"{item['id']}:{candidate['vision.nframes']}" for item in items]
+
+    runner = RoutedTAOActionBatchRunner(
+        Runner(),
+        route_fn=lambda item: item["category"],
+        route_candidates={"hard": {"vision.nframes": "16"}},
+    )
+    outputs = runner.run_batch(
+        {"system_prompt": "seed", "vision.nframes": "8"},
+        [
+            {"id": "a", "category": "easy"},
+            {"id": "b", "category": "hard"},
+            {"id": "c", "category": "easy"},
+        ],
+    )
+
+    assert outputs == ["a:8", "b:16", "c:8"]
+    assert calls == [
+        ({"system_prompt": "seed", "vision.nframes": "8"}, ["a", "c"]),
+        ({"system_prompt": "seed", "vision.nframes": "16"}, ["b"]),
+    ]
+    assert runner.last_route_counts == {"easy": 2, "hard": 1}
+
+
+def test_routed_batch_runner_rejects_unaligned_route_outputs():
+    runner = RoutedTAOActionBatchRunner(
+        SimpleNamespace(run_batch=lambda candidate, items: []),
+        route_fn=lambda item: "all",
+        route_candidates={},
+    )
+
+    with pytest.raises(ValueError, match="returned 0 outputs for 1 input items"):
+        runner.run_batch({}, [{"id": "a"}])
 
 
 def test_adapter_batches_once_and_builds_leak_free_reflection_records():
@@ -366,3 +408,39 @@ def test_aggregate_metric_must_expose_requested_key(monkeypatch):
             [{"query": "val", "gold": "Yes"}],
             budget=1,
         )
+
+
+def test_aggregate_metric_can_select_lower_cost_candidate_on_accuracy_tie(monkeypatch):
+    fake_result = SimpleNamespace(
+        candidates=[
+            {"dataset.system_prompt": "seed", "vision.nframes": "16"},
+            {"dataset.system_prompt": "seed", "vision.nframes": "8"},
+        ],
+        val_aggregate_scores=[0.9, 0.8],
+        best_idx=0,
+    )
+    monkeypatch.setitem(
+        __import__("sys").modules,
+        "gepa",
+        SimpleNamespace(optimize=lambda **kwargs: fake_result),
+    )
+    runner = SimpleNamespace(run_batch=lambda candidate, items: ["Yes"] * len(items))
+    adapter = TAOGEPAAdapter(runner, lambda output, gold: (1.0, "ok", None))
+    prompter = GEPAutoPrompter(
+        adapter,
+        reflection_lm=object(),
+        aggregate_metric_fn=lambda outputs, golds: {"accuracy": 1.0},
+        aggregate_metric_key="accuracy",
+        candidate_cost_fn=lambda candidate: float(candidate["vision.nframes"]),
+    )
+
+    result = prompter.optimize(
+        {"dataset.system_prompt": "seed", "vision.nframes": "8"},
+        [{"query": "train", "gold": "Yes"}],
+        [{"query": "val", "gold": "Yes"}],
+        budget=1,
+    )
+
+    assert result.selected_candidate_index == 1
+    assert result.candidate_validation_metrics[0]["cost"] == 16.0
+    assert result.candidate_validation_metrics[1]["utility"] == 1.0
