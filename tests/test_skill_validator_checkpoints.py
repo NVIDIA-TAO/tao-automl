@@ -45,6 +45,30 @@ def test_checkpoint_progress_accepts_advancing_sparse4d_promotion():
     assert promoted == ("step", 6)
 
 
+def test_documented_automl_metric_is_distinct_from_training_monitoring_metric():
+    validator = _load_validator_module()
+    skill_text = """
+- **Training monitoring metrics:** `val_loss`, `val_acc`
+- **AutoML metric contract:** for evaluation-backed selection, use
+  `accuracy` with maximize direction.
+
+### Next section
+"""
+
+    assert validator._monitoring_metric(skill_text) == "val_loss"
+    assert validator._documented_automl_metric(skill_text) == "accuracy"
+
+
+def test_documented_automl_metric_does_not_treat_rejected_proxy_as_contract():
+    validator = _load_validator_module()
+    skill_text = """
+- **Training-only monitoring metrics:** `val/avg_loss`
+- **AutoML metric contract:** do not use `val/avg_loss` as the evaluate metric.
+"""
+
+    assert validator._documented_automl_metric(skill_text) is None
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
