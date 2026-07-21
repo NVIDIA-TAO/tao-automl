@@ -1,4 +1,5 @@
 import importlib.util
+import io
 import json
 import sys
 import tarfile
@@ -104,6 +105,35 @@ def test_classification_dataset_is_recreated_from_real_object_layout(tmp_path, m
     assert (data_root / "val/images_val/dog/sample.jpg").read_bytes() == b"jpeg"
     assert (data_root / "train/classes.txt").read_text() == "cat\ndog\n"
     assert (data_root / "val/classes.txt").read_text() == "cat\ndog\n"
+
+
+def test_deformable_detr_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            content = "{}" if destination.name == "annotations.json" else "object\n"
+            destination.write_text(content)
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "deformable-detr"
+    data_root = validator._prepare_deformable_detr_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "deformable-detr"
+    assert (data_root / "train/images/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "val/images/sample.jpg").read_bytes() == b"jpeg"
+    assert len(downloaded) == 6
+    assert all("tao_od_synthetic_subset_" in uri for uri in downloaded)
 
 
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
