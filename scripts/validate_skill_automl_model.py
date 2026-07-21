@@ -353,7 +353,7 @@ def _schema_keys(skill_dir: Path, action: str = "train") -> set[str]:
 
 def _monitoring_metric(skill_text: str) -> str:
     match = re.search(
-        r"\*\*(?:AutoML training metrics?|Training monitoring metrics?|Monitoring metric):\*\*\s*([^\n]+)",
+        r"\*\*(?:AutoML training metrics?|Pretraining monitoring metrics?|Training monitoring metrics?|Monitoring metric):\*\*\s*([^\n]+)",
         skill_text,
     )
     if not match:

@@ -71,6 +71,17 @@ def test_documented_automl_metric_does_not_treat_rejected_proxy_as_contract():
     assert validator._documented_automl_metric(skill_text) is None
 
 
+def test_pretraining_monitor_is_distinct_from_finetuning_automl_metric():
+    validator = _load_validator_module()
+    skill_text = """
+- **Pretraining monitoring metric:** `train_loss`, minimized.
+- **AutoML metric contract:** for fine-tuning, use `ACC_all` with maximize direction.
+"""
+
+    assert validator._monitoring_metric(skill_text) == "train_loss"
+    assert validator._documented_automl_metric(skill_text) == "ACC_all"
+
+
 def test_classification_dataset_is_recreated_from_real_object_layout(tmp_path, monkeypatch):
     validator = _load_validator_module()
 
