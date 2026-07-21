@@ -364,6 +364,30 @@ def _monitoring_metric(skill_text: str) -> str:
     return metric.split(",", 1)[0].strip()
 
 
+def _documented_automl_metric(skill_text: str) -> str | None:
+    """Return the metric explicitly named by the skill's AutoML contract.
+
+    Training-monitoring metrics and evaluation-backed AutoML objectives are
+    intentionally distinct for some model skills.  Keep both in validation
+    evidence instead of presenting the first training KPI as the documented
+    AutoML objective.
+    """
+    match = re.search(
+        r"\*\*AutoML metric contract:\*\*(.*?)(?=\n\s*(?:-\s+\*\*|#{2,})|\Z)",
+        skill_text,
+        flags=re.DOTALL,
+    )
+    if not match:
+        return None
+    contract = " ".join(line.strip() for line in match.group(1).splitlines())
+    positive = re.search(
+        r"(?<!not )\b(?:use|optimize)\s+`([^`]+)`",
+        contract,
+        flags=re.IGNORECASE,
+    )
+    return positive.group(1).strip() if positive else None
+
+
 def _evaluation_metric(model: str, training_metric: str) -> str:
     """Return the task metric emitted by the packaged evaluate action."""
     return {
@@ -3209,6 +3233,7 @@ def run_model(args: argparse.Namespace) -> int:
         "algorithm": args.algorithm,
         "status": "passed" if passed else "failed",
         "metric_documented": _monitoring_metric(skill_text),
+        "metric_documented_for_automl": _documented_automl_metric(skill_text),
         "metric_used_by_automl": metric,
         "metric_emitted_by_evaluate": checkpoint_evaluation_metric,
         "direction": _direction(metric, model),
