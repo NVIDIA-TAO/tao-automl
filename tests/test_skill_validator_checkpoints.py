@@ -25,6 +25,26 @@ def test_checkpoint_selection_prefers_highest_explicit_epoch_and_step():
     assert validator._prefer_epoch_or_step_checkpoint(checkpoints) == checkpoints[1]
 
 
+def test_checkpoint_progress_detects_non_advancing_sparse4d_promotion():
+    validator = _load_validator_module()
+
+    parent = validator._checkpoint_progress("model_epoch_000_step_00003.pth")
+    promoted = validator._checkpoint_progress("model_epoch_000_step_00003.pth")
+
+    assert parent == ("step", 3)
+    assert promoted == parent
+
+
+def test_checkpoint_progress_accepts_advancing_sparse4d_promotion():
+    validator = _load_validator_module()
+
+    parent = validator._checkpoint_progress("model_epoch_000_step_00003.pth")
+    promoted = validator._checkpoint_progress("model_epoch_001_step_00006.pth")
+
+    assert parent == ("step", 3)
+    assert promoted == ("step", 6)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
@@ -185,6 +205,7 @@ def test_cosmos_staging_extracts_referenced_video_and_measures_fps(tmp_path, mon
         }
     ]))
     monkeypatch.setattr(validator, "_video_fps", lambda _path: 29.97)
+    monkeypatch.setattr(validator, "_ensure_cosmos_video_codec", lambda path: path)
 
     target = tmp_path / "staged"
     assert validator._stage_cosmos_split(annotations, archive, target) == 1

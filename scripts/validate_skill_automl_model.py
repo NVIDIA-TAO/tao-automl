@@ -908,6 +908,17 @@ def _prefer_epoch_or_step_checkpoint(
     return (fallback or [None])[0]
 
 
+def _checkpoint_progress(path: str) -> tuple[str, int] | None:
+    """Return the explicit step or epoch encoded in a checkpoint filename."""
+    step_match = re.search(r"(?:^|[_-])step[_-]?(\d+)", Path(path).name)
+    if step_match:
+        return "step", int(step_match.group(1))
+    epoch_match = re.search(r"(?:^|[_-])epoch[_-]?(\d+)", Path(path).name)
+    if epoch_match:
+        return "epoch", int(epoch_match.group(1))
+    return None
+
+
 def _host_to_container_path(host_path: str, host_root: Path, container_root: str = "/results") -> str:
     path = Path(host_path)
     return f"{container_root.rstrip('/')}/{path.relative_to(host_root).as_posix()}"
@@ -1695,6 +1706,38 @@ def _run_post_checks(
         }
         return payload
 
+    best_rec_id = ((payload.get("result") or {}).get("best") or {}).get("rec_id")
+    resume_record = next(
+        (
+            item for item in payload.get("resume_behavior", [])
+            if item.get("rec_id") == best_rec_id
+        ),
+        None,
+    )
+    if resume_record:
+        parent_path = str(resume_record.get("resume_checkpoint_path") or "")
+        parent_progress = _checkpoint_progress(parent_path)
+        promoted_progress = _checkpoint_progress(checkpoint_path)
+        if (
+            parent_progress
+            and promoted_progress
+            and parent_progress[0] == promoted_progress[0]
+            and promoted_progress[1] <= parent_progress[1]
+        ):
+            payload["checkpoint_validation"] = {
+                "status": "failed",
+                "reason": (
+                    "promoted checkpoint did not advance beyond its resume parent: "
+                    f"{parent_progress[0]} {parent_progress[1]} -> "
+                    f"{promoted_progress[1]}"
+                ),
+                "checkpoint_path": checkpoint_path,
+                "resume_checkpoint_path": parent_path,
+                "uses_latest": "latest" in Path(checkpoint_path).name.lower(),
+            }
+            payload["status"] = "failed"
+            return payload
+
     host_root = out_dir / "results"
     checkpoint_container_path = _checkpoint_action_container_path(
         checkpoint_path, host_root, model
@@ -2383,6 +2426,24 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "host_path": str(data_root),
             "container_path": "/data/aicity_root",
         })
+        source_root = os.environ.get("TAO_PYTORCH_SOURCE_ROOT")
+        if source_root:
+            train_entrypoint = (
+                Path(source_root)
+                / "nvidia_tao_pytorch/cv/sparse4d/scripts/train.py"
+            )
+            if not train_entrypoint.is_file():
+                raise FileNotFoundError(
+                    f"Sparse4D framework overlay is missing: {train_entrypoint}"
+                )
+            mounts.append({
+                "host_path": str(train_entrypoint),
+                "container_path": (
+                    "/usr/local/lib/python3.12/dist-packages/"
+                    "nvidia_tao_pytorch/cv/sparse4d/scripts/train.py"
+                ),
+                "read_only": True,
+            })
     if model == "cosmos-rl":
         model_snapshot, model_blobs = _prepare_cosmos_model_mounts()
         mounts.extend([
