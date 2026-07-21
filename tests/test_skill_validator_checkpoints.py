@@ -458,6 +458,35 @@ def test_oneformer_dataset_is_recreated_in_current_model_run(tmp_path, monkeypat
     assert any("segmentation_oneformer_val/label_map.json" in uri for uri in downloaded)
 
 
+def test_optical_inspection_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name.endswith(".tar.gz"):
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/board/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("image,label\nboard/sample.jpg,0\n")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "optical-inspection"
+    data_root = validator._prepare_optical_inspection_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "optical-inspection"
+    for split in ("train", "val"):
+        assert (data_root / split / "images/board/sample.jpg").is_file()
+        assert (data_root / split / "dataset.csv").is_file()
+    assert any("purpose_built_models_optical_inspection_train/images.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_optical_inspection_val/dataset.csv" in uri for uri in downloaded)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (

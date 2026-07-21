@@ -2562,6 +2562,30 @@ def _prepare_oneformer_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_optical_inspection_mount(out_dir: Path) -> Path:
+    """Stage the current run's real preconverted Optical Inspection splits."""
+    data_root = out_dir / "data_mount" / "optical-inspection"
+    for split, dataset_name in (
+        ("train", "purpose_built_models_optical_inspection_train"),
+        ("val", "purpose_built_models_optical_inspection_val"),
+    ):
+        target = data_root / split
+        source = f"{BUCKET_ROOT}/{dataset_name}"
+        archive = target / "images.tar.gz"
+        csv_path = target / "dataset.csv"
+        _download_s3_file(_join_uri(source, "images.tar.gz"), archive)
+        _download_s3_file(_join_uri(source, "dataset.csv"), csv_path)
+        image_root = target / "images"
+        if not image_root.is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(target, filter="data")
+        if not image_root.is_dir() or not csv_path.is_file():
+            raise FileNotFoundError(
+                f"Optical Inspection {split} split is incomplete after staging"
+            )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2824,7 +2848,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/oneformer",
         })
     if model == "optical-inspection":
-        dataset_root = out_dir.parent / "datasets" / "optical-inspection"
+        dataset_root = _prepare_optical_inspection_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/optical-inspection",
