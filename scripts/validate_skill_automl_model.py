@@ -2361,6 +2361,36 @@ def _prepare_mal_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_mask_grounding_dino_mount(out_dir: Path) -> Path:
+    """Stage the current run's real ODVG/COCO instance-segmentation data."""
+    data_root = out_dir / "data_mount" / "mask-grounding-dino-mini"
+    for split, dataset_name, required_files in (
+        (
+            "train",
+            "segmentation_mask_grounding_dino_train",
+            ("images.tar.gz", "annotations_odvg.jsonl", "annotations_odvg_labelmap.json"),
+        ),
+        (
+            "val",
+            "segmentation_mask_grounding_dino_val",
+            ("images.tar.gz", "annotations.json"),
+        ),
+    ):
+        target = data_root / split
+        source = f"{BUCKET_ROOT}/{dataset_name}"
+        for filename in required_files:
+            _download_s3_file(_join_uri(source, filename), target / filename)
+        archive = target / "images.tar.gz"
+        if not (target / "images").is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(target, filter="data")
+        if not (target / "images").is_dir():
+            raise FileNotFoundError(
+                f"Mask Grounding DINO image archive did not contain images/: {archive}"
+            )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2575,7 +2605,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/mal-mini",
         })
     if model == "mask-grounding-dino":
-        dataset_root = out_dir.parent / "datasets" / "mask-grounding-dino-mini"
+        dataset_root = _prepare_mask_grounding_dino_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/mask-grounding-dino-mini",
