@@ -577,6 +577,42 @@ def test_segformer_dataset_is_recreated_in_current_model_run(tmp_path, monkeypat
     assert any("segmentation_segformer_val/masks/val.tar.gz" in uri for uri in downloaded)
 
 
+def test_nvpanoptix3d_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            split = destination.parent.name
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"png"
+                info = tarfile.TarInfo(f"{split}_scene/rgb_0001.png")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        elif destination.suffix == ".json":
+            destination.write_text("{}\n")
+        else:
+            destination.write_bytes(b"npz")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "nvpanoptix3d"
+    data_root = validator._prepare_nvpanoptix3d_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "nvpanoptix3d"
+    assert (data_root / "train/data/train_scene/rgb_0001.png").is_file()
+    assert (data_root / "val/data/val_scene/rgb_0001.png").is_file()
+    assert (data_root / "val/data/test_scene/rgb_0001.png").is_file()
+    assert (data_root / "train/meta/train.json").is_file()
+    assert (data_root / "val/meta/val.json").is_file()
+    assert (data_root / "val/meta/test.json").is_file()
+    assert (data_root / "val/inference_flat/test_scene_rgb_0001.png").is_file()
+    assert any("purpose_built_models_nvpanoptix3d_train/data/images.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_nvpanoptix3d_test/meta/test.json" in uri for uri in downloaded)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
