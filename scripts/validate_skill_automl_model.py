@@ -2473,6 +2473,57 @@ def _prepare_nvdinov2_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_nvpanoptix3d_mount(out_dir: Path) -> Path:
+    """Stage current-run train/val/test NVPanoptix3D data and flat inference RGBs."""
+    data_root = out_dir / "data_mount" / "nvpanoptix3d"
+    split_targets = {"train": "train", "val": "val", "test": "val"}
+    scene_names: dict[str, set[str]] = {}
+    for source_split, target_split in split_targets.items():
+        source = f"{BUCKET_ROOT}/purpose_built_models_nvpanoptix3d_{source_split}"
+        target = data_root / target_split
+        archive = data_root / "_archives" / source_split / "images.tar.gz"
+        _download_s3_file(_join_uri(source, "data/images.tar.gz"), archive)
+        _download_s3_file(
+            _join_uri(source, f"meta/{source_split}.json"),
+            target / "meta" / f"{source_split}.json",
+        )
+        if source_split != "test":
+            for filename in ("colormap.json", "frustum_mask.npz"):
+                _download_s3_file(
+                    _join_uri(source, f"meta/{filename}"),
+                    target / "meta" / filename,
+                )
+
+        with tarfile.open(archive) as tar:
+            top_levels = {
+                Path(member.name).parts[0]
+                for member in tar.getmembers()
+                if member.name and Path(member.name).parts
+            }
+            scene_names[source_split] = top_levels
+            if not top_levels or any((target / "data" / name).exists() for name in top_levels):
+                pass
+            else:
+                (target / "data").mkdir(parents=True, exist_ok=True)
+                tar.extractall(target / "data", filter="data")
+        for scene_name in top_levels:
+            if not (target / "data" / scene_name).is_dir():
+                raise FileNotFoundError(
+                    f"NVPanoptix3D {source_split} archive did not produce scene {scene_name}"
+                )
+
+    inference_flat = data_root / "val" / "inference_flat"
+    inference_flat.mkdir(parents=True, exist_ok=True)
+    for scene_name in sorted(scene_names["test"]):
+        for image_path in sorted((data_root / "val" / "data" / scene_name).glob("rgb_*.png")):
+            destination = inference_flat / f"{scene_name}_{image_path.name}"
+            if not destination.exists():
+                os.link(image_path, destination)
+    if not any(inference_flat.glob("*.png")):
+        raise FileNotFoundError("NVPanoptix3D test data produced no flat inference RGB images")
+    return data_root
+
+
 def _prepare_ocdnet_mount(out_dir: Path) -> Path:
     """Stage the current run's real extracted OCDNet train/test splits."""
     data_root = out_dir / "data_mount" / "ocdnet"
@@ -2892,7 +2943,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/nvdinov2-mini",
         })
     if model == "nvpanoptix3d":
-        dataset_root = out_dir.parent / "datasets" / "nvpanoptix3d"
+        dataset_root = _prepare_nvpanoptix3d_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/nvpanoptix3d",
