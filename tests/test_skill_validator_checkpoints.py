@@ -197,6 +197,49 @@ def test_grounding_dino_dataset_is_recreated_and_converted_to_odvg(tmp_path, mon
     assert val_payload["annotations"][0]["category_id"] == 0
 
 
+def test_mal_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text(
+                '{"annotations": [{"segmentation": [[0, 0, 1, 0, 1, 1]]}]}'
+            )
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "mal"
+    data_root = validator._prepare_mal_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "mal-mini"
+    assert (data_root / "train/images/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "val/images/sample.jpg").read_bytes() == b"jpeg"
+    assert json.loads((data_root / "train/annotations.json").read_text())[
+        "annotations"
+    ][0]["segmentation"]
+    assert any("/auto_label_train/" in uri for uri in downloaded)
+    assert any("/auto_label_val/" in uri for uri in downloaded)
+
+
+def test_mal_segmentation_dataset_preserves_default_mask_loading():
+    validator = _load_validator_module()
+
+    overrides = validator._minimal_train_overrides(
+        {}, {"dataset.load_mask"}, None, "mal"
+    )
+
+    assert "dataset.load_mask" not in overrides
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (

@@ -1114,6 +1114,7 @@ def _build_action_specs(
             overrides.update({
                 "inference.img_dir": f"{profile.eval_uri}/images",
                 "inference.ann_path": f"{profile.eval_uri}/annotations.json",
+                "inference.load_mask": False,
             })
     if model == "cosmos-rl":
         if action == "evaluate":
@@ -2332,6 +2333,34 @@ def _prepare_grounding_dino_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_mal_mount(out_dir: Path) -> Path:
+    """Stage current-run COCO instance-segmentation data for MAL."""
+    data_root = out_dir / "data_mount" / "mal-mini"
+    for split, dataset_name in (
+        ("train", "auto_label_train"),
+        ("val", "auto_label_val"),
+    ):
+        target = data_root / split
+        source = f"{BUCKET_ROOT}/{dataset_name}"
+        archive = target / "images.tar.gz"
+        _download_s3_file(_join_uri(source, "images.tar.gz"), archive)
+        annotations_path = target / "annotations.json"
+        _download_s3_file(_join_uri(source, "annotations.json"), annotations_path)
+        annotations = json.loads(annotations_path.read_text())
+        instances = annotations.get("annotations", [])
+        if not instances or any(not item.get("segmentation") for item in instances):
+            raise ValueError(
+                "MAL AutoML validation requires non-empty segmentation ground truth "
+                f"for a finite mIoU objective: {annotations_path}"
+            )
+        if not (target / "images").is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(target, filter="data")
+        if not (target / "images").is_dir():
+            raise FileNotFoundError(f"MAL image archive did not contain images/: {archive}")
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2540,7 +2569,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/image-classification-mini",
         })
     if model == "mal":
-        dataset_root = out_dir.parent / "datasets" / "mal-mini"
+        dataset_root = _prepare_mal_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/mal-mini",
