@@ -834,6 +834,11 @@ def _automl_settings(
             "automl_max_recommendations": 4,
             "automl_max_generations": 2,
         })
+    if algorithm == "hyperband_es":
+        # The common two-epoch validation budget must still reach the
+        # predictor; its production default of three epochs would reduce this
+        # run to ordinary Hyperband and leave early-stop behavior untested.
+        settings["automl_min_early_stop_epochs"] = 1
     if algorithm in {"llm", "hybrid", "autoresearch"}:
         key = os.environ.get("AUTOML_LLM_API_KEY") or os.environ.get("NVIDIA_API_KEY")
         if not key:
