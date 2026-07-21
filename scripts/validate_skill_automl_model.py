@@ -1032,6 +1032,25 @@ def _cleanup_cosmos_prior_policy_artifacts(train_job_root: Path) -> list[str]:
     return removed
 
 
+def _noncompetitive_job_ids(
+    evaluations: list[dict[str, Any]], direction: str
+) -> list[str]:
+    """Return completed job IDs that cannot win a fully evaluated cohort."""
+    scored = [
+        item for item in evaluations
+        if item.get("train_job_id") and isinstance(item.get("metric_value"), (int, float))
+    ]
+    if len(scored) < 2:
+        return []
+    key = lambda item: float(item["metric_value"])
+    winner = (min if direction == "minimize" else max)(scored, key=key)
+    return [
+        str(item["train_job_id"])
+        for item in scored
+        if item is not winner
+    ]
+
+
 def _latest_kpi(job_root: Path) -> dict[str, Any]:
     latest: dict[str, Any] = {}
     for status_path in sorted(job_root.rglob("status.json")):
@@ -3718,6 +3737,26 @@ def run_model(args: argparse.Namespace) -> int:
         evaluated["recommendation_id"] = getattr(rec, "id", None)
         evaluated["train_job_id"] = train_job_id
         evaluated["checkpoint_path"] = checkpoint_path
+        evaluated["resumed"] = bool(getattr(rec, "resume_from_job_id", None))
+        if model == "cosmos-rl" and args.algorithm == "hyperband" and not evaluated["resumed"]:
+            initial_cohort = [
+                item for item in recommendation_eval_jobs
+                if not item.get("resumed")
+            ] + [evaluated]
+            if len(initial_cohort) >= 2:
+                cleaned_noncompetitive: list[str] = []
+                for losing_job_id in _noncompetitive_job_ids(
+                    initial_cohort, _direction(metric, model)
+                ):
+                    cleaned_noncompetitive.extend(
+                        _cleanup_cosmos_prior_policy_artifacts(
+                            out_dir / "results" / losing_job_id
+                        )
+                    )
+                if cleaned_noncompetitive:
+                    evaluated["cleaned_noncompetitive_policy_artifacts"] = (
+                        cleaned_noncompetitive
+                    )
         if cleaned_prior_policy_artifacts:
             evaluated["cleaned_prior_policy_artifacts"] = cleaned_prior_policy_artifacts
         if model == "cosmos-rl":
