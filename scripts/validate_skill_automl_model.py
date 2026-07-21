@@ -2473,6 +2473,30 @@ def _prepare_nvdinov2_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_ocdnet_mount(out_dir: Path) -> Path:
+    """Stage the current run's real extracted OCDNet train/test splits."""
+    data_root = out_dir / "data_mount" / "ocdnet"
+    for target_name, dataset_name, split in (
+        ("train", "purpose_built_models_ocdnet_train", "train"),
+        ("val", "purpose_built_models_ocdnet_val", "test"),
+    ):
+        target = data_root / target_name
+        archive = target / f"{split}.tar.gz"
+        _download_s3_file(
+            f"{BUCKET_ROOT}/{dataset_name}/{split}.tar.gz", archive
+        )
+        extracted = target / split
+        if not extracted.is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(target, filter="data")
+        for required in ("img", "gt"):
+            if not (extracted / required).is_dir():
+                raise FileNotFoundError(
+                    f"OCDNet {split} archive did not contain {split}/{required}: {archive}"
+                )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2717,7 +2741,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/nvpanoptix3d",
         })
     if model == "ocdnet":
-        dataset_root = out_dir.parent / "datasets" / "ocdnet"
+        dataset_root = _prepare_ocdnet_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/ocdnet",

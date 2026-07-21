@@ -363,6 +363,37 @@ def test_nvdinov2_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatc
     ]
 
 
+def test_ocdnet_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        split = destination.name.removesuffix(".tar.gz")
+        with tarfile.open(destination, "w:gz") as archive:
+            for directory, filename, payload in (
+                ("img", "sample.jpg", b"jpeg"),
+                ("gt", "sample.txt", b"text"),
+            ):
+                info = tarfile.TarInfo(f"{split}/{directory}/{filename}")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "ocdnet"
+    data_root = validator._prepare_ocdnet_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "ocdnet"
+    assert (data_root / "train/train/img/sample.jpg").is_file()
+    assert (data_root / "train/train/gt/sample.txt").is_file()
+    assert (data_root / "val/test/img/sample.jpg").is_file()
+    assert (data_root / "val/test/gt/sample.txt").is_file()
+    assert any("purpose_built_models_ocdnet_train/train.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_ocdnet_val/test.tar.gz" in uri for uri in downloaded)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (
