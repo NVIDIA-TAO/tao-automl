@@ -2228,6 +2228,29 @@ def _prepare_image_classification_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_deformable_detr_mount(out_dir: Path) -> Path:
+    """Stage current-run detection inputs instead of depending on stale caches."""
+    data_root = out_dir / "data_mount" / "deformable-detr"
+    for split, dataset_name in (
+        ("train", "tao_od_synthetic_subset_train_no_convert"),
+        ("val", "tao_od_synthetic_subset_val_no_convert"),
+    ):
+        target = data_root / split
+        source = f"{BUCKET_ROOT}/{dataset_name}"
+        archive = target / "images.tar.gz"
+        _download_s3_file(_join_uri(source, "images.tar.gz"), archive)
+        _download_s3_file(_join_uri(source, "annotations.json"), target / "annotations.json")
+        _download_s3_file(_join_uri(source, "label_map.txt"), target / "label_map.txt")
+        if not (target / "images").is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(target, filter="data")
+        if not (target / "images").is_dir():
+            raise FileNotFoundError(
+                f"Deformable-DETR image archive did not contain images/: {archive}"
+            )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2398,7 +2421,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/grounding-dino-mini",
         })
     if model == "deformable-detr":
-        dataset_root = out_dir.parent / "datasets" / "rtdetr"
+        dataset_root = _prepare_deformable_detr_mount(out_dir)
         mounts.extend([
             {
                 # Local mounted inputs are not archive-materialized by the
