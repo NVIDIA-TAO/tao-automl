@@ -2391,6 +2391,39 @@ def _prepare_mask_grounding_dino_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_mask2former_mount(out_dir: Path) -> Path:
+    """Stage the current run's real COCO panoptic train/validation data."""
+    data_root = out_dir / "data_mount" / "mask2former-mini"
+    required_files = (
+        "annotations.json",
+        "annotations_panoptic.json",
+        "images.tar.gz",
+        "images_panoptic.tar.gz",
+        "label_map_panoptic.json",
+    )
+    for split, dataset_name in (
+        ("train", "segmentation_mask2former_train"),
+        ("val", "segmentation_mask2former_val"),
+    ):
+        target = data_root / split
+        source = f"{BUCKET_ROOT}/{dataset_name}"
+        for filename in required_files:
+            _download_s3_file(_join_uri(source, filename), target / filename)
+        for archive_name, directory_name in (
+            ("images.tar.gz", "images"),
+            ("images_panoptic.tar.gz", "images_panoptic"),
+        ):
+            archive = target / archive_name
+            if not (target / directory_name).is_dir():
+                with tarfile.open(archive) as tar:
+                    tar.extractall(target, filter="data")
+            if not (target / directory_name).is_dir():
+                raise FileNotFoundError(
+                    f"Mask2Former archive did not contain {directory_name}/: {archive}"
+                )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2611,7 +2644,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/mask-grounding-dino-mini",
         })
     if model == "mask2former":
-        dataset_root = out_dir.parent / "datasets" / "mask2former-mini"
+        dataset_root = _prepare_mask2former_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/mask2former-mini",
