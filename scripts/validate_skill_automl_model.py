@@ -977,6 +977,21 @@ def _cosmos_inference_media_path(out_dir: Path) -> str:
     return f"/data/automl_datasets/cosmos-rl/eval/{relative_video.as_posix()}"
 
 
+def _cleanup_cosmos_merged_artifacts(train_job_root: Path) -> list[str]:
+    """Remove evaluation-only merged models while retaining real LoRA checkpoints."""
+    if not train_job_root.is_dir():
+        return []
+
+    removed: list[str] = []
+    for merged_dir in list(train_job_root.rglob("merged")):
+        if not merged_dir.is_dir() or merged_dir.is_symlink():
+            continue
+        shutil.rmtree(merged_dir)
+        removed.append(str(merged_dir))
+        LOG.info("Removed Cosmos-RL evaluation-only merged model: %s", merged_dir)
+    return removed
+
+
 def _latest_kpi(job_root: Path) -> dict[str, Any]:
     latest: dict[str, Any] = {}
     for status_path in sorted(job_root.rglob("status.json")):
@@ -3649,6 +3664,10 @@ def run_model(args: argparse.Namespace) -> int:
         evaluated["recommendation_id"] = getattr(rec, "id", None)
         evaluated["train_job_id"] = train_job_id
         evaluated["checkpoint_path"] = checkpoint_path
+        if model == "cosmos-rl":
+            evaluated["cleaned_merged_artifacts"] = _cleanup_cosmos_merged_artifacts(
+                out_dir / "results" / str(train_job_id)
+            )
         recommendation_eval_jobs.append(evaluated)
         if selection_uses_training_kpi:
             train_kpi = _latest_kpi(out_dir / "results" / str(train_job_id))
@@ -3709,6 +3728,10 @@ def run_model(args: argparse.Namespace) -> int:
             env_vars=checkpoint_action_env,
         )
         evaluated["checkpoint_path"] = checkpoint_path
+        if model == "cosmos-rl":
+            evaluated["cleaned_merged_artifacts"] = _cleanup_cosmos_merged_artifacts(
+                out_dir / "results" / str(train_job_id)
+            )
         final_eval_jobs.append(evaluated)
         record_path = out_dir / "evaluations" / "best_automl.json"
         _write_json(record_path, evaluated)

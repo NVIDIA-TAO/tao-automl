@@ -643,6 +643,33 @@ def test_cosmos_inference_uses_referenced_nested_video(tmp_path):
     )
 
 
+def test_cosmos_merged_cleanup_retains_policy_and_lora_checkpoints(tmp_path):
+    validator = _load_validator_module()
+    job_root = tmp_path / "results" / "train-job"
+    merged_model = job_root / "train_output_dir" / "timestamp" / "merged" / "epoch_1"
+    policy = job_root / "train_output_dir" / "timestamp" / "checkpoints" / "epoch_1" / "policy"
+    lora = job_root / "train_output_dir" / "timestamp" / "safetensors" / "epoch_1"
+    merged_model.mkdir(parents=True)
+    policy.mkdir(parents=True)
+    lora.mkdir(parents=True)
+    (merged_model / "model.safetensors").write_bytes(b"merged")
+    (policy / "model.safetensors").write_bytes(b"policy")
+    (lora / "adapter_model.safetensors").write_bytes(b"lora")
+
+    removed = validator._cleanup_cosmos_merged_artifacts(job_root)
+
+    assert removed == [str(merged_model.parent)]
+    assert not merged_model.parent.exists()
+    assert (policy / "model.safetensors").read_bytes() == b"policy"
+    assert (lora / "adapter_model.safetensors").read_bytes() == b"lora"
+
+
+def test_cosmos_merged_cleanup_is_noop_when_job_root_is_missing(tmp_path):
+    validator = _load_validator_module()
+
+    assert validator._cleanup_cosmos_merged_artifacts(tmp_path / "missing") == []
+
+
 def test_nvdinov2_checkpoint_selection_prefers_latest_student_checkpoint():
     validator = _load_validator_module()
     checkpoints = [
