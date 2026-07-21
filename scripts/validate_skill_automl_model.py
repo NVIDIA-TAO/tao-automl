@@ -2497,6 +2497,39 @@ def _prepare_ocdnet_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_ocrnet_mount(out_dir: Path) -> Path:
+    """Stage the current run's real OCRNet images, labels, and alphabet."""
+    data_root = out_dir / "data_mount" / "ocrnet"
+    for target_name, dataset_name, split in (
+        ("train", "purpose_built_models_ocrnet_train", "train"),
+        ("val", "purpose_built_models_ocrnet_val", "test"),
+    ):
+        target = data_root / target_name
+        archive = target / f"{split}.tar.gz"
+        _download_s3_file(
+            f"{BUCKET_ROOT}/{dataset_name}/{split}.tar.gz", archive
+        )
+        extracted = target / split
+        if not extracted.is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(target, filter="data")
+        gt_file = extracted / "gt_new.txt"
+        _download_s3_file(
+            f"{BUCKET_ROOT}/{dataset_name}/{split}/gt_new.txt", gt_file
+        )
+        if not any(extracted.glob("*.png")) or not gt_file.is_file():
+            raise FileNotFoundError(
+                f"OCRNet {split} data is incomplete after staging from {dataset_name}"
+            )
+    _download_s3_file(
+        f"{BUCKET_ROOT}/purpose_built_models_ocrnet_train/character_list",
+        data_root / "character_list",
+    )
+    if not (data_root / "character_list").is_file():
+        raise FileNotFoundError("OCRNet character_list was not staged")
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2747,7 +2780,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/ocdnet",
         })
     if model == "ocrnet":
-        dataset_root = out_dir.parent / "datasets" / "ocrnet"
+        dataset_root = _prepare_ocrnet_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/ocrnet",
