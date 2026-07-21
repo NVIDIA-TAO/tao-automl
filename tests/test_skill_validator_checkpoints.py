@@ -487,6 +487,36 @@ def test_optical_inspection_dataset_is_recreated_in_current_model_run(tmp_path, 
     assert any("purpose_built_models_optical_inspection_val/dataset.csv" in uri for uri in downloaded)
 
 
+def test_pointpillars_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        split = destination.name.removesuffix(".tar.gz")
+        with tarfile.open(destination, "w:gz") as archive:
+            for directory, filename, payload in (
+                ("lidar", "sample.bin", b"points"),
+                ("label", "sample.txt", b"Car 0 0 0 0 0 0 0 1 1 1 0 0 0 0"),
+            ):
+                info = tarfile.TarInfo(f"{split}/{directory}/{filename}")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "pointpillars"
+    data_root = validator._prepare_pointpillars_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "pointpillars"
+    for split in ("train", "val"):
+        assert (data_root / split / "lidar/sample.bin").is_file()
+        assert (data_root / split / "label/sample.txt").is_file()
+    assert any("purpose_built_models_pointpillars_train/train.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_pointpillars_train/val.tar.gz" in uri for uri in downloaded)
+
+
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
     validator = _load_validator_module()
     checkpoint = (

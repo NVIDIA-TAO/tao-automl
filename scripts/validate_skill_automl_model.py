@@ -2586,6 +2586,25 @@ def _prepare_optical_inspection_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_pointpillars_mount(out_dir: Path) -> Path:
+    """Stage current-run PointPillars raw splits before dataset conversion."""
+    data_root = out_dir / "data_mount" / "pointpillars"
+    source = f"{BUCKET_ROOT}/purpose_built_models_pointpillars_train"
+    for split in ("train", "val"):
+        archive = data_root / f"{split}.tar.gz"
+        _download_s3_file(_join_uri(source, f"{split}.tar.gz"), archive)
+        extracted = data_root / split
+        if not extracted.is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(data_root, filter="data")
+        for required in ("lidar", "label"):
+            if not (extracted / required).is_dir():
+                raise FileNotFoundError(
+                    f"PointPillars {split} archive did not contain {split}/{required}: {archive}"
+                )
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2866,7 +2885,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data/segformer",
         })
     if model == "pointpillars":
-        dataset_root = out_dir.parent / "datasets" / "pointpillars"
+        dataset_root = _prepare_pointpillars_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/pointpillars",
