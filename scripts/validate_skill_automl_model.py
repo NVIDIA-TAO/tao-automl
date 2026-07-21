@@ -2153,6 +2153,81 @@ def _prepare_clip_data_mount(profile: ModelProfile, out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_image_classification_mount(out_dir: Path) -> Path:
+    """Stage a minimal real classification dataset from the configured S3 source.
+
+    Algorithm roots are deliberately deleted before validation, so local bind
+    mounts cannot rely on datasets left by an earlier algorithm.  Materialize
+    one real image per class for train and validation directly from the TAO
+    classification dataset using environment-only credentials.
+    """
+    import boto3
+
+    data_root = out_dir.parent / "datasets" / "image-classification-mini"
+    train_root = data_root / "train"
+    val_root = data_root / "val"
+    train_classes = train_root / "classes.txt"
+    val_classes = val_root / "classes.txt"
+    if train_classes.is_file() and val_classes.is_file():
+        return data_root
+
+    client = boto3.client(
+        "s3",
+        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID") or os.environ.get("ACCESS_KEY"),
+        aws_secret_access_key=(
+            os.environ.get("AWS_SECRET_ACCESS_KEY") or os.environ.get("SECRET_KEY")
+        ),
+        endpoint_url=os.environ.get("S3_ENDPOINT_URL") or None,
+    )
+    bucket = "nvcf-storage-handling"
+    staged_classes: dict[str, list[str]] = {}
+    for source_split, target_split, image_dir_name in (
+        ("images_train", train_root, "images_train"),
+        ("images_test", val_root, "images_val"),
+    ):
+        prefix = f"data/classification_pyt/{source_split}/"
+        response = client.list_objects_v2(Bucket=bucket, Prefix=prefix, Delimiter="/")
+        class_prefixes = sorted(item["Prefix"] for item in response.get("CommonPrefixes", []))
+        if not class_prefixes:
+            raise RuntimeError(f"No classification classes found under s3://{bucket}/{prefix}")
+        classes: list[str] = []
+        for class_prefix in class_prefixes:
+            class_name = class_prefix.rstrip("/").rsplit("/", 1)[-1]
+            objects = client.list_objects_v2(Bucket=bucket, Prefix=class_prefix).get("Contents", [])
+            candidates = sorted(
+                item["Key"]
+                for item in objects
+                if item.get("Size", 0) > 0
+                and item["Key"].lower().endswith((".jpg", ".jpeg", ".png"))
+            )
+            if not candidates:
+                raise RuntimeError(
+                    f"No classification image found under s3://{bucket}/{class_prefix}"
+                )
+            key = candidates[0]
+            destination = target_split / image_dir_name / class_name / Path(key).name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if not destination.is_file() or destination.stat().st_size == 0:
+                with destination.open("wb") as stream:
+                    client.download_fileobj(bucket, key, stream)
+            classes.append(class_name)
+        staged_classes[str(target_split)] = classes
+
+    train_names = staged_classes[str(train_root)]
+    val_names = staged_classes[str(val_root)]
+    if train_names != val_names:
+        raise RuntimeError(
+            "Classification train/evaluation class sets differ: "
+            f"train={train_names}, val={val_names}"
+        )
+    class_text = "\n".join(train_names) + "\n"
+    train_root.mkdir(parents=True, exist_ok=True)
+    val_root.mkdir(parents=True, exist_ok=True)
+    train_classes.write_text(class_text)
+    val_classes.write_text(class_text)
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2349,13 +2424,13 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             ],
         ])
     if model == "classification-pyt":
-        dataset_root = out_dir.parent / "datasets" / "image-classification-mini"
+        dataset_root = _prepare_image_classification_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/image-classification-mini",
         })
     if model == "mae":
-        dataset_root = out_dir.parent / "datasets" / "image-classification-mini"
+        dataset_root = _prepare_image_classification_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/image-classification-mini",

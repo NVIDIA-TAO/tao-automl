@@ -3,6 +3,7 @@ import json
 import sys
 import tarfile
 from pathlib import Path
+from types import SimpleNamespace
 
 
 def _load_validator_module():
@@ -67,6 +68,42 @@ def test_documented_automl_metric_does_not_treat_rejected_proxy_as_contract():
 """
 
     assert validator._documented_automl_metric(skill_text) is None
+
+
+def test_classification_dataset_is_recreated_from_real_object_layout(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+
+    class FakeS3Client:
+        def list_objects_v2(self, *, Prefix, Delimiter=None, **_kwargs):
+            if Delimiter == "/":
+                return {
+                    "CommonPrefixes": [
+                        {"Prefix": f"{Prefix}cat/"},
+                        {"Prefix": f"{Prefix}dog/"},
+                    ]
+                }
+            return {
+                "Contents": [
+                    {"Key": f"{Prefix}sample.jpg", "Size": 4},
+                ]
+            }
+
+        def download_fileobj(self, _bucket, _key, stream):
+            stream.write(b"jpeg")
+
+    monkeypatch.setitem(
+        sys.modules,
+        "boto3",
+        SimpleNamespace(client=lambda *_args, **_kwargs: FakeS3Client()),
+    )
+    out_dir = tmp_path / "dehb" / "classification-pyt"
+
+    data_root = validator._prepare_image_classification_mount(out_dir)
+
+    assert (data_root / "train/images_train/cat/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "val/images_val/dog/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "train/classes.txt").read_text() == "cat\ndog\n"
+    assert (data_root / "val/classes.txt").read_text() == "cat\ndog\n"
 
 
 def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
