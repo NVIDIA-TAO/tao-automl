@@ -2251,6 +2251,87 @@ def _prepare_deformable_detr_mount(out_dir: Path) -> Path:
     return data_root
 
 
+def _prepare_grounding_dino_mount(out_dir: Path) -> Path:
+    """Stage real COCO inputs and derive the ODVG training contract."""
+    data_root = out_dir / "data_mount" / "grounding-dino-mini"
+    dataset_names = {
+        "train": "tao_od_synthetic_subset_train_no_convert",
+        "val": "tao_od_synthetic_subset_val_no_convert",
+    }
+    for split, dataset_name in dataset_names.items():
+        target = data_root / split
+        source = f"{BUCKET_ROOT}/{dataset_name}"
+        archive = target / "images.tar.gz"
+        annotations = target / "annotations.json"
+        _download_s3_file(_join_uri(source, "images.tar.gz"), archive)
+        _download_s3_file(_join_uri(source, "annotations.json"), annotations)
+        if not (target / "images").is_dir():
+            with tarfile.open(archive) as tar:
+                tar.extractall(target, filter="data")
+        if not (target / "images").is_dir():
+            raise FileNotFoundError(
+                f"Grounding-DINO image archive did not contain images/: {archive}"
+            )
+
+    val_annotations = data_root / "val" / "annotations.json"
+    val_payload = json.loads(val_annotations.read_text())
+    val_categories = [
+        category for category in val_payload.get("categories", [])
+        if isinstance(category, dict) and category.get("id") is not None
+    ]
+    category_id_map = {
+        category["id"]: index
+        for index, category in enumerate(sorted(val_categories, key=lambda item: item["id"]))
+    }
+    for category in val_categories:
+        category["id"] = category_id_map[category["id"]]
+    for annotation in val_payload.get("annotations", []):
+        if annotation.get("category_id") in category_id_map:
+            annotation["category_id"] = category_id_map[annotation["category_id"]]
+    if sorted(category_id_map.values()) != list(range(len(category_id_map))):
+        raise ValueError("Grounding-DINO validation categories are not contiguous")
+    _write_json(val_annotations, val_payload)
+
+    payload = json.loads((data_root / "train" / "annotations.json").read_text())
+    label_map = {
+        str(category["id"]): category["name"]
+        for category in payload.get("categories", [])
+        if category.get("id") is not None and category.get("name")
+    }
+    annotations_by_image: dict[Any, list[dict[str, Any]]] = {}
+    for annotation in payload.get("annotations", []):
+        bbox = annotation.get("bbox")
+        label = annotation.get("category_id")
+        if not isinstance(bbox, list) or len(bbox) != 4 or str(label) not in label_map:
+            continue
+        x, y, width, height = bbox
+        if width <= 0 or height <= 0:
+            continue
+        annotations_by_image.setdefault(annotation.get("image_id"), []).append({
+            "bbox": [x, y, x + width, y + height],
+            "label": label,
+            "category": label_map[str(label)],
+        })
+
+    records = []
+    for image in payload.get("images", []):
+        instances = annotations_by_image.get(image.get("id"), [])
+        if image.get("file_name") and instances:
+            records.append({
+                "file_name": image["file_name"],
+                "detection": {"instances": instances},
+            })
+    if not records or not label_map:
+        raise ValueError("Grounding-DINO COCO source produced no ODVG records or labels")
+
+    train_root = data_root / "train"
+    (train_root / "annotations_odvg.jsonl").write_text(
+        "".join(json.dumps(record, sort_keys=True) + "\n" for record in records)
+    )
+    _write_json(train_root / "annotations_odvg_labelmap.json", label_map)
+    return data_root
+
+
 def _prepare_visual_changenet_backbone(out_dir: Path) -> Path:
     destination = out_dir / "ptm" / "c-radio-v2-b" / "C-RADIOv2_B.safetensors"
     if destination.exists() and destination.stat().st_size > 0:
@@ -2415,7 +2496,7 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
             "container_path": "/data",
         })
     if model == "grounding-dino":
-        dataset_root = out_dir.parent / "datasets" / "grounding-dino-mini"
+        dataset_root = _prepare_grounding_dino_mount(out_dir)
         mounts.append({
             "host_path": str(dataset_root),
             "container_path": "/data/grounding-dino-mini",
