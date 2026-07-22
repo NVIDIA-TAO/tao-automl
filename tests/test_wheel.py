@@ -765,6 +765,53 @@ def test_pbt_retains_best_checkpoint_across_generations():
         assert best.job_id == "best-generation-1"
 
 
+def test_pbt_prefers_terminal_generation_checkpoint_on_tie():
+    """Equal PBT scores should select the checkpoint that completed PBT."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={
+                "train": {
+                    "epoch": 2,
+                    "optm_lr": 1e-6,
+                    "checkpoint_interval": 1,
+                    "validation_interval": 1,
+                }
+            },
+            settings={
+                "algorithm": "pbt",
+                "metric": "accuracy",
+                "automl_population_size": 2,
+                "automl_max_generations": 2,
+                "automl_eval_interval": 1,
+            },
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        first = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        first[0].assign_job_id("member-0-generation-1")
+        first[1].assign_job_id("member-1-generation-1")
+        automl.report_result(first[0].id, 0.9, status="success")
+        automl.report_result(first[1].id, 0.9, status="success")
+
+        second = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        second[0].assign_job_id("member-0-generation-2")
+        second[1].assign_job_id("member-1-generation-2")
+        automl.report_result(second[0].id, 0.9, status="success")
+        automl.report_result(second[1].id, 0.9, status="success")
+
+        assert automl.next_recommendation() == []
+        best = automl.get_best()
+        assert best.result == 0.9
+        assert best.job_id == "member-0-generation-2"
+
+
 # ---------------------------------------------------------------
 # 5. AlgorithmParams tests
 # ---------------------------------------------------------------

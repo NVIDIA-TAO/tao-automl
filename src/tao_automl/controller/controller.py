@@ -274,7 +274,12 @@ class Controller:
                 archived.created_on = rec_dict.get("created_on", "")
                 archived.last_modified = rec_dict.get("last_modified", "")
                 if archived.status in (JobStates.success, JobStates.done):
-                    completed.insert(0, archived)
+                    # Keep the archived snapshot eligible when it is strictly
+                    # better, but prefer a terminal-generation checkpoint on
+                    # an equal score.  PBT reuses member IDs, and selecting the
+                    # older tie would hand downstream actions a checkpoint
+                    # that predates the completed exploit/resume generation.
+                    completed.append(archived)
 
         if not completed:
             return None
