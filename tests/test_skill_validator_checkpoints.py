@@ -805,6 +805,19 @@ def test_nvdinov2_pbt_keeps_checkpoint_neutral_worker_parameter():
     ) == ["dataset.workers"]
 
 
+def test_bevfusion_pbt_keeps_checkpoint_neutral_train_batch_size():
+    validator = _load_validator_module()
+
+    assert validator._pbt_resume_safe_parameters(
+        [
+            "dataset.test_dataset.batch_size",
+            "dataset.train_dataset.batch_size",
+            "dataset.val_dataset.batch_size",
+        ],
+        "bevfusion",
+    ) == ["dataset.train_dataset.batch_size"]
+
+
 def test_pbt_rejects_structural_parameters_when_no_safe_fallback_exists():
     validator = _load_validator_module()
 

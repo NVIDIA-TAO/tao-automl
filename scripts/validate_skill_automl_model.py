@@ -2001,6 +2001,17 @@ def _pbt_resume_safe_parameters(params: list[str], model: str) -> list[str]:
     # Worker count is checkpoint-neutral and therefore safe across generations.
     if not resume_safe and model == "nvdinov2" and "dataset.workers" in params:
         return ["dataset.workers"]
+    # BEVFusion 5.5 exposes data-loader controls rather than optimizer fields
+    # in its generated AutoML surface.  Per-GPU train batch size does not alter
+    # checkpoint tensor shapes and remains valid when PBT copies and resumes a
+    # member checkpoint.  Keep only the train split; val/test batch sizes do
+    # not exercise the resumed training population.
+    if (
+        not resume_safe
+        and model == "bevfusion"
+        and "dataset.train_dataset.batch_size" in params
+    ):
+        return ["dataset.train_dataset.batch_size"]
     return resume_safe
 
 
