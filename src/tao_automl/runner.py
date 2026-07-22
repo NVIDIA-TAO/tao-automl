@@ -3723,6 +3723,11 @@ class AutoMLRunner:
                 }
                 for r in history
             ],
+            "algorithm_state": (
+                automl.get_algorithm_state()
+                if hasattr(automl, "get_algorithm_state")
+                else {}
+            ),
         }
         baseline["comparison_to_best"] = _compare_to_baseline(
             baseline.get("metric_value"),

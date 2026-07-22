@@ -579,6 +579,16 @@ def test_hyperband_es_uses_metric_direction_for_promotion():
         automl.report_result(first_rung[0].id, 0.1, status="success")
         automl.report_result(first_rung[1].id, 0.9, status="success")
 
+        brain_state = automl._state_store.get_brain_info(automl._context.id)
+        assert [item["decision"] for item in brain_state["early_stop_decisions"]] == [
+            "keep", "keep"
+        ]
+        assert all(
+            item["reason"] == "insufficient_curve_points"
+            for item in brain_state["early_stop_decisions"]
+        )
+        assert all(item["epoch"] == 1 for item in brain_state["early_stop_decisions"])
+
         promoted = automl.next_recommendation()
         assert len(promoted) == 1
         assert promoted[0].id == 1
