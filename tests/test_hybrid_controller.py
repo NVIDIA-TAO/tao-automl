@@ -130,6 +130,48 @@ def test_hybrid_retries_semantically_invalid_plan_response():
     assert strategist.invalid_plan_responses == 1
 
 
+def test_hybrid_retries_phase_reasoning_without_prior_metric_citation():
+    class Client:
+        def __init__(self):
+            self.responses = iter([
+                _Response({
+                    "action": "sweep",
+                    "algorithm": "bayesian",
+                    "parameters": ["train.optim.lr"],
+                    "trials": 1,
+                    "reasoning": "Run another refinement phase.",
+                }),
+                _Response({
+                    "action": "sweep",
+                    "algorithm": "bayesian",
+                    "parameters": ["train.optim.lr"],
+                    "trials": 1,
+                    "reasoning": (
+                        "The prior val/t2i_mAP was 0.520833, so sample a "
+                        "different learning rate."
+                    ),
+                }),
+            ])
+
+        def chat(self, *_args, **_kwargs):
+            return next(self.responses)
+
+    strategist = HybridStrategist(llm_client=Client())
+    strategist.full_history = [
+        {"rec_id": 0, "metric": 0.520833, "status": "success"}
+    ]
+
+    plan = strategist.plan_next_phase(
+        available_parameters=_params(["train.optim.lr"]),
+        network="clip",
+        metric_name="val/t2i_mAP",
+        metric_direction="maximize",
+    )
+
+    assert "val/t2i_mAP was 0.520833" in plan["reasoning"]
+    assert strategist.invalid_plan_responses == 1
+
+
 def test_hybrid_first_phase_reserves_refinement_budget(tmp_path, monkeypatch):
     class StaticStrategist:
         def __init__(self):
