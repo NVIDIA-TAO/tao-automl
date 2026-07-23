@@ -58,6 +58,29 @@ def test_checkpoint_progress_accepts_advancing_sparse4d_promotion():
     assert promoted == ("step", 6)
 
 
+def test_pbt_earlier_generation_winner_is_not_assigned_latest_member_resume():
+    validator = _load_validator_module()
+    payload = {
+        "result": {"best": {"rec_id": 0, "job_id": "generation-0"}},
+        "job_runs": [
+            {
+                "rec_id": 0,
+                "job_id": "generation-0",
+                "resume_from_job_id": None,
+                "resume_checkpoint_path": None,
+            },
+            {
+                "rec_id": 0,
+                "job_id": "generation-1",
+                "resume_from_job_id": "generation-0",
+                "resume_checkpoint_path": "/results/generation-0/model_epoch_000.pth",
+            },
+        ],
+    }
+
+    assert validator._resume_record_for_best_job(payload) is None
+
+
 def test_documented_automl_metric_is_distinct_from_training_monitoring_metric():
     validator = _load_validator_module()
     skill_text = """
