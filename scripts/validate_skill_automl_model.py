@@ -1788,6 +1788,19 @@ def _run_dataset_convert_preflight(
     }
 
 
+def _resume_record_for_best_job(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Return resume metadata only when the selected job itself was resumed."""
+    best_job_id = ((payload.get("result") or {}).get("best") or {}).get("job_id")
+    return next(
+        (
+            item for item in payload.get("job_runs", [])
+            if item.get("job_id") == best_job_id
+            and item.get("resume_from_job_id")
+        ),
+        None,
+    )
+
+
 def _run_post_checks(
     *,
     args: argparse.Namespace,
@@ -1810,14 +1823,11 @@ def _run_post_checks(
         }
         return payload
 
-    best_rec_id = ((payload.get("result") or {}).get("best") or {}).get("rec_id")
-    resume_record = next(
-        (
-            item for item in payload.get("resume_behavior", [])
-            if item.get("rec_id") == best_rec_id
-        ),
-        None,
-    )
+    # PBT reuses member/rec IDs across generations.  Looking up resume state by
+    # rec_id therefore attaches the latest generation's parent to an earlier
+    # generation winner.  Validate advancement only when the selected job
+    # itself was resumed.
+    resume_record = _resume_record_for_best_job(payload)
     if resume_record:
         parent_path = str(resume_record.get("resume_checkpoint_path") or "")
         parent_progress = _checkpoint_progress(parent_path)
