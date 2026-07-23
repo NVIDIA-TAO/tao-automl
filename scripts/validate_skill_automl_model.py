@@ -2042,7 +2042,12 @@ def _minimal_custom_ranges(
             ranges[param] = {"valid_min": 1, "valid_max": 1}
         elif model == "ml-recog" and lower == "train.batch_size":
             ranges[param] = {"valid_min": 4, "valid_max": 4}
-        elif "batch_size" in lower or lower.endswith("mini_batch") or ".mini_batch" in lower:
+        elif (
+            "batch_size" in lower
+            or lower.endswith("mini_batch")
+            or ".mini_batch" in lower
+            or lower.endswith("batch_per_replica")
+        ):
             ranges[param] = {"valid_min": 1, "valid_max": 2}
         elif model == "nvdinov2" and lower == "dataset.workers":
             ranges[param] = {"valid_min": 2, "valid_max": 2}
