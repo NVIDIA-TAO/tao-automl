@@ -828,6 +828,16 @@ def test_nvdinov2_pbt_keeps_checkpoint_neutral_worker_parameter():
     ) == ["dataset.workers"]
 
 
+def test_cosmos_local_validation_caps_batch_per_replica():
+    validator = _load_validator_module()
+
+    assert validator._minimal_custom_ranges(
+        ["train.train_batch_per_replica"], model="cosmos-rl"
+    ) == {
+        "train.train_batch_per_replica": {"valid_min": 1, "valid_max": 2}
+    }
+
+
 def test_bevfusion_pbt_keeps_checkpoint_neutral_train_batch_size():
     validator = _load_validator_module()
 
