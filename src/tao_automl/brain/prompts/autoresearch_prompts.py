@@ -225,6 +225,9 @@ Plan the next optimization phase. Return JSON with:
      leave budget for at least one result-informed refinement phase.
 5. **"algorithm_params"**: Algorithm-specific settings (e.g., automl_max_recommendations)
 6. **"reasoning"**: Why this strategy
+   - When experiment history is present, explicitly cite the prior
+     `{metric_name}` value used to choose the next algorithm, parameters, or
+     ranges. Do not describe a refinement without naming its measured metric.
 {range_narrowing_instructions}
 """
 

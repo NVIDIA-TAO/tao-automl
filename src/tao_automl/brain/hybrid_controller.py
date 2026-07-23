@@ -94,6 +94,28 @@ class HybridStrategist:
                 logger.warning("Hybrid strategist LLM call failed: %s", response.error)
                 return None
             plan = self._normalize_plan_payload(response.json_content)
+            if (
+                plan is not None
+                and self.full_history
+                and not self._reasoning_cites_prior_metric(plan, metric_name)
+            ):
+                self.invalid_plan_responses += 1
+                logger.warning(
+                    "Hybrid strategist reasoning did not cite prior %s metric "
+                    "(semantic attempt %d/2)",
+                    metric_name,
+                    semantic_attempt + 1,
+                )
+                messages = messages + [{
+                    "role": "user",
+                    "content": (
+                        "Your reasoning must explicitly cite the prior "
+                        f"{metric_name} metric name and measured value used to "
+                        "choose this next phase. Return the corrected plan JSON."
+                    ),
+                }]
+                plan = None
+                continue
             if plan is not None:
                 break
             self.invalid_plan_responses += 1
@@ -139,6 +161,16 @@ class HybridStrategist:
         )
 
         return plan
+
+    @staticmethod
+    def _reasoning_cites_prior_metric(
+        plan: Dict[str, Any], metric_name: str
+    ) -> bool:
+        """Require result-informed phases to expose their metric evidence."""
+        reasoning = str(plan.get("reasoning", "")).lower()
+        return metric_name.lower() in reasoning and any(
+            character.isdigit() for character in reasoning
+        )
 
     @staticmethod
     def _normalize_plan_payload(payload: Any) -> Optional[Dict[str, Any]]:
