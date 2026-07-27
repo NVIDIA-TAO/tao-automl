@@ -1,0 +1,7 @@
+__pycache__/
+.hardware_contract.lock
+smoke/events.jsonl
+smoke/slurm_state*
+seed_*/events.jsonl
+seed_*/slurm_state*
+seed_*/workspace/

@@ -307,6 +307,7 @@ class AutoML:
             workspace_path=workspace,
             metric=metric,
             handler_id=settings.get("experiment_id", session_id),
+            random_seed=settings.get("random_seed", settings.get("seed")),
         )
 
         # 3. Persist the training spec so the brain can read it

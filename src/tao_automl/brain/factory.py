@@ -16,6 +16,7 @@ from tao_automl.brain.hyperband_es import HyperBandES
 from tao_automl.brain.llm_brain import LLMBrain
 from tao_automl.brain.hybrid_controller import HybridBrain
 from tao_automl.brain.autoresearch_controller import AutoresearchBrain
+from tao_automl.objectives import implicit_direction
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +164,7 @@ class BrainFactory:
             resume: Whether to resume from previous state
         """
         algo_lower = algorithm.lower()
+        metric_direction = implicit_direction(metric)
 
         if algo_lower in AlgorithmType.HYPERBAND:
             brain_class = HyperBand
@@ -182,7 +184,9 @@ class BrainFactory:
                 "context": context,
                 "state_store": state_store,
                 "network": network,
-                "parameters": parameters
+                "parameters": parameters,
+                "metric": metric,
+                "direction": metric_direction,
             }
         elif algo_lower in AlgorithmType.BOHB:
             brain_class = BOHB
@@ -205,7 +209,9 @@ class BrainFactory:
                 "context": context,
                 "state_store": state_store,
                 "network": network,
-                "parameters": parameters
+                "parameters": parameters,
+                "metric": metric,
+                "direction": metric_direction,
             }
         elif algo_lower in AlgorithmType.ASHA:
             brain_class = ASHA

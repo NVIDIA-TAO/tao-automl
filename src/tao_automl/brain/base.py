@@ -1,12 +1,14 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 """AutoML algorithm's Base Class"""
+import hashlib
 import math
 import numpy as np
 import random
 import logging
 
 
+from tao_automl.objectives import normalize_direction
 from tao_automl.utils.math_utils import (
     fix_input_dimension,
     fix_power_of_factor,
@@ -20,6 +22,36 @@ from tao_automl.utils import automl_helper
 
 
 logger = logging.getLogger(__name__)
+
+OBSERVATION_UTILITY_VERSION = 1
+
+
+def _stable_context_seed(context):
+    """Return a process-independent AutoML seed for a context.
+
+    Python's built-in ``hash`` is intentionally randomized between interpreter
+    processes, so it cannot be used as a reproducibility seed.  Callers may
+    provide ``context.random_seed`` explicitly; otherwise derive a stable seed
+    from the persisted context ID.
+    """
+    explicit_seed = getattr(context, "random_seed", None)
+    if explicit_seed is not None:
+        if isinstance(explicit_seed, (bool, np.bool_)):
+            raise TypeError("context.random_seed must be an integer, not a boolean")
+        try:
+            seed = int(explicit_seed)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise TypeError("context.random_seed must be an integer") from exc
+        if isinstance(explicit_seed, (float, np.floating)) and not float(
+            explicit_seed
+        ).is_integer():
+            raise ValueError("context.random_seed must be an integer")
+        if seed < 0 or seed >= 2**32:
+            raise ValueError("context.random_seed must be in [0, 2**32)")
+        return seed
+
+    digest = hashlib.sha256(str(context.id).encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], byteorder="big", signed=False) % (2**32)
 
 
 def is_nan_value(val):
@@ -62,13 +94,150 @@ class AutoMLAlgorithmBase:
         self.custom_ranges = self.state_store.get_custom_param_ranges(self.context.handler_id) or {}
         logger.info(f"Loaded {len(self.custom_ranges)} custom parameter range(s) for experiment {experiment_id}")
 
-        # Initialize random seeds to ensure different values across experiments
-        # Using context.id hash to get different seeds for different jobs
-        seed = hash(str(context.id)) % 2**31
-        np.random.seed(seed)
-        random.seed(seed)
+        # Keep legacy global RNG use deterministic across interpreter processes.
+        # Individual algorithms still share these RNGs, but the seed itself no
+        # longer depends on Python's randomized hash implementation.
+        self.random_seed = _stable_context_seed(context)
+        np.random.seed(self.random_seed)
+        random.seed(self.random_seed)
 
-        logger.info(f"Initialized random seed: {seed} for job {context.id}")
+        logger.info(
+            "Initialized stable random seed: %d for job %s",
+            self.random_seed,
+            context.id,
+        )
+
+    def _configure_objective(self, metric="kpi", direction=None):
+        """Configure the scalar utility consumed by maximize-only acquisitions."""
+        self.metric = str(metric or "kpi")
+        self.metric_direction = normalize_direction(direction, self.metric)
+
+    @staticmethod
+    def _finite_observation_value(value):
+        """Return a finite float, rejecting booleans and non-scalars."""
+        if isinstance(value, (bool, np.bool_)):
+            return None
+        try:
+            normalized = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return None
+        return normalized if math.isfinite(normalized) else None
+
+    def _observation_utility(self, recommendation):
+        """Return an oriented, finite utility for a successful recommendation.
+
+        Recommendation results stay on their raw user-facing scale.  Bayesian
+        acquisitions are maximize-only, so minimization metrics are negated only
+        at this ingestion boundary.
+        """
+        status = str(getattr(recommendation, "status", "")).lower()
+        if status not in {"success", "done"}:
+            return None
+
+        result = self._finite_observation_value(
+            getattr(recommendation, "result", None)
+        )
+        if result is None:
+            return None
+
+        # The controller only marks a multi-objective report successful after
+        # scalarization receives every objective.  Recheck the payload here so
+        # direct brain users and legacy/corrupt state cannot fit a partial score.
+        if self.metric == "multi_objective_score":
+            objective_values = getattr(recommendation, "objective_values", None)
+            if not isinstance(objective_values, dict) or len(objective_values) < 2:
+                return None
+            if any(
+                self._finite_observation_value(value) is None
+                for value in objective_values.values()
+            ):
+                return None
+
+        return -result if self.metric_direction == "minimize" else result
+
+    def _discard_pending_observation(self):
+        """Remove the issued point corresponding to an unusable terminal result."""
+        if len(self.Xs) > len(self.ys):
+            self.Xs.pop()
+
+    def _rebuild_observation_utilities(self, history):
+        """Rebuild surrogate responses from the controller's current archive.
+
+        Multi-objective scalarization may renormalize every successful
+        recommendation whenever a new result enters the archive.  Consequently
+        previously fitted utilities are not immutable observations.  ``Xs`` is
+        kept in successful-recommendation order, while ``ys`` is reconstructed
+        from the current Recommendation objects before every GP fit.
+        """
+        utilities = []
+        for recommendation in history:
+            utility = self._observation_utility(recommendation)
+            if utility is not None:
+                utilities.append(utility)
+
+        if len(self.Xs) != len(utilities):
+            raise ValueError(
+                "Surrogate observation archive is misaligned: "
+                f"{len(self.Xs)} successful parameter point(s), "
+                f"{len(utilities)} current valid successful result(s)"
+            )
+        self.ys = utilities
+        return utilities
+
+    def _restore_observation_state(
+        self,
+        raw_xs,
+        raw_ys,
+        *,
+        utilities_oriented,
+    ):
+        """Restore only complete finite X/Y pairs plus one pending proposal."""
+        restored_xs = []
+        restored_ys = []
+        paired_count = min(len(raw_xs), len(raw_ys))
+        expected_dimension = len(self.parameters)
+
+        for index in range(paired_count):
+            try:
+                point = np.asarray(raw_xs[index], dtype=float)
+            except (TypeError, ValueError, OverflowError):
+                continue
+            raw_value = self._finite_observation_value(raw_ys[index])
+            if (
+                raw_value is None
+                or point.ndim != 1
+                or point.size != expected_dimension
+                or not np.all(np.isfinite(point))
+            ):
+                continue
+            utility = raw_value
+            if not utilities_oriented and self.metric_direction == "minimize":
+                utility = -raw_value
+            restored_xs.append(point)
+            restored_ys.append(utility)
+
+        pending = list(raw_xs[paired_count:])
+        if len(pending) > 1:
+            logger.warning(
+                "Discarding %d excess unpaired Bayesian proposals while loading state",
+                len(pending) - 1,
+            )
+            pending = pending[-1:]
+        if pending:
+            try:
+                point = np.asarray(pending[0], dtype=float)
+            except (TypeError, ValueError, OverflowError):
+                point = None
+            if (
+                point is not None
+                and point.ndim == 1
+                and point.size == expected_dimension
+                and np.all(np.isfinite(point))
+            ):
+                restored_xs.append(point)
+
+        self.Xs = restored_xs
+        self.ys = restored_ys
 
     def _training_budget_spec_overrides(self, num_epochs=None, interval=None):
         """Return dotted spec overrides for train budget keys.
