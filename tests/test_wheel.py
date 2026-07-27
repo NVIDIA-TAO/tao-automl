@@ -217,6 +217,7 @@ def test_controller_multi_objective_score_and_pareto_front():
             "multi_objective": True,
             "latency_metric": "latency",
             "latency_scale": 100,
+            "accuracy_retention_fraction": 0.90,
         })
         ctrl = Controller(
             brain=MockBrain(4),
@@ -239,17 +240,20 @@ def test_controller_multi_objective_score_and_pareto_front():
             ctrl.report_result(rec.id, values)
 
         best = ctrl.get_best()
-        assert best.id == 1
-        assert best.primary_metric_value() == pytest.approx(0.88)
-        assert best.objective_score == pytest.approx(0.78)
+        assert best.id == 0
+        assert best.primary_metric_value() == pytest.approx(0.90)
+        assert best.objective_score == pytest.approx(-0.2500005)
 
         status = ctrl.get_status()
         assert status["progress"]["pareto_front_size"] == 3
         assert {item["rec_id"] for item in status["pareto_front"]} == {0, 1, 2}
         assert status["best"]["objective_values"] == {
-            "accuracy": 0.88,
-            "latency": 10.0,
+            "accuracy": 0.90,
+            "latency": 20.0,
         }
+        assert status["selection_analysis"]["selections"]["multi_objective"][
+            "winner_id"
+        ] == "0"
 
         loaded = Controller.load_state(
             brain=MockBrain(4),
@@ -261,11 +265,11 @@ def test_controller_multi_objective_score_and_pareto_front():
             objective_config=objective_config,
         )
         loaded_best = loaded.get_best()
-        assert loaded_best.id == 1
-        assert loaded_best.objective_score == pytest.approx(0.78)
+        assert loaded_best.id == 0
+        assert loaded_best.objective_score == pytest.approx(-0.2500005)
         assert loaded_best.objective_values == {
-            "accuracy": 0.88,
-            "latency": 10.0,
+            "accuracy": 0.90,
+            "latency": 20.0,
         }
 
 

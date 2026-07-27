@@ -14,7 +14,11 @@ from tao_automl.utils.math_utils import (
     JobStates, get_valid_range, clamp_value,
     get_valid_options, get_option_weights, fix_input_dimension
 )
-from tao_automl.brain.base import AutoMLAlgorithmBase, is_nan_value
+from tao_automl.brain.base import (
+    OBSERVATION_UTILITY_VERSION,
+    AutoMLAlgorithmBase,
+    is_nan_value,
+)
 from tao_automl.utils.spec_utils import get_flatten_specs
 
 logger = logging.getLogger(__name__)
@@ -42,7 +46,15 @@ def _get_total_epochs_from_specs(specs):
 class Bayesian(AutoMLAlgorithmBase):
     """Bayesian AutoML algorithm class"""
 
-    def __init__(self, context, state_store, network, parameters):
+    def __init__(
+        self,
+        context,
+        state_store,
+        network,
+        parameters,
+        metric="kpi",
+        direction=None,
+    ):
         """Initialize the Bayesian algorithm class
 
         Args:
@@ -52,6 +64,7 @@ class Bayesian(AutoMLAlgorithmBase):
             parameters: automl sweepable parameters
         """
         super().__init__(context, state_store, network, parameters)
+        self._configure_objective(metric, direction)
         length_scale = [1.0] * len(self.parameters)
         m52 = ConstantKernel(1.0) * Matern(length_scale=length_scale, nu=2.5)
         # m52 = ConstantKernel(1.0) * Matern(length_scale=1.0, nu=2.5) # is another option
@@ -60,7 +73,7 @@ class Bayesian(AutoMLAlgorithmBase):
             alpha=1e-10,
             optimizer="fmin_l_bfgs_b",
             n_restarts_optimizer=10,
-            random_state=95051
+            random_state=self.random_seed,
         )
         # The following 2 need to be stored
         self.Xs = []
@@ -351,42 +364,73 @@ class Bayesian(AutoMLAlgorithmBase):
         """Save the Bayesian algorithm related variables to brain metadata"""
         state_dict = {}
         state_dict["Xs"] = np.array(self.Xs).tolist()  # List of np arrays
-        state_dict["ys"] = np.array(self.ys).tolist()  # List
+        state_dict["ys"] = np.array(self.ys).tolist()  # Oriented utilities
+        state_dict["metric"] = self.metric
+        state_dict["metric_direction"] = self.metric_direction
+        state_dict["observation_utility_version"] = OBSERVATION_UTILITY_VERSION
+        state_dict["random_seed"] = self.random_seed
 
         self.state_store.save_brain_info(self.context.id, state_dict)
 
     @staticmethod
-    def load_state(context, state_store, network, parameters):
+    def load_state(
+        context,
+        state_store,
+        network,
+        parameters,
+        metric="kpi",
+        direction=None,
+    ):
         """Load the Bayesian algorithm related variables to brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
         if not json_loaded:
-            return Bayesian(context, state_store, network, parameters)
+            return Bayesian(
+                context,
+                state_store,
+                network,
+                parameters,
+                metric=metric,
+                direction=direction,
+            )
 
-        Xs = []
-        for x in json_loaded["Xs"]:
-            Xs.append(np.array(x))
-        ys = json_loaded["ys"]
-        bayesian = Bayesian(context, state_store, network, parameters)
-        # Load state (Remember everything)
-        bayesian.Xs = Xs
-        bayesian.ys = ys
+        bayesian = Bayesian(
+            context,
+            state_store,
+            network,
+            parameters,
+            metric=metric,
+            direction=direction,
+        )
+        stored_metric = json_loaded.get("metric")
+        stored_direction = json_loaded.get("metric_direction")
+        if stored_metric is not None and stored_metric != bayesian.metric:
+            raise ValueError(
+                "Cannot resume Bayesian state with a different metric: "
+                f"stored={stored_metric!r}, requested={bayesian.metric!r}"
+            )
+        if (
+            stored_direction is not None
+            and stored_direction != bayesian.metric_direction
+        ):
+            raise ValueError(
+                "Cannot resume Bayesian state with a different direction: "
+                f"stored={stored_direction!r}, "
+                f"requested={bayesian.metric_direction!r}"
+            )
 
-        len_y = len(ys)
-        if Xs and ys:
-            Xs_npy = np.array(Xs[:len_y])
-            ys_npy = np.array(ys)
-
-            # Validate data before fitting - check for inf/nan values
-            if np.any(np.isinf(ys_npy)) or np.any(np.isnan(ys_npy)):
-                logger.warning(
-                    "Detected inf/nan values in loaded training data. "
-                    "Replacing inf with large finite values and nan with 0."
-                )
-                ys_npy = np.nan_to_num(ys_npy, nan=0.0, posinf=1e7, neginf=-1e7)
-                # Update the loaded ys with cleaned values
-                bayesian.ys = ys_npy.tolist()
-
-            bayesian.gp.fit(Xs_npy, ys_npy)
+        bayesian._restore_observation_state(
+            json_loaded.get("Xs", []),
+            json_loaded.get("ys", []),
+            utilities_oriented=(
+                json_loaded.get("observation_utility_version")
+                == OBSERVATION_UTILITY_VERSION
+            ),
+        )
+        if bayesian.ys:
+            bayesian.gp.fit(
+                np.array(bayesian.Xs[:len(bayesian.ys)]),
+                np.array(bayesian.ys),
+            )
 
         return bayesian
 
@@ -407,32 +451,37 @@ class Bayesian(AutoMLAlgorithmBase):
         # This function will be called every 5 seconds or so.
         # If no change in history, dont give a recommendation
         # ie - wait for previous recommendation to finish
-        if history[-1].status not in [JobStates.success, JobStates.failure]:
+        terminal_statuses = {
+            JobStates.success,
+            JobStates.done,
+            JobStates.failure,
+            JobStates.error,
+            JobStates.canceled,
+        }
+        if history[-1].status not in terminal_statuses:
             return []
 
-        if history[-1].status == JobStates.failure:
-            # A failed trial carries no trustworthy metric — its 0.0 result is
-            # synthesized by the runner, not measured. Feeding it to the GP
-            # teaches the search that this design point is bad when the job may
-            # have died for reasons unrelated to the hyperparameters (image
-            # pull, PTM staging, node failure). Drop the pending design point
-            # and propose the next one from the uncontaminated observations.
-            if len(self.Xs) > len(self.ys):
-                self.Xs.pop()
-            if not self.ys:
-                suggestions = np.random.rand(len(self.parameters))
-            else:
-                suggestions = self.optimize_ei()
-            self.Xs.append(suggestions)
-        else:
-            # Update the GP based on results
-            self.ys.append(history[-1].result)
-            self.update_gp()
+        latest_utility = self._observation_utility(history[-1])
+        if latest_utility is None:
+            logger.warning(
+                "Skipping unusable Bayesian observation for recommendation %s "
+                "(status=%s, result=%r)",
+                getattr(history[-1], "id", "N/A"),
+                getattr(history[-1], "status", None),
+                getattr(history[-1], "result", None),
+            )
+            self._discard_pending_observation()
 
-            # Generate one recommendation
-            # Generate "suggestions" which are in [0.0, 1.0] by optimizing EI
-            suggestions = self.optimize_ei()  # length = len(self.parameters), np.array type
-            self.Xs.append(suggestions)
+        # Objective normalization can change every prior scalarized result when
+        # the archive grows. Re-read every current success rather than appending
+        # only the latest (potentially leaving stale utilities in the GP).
+        utilities = self._rebuild_observation_utilities(history)
+        if utilities:
+            self.update_gp()
+            suggestions = self.optimize_ei()
+        else:
+            suggestions = np.random.rand(len(self.parameters))
+        self.Xs.append(suggestions)
         # Convert the suggestions to recommendations based on parameter type
         # Assume one:one mapping between self.parameters and suggestions
         recommendations = []
@@ -452,21 +501,17 @@ class Bayesian(AutoMLAlgorithmBase):
         Xs_npy = np.array(self.Xs)
         ys_npy = np.array(self.ys)
 
-        # Validate data before fitting - check for inf/nan values
-        if np.any(np.isinf(ys_npy)) or np.any(np.isnan(ys_npy)):
-            logger.warning(
-                f"Detected inf/nan values in training data. "
-                f"ys_npy: {ys_npy}. "
-                f"Replacing inf with large finite values and nan with 0."
+        if (
+            len(Xs_npy) == 0
+            or len(ys_npy) == 0
+            or len(Xs_npy) != len(ys_npy)
+            or not np.all(np.isfinite(Xs_npy))
+            or not np.all(np.isfinite(ys_npy))
+        ):
+            raise ValueError(
+                "Bayesian GP requires complete finite X/Y observation pairs"
             )
-            # Replace inf with large finite value (1e7) and nan with 0
-            ys_npy = np.nan_to_num(ys_npy, nan=0.0, posinf=1e7, neginf=-1e7)
-            logger.info(f"Cleaned ys_npy: {ys_npy}")
-
-        if len(Xs_npy) > 0 and len(ys_npy) > 0:
-            self.gp.fit(Xs_npy, ys_npy)
-        else:
-            logger.warning("No valid training data available for Gaussian Process")
+        self.gp.fit(Xs_npy, ys_npy)
 
     def optimize_ei(self):
         """Optmize expected improvement functions"""

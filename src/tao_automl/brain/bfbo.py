@@ -14,7 +14,11 @@ from tao_automl.utils.math_utils import (
     JobStates, get_valid_range, clamp_value,
     get_valid_options, get_option_weights, fix_input_dimension
 )
-from tao_automl.brain.base import AutoMLAlgorithmBase, is_nan_value
+from tao_automl.brain.base import (
+    OBSERVATION_UTILITY_VERSION,
+    AutoMLAlgorithmBase,
+    is_nan_value,
+)
 from tao_automl.utils.spec_utils import get_flatten_specs
 from tao_automl.brain.bayesian import _get_total_epochs_from_specs
 
@@ -24,9 +28,18 @@ logger = logging.getLogger(__name__)
 class BFBO(AutoMLAlgorithmBase):
     """BFBO (Bayesian First-Order Bayesian Optimization) AutoML algorithm class"""
 
-    def __init__(self, context, state_store, network, parameters):
+    def __init__(
+        self,
+        context,
+        state_store,
+        network,
+        parameters,
+        metric="kpi",
+        direction=None,
+    ):
         """Initialize the BFBO algorithm class"""
         super().__init__(context, state_store, network, parameters)
+        self._configure_objective(metric, direction)
 
         length_scale = [1.0] * len(self.parameters)
         kernel = ConstantKernel(1.0) * RBF(length_scale=length_scale, length_scale_bounds=(1e-2, 1e2))
@@ -37,7 +50,7 @@ class BFBO(AutoMLAlgorithmBase):
             optimizer="fmin_l_bfgs_b",
             n_restarts_optimizer=10,
             normalize_y=True,
-            random_state=95051
+            random_state=self.random_seed,
         )
 
         self.Xs = []
@@ -281,39 +294,70 @@ class BFBO(AutoMLAlgorithmBase):
         state_dict["Xs"] = np.array(self.Xs).tolist()
         state_dict["ys"] = np.array(self.ys).tolist()
         state_dict["kappa"] = self.kappa
+        state_dict["metric"] = self.metric
+        state_dict["metric_direction"] = self.metric_direction
+        state_dict["observation_utility_version"] = OBSERVATION_UTILITY_VERSION
+        state_dict["random_seed"] = self.random_seed
 
         self.state_store.save_brain_info(self.context.id, state_dict)
 
     @staticmethod
-    def load_state(context, state_store, network, parameters):
+    def load_state(
+        context,
+        state_store,
+        network,
+        parameters,
+        metric="kpi",
+        direction=None,
+    ):
         """Load the BFBO algorithm related variables from brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
         if not json_loaded:
-            return BFBO(context, state_store, network, parameters)
+            return BFBO(
+                context,
+                state_store,
+                network,
+                parameters,
+                metric=metric,
+                direction=direction,
+            )
 
-        Xs = []
-        for x in json_loaded["Xs"]:
-            Xs.append(np.array(x))
-        ys = json_loaded["ys"]
-        bfbo = BFBO(context, state_store, network, parameters)
-        bfbo.Xs = Xs
-        bfbo.ys = ys
+        bfbo = BFBO(
+            context,
+            state_store,
+            network,
+            parameters,
+            metric=metric,
+            direction=direction,
+        )
+        stored_metric = json_loaded.get("metric")
+        stored_direction = json_loaded.get("metric_direction")
+        if stored_metric is not None and stored_metric != bfbo.metric:
+            raise ValueError(
+                "Cannot resume BFBO state with a different metric: "
+                f"stored={stored_metric!r}, requested={bfbo.metric!r}"
+            )
+        if stored_direction is not None and stored_direction != bfbo.metric_direction:
+            raise ValueError(
+                "Cannot resume BFBO state with a different direction: "
+                f"stored={stored_direction!r}, "
+                f"requested={bfbo.metric_direction!r}"
+            )
+
+        bfbo._restore_observation_state(
+            json_loaded.get("Xs", []),
+            json_loaded.get("ys", []),
+            utilities_oriented=(
+                json_loaded.get("observation_utility_version")
+                == OBSERVATION_UTILITY_VERSION
+            ),
+        )
         bfbo.kappa = json_loaded.get("kappa", 2.0)
-
-        len_y = len(ys)
-        if Xs and ys:
-            Xs_npy = np.array(Xs[:len_y])
-            ys_npy = np.array(ys)
-
-            if np.any(np.isinf(ys_npy)) or np.any(np.isnan(ys_npy)):
-                logger.warning(
-                    "Detected inf/nan values in loaded training data. "
-                    "Replacing inf with large finite values and nan with 0."
-                )
-                ys_npy = np.nan_to_num(ys_npy, nan=0.0, posinf=1e7, neginf=-1e7)
-                bfbo.ys = ys_npy.tolist()
-
-            bfbo.gp.fit(Xs_npy, ys_npy)
+        if bfbo.ys:
+            bfbo.gp.fit(
+                np.array(bfbo.Xs[:len(bfbo.ys)]),
+                np.array(bfbo.ys),
+            )
 
         return bfbo
 
@@ -330,15 +374,35 @@ class BFBO(AutoMLAlgorithmBase):
                 recommendations.append(recommendation_value)
             return [dict(zip([param["parameter"] for param in self.parameters], recommendations))]
 
-        if history[-1].status not in [JobStates.success, JobStates.failure]:
+        terminal_statuses = {
+            JobStates.success,
+            JobStates.done,
+            JobStates.failure,
+            JobStates.error,
+            JobStates.canceled,
+        }
+        if history[-1].status not in terminal_statuses:
             return []
 
-        self.ys.append(history[-1].result)
-        self.update_gp()
+        latest_utility = self._observation_utility(history[-1])
+        if latest_utility is None:
+            logger.warning(
+                "Skipping unusable BFBO observation for recommendation %s "
+                "(status=%s, result=%r)",
+                getattr(history[-1], "id", "N/A"),
+                getattr(history[-1], "status", None),
+                getattr(history[-1], "result", None),
+            )
+            self._discard_pending_observation()
 
-        self.kappa = max(self.kappa_min, self.kappa * self.kappa_decay)
-
-        suggestions = self.optimize_ucb()
+        utilities = self._rebuild_observation_utilities(history)
+        if utilities:
+            self.update_gp()
+            if latest_utility is not None:
+                self.kappa = max(self.kappa_min, self.kappa * self.kappa_decay)
+            suggestions = self.optimize_ucb()
+        else:
+            suggestions = np.random.rand(len(self.parameters))
         self.Xs.append(suggestions)
         recommendations = []
         for param_dict, suggestion in zip(self.parameters, suggestions):
@@ -352,11 +416,15 @@ class BFBO(AutoMLAlgorithmBase):
         Xs_npy = np.array(self.Xs)
         ys_npy = np.array(self.ys)
 
-        if np.any(np.isinf(ys_npy)) or np.any(np.isnan(ys_npy)):
-            ys_npy = np.nan_to_num(ys_npy, nan=0.0, posinf=1e7, neginf=-1e7)
-
-        if len(Xs_npy) > 0 and len(ys_npy) > 0:
-            self.gp.fit(Xs_npy, ys_npy)
+        if (
+            len(Xs_npy) == 0
+            or len(ys_npy) == 0
+            or len(Xs_npy) != len(ys_npy)
+            or not np.all(np.isfinite(Xs_npy))
+            or not np.all(np.isfinite(ys_npy))
+        ):
+            raise ValueError("BFBO GP requires complete finite X/Y observation pairs")
+        self.gp.fit(Xs_npy, ys_npy)
 
     def optimize_ucb(self):
         """Optimize Upper Confidence Bound acquisition function"""

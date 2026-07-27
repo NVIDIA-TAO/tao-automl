@@ -1049,7 +1049,10 @@ def _metric_payload_from_values(
     missing = [name for name in metric_names if name not in values]
     if missing:
         return None
-    return {name: values[name] for name in metric_names}
+    # Preserve flat finite diagnostics returned alongside the declared
+    # objectives (for example latency p95, dispersion, and confidence bounds).
+    # ObjectiveConfig decides which keys participate in optimization.
+    return dict(values)
 
 
 def _metric_payload_primary(payload, metric_name: str):
@@ -1322,6 +1325,10 @@ class MetricExtractorError(RuntimeError):
     not to stdout — in which case the right fix is to pass ``eval_fn=`` with
     a status.json reader).
     """
+
+
+class NoFeasibleCandidateError(RuntimeError):
+    """Raised when a constrained selector has no accuracy-feasible candidate."""
 
 
 # Spec keys we treat as per-job output directories. When a user hardcodes
@@ -3186,6 +3193,12 @@ class AutoMLRunner:
             self._validate_artifact_retention_config(platform_kwargs)
         objective_config = parse_objective_config(automl_settings)
         self._retain_pareto_front = objective_config.is_multi_objective
+        self._require_eval_fn_success = bool(
+            automl_settings.get(
+                "require_eval_fn_success",
+                objective_config.has_archive_selector,
+            )
+        )
         objective_names = objective_config.metric_names
         workspace_id = workspace_id or getattr(self._sdk, "_workspace_id", "")
         network_arch = self.skill_ctx.network_arch
@@ -3600,6 +3613,25 @@ class AutoMLRunner:
         progress = automl.get_progress()
         history = automl.get_history()
         if best is None:
+            get_status = getattr(automl, "get_status", None)
+            status_for_failure = get_status() if callable(get_status) else {}
+            selection_analysis = (
+                status_for_failure.get("selection_analysis") or {}
+            )
+            selected_mode = (
+                selection_analysis.get("algorithm", {})
+                .get("configuration", {})
+                .get("mode")
+            )
+            selected_status = (
+                selection_analysis.get("selections", {})
+                .get(selected_mode, {})
+            )
+            if (
+                selected_status.get("status")
+                == "no_accuracy_feasible_candidates"
+            ):
+                raise NoFeasibleCandidateError(selected_status.get("reason"))
             failed = [r.id for r in history if r.status == "failure"]
             raise RuntimeError(
                 "AutoML finished without a successful recommendation; "
@@ -3673,6 +3705,12 @@ class AutoMLRunner:
         # parent checkpoints must survive a later resume.
         self._prune_intermediate_artifacts(automl, completed=search_complete)
 
+        get_status = getattr(automl, "get_status", None)
+        status_snapshot = get_status() if callable(get_status) else {}
+        audit_by_id = {
+            item.get("rec_id"): item.get("selection_audit")
+            for item in status_snapshot.get("recommendations", [])
+        }
         result = {
             "best": {
                 "rec_id": best.id if best else None,
@@ -3688,12 +3726,15 @@ class AutoMLRunner:
             "history": [
                 {
                     "rec_id": r.id,
+                    "specs": r.specs,
+                    "job_id": r.job_id,
                     "metric": _recommendation_primary_metric(r, metric_name),
                     "objective_score": getattr(r, "objective_score", None),
                     "objective_values": _recommendation_objective_values(r),
                     "status": r.status,
                     "failure_reason": getattr(r, "failure_reason", None),
                     "adjustments": getattr(r, "adjustments", []),
+                    "selection_audit": audit_by_id.get(r.id),
                 }
                 for r in history
             ],
@@ -3704,7 +3745,8 @@ class AutoMLRunner:
             _effective_dir,
         )
         if objective_config.is_multi_objective:
-            result["pareto_front"] = automl.get_status().get("pareto_front", [])
+            result["pareto_front"] = status_snapshot.get("pareto_front", [])
+            result["selection_analysis"] = status_snapshot.get("selection_analysis")
         logger.info(
             "AutoML %s: %d recommendations, best metric=%.6f (rec %s)",
             "complete" if search_complete else "stopped before controller completion",
@@ -4015,9 +4057,27 @@ class AutoMLRunner:
                     eval_fn(rec, job.id), "eval_fn"
                 )
             except Exception as ex:
-                logger.warning("eval_fn raised for rec %d: %s; falling back "
-                                "to log-extracted metric", rec.id, ex)
+                if getattr(self, "_require_eval_fn_success", False):
+                    rec.failure_reason = f"required_eval_fn_failed:{ex}"
+                    logger.warning(
+                        "Required eval_fn raised for rec %d: %s",
+                        rec.id,
+                        ex,
+                    )
+                    return None, "failure"
+                logger.warning(
+                    "eval_fn raised for rec %d: %s; falling back to "
+                    "log-extracted metric",
+                    rec.id,
+                    ex,
+                )
                 eval_metric = None
+            if (
+                eval_metric is None
+                and getattr(self, "_require_eval_fn_success", False)
+            ):
+                rec.failure_reason = "required_eval_fn_missing_metric"
+                return None, "metric_missing"
             if eval_metric is not None:
                 if isinstance(eval_metric, dict):
                     metric_values.update({
@@ -4352,8 +4412,13 @@ class AutoMLRunner:
                 try:
                     em = _callback_metric_payload(eval_fn(rec, job_id), "eval_fn")
                 except Exception as ex:
-                    logger.warning("eval_fn raised during resume for rec %d: %s",
-                                    rec_id, ex)
+                    logger.warning(
+                        "eval_fn raised during resume for rec %d: %s",
+                        rec_id,
+                        ex,
+                    )
+                    if getattr(self, "_require_eval_fn_success", False):
+                        rec.failure_reason = f"required_eval_fn_failed:{ex}"
                     em = None
                 if em is not None:
                     if isinstance(em, dict):
@@ -4364,7 +4429,16 @@ class AutoMLRunner:
                     else:
                         metric_values[metric_name] = float(em)
                     eval_metric_used = True
-            if not eval_metric_used:
+            if (
+                not eval_metric_used
+                and getattr(self, "_require_eval_fn_success", False)
+            ):
+                rec.failure_reason = (
+                    rec.failure_reason or "required_eval_fn_missing_metric"
+                )
+                metric_value = None
+                report_status = "failure"
+            elif not eval_metric_used:
                 local_metrics = {}
                 for index, name in enumerate(metric_names):
                     local_metric = _extract_metric_from_local_results(
@@ -4381,10 +4455,15 @@ class AutoMLRunner:
                         "Resume: rec %d using local status metric(s)=%s",
                         rec_id, _format_metric_payload(local_metrics),
                     )
-            metric_value = _metric_payload_from_values(
-                metric_values, metric_name, metric_names
-            )
-            report_status = "success" if metric_value is not None else "failure"
+            if eval_metric_used or not getattr(
+                self,
+                "_require_eval_fn_success",
+                False,
+            ):
+                metric_value = _metric_payload_from_values(
+                    metric_values, metric_name, metric_names
+                )
+                report_status = "success" if metric_value is not None else "failure"
 
         self._finalize_terminal_job(
             automl=automl,

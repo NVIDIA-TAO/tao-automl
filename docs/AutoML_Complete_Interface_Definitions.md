@@ -575,6 +575,16 @@ The `settings` dict passed to `AutoML(settings=...)`:
 |-----|------|---------|---------|
 | `algorithm` | str | **required** | All — selects brain type |
 | `metric` | str | `"loss"` | All — "loss" → lower is better |
+| `objectives` | list[dict] | unset | Explicit objectives. A two-objective maximize-accuracy/minimize-latency list enables constrained Pareto archive selection. |
+| `selection_mode` | str | `"multi_objective"` | Two-objective archives — one of `accuracy`, `latency`, or `multi_objective`. |
+| `accuracy_constraint` | dict | relative 0.98 | Latency and multi-objective modes — accuracy-winner-relative `relative` retained fraction or `absolute` maximum degradation. |
+| `objective_normalization` | str | `"pareto_front"` | Two-objective archives — front-relative regret normalization. |
+| `augmentation_rho` | float | `1e-6` | Multi-objective final selection — strictly positive augmented-Chebyshev tie term. |
+| `accuracy_tolerance` | float | `1e-12` | Accuracy-mode equivalence and the strict-improvement threshold in Pareto comparisons; it never makes lower accuracy "no worse." |
+| `latency_tolerance` | float | `0.0` | Latency-mode equivalence and the strict-improvement margin in Pareto comparisons; reported confidence-interval overlap also prevents a latency-only strict claim, but never makes a slower median "no worse." |
+| `selection_score_tolerance` | float | `1e-12` | Multi-objective compromise-score equivalence. |
+| `random_seed` | int | stable session-derived | Candidate-generation RNG; explicit values are recorded and reproducible across processes. |
+| `require_eval_fn_success` | bool | true for two-objective archives | Fail the candidate when required benchmark evaluation raises or omits a metric; disables fallback to progress-log metrics. |
 | `automl_max_recommendations` | int | 20 | Bayesian, BFBO |
 | `automl_max_epochs` | int | 27 | Hyperband, BOHB, ASHA, DEHB |
 | `automl_reduction_factor` | int | 3 | Hyperband, BOHB, ASHA, DEHB |

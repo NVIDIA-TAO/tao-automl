@@ -8,6 +8,12 @@ import math
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+from tao_automl.selection import (
+    AccuracyConstraint,
+    SelectionAnalysis,
+    SelectionConfig,
+    analyze_archive,
+)
 from tao_automl.utils.value_utils import normalize_finite_number, normalize_json_value
 
 
@@ -101,7 +107,12 @@ class ObjectiveSpec:
 class ObjectiveConfig:
     """Collection of objectives plus scoring/Pareto helpers."""
 
-    def __init__(self, objectives: Iterable[ObjectiveSpec], primary_metric: str | None = None):
+    def __init__(
+        self,
+        objectives: Iterable[ObjectiveSpec],
+        primary_metric: str | None = None,
+        selection_config: SelectionConfig | None = None,
+    ):
         specs = tuple(objectives)
         if not specs:
             raise ValueError("At least one objective is required")
@@ -114,6 +125,7 @@ class ObjectiveConfig:
             unique.append(spec)
         self.objectives = tuple(unique)
         self.primary_metric = primary_metric or self.objectives[0].metric
+        self.selection_config = selection_config
 
     @property
     def is_multi_objective(self) -> bool:
@@ -161,6 +173,20 @@ class ObjectiveConfig:
                     raw[spec.metric],
                     path=f"objective_values.{spec.metric}",
                 )
+            # Preserve flat numeric benchmark diagnostics (for example latency
+            # confidence bounds) without treating them as optimization
+            # objectives. Structured/string metadata belongs in the evaluation
+            # artifact rather than the scalar callback payload.
+            for name, value in raw.items():
+                if name in values or name in {"metric", "metric_value", "value", "score"}:
+                    continue
+                try:
+                    values[name] = normalize_finite_number(
+                        value,
+                        path=f"objective_values.{name}",
+                    )
+                except (TypeError, ValueError):
+                    continue
             return values
 
         value = normalize_finite_number(
@@ -179,15 +205,23 @@ class ObjectiveConfig:
             )
 
     def scalarize(self, values: dict[str, float]) -> float:
-        """Return the scalar score used by existing search algorithms.
+        """Return a provisional scalar score used before archive analysis.
 
         For single-objective runs this is the raw metric, preserving legacy
-        behavior. For multi-objective runs every objective is oriented so
-        higher is better, scaled, weighted, and summed.
+        behavior.  A two-objective accuracy/latency session is scored from the
+        complete archive by :meth:`analyze_archive`; it deliberately does not
+        combine raw accuracy and milliseconds here.  The provisional score is
+        replaced by a normalized Pareto-aware acquisition score whenever the
+        controller records a successful result.
+
+        Generic multi-objective sessions without the archive selector retain
+        the legacy weighted scalarization for backward compatibility.
         """
         self.validate_complete(values)
         if not self.is_multi_objective:
             return float(values[self.primary_metric])
+        if self.selection_config is not None:
+            return 0.0
 
         score = 0.0
         for spec in self.objectives:
@@ -197,6 +231,26 @@ class ObjectiveConfig:
         if not math.isfinite(score):
             raise ValueError("Objective score must be finite")
         return float(score)
+
+    @property
+    def has_archive_selector(self) -> bool:
+        """Return whether final selection uses constrained Pareto analysis."""
+        return self.selection_config is not None
+
+    def analyze_archive(self, recommendations: Iterable[Any]) -> SelectionAnalysis:
+        """Return deterministic accuracy, latency, and compromise selections."""
+        if self.selection_config is None:
+            raise ValueError(
+                "Archive selection requires one maximize accuracy objective and "
+                "one minimize latency objective"
+            )
+        specs = {spec.metric: spec for spec in self.objectives}
+        return analyze_archive(
+            recommendations,
+            self.selection_config,
+            accuracy_weight=specs[self.selection_config.accuracy_metric].weight,
+            latency_weight=specs[self.selection_config.latency_metric].weight,
+        )
 
     def is_better_score(self, left: float, right: float) -> bool:
         if self.score_direction == "minimize":
@@ -247,7 +301,7 @@ class ObjectiveConfig:
         return sorted(front, key=lambda rec: rec.id)
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "primary_metric": self.primary_metric,
             "objectives": [
                 {
@@ -260,6 +314,124 @@ class ObjectiveConfig:
             ],
             "score_direction": self.score_direction,
         }
+        if self.selection_config is not None:
+            result["selection"] = self.selection_config.to_dict()
+        return result
+
+
+def _parse_accuracy_constraint(settings: dict[str, Any]) -> AccuracyConstraint:
+    raw = settings.get("accuracy_constraint") or {}
+    if not isinstance(raw, dict):
+        raise TypeError("automl_settings['accuracy_constraint'] must be a dictionary")
+
+    flattened_relative = settings.get("accuracy_retention_fraction")
+    flattened_absolute = settings.get("max_accuracy_degradation")
+    nested_relative = raw.get(
+        "retained_fraction",
+        raw.get("min_retained_fraction"),
+    )
+    nested_absolute = raw.get(
+        "max_absolute_degradation",
+        raw.get("max_accuracy_degradation"),
+    )
+    relative = (
+        flattened_relative
+        if flattened_relative is not None
+        else nested_relative
+    )
+    absolute = (
+        flattened_absolute
+        if flattened_absolute is not None
+        else nested_absolute
+    )
+    if relative is not None and absolute is not None:
+        raise ValueError(
+            "Configure either retained accuracy fraction or maximum absolute "
+            "accuracy degradation, not both"
+        )
+
+    kind = raw.get("type")
+    raw_value = raw.get("value")
+    if relative is not None:
+        if kind not in (None, "relative"):
+            raise ValueError("accuracy constraint type conflicts with retained fraction")
+        kind = "relative"
+        raw_value = relative
+    elif absolute is not None:
+        if kind not in (None, "absolute"):
+            raise ValueError(
+                "accuracy constraint type conflicts with absolute degradation"
+            )
+        kind = "absolute"
+        raw_value = absolute
+
+    kind = kind or "relative"
+    if raw_value is None:
+        raw_value = 0.98 if kind == "relative" else 0.0
+    return AccuracyConstraint(
+        kind=kind,
+        value=raw_value,
+        reference=raw.get("reference", "accuracy_winner"),
+        reference_value=raw.get("reference_value"),
+        reference_candidate_id=raw.get("reference_candidate_id"),
+    )
+
+
+def _build_selection_config(
+    settings: dict[str, Any],
+    objectives: list[ObjectiveSpec],
+) -> SelectionConfig | None:
+    if len(objectives) != 2:
+        return None
+
+    by_metric = {spec.metric: spec for spec in objectives}
+    accuracy_metric = settings.get("accuracy_metric")
+    if accuracy_metric is None:
+        accuracy_metric = next(
+            (spec.metric for spec in objectives if spec.direction == "maximize"),
+            None,
+        )
+    latency_metric = settings.get("latency_metric")
+    if latency_metric is None or latency_metric not in by_metric:
+        latency_metric = next(
+            (
+                spec.metric
+                for spec in objectives
+                if spec.direction == "minimize" and is_latency_metric(spec.metric)
+            ),
+            None,
+        )
+    if accuracy_metric is None or latency_metric is None:
+        return None
+    if accuracy_metric not in by_metric or latency_metric not in by_metric:
+        raise ValueError(
+            "accuracy_metric and latency_metric must name configured objectives"
+        )
+    if by_metric[accuracy_metric].direction != "maximize":
+        raise ValueError("the configured accuracy objective must be maximized")
+    if by_metric[latency_metric].direction != "minimize":
+        raise ValueError("the configured latency objective must be minimized")
+
+    mode = settings.get("selection_mode", "multi_objective")
+    return SelectionConfig(
+        mode=mode,
+        accuracy_metric=accuracy_metric,
+        latency_metric=latency_metric,
+        accuracy_constraint=_parse_accuracy_constraint(settings),
+        accuracy_tolerance=settings.get("accuracy_tolerance", 1e-12),
+        latency_tolerance=settings.get("latency_tolerance", 0.0),
+        score_tolerance=settings.get("selection_score_tolerance", 1e-12),
+        augmentation_rho=settings.get("augmentation_rho", 1e-6),
+        normalization=settings.get("objective_normalization", "pareto_front"),
+        latency_ci_low_metric=settings.get(
+            "latency_ci_low_metric",
+            "latency_ci95_low",
+        ),
+        latency_ci_high_metric=settings.get(
+            "latency_ci_high_metric",
+            "latency_ci95_high",
+        ),
+    )
 
 
 def parse_objective_config(settings: dict[str, Any] | None) -> ObjectiveConfig:
@@ -299,4 +471,8 @@ def parse_objective_config(settings: dict[str, Any] | None) -> ObjectiveConfig:
                 })
             )
 
-    return ObjectiveConfig(objectives, primary_metric=objectives[0].metric)
+    return ObjectiveConfig(
+        objectives,
+        primary_metric=objectives[0].metric,
+        selection_config=_build_selection_config(settings, objectives),
+    )
