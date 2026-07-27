@@ -118,6 +118,14 @@ def main() -> int:
     cfg.dataset.workers = 0
     cfg.dataset.pin_memory = False
     cfg.evaluate.batch_size = 1
+    # Native ``tao dino evaluate`` merges the YAML into DINOEvalExpConfig,
+    # whose optional fixed-resize fields default to None.  This standalone
+    # benchmark intentionally loads the same YAML directly, so restore those
+    # schema defaults when the user config omits them.
+    if "input_width" not in cfg.evaluate:
+        cfg.evaluate.input_width = None
+    if "input_height" not in cfg.evaluate:
+        cfg.evaluate.input_height = None
 
     lightning_model = DINOPlModel.load_from_checkpoint(
         args.checkpoint,
