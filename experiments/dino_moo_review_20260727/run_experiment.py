@@ -322,13 +322,18 @@ def read_status_map50(sdk: SlurmSDK, eval_job_id: str) -> float | None:
     return values[-1] if values else None
 
 
-def evaluation_specs(checkpoint: str, num_queries: int) -> dict[str, Any]:
+def evaluation_specs(
+    checkpoint: str,
+    num_queries: int,
+    *,
+    num_classes: int = 5,
+) -> dict[str, Any]:
     specs = copy.deepcopy(yaml.safe_load(EVALUATE_TEMPLATE.read_text()))
     specs["wandb"]["enable"] = False
     specs["model"]["backbone"] = "resnet_50"
     specs["model"]["num_queries"] = int(num_queries)
     specs["model"]["num_select"] = min(300, int(num_queries))
-    specs["dataset"]["num_classes"] = 5
+    specs["dataset"]["num_classes"] = int(num_classes)
     specs["dataset"]["eval_class_ids"] = [1, 2, 3, 4]
     specs["dataset"]["batch_size"] = TRAIN_BATCH_SIZE_PER_GPU
     specs["dataset"]["workers"] = 8
@@ -392,10 +397,15 @@ def launch_accuracy_evaluation(
     event_path: Path,
     seed: int,
     rec_id: int,
+    num_classes: int = 5,
 ) -> tuple[float, dict[str, Any]]:
     entrypoint = build_entrypoint(
         command="dino evaluate -e {config_path}",
-        specs=evaluation_specs(checkpoint, num_queries),
+        specs=evaluation_specs(
+            checkpoint,
+            num_queries,
+            num_classes=num_classes,
+        ),
         inputs=EVALUATE_INPUTS,
         outputs=EVALUATE_OUTPUTS,
         config_format="yaml",
@@ -554,8 +564,13 @@ def launch_latency_benchmark(
     event_path: Path,
     seed: int,
     rec_id: int,
+    num_classes: int = 5,
 ) -> tuple[dict[str, float], dict[str, Any]]:
-    specs = evaluation_specs(checkpoint, num_queries)
+    specs = evaluation_specs(
+        checkpoint,
+        num_queries,
+        num_classes=num_classes,
+    )
     specs["dataset"]["batch_size"] = LATENCY_BATCH_SIZE_PER_GPU
     specs["evaluate"]["batch_size"] = LATENCY_BATCH_SIZE_PER_GPU
     entrypoint = build_entrypoint(
@@ -674,6 +689,7 @@ def run_smoke() -> dict[str, Any]:
             event_path=event_path,
             seed=TRAIN_SEED,
             rec_id=-1,
+            num_classes=91,
         )
         latency_metrics, latency_job = launch_latency_benchmark(
             sdk,
@@ -682,6 +698,7 @@ def run_smoke() -> dict[str, Any]:
             event_path=event_path,
             seed=TRAIN_SEED,
             rec_id=-1,
+            num_classes=91,
         )
         result = {
             "status": "success",
@@ -691,6 +708,7 @@ def run_smoke() -> dict[str, Any]:
             ),
             "dataset": DATASET_URI,
             "checkpoint": PTM,
+            "checkpoint_classifier_classes": 91,
             "mAP50": map50,
             "latency_metrics": latency_metrics,
             "accuracy_evaluation": accuracy_job,
@@ -1102,6 +1120,15 @@ def write_launch_manifest() -> None:
             "random_resize_max_size": 1333,
             "fixed_padding": True,
             "gpu_count": GPU_COUNT,
+        },
+        "smoke_baseline": {
+            "checkpoint": PTM,
+            "checkpoint_classifier_classes": 91,
+            "evaluation_class_ids": [1, 2, 3, 4],
+            "purpose": (
+                "raw COCO PTM compatibility and launch validation only; "
+                "never used as the retained-accuracy reference"
+            ),
         },
         "search_parameters": list(SEARCH_PARAMETERS),
         "search_ranges": SEARCH_RANGES,
