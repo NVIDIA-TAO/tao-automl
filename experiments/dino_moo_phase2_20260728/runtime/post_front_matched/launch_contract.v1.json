@@ -1,0 +1,67 @@
+{
+  "allocation_count": 6,
+  "allocation_ids": [
+    "post_front_allocation_00",
+    "post_front_allocation_01",
+    "post_front_allocation_02",
+    "post_front_allocation_03",
+    "post_front_allocation_04",
+    "post_front_allocation_05"
+  ],
+  "candidate_set_sha256": "b19e3be3e99d3bee0c0180e567dfd608dcfdf94a50975df73fc89b7c55075a44",
+  "contract_id": "dino_post_front_matched_launch_20260728_v1",
+  "contract_sha256": "1eb3d141d571319249084407751272748ffe20dcb1fce596541b85ea6f6d8f0b",
+  "feeds_final_selection": false,
+  "feeds_reselection": false,
+  "manifest_id": "dino_expanded_post_front_matched_20260728_v1",
+  "manifest_internal_sha256": "c49eb5ebc694c991164ab74d9d90b9f700cf56e63efc852b6a6d9e6ff8b5701c",
+  "manifest_sha256": "d468d5d26f607b115c7c1732966f0ac98664fd232ce83abfa6becc0ce062b7b6",
+  "manual_winner_override_permitted": false,
+  "runtime_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/post_front_matched",
+  "schedule_sha256": "ec53c4e5088201d10eb65270511180a274d1aa4c9746cf6c51097b15d17c2cb9",
+  "schema_version": 1,
+  "selection_time_objective_replacement_permitted": false,
+  "source_checks": {
+    "candidate_set_sha256": "b19e3be3e99d3bee0c0180e567dfd608dcfdf94a50975df73fc89b7c55075a44",
+    "candidate_table_csv_sha256": "0b313942968805879ac0f3bfb386dd45156d4be160c070aedf83bac579df6e5a",
+    "candidate_table_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03",
+    "combined_selection_sha256": "78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1",
+    "exact_manifest_reconstruction": true,
+    "expanded_archive_candidate_ids_sha256": "7b4de18434ce46fa7f9238a7be2fda4185fbbe68d1046ca9dbb923957bfb6549",
+    "expanded_archive_candidate_table_projection_sha256": "9e00262945d521468b973745a67d8f9c7e3c85c4c7b66712454d2b4f36922551",
+    "expanded_archive_full_record_union_sha256": "a55964fa0c5762c1a8df45dd6b8a55047a68691cdefc5a8764c4426e68c1d365",
+    "expanded_manifest_sha256": "9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a",
+    "expanded_runtime_contract_sha256": "e20294ec4c38fd4e29716dca8a4c3a273f142d002f7958cde9ed8f60fe8a48bd",
+    "integrity_audit_sha256": "a11eeeaf77bd2f289c6363133882bb78c6889205d4cb9be5f0dacf79a1bea159",
+    "launch_source_state": {
+      "repository": "/localhome/local-rarunachalam/tao-automl",
+      "source_count": 7,
+      "tao_sdk_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "tao_sdk_commit": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+      "tao_sdk_worktree_clean": true,
+      "tracked_committed_clean": true
+    },
+    "protocol_erratum_canonical_sha256": "e77b2a4a00cc99c687b3afe832de2295d8ca55a08cb157c0d9e5da7581ebce71",
+    "protocol_erratum_sha256": "95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13",
+    "reconstructed_manifest_internal_sha256": "c49eb5ebc694c991164ab74d9d90b9f700cf56e63efc852b6a6d9e6ff8b5701c",
+    "seed_archive_internal_sha256": {
+      "161803": "7fe334b80f03cee36a6c5d283574cc36d8ad7ab5d098c9d2f5f1389a94240f34",
+      "271828": "eedaa0a37e49cfa86e54be15a56352e4891044856ad5db782f6a4eed464dfb36",
+      "314159": "45418f66fa435d35427725c64f7e2c58b48dbdd56397c43e3e07575185a5c424"
+    },
+    "seed_archive_whole_file_sha256": {
+      "161803": "0057080db477db3acd544ec360ce08b1c1c902a3d6ae820f52180f8d492109c9",
+      "271828": "a42a989ea27940ea9ae481212a75216c7f23f01602b0c260b6750c9fdb709c9e",
+      "314159": "c8a1f937a6208ba2e9bd305a272b7a94b2269a46ef5e683d67d01596d6d5c044"
+    },
+    "selection_stack_sha256": "f725d92470dc1f5f249bcfbff463c9d1cf49881e0dcf59e42fa6182a00e839b6",
+    "selector_replay_proof_sha256": "ff12dd5e599b8ab9594d75521c069bc54f102f0f3761bbd4c9d9d3c1ce5b507e",
+    "tool_sources": {
+      "post_front_matched_aggregator.py": "ff652784fdd63b73020eb32d0b22b6fe8bca3385413b6060aa8ba1d5bdc604db",
+      "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6",
+      "post_front_matched_launcher.py": "e64108dff03da40a91642217dcac453e29bdad7046cb58ad5c05e7e65fa9a887",
+      "post_front_matched_manifest_generator.py": "e535ad59beb11b02c49527f6490719f29b1bd680ae990a7b8beb739f8c7899da"
+    }
+  },
+  "status": "reserved_before_sdk_initialization"
+}
