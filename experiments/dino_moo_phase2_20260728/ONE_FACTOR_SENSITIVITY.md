@@ -22,15 +22,28 @@ generation, job order, promotion thresholds, or submission order.
 - Every job uses one node and all eight A100 GPUs through the pinned TAO SDK
   SLURM backend and the pinned TAO 7.0.1 SQSH image.
 - Each non-reference result is compared only with the same seed's reference.
-- Accuracy must retain at least 98% of the same-seed reference in all 3 seeds.
-- A latency improvement must be negative in at least 2 of 3 seeds and the
-  median matched effect must exceed the effective noise floor.
+- Same-seed 98% accuracy retention is reported as a separate annotation for
+  constrained-latency suitability. It does not qualify or disqualify an axis
+  for the shared multi-objective search.
+- Each latency level must have all nine valid measurements: three matched
+  allocations for each of the three training seeds.
+- A latency effect qualifies only when its seed-stratified hierarchical 95%
+  confidence interval lies wholly outside the practical-equivalence band.
+  Both reliably faster and reliably slower effects establish that an axis
+  changes inference cost; the direction is recorded separately.
 - The effective noise floor is the maximum of the historical
   `0.73553775 ms` floor and a three-independent-allocation reference
   recalibration.
+- If any level on an architecture axis qualifies, the future shared search
+  admits that axis's complete preregistered domain. It does not fit a smaller
+  range after seeing which level happened to qualify.
 
 Unsupported, coupled, training-only, and deployment-resolution axes are listed
 explicitly in the manifest and cannot enter profile generation.
+
+The authoritative latency protocol and qualification rules are frozen in
+`sensitivity_latency_manifest.v2.json`. Its predecessor v1 stopped at runtime
+preflight and produced no latency measurements.
 
 ## Dry run
 
