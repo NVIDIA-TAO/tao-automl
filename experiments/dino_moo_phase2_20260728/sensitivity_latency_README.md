@@ -30,10 +30,25 @@ matching TAO SDK/SLURM state.
 - `sensitivity_latency_launcher.py` stages nine independent eight-GPU jobs.
 - `sensitivity_latency_block_runner.py` verifies one allocation and executes
   all 14 profiles sequentially.
-- `sensitivity_latency_aggregate.py` binds every result to the immutable
-  ledger, SDK state, and `sacct`; validates raw rank samples; computes
-  allocation, between-allocation, and paired statistics; recalibrates the
-  noise floor; and applies the frozen effect-qualification rule.
+- `sensitivity_latency_aggregate.py`, SHA256
+  `5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967`,
+  is retained byte-for-byte as the measurement-manifest-pinned analysis
+  source. Its allocation-level runtime check incorrectly used full-string
+  PyTorch equality even though v2 declares a major.minor.patch comparison.
+- `sensitivity_latency_analysis_erratum.v1.json`, SHA256
+  `2f432cd2efc82fd8ebb8a290cbd9d625808c9d6e67532fa748780b9d96af8658`,
+  pins the immutable v2 manifest, submission ledger, measurement-generation
+  sources, unchanged measurement and qualification policies, and corrected
+  analysis source. It also pins the exact remote-evidence acquisition policy.
+- `sensitivity_latency_aggregate_erratum.py` is the analysis-only entrypoint.
+  It regenerates the original plans and command hashes, validates the original
+  source and ledger chain, preserves the full runtime string, and corrects only
+  allocation-level PyTorch validation to use the v2-declared
+  major.minor.patch rule. Because `/lustre/fs11` is not mounted on the analysis
+  host, it derives all 1,017 expected remote paths from the trusted ledger and
+  regenerated plans, hashes them through read-only SSH, fetches only the exact
+  missing paths through `rsync --files-from`, and aggregates from a verified
+  local mirror. It does not rewrite measurements or objective values.
 
 ## Frozen execution design
 
@@ -159,7 +174,11 @@ result path from the finalized ledger and `sdk.get_job_results_dir()` after
 verifying SDK and scheduler identity:
 
 ```bash
-python experiments/dino_moo_phase2_20260728/sensitivity_latency_aggregate.py \
+python experiments/dino_moo_phase2_20260728/sensitivity_latency_aggregate_erratum.py \
+  --analysis-erratum \
+  experiments/dino_moo_phase2_20260728/sensitivity_latency_analysis_erratum.v1.json \
+  --analysis-erratum-sha256 \
+  2f432cd2efc82fd8ebb8a290cbd9d625808c9d6e67532fa748780b9d96af8658 \
   --manifest \
   experiments/dino_moo_phase2_20260728/sensitivity_latency_manifest.v2.json \
   --checkpoint-artifact \
@@ -172,13 +191,16 @@ python experiments/dino_moo_phase2_20260728/sensitivity_latency_aggregate.py \
   459da2ebe557ec26947dc723b2864f2bc31880ae3181ad1216c3a47825ec466b \
   --submission-ledger \
   experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency_v2/block_submissions.json \
-  --submission-ledger-sha256 <immutable-nine-entry-ledger-sha256> \
+  --submission-ledger-sha256 \
+  b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54 \
   --sdk-state \
   experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency_v2/slurm_state.json \
+  --evidence-snapshot \
+  experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency_v2/evidence_snapshot \
   --output /path/to/sensitivity_latency_aggregation.json
 ```
 
-The aggregator requires nine distinct TAO IDs and nine distinct SLURM
+The erratum aggregator requires nine distinct TAO IDs and nine distinct SLURM
 allocation IDs. For every entry it checks the submitted command and block-plan
 digests, durable SDK status `Complete`, SDK/ledger SLURM identity, exact
 job-scoped result URI, and a single `sacct` root row in `COMPLETED` state with
@@ -187,6 +209,20 @@ then validates the allocation seed, repeat, Williams row, profile positions,
 config/model/checkpoint digests, hostname/node assignment, eight stable and
 distinct GPU UUIDs, runtime, protocol, benchmark-input identity, and all 1008
 raw rank-file hashes.
+
+The evidence snapshot path is explicit and must be a dedicated child beneath
+`runtime/sensitivity_latency_v2`. Remote paths are never discovered with
+`rglob`, `find`, or wildcard expansion: they are derived exactly from the nine
+ledger roots, frozen relative layout, regenerated run labels, and ranks zero
+through seven. SSH rejects missing, non-regular, symlinked, duplicate, or extra
+inventory entries before transfer. Existing local files are accepted only
+when their SHA256 equals the fresh remote SHA256; non-identical files are never
+overwritten. Transfer uses an isolated sibling staging directory, verifies all
+bytes, then installs files without replacement. A repeated command is
+resume-safe and performs no transfer for byte-identical evidence. The report
+records every remote and local path, size, SHA256, digest-equality result, and
+the aggregate inventory SHA256 while continuing to validate the original
+embedded remote result-root strings.
 
 For each allocation/profile the report contains median, p95, bootstrap median
 CI, robust CV, round range, drift, and device range. Per-profile summaries make

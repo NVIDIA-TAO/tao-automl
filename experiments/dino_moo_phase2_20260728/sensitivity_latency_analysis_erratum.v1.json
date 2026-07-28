@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "erratum_id": "dino_sensitivity_latency_analysis_erratum_20260728_v1",
+  "status": "approved_analysis_only",
+  "scope": "aggregation_validation_only",
+  "reason_code": "allocation_torch_version_used_full_string_instead_of_declared_base_release",
+  "reason": "The immutable v2 measurement contract declares torch_version_match=major_minor_patch and both the block preflight and rank-record validator apply that policy. The original analysis aggregator instead compared allocation.hardware.runtime.torch as a full string to required_torch=2.11.0, incorrectly rejecting the valid NVIDIA build string 2.11.0a0+a6c236b9fd.nv26.03.46836102 after measurements completed.",
+  "measurement_generation_unchanged": true,
+  "qualification_policy_unchanged": true,
+  "objective_values_altered": false,
+  "winner_selected": false,
+  "feeds_final_selection": false,
+  "manual_promotion_permitted": false,
+  "measurement_contract": {
+    "manifest_id": "dino_sensitivity_latency_20260728_v2",
+    "manifest_path": "sensitivity_latency_manifest.v2.json",
+    "manifest_sha256": "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655",
+    "submission_ledger_path": "runtime/sensitivity_latency_v2/block_submissions.json",
+    "submission_ledger_sha256": "b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54"
+  },
+  "source_pins": {
+    "measurement_generation": {
+      "launcher": "42d92d39d7ea2e957e46b2399760f26331633b2e8f2463984933f0eab99b7afd",
+      "block_runner": "1130028f541f0f43960a16080df2b289c98b433f492758aae5350137be6b7ae5",
+      "common": "3deb544e28208e44629cd2fa2ab319391e2c06721a40fee0ff22c155d3621e5c",
+      "original_aggregator": "5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967",
+      "latency_stats": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d"
+    },
+    "original_aggregator_sha256": "5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967",
+    "corrected_aggregator_sha256": "e29e0d121caa01558eadabf7807738f698a2b97778b0a3bfa08106e60a2fe356"
+  },
+  "unchanged_policy_pins": {
+    "measurement_policy_sha256": "3a158b7018a298b2bd7fb7d3340f066d11e1720f1eb0c383e493c98d973c2918",
+    "qualification_policy_sha256": "f64e2e472ffa1487ce3a56cd5c5e13ab6b61dadbdcfd037cc88901069cc0f962"
+  },
+  "correction": {
+    "field": "allocation.hardware.runtime.torch",
+    "old_comparison": "full_string_exact",
+    "new_comparison": "major_minor_patch",
+    "declared_by": "measurement_manifest.runtime_contract.torch_version_match",
+    "raw_runtime_string_preserved": true,
+    "measurement_values_recomputed": false
+  },
+  "evidence_acquisition_policy": {
+    "mode": "read_only_remote_exact_inventory_snapshot",
+    "remote_transport": "ssh_batch_mode_plus_rsync_files_from",
+    "remote_results_anchor": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results",
+    "local_snapshot_parent": "runtime/sensitivity_latency_v2",
+    "path_derivation": "trusted ledger SDK job root plus regenerated allocation plan; no discovery globbing",
+    "expected_allocation_result_count": 9,
+    "expected_rank_result_count": 1008,
+    "expected_file_count": 1017,
+    "remote_file_type": "regular_non_symlink",
+    "remote_hash_stability": "lstat_identity_equal_before_and_after_hash",
+    "digest_algorithm": "sha256",
+    "transfer_scope": "missing_expected_files_only",
+    "existing_file_policy": "accept_only_when_remote_and_local_sha256_match",
+    "overwrite_policy": "forbidden",
+    "extra_file_policy": "reject",
+    "missing_file_policy": "reject_after_transfer",
+    "duplicate_path_policy": "reject",
+    "embedded_remote_path_policy": "validate_without_rewriting",
+    "remote_write_permitted": false
+  },
+  "analysis_guards": {
+    "regenerate_execution_plans_and_command_hashes": true,
+    "validate_measurement_generation_source_identities": true,
+    "validate_immutable_submission_ledger": true,
+    "validate_raw_result_and_rank_file_digests": true,
+    "derive_remote_paths_without_discovery_globs": true,
+    "require_remote_local_sha256_equality": true,
+    "reject_snapshot_overwrite_extras_missing_and_duplicates": true,
+    "reuse_original_sample_aggregation": true,
+    "reuse_original_qualification_analysis": true,
+    "allow_measurement_rewrite": false,
+    "allow_objective_override": false
+  }
+}
