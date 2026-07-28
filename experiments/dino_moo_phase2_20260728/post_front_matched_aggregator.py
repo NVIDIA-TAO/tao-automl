@@ -43,6 +43,13 @@ DEFAULT_SDK_STATE = DEFAULT_RUNTIME / "slurm_state.json"
 DEFAULT_OUTPUT = DEFAULT_RUNTIME / "post_front_matched_analysis.json"
 EXPECTED_ALLOCATIONS = 6
 EXPECTED_RANKS = 8
+EXPECTED_PROTOCOL_ERRATUM_ID = "dino_phase2_protocol_erratum_20260728_v1"
+EXPECTED_PROTOCOL_ERRATUM_SHA256 = (
+    "95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13"
+)
+EXPECTED_PROTOCOL_ERRATUM_ISSUED_AT = "2026-07-28T06:36:41Z"
+EXPECTED_EXPANDED_SEARCH_SEEDS = [314159, 271828, 161803]
+EXPECTED_EXPANDED_CANDIDATE_COUNT = 60
 
 AUTOML_SRC = HERE.parent.parent / "src"
 if str(AUTOML_SRC) not in sys.path:
@@ -2170,6 +2177,405 @@ def classify_difference(
     }
 
 
+def original_bootstrap_claim(
+    ci: list[float],
+    tolerance: float,
+) -> str:
+    """Apply the immutable, originally preregistered CI classification."""
+
+    if (
+        len(ci) != 2
+        or any(not math.isfinite(value) for value in ci)
+        or ci[0] > ci[1]
+        or not math.isfinite(tolerance)
+        or tolerance < 0.0
+    ):
+        raise ContractError("original bootstrap-classification inputs are invalid")
+    if ci[1] < -tolerance:
+        return "first_stably_faster"
+    if ci[0] > tolerance:
+        return "second_stably_faster"
+    if ci[0] >= -tolerance and ci[1] <= tolerance:
+        return "practically_equivalent"
+    return "uncertain"
+
+
+def _required_mapping(value: Any, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ContractError(f"{label} is missing or is not an object")
+    return value
+
+
+def _required_nonempty_string(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ContractError(f"{label} must be a non-empty string")
+    return value
+
+
+def validate_protocol_analysis_contract(
+    manifest: dict[str, Any],
+) -> dict[str, Any]:
+    """Fail closed on the dual-policy erratum and frozen archive snapshot."""
+
+    paired = _required_mapping(
+        manifest.get("paired_analysis"),
+        "paired-analysis contract",
+    )
+    source = _required_mapping(
+        _required_mapping(
+            manifest.get("source_artifacts"),
+            "source-artifact contract",
+        ).get("phase2_protocol_erratum"),
+        "phase-2 protocol erratum provenance",
+    )
+    require_equal(
+        source.get("erratum_id"),
+        EXPECTED_PROTOCOL_ERRATUM_ID,
+        "protocol erratum ID",
+    )
+    require_equal(
+        source.get("issued_at_utc"),
+        EXPECTED_PROTOCOL_ERRATUM_ISSUED_AT,
+        "protocol erratum issuance time",
+    )
+    source_sha256 = manifest_generator.require_sha256(
+        source.get("sha256"),
+        "protocol erratum SHA256",
+    )
+    require_equal(
+        source_sha256,
+        EXPECTED_PROTOCOL_ERRATUM_SHA256,
+        "protocol erratum SHA256",
+    )
+    erratum_path = Path(
+        _required_nonempty_string(
+            source.get("path"),
+            "protocol erratum path",
+        )
+    )
+    if not erratum_path.is_absolute():
+        raise ContractError("protocol erratum path must be absolute")
+    if not erratum_path.is_file():
+        raise ContractError(f"protocol erratum file is missing: {erratum_path}")
+    require_equal(
+        manifest_generator.sha256_file(erratum_path),
+        EXPECTED_PROTOCOL_ERRATUM_SHA256,
+        "aggregation-time protocol erratum SHA256",
+    )
+    try:
+        erratum = json.loads(erratum_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ContractError("protocol erratum could not be parsed") from error
+    require_equal(
+        erratum.get("erratum_id"),
+        EXPECTED_PROTOCOL_ERRATUM_ID,
+        "protocol erratum file ID",
+    )
+    require_equal(
+        erratum.get("issued_at_utc"),
+        EXPECTED_PROTOCOL_ERRATUM_ISSUED_AT,
+        "protocol erratum file issuance time",
+    )
+    erratum_classification = _required_mapping(
+        _required_mapping(
+            erratum.get("corrections"),
+            "protocol erratum corrections",
+        ).get("post_front_paired_classification"),
+        "protocol erratum paired-classification correction",
+    )
+
+    require_equal(
+        paired.get("policy_erratum_id"),
+        EXPECTED_PROTOCOL_ERRATUM_ID,
+        "paired-analysis erratum ID",
+    )
+    require_equal(
+        paired.get("policy_erratum_sha256"),
+        EXPECTED_PROTOCOL_ERRATUM_SHA256,
+        "paired-analysis erratum SHA256",
+    )
+    require_equal(
+        paired.get("both_policy_branches_must_be_emitted"),
+        True,
+        "paired-analysis dual-policy requirement",
+    )
+    original = _required_mapping(
+        paired.get("original_preregistered_bootstrap_classification"),
+        "original preregistered bootstrap policy",
+    )
+    effective = _required_mapping(
+        paired.get("effective_erratum_directional_classification"),
+        "effective erratum directional policy",
+    )
+    require_equal(
+        original,
+        erratum_classification.get(
+            "original_preregistered_bootstrap_classification"
+        ),
+        "manifest/original erratum classification",
+    )
+    require_equal(
+        effective,
+        erratum_classification.get(
+            "effective_erratum_directional_classification"
+        ),
+        "manifest/effective erratum classification",
+    )
+    require_equal(
+        erratum_classification.get("both_policy_branches_must_be_emitted"),
+        True,
+        "protocol erratum dual-policy requirement",
+    )
+    expected_original = {
+        "status": "preserved_and_reported",
+        "first_stably_faster_condition": (
+            "bootstrap_ci_high < -practical_tolerance_ms"
+        ),
+        "second_stably_faster_condition": (
+            "bootstrap_ci_low > practical_tolerance_ms"
+        ),
+        "practically_equivalent_condition": (
+            "bootstrap_ci_low >= -practical_tolerance_ms AND "
+            "bootstrap_ci_high <= practical_tolerance_ms"
+        ),
+        "otherwise": "uncertain",
+        "point_classification_preserved": True,
+    }
+    for key, expected in expected_original.items():
+        require_equal(
+            original.get(key),
+            expected,
+            f"original bootstrap policy {key}",
+        )
+    expected_effective = {
+        "status": "controls_directional_and_ordering_claims",
+        "bootstrap_role": "descriptive_only",
+        "allocation_count": EXPECTED_ALLOCATIONS,
+        "permutation_count": 1 << EXPECTED_ALLOCATIONS,
+        "otherwise": "no_stable_directional_claim",
+        "no_stable_directional_claim_implies_equivalence": False,
+        "median_and_p95_classified_independently": True,
+        "headline_stable_ordering_endpoint": "median_ms",
+        "scope": "pairwise_only",
+        "multiplicity_adjustment": "none",
+        "simultaneous_total_order_inference_permitted": False,
+    }
+    for key, expected in expected_effective.items():
+        require_equal(
+            effective.get(key),
+            expected,
+            f"effective directional policy {key}",
+        )
+    tolerance = paired.get("practical_tolerance_ms")
+    confidence = paired.get("bootstrap_confidence_level")
+    if (
+        isinstance(tolerance, bool)
+        or not isinstance(tolerance, (int, float))
+        or not math.isfinite(float(tolerance))
+        or float(tolerance) < 0.0
+        or isinstance(confidence, bool)
+        or not isinstance(confidence, (int, float))
+        or not 0.0 < float(confidence) < 1.0
+    ):
+        raise ContractError("paired-analysis tolerance/confidence is invalid")
+    require_equal(
+        effective.get("practical_tolerance_ms"),
+        tolerance,
+        "effective-policy practical tolerance",
+    )
+    if not math.isclose(
+        float(effective.get("alpha", math.nan)),
+        1.0 - float(confidence),
+        rel_tol=0.0,
+        abs_tol=1e-15,
+    ):
+        raise ContractError("effective-policy alpha mismatches confidence level")
+
+    archive = _required_mapping(
+        manifest.get("expanded_archive_snapshot"),
+        "expanded archive snapshot",
+    )
+    require_equal(
+        archive.get("search_seeds"),
+        EXPECTED_EXPANDED_SEARCH_SEEDS,
+        "expanded archive search seeds",
+    )
+    require_equal(
+        archive.get("recommendations_per_seed"),
+        20,
+        "expanded archive recommendations per seed",
+    )
+    require_equal(
+        archive.get("candidate_count"),
+        EXPECTED_EXPANDED_CANDIDATE_COUNT,
+        "expanded archive candidate count",
+    )
+    require_equal(
+        archive.get("terminal_candidate_count"),
+        EXPECTED_EXPANDED_CANDIDATE_COUNT,
+        "expanded archive terminal count",
+    )
+    require_equal(
+        archive.get("manual_candidate_injection_used"),
+        False,
+        "expanded archive manual candidate injection",
+    )
+    require_equal(
+        archive.get("canonical_order"),
+        "ascending UTF-8 candidate_id",
+        "expanded archive canonical order",
+    )
+    archive_candidate_ids = archive.get("candidate_ids")
+    if (
+        not isinstance(archive_candidate_ids, list)
+        or len(archive_candidate_ids) != EXPECTED_EXPANDED_CANDIDATE_COUNT
+        or any(
+            not isinstance(candidate_id, str) or not candidate_id
+            for candidate_id in archive_candidate_ids
+        )
+        or archive_candidate_ids != sorted(set(archive_candidate_ids))
+    ):
+        raise ContractError(
+            "expanded archive candidate IDs must be 60 unique sorted strings"
+        )
+    require_equal(
+        archive.get("candidate_ids_sha256"),
+        manifest_generator.sha256_value(archive_candidate_ids),
+        "expanded archive candidate-ID SHA256",
+    )
+    successful_count = archive.get("successful_candidate_count")
+    failed_count = archive.get("failed_candidate_count")
+    if (
+        isinstance(successful_count, bool)
+        or not isinstance(successful_count, int)
+        or successful_count < 1
+        or isinstance(failed_count, bool)
+        or not isinstance(failed_count, int)
+        or failed_count < 0
+        or successful_count + failed_count
+        != EXPECTED_EXPANDED_CANDIDATE_COUNT
+    ):
+        raise ContractError("expanded archive success/failure counts are invalid")
+    for key in (
+        "full_record_union_sha256",
+        "candidate_table_projection_sha256",
+        "expanded_combined_selection_sha256",
+        "expanded_candidate_table_sha256",
+        "expanded_candidate_table_csv_sha256",
+        "expanded_integrity_audit_sha256",
+    ):
+        manifest_generator.require_sha256(
+            archive.get(key),
+            f"expanded archive {key}",
+        )
+    seed_archives = archive.get("seed_archives")
+    if not isinstance(seed_archives, list) or len(seed_archives) != 3:
+        raise ContractError("expanded archive must contain three seed snapshots")
+    observed_seeds: list[int] = []
+    seed_totals = {
+        "record_count": 0,
+        "terminal_record_count": 0,
+        "successful_record_count": 0,
+        "failed_record_count": 0,
+    }
+    for seed_archive in seed_archives:
+        seed_archive = _required_mapping(
+            seed_archive,
+            "expanded per-seed archive snapshot",
+        )
+        observed_seeds.append(seed_archive.get("search_seed"))
+        _required_nonempty_string(
+            seed_archive.get("path"),
+            "expanded per-seed archive path",
+        )
+        for key in (
+            "whole_file_sha256",
+            "internal_archive_sha256",
+            "candidate_ids_sha256",
+            "full_records_sha256",
+        ):
+            manifest_generator.require_sha256(
+                seed_archive.get(key),
+                f"expanded per-seed archive {key}",
+            )
+        for key in seed_totals:
+            value = seed_archive.get(key)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or value < 0
+            ):
+                raise ContractError(
+                    f"expanded per-seed archive {key} is invalid"
+                )
+            seed_totals[key] += value
+        require_equal(
+            seed_archive.get("record_count"),
+            20,
+            "expanded per-seed record count",
+        )
+        require_equal(
+            seed_archive.get("terminal_record_count"),
+            20,
+            "expanded per-seed terminal count",
+        )
+        require_equal(
+            seed_archive.get("successful_record_count")
+            + seed_archive.get("failed_record_count"),
+            20,
+            "expanded per-seed success/failure count",
+        )
+    require_equal(
+        observed_seeds,
+        EXPECTED_EXPANDED_SEARCH_SEEDS,
+        "expanded per-seed archive order",
+    )
+    require_equal(
+        seed_totals["record_count"],
+        EXPECTED_EXPANDED_CANDIDATE_COUNT,
+        "expanded per-seed total records",
+    )
+    require_equal(
+        seed_totals["terminal_record_count"],
+        EXPECTED_EXPANDED_CANDIDATE_COUNT,
+        "expanded per-seed terminal records",
+    )
+    require_equal(
+        seed_totals["successful_record_count"],
+        successful_count,
+        "expanded per-seed successful records",
+    )
+    require_equal(
+        seed_totals["failed_record_count"],
+        failed_count,
+        "expanded per-seed failed records",
+    )
+
+    front_ids = manifest.get("candidate_derivation", {}).get("candidate_ids")
+    if (
+        not isinstance(front_ids, list)
+        or not set(front_ids).issubset(archive_candidate_ids)
+    ):
+        raise ContractError(
+            "post-front candidates are not a subset of the frozen archive"
+        )
+    return {
+        "protocol_erratum": {
+            "erratum_id": EXPECTED_PROTOCOL_ERRATUM_ID,
+            "sha256": EXPECTED_PROTOCOL_ERRATUM_SHA256,
+            "issued_at_utc": EXPECTED_PROTOCOL_ERRATUM_ISSUED_AT,
+            "path": str(erratum_path),
+        },
+        "original_preregistered_bootstrap_classification": copy.deepcopy(
+            original
+        ),
+        "effective_erratum_directional_classification": copy.deepcopy(
+            effective
+        ),
+        "expanded_archive_snapshot": copy.deepcopy(archive),
+    }
+
+
 def exact_shifted_sign_flip_test(
     values: list[float],
     *,
@@ -2287,14 +2693,414 @@ def directional_pairwise_evidence(
     }
 
 
+def _finite_objective(value: Any, label: str) -> float:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(float(value))
+    ):
+        raise ContractError(f"{label} must be a finite number")
+    return float(value)
+
+
+def _effective_edge_exists(
+    edges: list[dict[str, Any]],
+    faster_candidate_id: str,
+    slower_candidate_id: str,
+) -> bool:
+    return any(
+        edge.get("faster_candidate_id") == faster_candidate_id
+        and edge.get("slower_candidate_id") == slower_candidate_id
+        for edge in edges
+    )
+
+
+def hypothesis_distinctness_evidence(
+    manifest: dict[str, Any],
+    effective_median_edges: list[dict[str, Any]],
+    effective_p95_edges: list[dict[str, Any]],
+    matched_aggregate_by_candidate: dict[str, dict[str, float]],
+) -> dict[str, Any]:
+    """Compare the frozen MO winner with the actual two mode winners.
+
+    The production selector's ``distinct_compromise`` flag is geometric: its
+    latency extreme is the unconstrained multi-objective population's extreme.
+    This verdict-only evidence intentionally leaves that flag unchanged and
+    separately evaluates the selected point against the actual 98%-constrained
+    latency-mode winner.  No matched measurement enters a selector.
+    """
+
+    proof = _required_mapping(
+        manifest.get("candidate_derivation", {}).get(
+            "selector_replay_proof"
+        ),
+        "selector replay proof",
+    )
+    settings = _required_mapping(
+        proof.get("selector_settings"),
+        "selector replay settings",
+    )
+    require_equal(
+        settings.get("latency_accuracy_retention"),
+        {
+            "type": "relative",
+            "retained_fraction": 0.98,
+            "reference": "accuracy_winner",
+        },
+        "verdict latency accuracy retention",
+    )
+    require_equal(
+        settings.get("multi_objective_min_accuracy"),
+        None,
+        "verdict multi-objective accuracy floor",
+    )
+    accuracy_metric = _required_nonempty_string(
+        settings.get("accuracy_metric"),
+        "selector accuracy metric",
+    )
+    latency_metric = _required_nonempty_string(
+        settings.get("latency_metric"),
+        "selector latency metric",
+    )
+    require_equal(accuracy_metric, "mAP50", "selector accuracy metric")
+    require_equal(latency_metric, "latency_ms", "selector latency metric")
+    accuracy_tolerance = _finite_objective(
+        settings.get("accuracy_tolerance"),
+        "selector accuracy tolerance",
+    )
+    if accuracy_tolerance < 0.0:
+        raise ContractError("selector accuracy tolerance must be non-negative")
+    latency_tolerance = _finite_objective(
+        manifest.get("paired_analysis", {}).get("practical_tolerance_ms"),
+        "matched practical latency tolerance",
+    )
+    if latency_tolerance < 0.0:
+        raise ContractError(
+            "matched practical latency tolerance must be non-negative"
+        )
+
+    selections = _required_mapping(
+        manifest.get("selection_snapshot", {}).get("selections"),
+        "frozen selection snapshot",
+    )
+    mode_selections = {
+        mode: _required_mapping(
+            selections.get(mode),
+            f"frozen {mode} selection",
+        )
+        for mode in ("accuracy", "latency", "multi_objective")
+    }
+    mode_ids = {
+        mode: _required_nonempty_string(
+            selection.get("winner_id"),
+            f"frozen {mode} winner ID",
+        )
+        for mode, selection in mode_selections.items()
+    }
+    geometric_distinct = mode_selections["multi_objective"].get(
+        "distinct_compromise"
+    )
+    if not isinstance(geometric_distinct, bool):
+        raise ContractError(
+            "frozen multi-objective geometric distinctness is missing"
+        )
+
+    candidates = manifest.get("candidates")
+    if not isinstance(candidates, list):
+        raise ContractError("post-front candidate records are missing")
+    candidates_by_id: dict[str, dict[str, Any]] = {}
+    for candidate in candidates:
+        candidate = _required_mapping(candidate, "post-front candidate")
+        candidate_id = _required_nonempty_string(
+            candidate.get("candidate_id"),
+            "post-front candidate ID",
+        )
+        if candidate_id in candidates_by_id:
+            raise ContractError(
+                f"duplicate post-front candidate record: {candidate_id}"
+            )
+        candidates_by_id[candidate_id] = candidate
+    if not set(mode_ids.values()).issubset(candidates_by_id):
+        raise ContractError(
+            "a frozen mode winner is absent from the measured global front"
+        )
+    if not set(mode_ids.values()).issubset(matched_aggregate_by_candidate):
+        raise ContractError(
+            "a frozen mode winner is absent from matched aggregate latency"
+        )
+
+    objective_values: dict[str, dict[str, float]] = {}
+    for mode, candidate_id in mode_ids.items():
+        objectives = _required_mapping(
+            candidates_by_id[candidate_id].get(
+                "selection_time_objective_values"
+            ),
+            f"{mode} winner selection-time objectives",
+        )
+        objective_values[mode] = {
+            "accuracy": _finite_objective(
+                objectives.get(accuracy_metric),
+                f"{mode} winner {accuracy_metric}",
+            ),
+            "latency_ms": _finite_objective(
+                objectives.get(latency_metric),
+                f"{mode} winner {latency_metric}",
+            ),
+        }
+
+    accuracy_id = mode_ids["accuracy"]
+    latency_id = mode_ids["latency"]
+    multi_id = mode_ids["multi_objective"]
+    accuracy_value = objective_values["accuracy"]["accuracy"]
+    latency_value = objective_values["latency"]["accuracy"]
+    multi_accuracy = objective_values["multi_objective"]["accuracy"]
+    accuracy_latency = objective_values["accuracy"]["latency_ms"]
+    latency_latency = objective_values["latency"]["latency_ms"]
+    multi_latency = objective_values["multi_objective"]["latency_ms"]
+
+    different_from_accuracy = multi_id != accuracy_id
+    different_from_latency = multi_id != latency_id
+    accuracy_between = (
+        multi_accuracy <= accuracy_value + accuracy_tolerance
+        and multi_accuracy >= latency_value - accuracy_tolerance
+    )
+    latency_between = (
+        multi_latency >= latency_latency - latency_tolerance
+        and multi_latency <= accuracy_latency + latency_tolerance
+    )
+    accuracy_strictly_between = (
+        multi_accuracy < accuracy_value - accuracy_tolerance
+        and multi_accuracy > latency_value + accuracy_tolerance
+    )
+    selection_latency_strictly_between = (
+        multi_latency > latency_latency + latency_tolerance
+        and multi_latency < accuracy_latency - latency_tolerance
+    )
+    latency_to_multi_edge = _effective_edge_exists(
+        effective_median_edges,
+        latency_id,
+        multi_id,
+    )
+    multi_to_accuracy_edge = _effective_edge_exists(
+        effective_median_edges,
+        multi_id,
+        accuracy_id,
+    )
+    p95_latency_to_multi_edge = _effective_edge_exists(
+        effective_p95_edges,
+        latency_id,
+        multi_id,
+    )
+    p95_multi_to_accuracy_edge = _effective_edge_exists(
+        effective_p95_edges,
+        multi_id,
+        accuracy_id,
+    )
+    matched_by_mode = {
+        mode: copy.deepcopy(matched_aggregate_by_candidate[candidate_id])
+        for mode, candidate_id in mode_ids.items()
+    }
+    matched_median_multi_vs_accuracy = (
+        matched_by_mode["multi_objective"]["median_ms"]
+        - matched_by_mode["accuracy"]["median_ms"]
+    )
+    matched_median_multi_vs_latency = (
+        matched_by_mode["multi_objective"]["median_ms"]
+        - matched_by_mode["latency"]["median_ms"]
+    )
+    matched_p95_multi_vs_accuracy = (
+        matched_by_mode["multi_objective"]["p95_ms"]
+        - matched_by_mode["accuracy"]["p95_ms"]
+    )
+    matched_p95_multi_vs_latency = (
+        matched_by_mode["multi_objective"]["p95_ms"]
+        - matched_by_mode["latency"]["p95_ms"]
+    )
+    actual_intermediate_supported = (
+        geometric_distinct
+        and different_from_accuracy
+        and different_from_latency
+        and accuracy_between
+        and latency_between
+        and latency_to_multi_edge
+        and multi_to_accuracy_edge
+    )
+    return {
+        "purpose": "hypothesis_verdict_only",
+        "feeds_selection": False,
+        "feeds_reselection": False,
+        "selection_time_objectives_replaced": False,
+        "selector_invoked_on_matched_measurements": False,
+        "selector_geometric_distinct_compromise": {
+            "value": geometric_distinct,
+            "preserved_unchanged": True,
+            "reference_extremes": (
+                "accuracy winner and unconstrained multi-objective-population "
+                "latency extreme"
+            ),
+            "not_reinterpreted_as_actual_mode_winner_distinctness": True,
+        },
+        "actual_mode_winner_ids": {
+            "accuracy": accuracy_id,
+            "latency_98_percent_constrained": latency_id,
+            "multi_objective": multi_id,
+        },
+        "actual_latency_mode_constraint": copy.deepcopy(
+            settings["latency_accuracy_retention"]
+        ),
+        "multi_objective_min_accuracy": None,
+        "identity_distinctness": {
+            "different_from_accuracy_winner": different_from_accuracy,
+            "different_from_constrained_latency_winner": (
+                different_from_latency
+            ),
+            "different_from_both_actual_extremes": (
+                different_from_accuracy and different_from_latency
+            ),
+        },
+        "selection_time_objectives": {
+            "accuracy_metric": accuracy_metric,
+            "latency_metric": latency_metric,
+            "accuracy_tolerance": accuracy_tolerance,
+            "latency_tolerance_ms": latency_tolerance,
+            "by_mode": copy.deepcopy(objective_values),
+            "multi_objective_accuracy_delta_from_accuracy_winner": (
+                multi_accuracy - accuracy_value
+            ),
+            (
+                "multi_objective_accuracy_delta_from_"
+                "constrained_latency_winner"
+            ): multi_accuracy - latency_value,
+            "multi_objective_latency_delta_from_accuracy_winner_ms": (
+                multi_latency - accuracy_latency
+            ),
+            (
+                "multi_objective_latency_delta_from_"
+                "constrained_latency_winner_ms"
+            ): multi_latency - latency_latency,
+            "accuracy_between_actual_winners_with_tolerance": accuracy_between,
+            "latency_between_actual_winners_with_tolerance": latency_between,
+            "accuracy_strictly_between_actual_winners": (
+                accuracy_strictly_between
+            ),
+            "latency_strictly_between_actual_winners_at_tolerance": (
+                selection_latency_strictly_between
+            ),
+        },
+        "matched_effective_median_pairwise_edges": {
+            (
+                "constrained_latency_winner_stably_faster_than_"
+                "multi_objective"
+            ): latency_to_multi_edge,
+            (
+                "multi_objective_stably_faster_than_accuracy_winner"
+            ): multi_to_accuracy_edge,
+            "both_required_pairwise_edges_established": (
+                latency_to_multi_edge and multi_to_accuracy_edge
+            ),
+            "scope": "pairwise_only",
+            "simultaneous_total_order_inference_permitted": False,
+            "absence_of_an_edge_implies_equivalence": False,
+        },
+        "matched_aggregate_latency": {
+            "aggregation": (
+                "median across the six allocation-level candidate medians "
+                "or allocation-level candidate p95 values"
+            ),
+            "by_mode": matched_by_mode,
+            "multi_objective_median_delta_from_accuracy_winner_ms": (
+                matched_median_multi_vs_accuracy
+            ),
+            (
+                "multi_objective_median_delta_from_"
+                "constrained_latency_winner_ms"
+            ): matched_median_multi_vs_latency,
+            "multi_objective_p95_delta_from_accuracy_winner_ms": (
+                matched_p95_multi_vs_accuracy
+            ),
+            (
+                "multi_objective_p95_delta_from_"
+                "constrained_latency_winner_ms"
+            ): matched_p95_multi_vs_latency,
+            "multi_objective_vs_accuracy": {
+                "median_tolerance_distinct": (
+                    abs(matched_median_multi_vs_accuracy)
+                    > latency_tolerance
+                ),
+                "p95_tolerance_distinct": (
+                    abs(matched_p95_multi_vs_accuracy) > latency_tolerance
+                ),
+                "effective_median_expected_direction_edge_exists": (
+                    multi_to_accuracy_edge
+                ),
+                "effective_p95_expected_direction_edge_exists": (
+                    p95_multi_to_accuracy_edge
+                ),
+            },
+            "multi_objective_vs_constrained_latency": {
+                "median_tolerance_distinct": (
+                    abs(matched_median_multi_vs_latency)
+                    > latency_tolerance
+                ),
+                "p95_tolerance_distinct": (
+                    abs(matched_p95_multi_vs_latency) > latency_tolerance
+                ),
+                "effective_median_expected_direction_edge_exists": (
+                    latency_to_multi_edge
+                ),
+                "effective_p95_expected_direction_edge_exists": (
+                    p95_latency_to_multi_edge
+                ),
+            },
+            "effective_direction_absence_implies_equivalence": False,
+            "median_and_p95_evidence_are_separate": True,
+            "scope": "pairwise_only",
+            "simultaneous_total_order_inference_permitted": False,
+        },
+        "actual_three_mode_intermediate_supported": (
+            actual_intermediate_supported
+        ),
+        "decision_rule": (
+            "True only when the selector's geometric flag is true; the "
+            "multi-objective identity differs from both actual mode winners; "
+            "its frozen accuracy and selection-time latency are between those "
+            "winners within configured tolerances; and the two required "
+            "effective median pairwise directions are independently "
+            "established. This is verdict evidence, never reselection."
+        ),
+    }
+
+
 def comparative_analysis(
     manifest: dict[str, Any],
     measurements: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    candidate_ids = manifest["candidate_derivation"]["candidate_ids"]
+    provenance = validate_protocol_analysis_contract(manifest)
+    raw_candidate_ids = manifest["candidate_derivation"]["candidate_ids"]
+    if (
+        not isinstance(raw_candidate_ids, list)
+        or len(raw_candidate_ids) != len(set(raw_candidate_ids))
+    ):
+        raise ContractError("matched candidate IDs must be a unique list")
+    candidate_ids = sorted(raw_candidate_ids)
+    allocations = manifest["schedule"]["allocations"]
+    if (
+        not isinstance(allocations, list)
+        or len(allocations) != EXPECTED_ALLOCATIONS
+    ):
+        raise ContractError("matched schedule must contain six allocations")
+    ordered_allocations = sorted(
+        allocations,
+        key=lambda item: (
+            item.get("allocation_index"),
+            item.get("allocation_id"),
+        ),
+    )
     allocation_ids = [
-        item["allocation_id"] for item in manifest["schedule"]["allocations"]
+        item["allocation_id"] for item in ordered_allocations
     ]
+    if len(allocation_ids) != len(set(allocation_ids)):
+        raise ContractError("matched allocation IDs must be unique")
     by_key = {
         (item["allocation_id"], item["candidate_id"]): item
         for item in measurements
@@ -2317,6 +3123,7 @@ def comparative_analysis(
     seed = paired["bootstrap_seed"]
     between = []
     aggregate_medians = {}
+    matched_aggregate_by_candidate: dict[str, dict[str, float]] = {}
     for candidate_id in candidate_ids:
         medians = [
             by_key[(allocation_id, candidate_id)]["median_ms"]
@@ -2327,16 +3134,71 @@ def comparative_analysis(
             for allocation_id in allocation_ids
         ]
         median_summary = distribution_summary(medians)
+        p95_summary = distribution_summary(p95s)
         aggregate_medians[candidate_id] = median_summary["median_ms"]
+        matched_aggregate_by_candidate[candidate_id] = {
+            "median_ms": median_summary["median_ms"],
+            "p95_ms": p95_summary["median_ms"],
+        }
         between.append(
             {
                 "candidate_id": candidate_id,
                 "median_latency": median_summary,
-                "p95_latency": distribution_summary(p95s),
+                "p95_latency": p95_summary,
             }
         )
     pairs = []
+    original_median_claims = []
+    original_p95_claims = []
     stable_edges = []
+    stable_p95_edges = []
+
+    def original_claim_record(
+        *,
+        first: str,
+        second: str,
+        endpoint: str,
+        ci: list[float],
+        classification: str,
+    ) -> dict[str, Any]:
+        record: dict[str, Any] = {
+            "first_candidate_id": first,
+            "second_candidate_id": second,
+            "endpoint": endpoint,
+            "paired_bootstrap_ci95_ms": ci,
+            "classification": classification,
+            "scope": "pairwise_only",
+            "simultaneous_order_inference_permitted": False,
+        }
+        if classification == "first_stably_faster":
+            record["faster_candidate_id"] = first
+            record["slower_candidate_id"] = second
+        elif classification == "second_stably_faster":
+            record["faster_candidate_id"] = second
+            record["slower_candidate_id"] = first
+        return record
+
+    def effective_edge(
+        *,
+        first: str,
+        second: str,
+        endpoint: str,
+        claim: str,
+    ) -> dict[str, Any] | None:
+        if claim == "first_stably_faster":
+            faster, slower = first, second
+        elif claim == "second_stably_faster":
+            faster, slower = second, first
+        else:
+            return None
+        return {
+            "faster_candidate_id": faster,
+            "slower_candidate_id": slower,
+            "endpoint": endpoint,
+            "scope": "pairwise_only",
+            "simultaneous_order_inference_permitted": False,
+        }
+
     for first_index, first in enumerate(candidate_ids):
         for second in candidate_ids[first_index + 1 :]:
             median_differences = [
@@ -2383,6 +3245,14 @@ def comparative_analysis(
                 tolerance=tolerance,
                 confidence=confidence,
             )
+            original_median_claim = original_bootstrap_claim(
+                median_ci,
+                tolerance,
+            )
+            original_p95_claim = original_bootstrap_claim(
+                p95_ci,
+                tolerance,
+            )
             pair = {
                 "first_candidate_id": first,
                 "second_candidate_id": second,
@@ -2393,15 +3263,39 @@ def comparative_analysis(
                 "paired_median_differences_ms": median_differences,
                 "median_paired_difference_ms": median_delta,
                 "median_paired_bootstrap_ci95_ms": median_ci,
-                "median_bootstrap_ci_is_descriptive_only": True,
+                (
+                    "median_bootstrap_ci_is_descriptive_only_under_"
+                    "effective_erratum"
+                ): True,
+                "median_bootstrap_role_by_policy": {
+                    "original_preregistered": (
+                        "controls original preserved classification"
+                    ),
+                    "effective_erratum": "descriptive_only",
+                },
+                "original_preregistered_median_bootstrap_claim": (
+                    original_median_claim
+                ),
                 "paired_p95_differences_ms": p95_differences,
                 "median_paired_p95_difference_ms": p95_delta,
                 "p95_paired_bootstrap_ci95_ms": p95_ci,
-                "p95_bootstrap_ci_is_descriptive_only": True,
+                (
+                    "p95_bootstrap_ci_is_descriptive_only_under_"
+                    "effective_erratum"
+                ): True,
+                "p95_bootstrap_role_by_policy": {
+                    "original_preregistered": (
+                        "controls original preserved classification"
+                    ),
+                    "effective_erratum": "descriptive_only",
+                },
+                "original_preregistered_p95_bootstrap_claim": (
+                    original_p95_claim
+                ),
                 "p95_point_classification": p95_classification[
                     "point_classification"
                 ],
-                "p95_descriptive_bootstrap_interval_classification": (
+                "p95_bootstrap_interval_position": (
                     p95_classification[
                         "descriptive_bootstrap_interval_classification"
                     ]
@@ -2413,34 +3307,50 @@ def comparative_analysis(
                 "pairwise_directional_claim": directional_evidence[
                     "directional_claim"
                 ],
+                "effective_no_direction_implies_equivalence": False,
                 "practical_tolerance_ms": tolerance,
-                **classification,
+                "median_point_classification": classification[
+                    "point_classification"
+                ],
+                "median_bootstrap_interval_position": classification[
+                    "descriptive_bootstrap_interval_classification"
+                ],
             }
             pairs.append(pair)
-            if (
-                directional_evidence["directional_claim"]
-                == "first_stably_faster"
-            ):
-                stable_edges.append(
-                    {
-                        "faster_candidate_id": first,
-                        "slower_candidate_id": second,
-                        "scope": "pairwise_only",
-                        "simultaneous_order_inference_permitted": False,
-                    }
+            original_median_claims.append(
+                original_claim_record(
+                    first=first,
+                    second=second,
+                    endpoint="median_ms",
+                    ci=median_ci,
+                    classification=original_median_claim,
                 )
-            elif (
-                directional_evidence["directional_claim"]
-                == "second_stably_faster"
-            ):
-                stable_edges.append(
-                    {
-                        "faster_candidate_id": second,
-                        "slower_candidate_id": first,
-                        "scope": "pairwise_only",
-                        "simultaneous_order_inference_permitted": False,
-                    }
+            )
+            original_p95_claims.append(
+                original_claim_record(
+                    first=first,
+                    second=second,
+                    endpoint="p95_ms",
+                    ci=p95_ci,
+                    classification=original_p95_claim,
                 )
+            )
+            median_edge = effective_edge(
+                first=first,
+                second=second,
+                endpoint="median_ms",
+                claim=directional_evidence["directional_claim"],
+            )
+            if median_edge is not None:
+                stable_edges.append(median_edge)
+            p95_edge = effective_edge(
+                first=first,
+                second=second,
+                endpoint="p95_ms",
+                claim=p95_directional_evidence["directional_claim"],
+            )
+            if p95_edge is not None:
+                stable_p95_edges.append(p95_edge)
     descriptive_order = sorted(
         candidate_ids,
         key=lambda item: (aggregate_medians[item], item),
@@ -2463,7 +3373,38 @@ def comparative_analysis(
         }
         for index in range(len(descriptive_order) - 1)
     ]
-    return {
+    original_policy_claims = {
+        "policy": copy.deepcopy(
+            provenance["original_preregistered_bootstrap_classification"]
+        ),
+        "median_ms": original_median_claims,
+        "p95_ms": original_p95_claims,
+        "scope": "pairwise_only",
+        "simultaneous_total_order_inference_permitted": False,
+    }
+    effective_policy_claims = {
+        "policy": copy.deepcopy(
+            provenance["effective_erratum_directional_classification"]
+        ),
+        "headline_endpoint": "median_ms",
+        "median_ms": stable_edges,
+        "p95_ms": stable_p95_edges,
+        "no_stable_directional_claim_implies_equivalence": False,
+        "median_and_p95_classified_independently": True,
+        "scope": "pairwise_only",
+        "simultaneous_total_order_inference_permitted": False,
+    }
+    distinctness = hypothesis_distinctness_evidence(
+        manifest,
+        stable_edges,
+        stable_p95_edges,
+        matched_aggregate_by_candidate,
+    )
+    result = {
+        "protocol_erratum": provenance["protocol_erratum"],
+        "expanded_archive_snapshot": provenance[
+            "expanded_archive_snapshot"
+        ],
         "practical_tolerance_ms": tolerance,
         "paired_bootstrap": {
             "unit": "allocation",
@@ -2471,11 +3412,17 @@ def comparative_analysis(
             "confidence_level": confidence,
             "seed": seed,
             "statistic": "median of allocation-paired differences",
-            "confidence_interval_scope": (
-                "descriptive per-comparison percentile interval; no "
-                "multiplicity adjustment and never used alone for a "
-                "stable-direction claim"
-            ),
+            "confidence_interval_role_by_policy": {
+                "original_preregistered": (
+                    "controls the preserved per-comparison bootstrap "
+                    "classification"
+                ),
+                "effective_erratum": (
+                    "descriptive only and never sufficient for an effective "
+                    "stable-direction claim"
+                ),
+            },
+            "multiplicity_adjustment": "none",
         },
         "directional_inference": {
             "method": (
@@ -2497,19 +3444,36 @@ def comparative_analysis(
         "all_pairwise_comparisons": pairs,
         "descriptive_latency_order": descriptive_order,
         "adjacent_order_stability": adjacent,
+        "original_preregistered_bootstrap_ordering_claims": (
+            original_policy_claims
+        ),
+        "effective_stable_ordering_claims": effective_policy_claims,
         "stable_ordering_claims": stable_edges,
+        "stable_ordering_claims_alias": {
+            "target": "effective_stable_ordering_claims.median_ms",
+            "exact_value_alias": True,
+            "value_sha256": manifest_generator.sha256_value(stable_edges),
+        },
         "stable_ordering_claims_scope": "pairwise_only",
+        "hypothesis_distinctness_evidence": distinctness,
         "descriptive_order_is_a_stable_total_order": False,
         "stable_total_order_claim_applicable": False,
         "ordering_claim_policy": (
-            "Pairwise direction is emitted only when the one-sided exact "
-            "shifted sign-flip test passes and all six paired differences "
-            f"are strictly beyond the preregistered +/-{tolerance} ms "
-            "practical tolerance. Bootstrap intervals remain descriptive. "
-            "Unadjusted pairwise evidence never implies a simultaneous "
-            "total order."
+            "The original preregistered paired-bootstrap classification is "
+            "preserved for median and p95. Effective stable directions are "
+            "separately emitted only when the one-sided exact shifted "
+            "sign-flip test passes and all six paired differences are "
+            f"strictly beyond +/-{tolerance} ms. Lack of an effective "
+            "direction is uncertainty, not equivalence. Every inference is "
+            "pairwise-only; no simultaneous total order is claimed."
         ),
     }
+    if (
+        result["stable_ordering_claims"]
+        is not result["effective_stable_ordering_claims"]["median_ms"]
+    ):
+        raise ContractError("legacy stable-ordering alias was not preserved")
+    return result
 
 
 def build_final_report(
