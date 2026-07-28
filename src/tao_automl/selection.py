@@ -405,6 +405,12 @@ def _build_audits(
             audit.invalid_reason = error
             audits.append(audit)
             continue
+        if latency is None or latency <= 0.0:
+            audit.invalid_reason = (
+                f"invalid_metric:{config.latency_metric}:must_be_positive"
+            )
+            audits.append(audit)
+            continue
         ci_low, error_low = _extract_finite(
             values,
             config.latency_ci_low_metric,
@@ -421,6 +427,10 @@ def _build_audits(
             continue
         if (ci_low is None) != (ci_high is None):
             audit.invalid_reason = "incomplete_latency_confidence_interval"
+            audits.append(audit)
+            continue
+        if ci_low is not None and ci_low <= 0.0:
+            audit.invalid_reason = "invalid_latency_confidence_interval"
             audits.append(audit)
             continue
         if ci_low is not None and not ci_low <= latency <= ci_high:

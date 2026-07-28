@@ -191,6 +191,38 @@ def test_positive_affine_scale_changes_preserve_normalized_decision():
         )
 
 
+def test_dominated_finite_outlier_cannot_distort_front_normalization():
+    front = [
+        Candidate("A", 0.92, 20.0),
+        Candidate("M", 0.89, 14.0),
+        Candidate("L", 0.86, 10.0),
+    ]
+    baseline = analyze_archive(front, config())
+    with_outlier = analyze_archive(
+        [
+            *front,
+            Candidate("dominated_outlier", 0.10, 1.0e12),
+        ],
+        config(),
+    )
+    audits = audits_by_id(with_outlier)
+
+    assert with_outlier.multi_objective.winner_id == (
+        baseline.multi_objective.winner_id
+    )
+    assert with_outlier.normalization_bounds == baseline.normalization_bounds
+    assert audits["dominated_outlier"].pareto_rank > 0
+    assert audits["dominated_outlier"].dominated_by
+    assert all(
+        math.isfinite(value)
+        for value in (
+            audits["dominated_outlier"].normalized_accuracy_regret,
+            audits["dominated_outlier"].normalized_latency_regret,
+            audits["dominated_outlier"].compromise_score,
+        )
+    )
+
+
 @pytest.mark.parametrize("count", [1, 3])
 def test_identical_objectives_are_finite_and_do_not_divide_by_zero(count):
     analysis = analyze_archive(
@@ -217,6 +249,8 @@ def test_identical_objectives_are_finite_and_do_not_divide_by_zero(count):
          "missing_metric:latency"),
         (Candidate("nan", float("nan"), 10.0), "invalid_metric:accuracy"),
         (Candidate("inf", 0.9, float("inf")), "invalid_metric:latency"),
+        (Candidate("zero_latency", 0.9, 0.0), "invalid_metric:latency"),
+        (Candidate("negative_latency", 0.9, -1.0), "invalid_metric:latency"),
         (Candidate("bool", True, 10.0), "invalid_metric:accuracy"),
         (Candidate("failed", 0.9, 10.0, status="failure"), "non_success_status"),
     ],
