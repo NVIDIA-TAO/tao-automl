@@ -1,0 +1,47 @@
+{
+  "candidate_artifacts": {
+    "candidate_table_csv": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_candidate_table.csv",
+    "candidate_table_csv_sha256": "0b313942968805879ac0f3bfb386dd45156d4be160c070aedf83bac579df6e5a",
+    "candidate_table_json": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_candidate_table.json",
+    "candidate_table_json_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03"
+  },
+  "combined_selection": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_combined_selection.json",
+  "combined_selection_sha256": "78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1",
+  "integrity_audit": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_integrity_audit.json",
+  "integrity_audit_sha256": "a11eeeaf77bd2f289c6363133882bb78c6889205d4cb9be5f0dacf79a1bea159",
+  "selections": {
+    "accuracy": {
+      "distinct_compromise": null,
+      "fallback_used": false,
+      "latency_tied_candidate_ids": [],
+      "mode": "accuracy",
+      "reason": "Highest valid accuracy; accuracy-equivalent ties use lower stabilized latency then canonical configuration hash.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_18"
+    },
+    "latency": {
+      "distinct_compromise": null,
+      "fallback_used": false,
+      "latency_tied_candidate_ids": [
+        "seed_161803_rec_14",
+        "seed_271828_rec_16",
+        "seed_271828_rec_18",
+        "seed_314159_rec_12"
+      ],
+      "mode": "latency",
+      "reason": "Lowest stabilized latency among candidates satisfying the accuracy-winner-relative constraint; statistically equivalent latencies use higher accuracy then canonical configuration hash.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_18"
+    },
+    "multi_objective": {
+      "distinct_compromise": true,
+      "fallback_used": false,
+      "latency_tied_candidate_ids": [],
+      "mode": "multi_objective",
+      "reason": "Minimum front-normalized augmented-Chebyshev regret on the multi-objective-eligible Pareto front selected a distinct compromise.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_19"
+    }
+  },
+  "status": "complete"
+}
