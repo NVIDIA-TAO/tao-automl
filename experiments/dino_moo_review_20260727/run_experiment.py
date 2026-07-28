@@ -556,6 +556,35 @@ def enforce_hardware_contract(records: list[dict[str, Any]]) -> dict[str, Any]:
     return contract
 
 
+def enforce_input_identity(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Require all eight replicas to benchmark the exact same input workload."""
+
+    metadata = [record.get("benchmark_inputs") for record in records]
+    if any(not isinstance(item, dict) for item in metadata):
+        raise RuntimeError(
+            "latency rank record is missing benchmark input identity metadata"
+        )
+    canonical = {
+        json.dumps(item, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        for item in metadata
+    }
+    if len(canonical) != 1:
+        identities = [
+            {
+                "rank": record["rank"],
+                "identity_sha256": record["benchmark_inputs"].get(
+                    "identity_sha256"
+                ),
+            }
+            for record in records
+        ]
+        raise RuntimeError(
+            "latency benchmark ranks used different input workloads: "
+            f"{identities}"
+        )
+    return copy.deepcopy(metadata[0])
+
+
 def launch_latency_benchmark(
     sdk: SlurmSDK,
     checkpoint: str,
@@ -607,6 +636,7 @@ def launch_latency_benchmark(
 
     rank_records = read_latency_rank_records(sdk, job.id)
     hardware_contract = enforce_hardware_contract(rank_records)
+    benchmark_inputs = enforce_input_identity(rank_records)
     samples = {
         round_index: {
             str(record["rank"]): record["samples_ms"][round_index]
@@ -651,6 +681,16 @@ def launch_latency_benchmark(
         "status": status,
         "statistics": statistics_dict,
         "hardware_contract": hardware_contract,
+        "benchmark_inputs": benchmark_inputs,
+        "rank_input_identities": [
+            {
+                "rank": record["rank"],
+                "identity_sha256": record["benchmark_inputs"][
+                    "identity_sha256"
+                ],
+            }
+            for record in rank_records
+        ],
         "rank_hardware": [
             {
                 "rank": record["rank"],

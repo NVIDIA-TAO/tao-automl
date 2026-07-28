@@ -127,7 +127,13 @@ class LatencyProtocol:
 
 @dataclass(frozen=True, slots=True)
 class LatencyStatistics:
-    """Aggregate latency and repeatability diagnostics."""
+    """Aggregate latency and repeatability diagnostics.
+
+    ``raw_sample_count_total`` and ``samples_per_device`` are the unambiguous
+    sample-count fields. ``per_device_sample_count`` is retained as a
+    backward-compatible alias for the historical serialized field, whose
+    value was the total sample count despite its name.
+    """
 
     protocol: LatencyProtocol
     device_ids: tuple[str, ...]
@@ -157,6 +163,25 @@ class LatencyStatistics:
     bootstrap_ci_width_fraction: float
     is_valid: bool
     invalid_reasons: tuple[str, ...]
+    # Derived fields use ``init=False`` so the historical constructor
+    # signature remains valid for downstream callers.
+    raw_sample_count_total: int = field(init=False)
+    samples_per_device: int = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "raw_sample_count_total",
+            int(self.per_device_sample_count),
+        )
+        object.__setattr__(
+            self,
+            "samples_per_device",
+            int(
+                self.protocol.repeated_rounds
+                * self.protocol.timed_iterations
+            ),
+        )
 
     @property
     def validity_reason(self) -> str:
@@ -406,6 +431,8 @@ def aggregate_synchronized_latency(
     return LatencyStatistics(
         protocol=protocol,
         device_ids=device_ids,
+        # Deprecated compatibility field.  Its historical value was the
+        # total across devices, not the number for one device.
         per_device_sample_count=int(flattened_per_device.size),
         device_round_cluster_count=int(cluster_medians.size),
         synchronized_sample_count=int(flattened_synchronized.size),

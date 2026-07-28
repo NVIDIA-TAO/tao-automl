@@ -12,6 +12,7 @@ accumulation, and distributed result gathering are outside the timed region.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -86,6 +87,100 @@ def move_preprocessed_batch(batch, device: torch.device):
     return data, original_sizes, image_names
 
 
+def canonical_json_value(value):
+    """Convert input identifiers to a strict, deterministic JSON value."""
+
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, Path):
+        return str(value)
+    if torch.is_tensor(value):
+        return value.detach().cpu().tolist()
+    if isinstance(value, dict):
+        return {
+            str(key): canonical_json_value(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [canonical_json_value(item) for item in value]
+    if hasattr(value, "item"):
+        return canonical_json_value(value.item())
+    raise TypeError(
+        "benchmark input identifier is not deterministically JSON serializable: "
+        f"{type(value).__name__}"
+    )
+
+
+def tensor_sha256(tensor: torch.Tensor) -> str:
+    """Hash the exact contiguous tensor bytes outside the timed region."""
+
+    contiguous = tensor.detach().cpu().contiguous()
+    return hashlib.sha256(contiguous.numpy().tobytes(order="C")).hexdigest()
+
+
+def benchmark_input_metadata(preloaded) -> dict:
+    """Describe and fingerprint the exact preprocessed benchmark workload."""
+
+    batches = []
+    for batch_index, (data, original_sizes, image_names) in enumerate(preloaded):
+        # TAO's DINO collate function packs the RGB tensor and padding mask as
+        # a four-channel model input. Recording both views proves the actual
+        # tensor and mask shapes used by the timed model invocation.
+        if not torch.is_tensor(data) or data.ndim != 4 or data.shape[1] != 4:
+            raise RuntimeError(
+                "expected TAO DINO model input shaped [batch,4,height,width], "
+                f"got {type(data).__name__} "
+                f"{list(data.shape) if torch.is_tensor(data) else ''}"
+            )
+        mask = data[:, 3:4, :, :]
+        batches.append(
+            {
+                "batch_index": batch_index,
+                "batch_size": int(data.shape[0]),
+                "model_input": {
+                    "shape": list(data.shape),
+                    "dtype": str(data.dtype),
+                    "sha256": tensor_sha256(data),
+                },
+                "image_tensor_shape": [
+                    int(data.shape[0]),
+                    3,
+                    int(data.shape[2]),
+                    int(data.shape[3]),
+                ],
+                "padding_mask": {
+                    "shape": list(mask.shape),
+                    "dtype": str(mask.dtype),
+                    "channel_index": 3,
+                    "sha256": tensor_sha256(mask),
+                },
+                "original_sizes": canonical_json_value(original_sizes),
+                "image_names": canonical_json_value(image_names),
+            }
+        )
+
+    identity_payload = {
+        "schema_version": 1,
+        "batch_count": len(batches),
+        "example_count": sum(batch["batch_size"] for batch in batches),
+        "batches": batches,
+    }
+    canonical = json.dumps(
+        identity_payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return {
+        **identity_payload,
+        "identity_sha256": hashlib.sha256(canonical).hexdigest(),
+        "identity_definition": (
+            "sha256(canonical JSON of batch order, image names, original sizes, "
+            "tensor/mask shapes+dtypes, and exact preprocessed tensor/mask hashes)"
+        ),
+    }
+
+
 def main() -> int:
     args = parse_args()
     if min(
@@ -148,6 +243,7 @@ def main() -> int:
         raise RuntimeError(
             f"requested {args.preloaded_batches} fixed batches, got {len(preloaded)}"
         )
+    input_metadata = benchmark_input_metadata(preloaded)
 
     def invoke(iteration: int) -> None:
         data, original_sizes, image_names = preloaded[iteration % len(preloaded)]
@@ -220,6 +316,7 @@ def main() -> int:
         },
         "checkpoint": args.checkpoint,
         "config_path": args.config,
+        "benchmark_inputs": input_metadata,
         "samples_ms": samples_by_round,
     }
 
