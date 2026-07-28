@@ -9,7 +9,7 @@
     "random_resize_max_size": 1333,
     "test_random_resize": 800
   },
-  "created_utc": "2026-07-27T20:10:49Z",
+  "created_utc": "2026-07-27T20:30:28Z",
   "dataset_inventory": {
     "category_ids": [
       1,
@@ -82,7 +82,7 @@
   "repositories": {
     "tao_automl": {
       "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
-      "commit": "758efb8a11c7e7811e737236d2a9e0baa3665346",
+      "commit": "c0393ead46605f133cef8121c7f1335777b49b90",
       "path": "/localhome/local-rarunachalam/tao-automl"
     },
     "tao_sdk": {
@@ -164,6 +164,17 @@
     "all_modes_receive_identical_candidates": true,
     "generation": "three seeded sequential Bayesian sub-archives",
     "selection_population": "union of every successful measured candidate"
+  },
+  "smoke_baseline": {
+    "checkpoint": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+    "checkpoint_classifier_classes": 91,
+    "evaluation_class_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "purpose": "raw COCO PTM compatibility and launch validation only; never used as the retained-accuracy reference"
   },
   "source_dataset": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
   "spec_overrides": {
