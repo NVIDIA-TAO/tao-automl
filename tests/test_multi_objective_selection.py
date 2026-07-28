@@ -12,6 +12,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from tao_automl.objectives import parse_objective_config
 from tao_automl.selection import (
     AccuracyConstraint,
     SelectionConfig,
@@ -43,6 +44,7 @@ def config(
     *,
     mode="multi_objective",
     constraint=None,
+    multi_objective_min_accuracy=None,
     accuracy_tolerance=0.0,
     latency_tolerance=0.0,
 ):
@@ -50,8 +52,9 @@ def config(
         mode=mode,
         accuracy_metric="accuracy",
         latency_metric="latency",
-        accuracy_constraint=constraint
+        latency_accuracy_retention=constraint
         or AccuracyConstraint(kind="absolute", value=1_000_000.0),
+        multi_objective_min_accuracy=multi_objective_min_accuracy,
         accuracy_tolerance=accuracy_tolerance,
         latency_tolerance=latency_tolerance,
     )
@@ -115,7 +118,8 @@ def test_latency_winner_dominates_fake_middle_and_triggers_fallback():
     assert analysis.multi_objective.distinct_compromise is False
     assert analysis.multi_objective.fallback_used is True
     assert analysis.multi_objective.reason.startswith(
-        "No distinct Pareto compromise exists"
+        "No distinct Pareto compromise exists under the configured "
+        "multi-objective eligibility policy"
     )
 
 
@@ -518,6 +522,302 @@ def test_latency_is_constrained_relative_to_accuracy_winner():
     assert analysis.latency.winner_id == "feasible_fast"
 
 
+def test_latency_retention_does_not_filter_multi_objective_front():
+    analysis = analyze_archive(
+        [
+            Candidate("accuracy", 0.95, 20.0),
+            Candidate("middle", 0.85, 14.0),
+            Candidate("latency", 0.75, 10.0),
+        ],
+        config(
+            constraint=AccuracyConstraint(kind="relative", value=0.90),
+        ),
+    )
+    audits = audits_by_id(analysis)
+
+    assert analysis.latency_accuracy_threshold == pytest.approx(0.855)
+    assert analysis.latency.winner_id == "accuracy"
+    assert analysis.multi_objective_accuracy_reference_candidate_id is None
+    assert analysis.multi_objective_accuracy_reference_value is None
+    assert analysis.multi_objective_accuracy_threshold is None
+    assert audits["middle"].accuracy_feasible is False
+    assert audits["middle"].multi_objective_accuracy_feasible is True
+    assert audits["middle"].feasible_pareto_rank == 0
+    assert analysis.multi_objective.winner_id == "middle"
+    assert analysis.multi_objective.distinct_compromise is True
+
+
+@pytest.mark.parametrize(
+    "multi_objective_policy",
+    [
+        0.90,
+        {"type": "absolute", "value": 0.90},
+    ],
+)
+def test_optional_multi_objective_min_accuracy_filters_only_compromise_mode(
+    multi_objective_policy,
+):
+    analysis = analyze_archive(
+        [
+            Candidate("accuracy", 0.95, 20.0),
+            Candidate("middle", 0.85, 14.0),
+            Candidate("latency", 0.75, 10.0),
+        ],
+        config(
+            constraint=AccuracyConstraint(kind="relative", value=0.90),
+            multi_objective_min_accuracy=multi_objective_policy,
+        ),
+    )
+    audits = audits_by_id(analysis)
+
+    assert analysis.config.multi_objective_min_accuracy.kind == "absolute"
+    assert analysis.config.multi_objective_min_accuracy.value == pytest.approx(
+        0.90
+    )
+    assert analysis.latency.winner_id == "accuracy"
+    assert audits["middle"].accuracy_feasible is False
+    assert audits["middle"].multi_objective_accuracy_feasible is False
+    assert audits["middle"].pareto_rank == 0
+    assert audits["middle"].feasible_pareto_rank is None
+    assert analysis.multi_objective_accuracy_reference_candidate_id is None
+    assert analysis.multi_objective_accuracy_reference_value is None
+    assert analysis.multi_objective_accuracy_threshold == pytest.approx(0.90)
+    assert analysis.multi_objective.winner_id == "accuracy"
+    assert analysis.multi_objective.fallback_used is True
+    assert analysis.multi_objective.reason.startswith(
+        "No distinct Pareto compromise exists under the configured "
+        "multi-objective eligibility policy"
+    )
+
+
+def test_relative_multi_objective_floor_is_resolved_from_accuracy_winner():
+    analysis = analyze_archive(
+        [
+            Candidate("accuracy", 0.95, 22.0),
+            Candidate("middle", 0.90, 15.0),
+            Candidate("latency", 0.86, 10.0),
+        ],
+        config(
+            constraint=AccuracyConstraint(kind="relative", value=0.98),
+            multi_objective_min_accuracy={
+                "type": "relative",
+                "value": 0.90,
+            },
+        ),
+    )
+
+    assert analysis.latency_accuracy_threshold == pytest.approx(0.931)
+    assert analysis.latency.winner_id == "accuracy"
+    assert analysis.multi_objective_accuracy_reference_candidate_id == (
+        "accuracy"
+    )
+    assert analysis.multi_objective_accuracy_reference_value == pytest.approx(
+        0.95
+    )
+    assert analysis.multi_objective_accuracy_threshold == pytest.approx(0.855)
+    assert analysis.multi_objective.winner_id == "middle"
+    serialized = analysis.to_dict()["algorithm"]
+    assert serialized["multi_objective_accuracy_reference_candidate_id"] == (
+        "accuracy"
+    )
+    assert serialized["multi_objective_accuracy_reference_value"] == (
+        pytest.approx(0.95)
+    )
+    assert serialized["multi_objective_accuracy_threshold"] == pytest.approx(
+        0.855
+    )
+    assert serialized["configuration"]["multi_objective_min_accuracy"] == {
+        "type": "relative",
+        "value": 0.90,
+        "reference": "accuracy_winner",
+    }
+
+
+@pytest.mark.parametrize(
+    ("retained_fraction", "expected_eligible", "expected_winner"),
+    [
+        (0.90, {"accuracy", "middle", "latency"}, "middle"),
+        (0.95, {"accuracy"}, "accuracy"),
+        (0.98, {"accuracy"}, "accuracy"),
+    ],
+)
+def test_relative_multi_objective_sensitivity_resolves_without_fitted_floor(
+    retained_fraction,
+    expected_eligible,
+    expected_winner,
+):
+    analysis = analyze_archive(
+        [
+            Candidate("accuracy", 0.95, 22.0),
+            Candidate("middle", 0.90, 15.0),
+            Candidate("latency", 0.86, 10.0),
+        ],
+        config(
+            multi_objective_min_accuracy={
+                "type": "relative",
+                "value": retained_fraction,
+                "reference": "accuracy_winner",
+            },
+        ),
+    )
+
+    assert analysis.multi_objective_accuracy_reference_candidate_id == (
+        "accuracy"
+    )
+    assert analysis.multi_objective_accuracy_reference_value == pytest.approx(
+        0.95
+    )
+    assert analysis.multi_objective_accuracy_threshold == pytest.approx(
+        0.95 * retained_fraction
+    )
+    assert {
+        audit.candidate_id
+        for audit in analysis.audits
+        if audit.multi_objective_accuracy_feasible
+    } == expected_eligible
+    assert analysis.multi_objective.winner_id == expected_winner
+
+
+def test_optional_multi_objective_floor_can_report_no_eligible_candidate():
+    analysis = analyze_archive(
+        [Candidate("best", 0.90, 10.0)],
+        config(multi_objective_min_accuracy=0.91),
+    )
+    audit = audits_by_id(analysis)["best"]
+
+    assert analysis.accuracy.winner_id == "best"
+    assert analysis.latency.winner_id == "best"
+    assert audit.multi_objective_accuracy_feasible is False
+    assert analysis.multi_objective.status == (
+        "no_multi_objective_accuracy_feasible_candidates"
+    )
+    assert analysis.multi_objective.winner_id is None
+    assert "minimum accuracy 0.91" in analysis.multi_objective.reason
+
+
+def test_multi_objective_dominance_is_independent_of_latency_retention():
+    analysis = analyze_archive(
+        [
+            Candidate("accuracy", 0.92, 20.0),
+            Candidate("latency", 0.84, 10.0),
+            Candidate("dominated", 0.83, 11.0),
+        ],
+        config(
+            constraint=AccuracyConstraint(kind="relative", value=0.95),
+        ),
+    )
+    audits = audits_by_id(analysis)
+
+    assert analysis.latency.winner_id == "accuracy"
+    assert audits["latency"].accuracy_feasible is False
+    assert audits["latency"].multi_objective_accuracy_feasible is True
+    assert audits["dominated"].feasible_pareto_rank == 1
+    assert audits["dominated"].feasible_dominated_by == ("latency",)
+    assert analysis.multi_objective.winner_id != "dominated"
+
+
+def test_separate_constraints_are_order_invariant():
+    candidates = [
+        Candidate("accuracy", 0.95, 22.0),
+        Candidate("middle", 0.88, 15.0),
+        Candidate("latency", 0.84, 10.0),
+        Candidate("dominated", 0.83, 11.0),
+    ]
+    selection_config = config(
+        constraint=AccuracyConstraint(kind="relative", value=0.90),
+        multi_objective_min_accuracy=0.82,
+    )
+
+    forward = analyze_archive(candidates, selection_config)
+    reverse = analyze_archive(reversed(candidates), selection_config)
+    assert (
+        forward.accuracy.winner_id,
+        forward.latency.winner_id,
+        forward.multi_objective.winner_id,
+    ) == (
+        reverse.accuracy.winner_id,
+        reverse.latency.winner_id,
+        reverse.multi_objective.winner_id,
+    )
+    assert {
+        item.candidate_id: (
+            item.accuracy_feasible,
+            item.multi_objective_accuracy_feasible,
+            item.feasible_pareto_rank,
+            item.feasible_dominated_by,
+        )
+        for item in forward.audits
+    } == {
+        item.candidate_id: (
+            item.accuracy_feasible,
+            item.multi_objective_accuracy_feasible,
+            item.feasible_pareto_rank,
+            item.feasible_dominated_by,
+        )
+        for item in reverse.audits
+    }
+
+
+def test_objective_config_parses_separate_constraint_settings():
+    objective_config = parse_objective_config({
+        "objectives": [
+            {"metric": "accuracy", "direction": "maximize"},
+            {"metric": "latency", "direction": "minimize"},
+        ],
+        "latency_accuracy_retention": {
+            "type": "absolute",
+            "max_absolute_degradation": 0.03,
+        },
+        "multi_objective_min_accuracy": {
+            "type": "relative",
+            "value": 0.90,
+        },
+    })
+    selection = objective_config.selection_config
+
+    assert selection is not None
+    assert selection.latency_accuracy_retention.kind == "absolute"
+    assert selection.latency_accuracy_retention.value == pytest.approx(0.03)
+    assert selection.multi_objective_min_accuracy.kind == "relative"
+    assert selection.multi_objective_min_accuracy.value == pytest.approx(0.90)
+    assert selection.multi_objective_min_accuracy.reference == "accuracy_winner"
+    serialized = selection.to_dict()
+    assert serialized["latency_accuracy_retention"]["type"] == "absolute"
+    assert serialized["multi_objective_min_accuracy"] == {
+        "type": "relative",
+        "value": 0.90,
+        "reference": "accuracy_winner",
+    }
+    assert "accuracy_constraint" not in serialized
+
+
+def test_legacy_accuracy_constraint_maps_to_latency_only():
+    objective_config = parse_objective_config({
+        "objectives": [
+            {"metric": "accuracy", "direction": "maximize"},
+            {"metric": "latency", "direction": "minimize"},
+        ],
+        "accuracy_retention_fraction": 0.90,
+    })
+    selection = objective_config.selection_config
+
+    assert selection is not None
+    assert selection.latency_accuracy_retention.value == pytest.approx(0.90)
+    assert selection.multi_objective_min_accuracy is None
+
+
+def test_new_and_legacy_latency_constraints_cannot_conflict():
+    with pytest.raises(ValueError, match="not both"):
+        parse_objective_config({
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+            ],
+            "latency_accuracy_retention": 0.95,
+            "accuracy_retention_fraction": 0.90,
+        })
+
+
 def test_absolute_accuracy_degradation_rule_and_inclusive_floor():
     analysis = analyze_archive(
         [
@@ -536,7 +836,7 @@ def test_absolute_accuracy_degradation_rule_and_inclusive_floor():
     assert analysis.latency.winner_id == "on_floor"
 
 
-def test_external_reference_can_report_no_accuracy_feasible_candidate():
+def test_external_latency_reference_does_not_block_multi_objective_selection():
     analysis = analyze_archive(
         [Candidate("best_observed", 0.90, 10.0)],
         config(
@@ -551,7 +851,8 @@ def test_external_reference_can_report_no_accuracy_feasible_candidate():
     assert analysis.accuracy.winner_id == "best_observed"
     assert analysis.latency.status == "no_accuracy_feasible_candidates"
     assert analysis.latency.winner_id is None
-    assert analysis.multi_objective.winner_id is None
+    assert analysis.multi_objective.status == "selected"
+    assert analysis.multi_objective.winner_id == "best_observed"
 
 
 @settings(max_examples=100, deadline=None, derandomize=True, database=None)

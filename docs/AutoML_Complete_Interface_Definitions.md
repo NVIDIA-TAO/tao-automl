@@ -577,7 +577,9 @@ The `settings` dict passed to `AutoML(settings=...)`:
 | `metric` | str | `"loss"` | All — "loss" → lower is better |
 | `objectives` | list[dict] | unset | Explicit objectives. A two-objective maximize-accuracy/minimize-latency list enables constrained Pareto archive selection. |
 | `selection_mode` | str | `"multi_objective"` | Two-objective archives — one of `accuracy`, `latency`, or `multi_objective`. |
-| `accuracy_constraint` | dict | relative 0.98 | Latency and multi-objective modes — accuracy-winner-relative `relative` retained fraction or `absolute` maximum degradation. |
+| `latency_accuracy_retention` | number or dict | relative 0.98 | Latency mode only — accuracy-winner-relative retained fraction (`relative`) or maximum degradation (`absolute`). A number is relative shorthand. |
+| `multi_objective_min_accuracy` | number or dict | unset | Multi-objective mode only — optional eligibility floor. A number is an absolute metric floor; a dict accepts `{"type": "absolute", "value": floor}` or `{"type": "relative", "value": fraction, "reference": "accuracy_winner"}`. Unset means no accuracy floor. |
+| `accuracy_constraint` | dict | unset | Deprecated compatibility alias for `latency_accuracy_retention`; it never constrains the multi-objective front. |
 | `objective_normalization` | str | `"pareto_front"` | Two-objective archives — front-relative regret normalization. |
 | `augmentation_rho` | float | `1e-6` | Multi-objective final selection — strictly positive augmented-Chebyshev tie term. |
 | `accuracy_tolerance` | float | `1e-12` | Accuracy-mode equivalence and the strict-improvement threshold in Pareto comparisons; it never makes lower accuracy "no worse." |

@@ -217,7 +217,7 @@ def test_controller_multi_objective_score_and_pareto_front():
             "multi_objective": True,
             "latency_metric": "latency",
             "latency_scale": 100,
-            "accuracy_retention_fraction": 0.90,
+            "accuracy_retention_fraction": 0.98,
         })
         ctrl = Controller(
             brain=MockBrain(4),
@@ -254,6 +254,17 @@ def test_controller_multi_objective_score_and_pareto_front():
         assert status["selection_analysis"]["selections"]["multi_objective"][
             "winner_id"
         ] == "0"
+        assert status["selection_analysis"]["selections"]["latency"][
+            "winner_id"
+        ] == "2"
+        candidate_audit = {
+            item["candidate_id"]: item
+            for item in status["selection_analysis"]["candidates"]
+        }
+        assert candidate_audit["0"]["latency_accuracy_feasible"] is False
+        assert candidate_audit["0"]["multi_objective_accuracy_feasible"] is True
+        assert candidate_audit["1"]["latency_accuracy_feasible"] is False
+        assert candidate_audit["1"]["multi_objective_accuracy_feasible"] is True
 
         loaded = Controller.load_state(
             brain=MockBrain(4),

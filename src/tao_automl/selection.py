@@ -5,8 +5,9 @@
 The search algorithm's acquisition score and the final deployment decision are
 different concerns.  This module owns the latter.  It operates on the complete
 measured archive, rejects invalid observations, derives an accuracy-winner
-relative feasibility constraint, performs non-dominated sorting, and selects a
-scale-independent compromise from the feasible rank-zero front.
+relative feasibility constraint for latency mode, performs non-dominated
+sorting under an independent optional multi-objective accuracy policy, and
+selects a scale-independent compromise from that policy's rank-zero front.
 """
 
 from __future__ import annotations
@@ -22,7 +23,8 @@ from tao_automl.utils.value_utils import normalize_finite_number, normalize_json
 
 _SUCCESS_STATUSES = frozenset({"success", "done"})
 _NO_DISTINCT_COMPROMISE = (
-    "No distinct Pareto compromise exists in the evaluated search space."
+    "No distinct Pareto compromise exists under the configured "
+    "multi-objective eligibility policy."
 )
 
 
@@ -58,7 +60,7 @@ def canonical_spec_fingerprint(specs: Mapping[str, Any] | None) -> str:
 
 @dataclass(frozen=True)
 class AccuracyConstraint:
-    """Accuracy-winner-relative epsilon constraint.
+    """Accuracy-winner-relative retention constraint for latency mode.
 
     ``relative`` requires ``accuracy >= reference * value``.
     ``absolute`` requires ``accuracy >= reference - value``.
@@ -79,7 +81,7 @@ class AccuracyConstraint:
             )
         value = normalize_finite_number(
             self.value,
-            path="selection.accuracy_constraint.value",
+            path="selection.latency_accuracy_retention.value",
         )
         if kind == "relative" and not 0.0 < value <= 1.0:
             raise ValueError("relative retained-accuracy fraction must be in (0, 1]")
@@ -94,7 +96,7 @@ class AccuracyConstraint:
                 "reference_value",
                 normalize_finite_number(
                     self.reference_value,
-                    path="selection.accuracy_constraint.reference_value",
+                    path="selection.latency_accuracy_retention.reference_value",
                 ),
             )
 
@@ -114,13 +116,106 @@ class AccuracyConstraint:
 
 
 @dataclass(frozen=True)
+class MultiObjectiveAccuracyPolicy:
+    """Optional minimum-accuracy policy for multi-objective eligibility.
+
+    ``absolute`` treats ``value`` as the accuracy metric floor itself.
+    ``relative`` resolves the floor as ``accuracy_winner * value``.
+    """
+
+    kind: str
+    value: float
+    reference: str | None = None
+
+    def __post_init__(self) -> None:
+        kind = str(self.kind).strip().lower()
+        object.__setattr__(self, "kind", kind)
+        if kind not in {"absolute", "relative"}:
+            raise ValueError(
+                "multi-objective minimum-accuracy type must be 'absolute' "
+                "or 'relative'"
+            )
+        value = normalize_finite_number(
+            self.value,
+            path="selection.multi_objective_min_accuracy.value",
+        )
+        if kind == "relative":
+            if not 0.0 < value <= 1.0:
+                raise ValueError(
+                    "relative multi-objective retained-accuracy fraction "
+                    "must be in (0, 1]"
+                )
+            reference = self.reference or "accuracy_winner"
+            if reference != "accuracy_winner":
+                raise ValueError(
+                    "relative multi-objective minimum accuracy must reference "
+                    "'accuracy_winner'"
+                )
+        else:
+            if self.reference not in (None, ""):
+                raise ValueError(
+                    "absolute multi-objective minimum accuracy cannot specify "
+                    "a reference"
+                )
+            reference = None
+        object.__setattr__(self, "value", value)
+        object.__setattr__(self, "reference", reference)
+
+    @classmethod
+    def from_raw(
+        cls,
+        raw: MultiObjectiveAccuracyPolicy | Mapping[str, Any] | float | int,
+    ) -> MultiObjectiveAccuracyPolicy:
+        if isinstance(raw, cls):
+            return raw
+        if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+            return cls(kind="absolute", value=raw)
+        if not isinstance(raw, Mapping):
+            raise TypeError(
+                "multi_objective_min_accuracy must be a number, mapping, or None"
+            )
+        kind = raw.get("type", "absolute")
+        if "value" not in raw:
+            raise ValueError(
+                "multi_objective_min_accuracy mapping must include 'value'"
+            )
+        return cls(
+            kind=str(kind),
+            value=raw["value"],
+            reference=raw.get("reference"),
+        )
+
+    def threshold(self, accuracy_winner: float) -> float:
+        if self.kind == "relative":
+            return float(accuracy_winner * self.value)
+        return self.value
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "type": self.kind,
+            "value": self.value,
+            "reference": self.reference,
+        }
+
+
+@dataclass(frozen=True)
 class SelectionConfig:
     """Configuration for deterministic archive selection."""
 
     mode: str = "multi_objective"
     accuracy_metric: str = "accuracy"
     latency_metric: str = "latency"
-    accuracy_constraint: AccuracyConstraint = field(default_factory=AccuracyConstraint)
+    latency_accuracy_retention: AccuracyConstraint | None = None
+    multi_objective_min_accuracy: (
+        MultiObjectiveAccuracyPolicy | Mapping[str, Any] | float | int | None
+    ) = None
+    # Deprecated constructor alias retained for API compatibility. It applies
+    # only to latency mode and never constrains multi-objective selection.
+    accuracy_constraint: AccuracyConstraint | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
     accuracy_tolerance: float = 1e-12
     latency_tolerance: float = 0.0
     score_tolerance: float = 1e-12
@@ -142,6 +237,37 @@ class SelectionConfig:
             raise ValueError("accuracy_metric and latency_metric must be non-empty")
         if self.accuracy_metric == self.latency_metric:
             raise ValueError("accuracy_metric and latency_metric must be different")
+        retention = self.latency_accuracy_retention
+        legacy_retention = self.accuracy_constraint
+        if (
+            retention is not None
+            and legacy_retention is not None
+            and retention != legacy_retention
+        ):
+            raise ValueError(
+                "Configure latency_accuracy_retention or the deprecated "
+                "accuracy_constraint alias, not both"
+            )
+        if retention is None:
+            retention = (
+                legacy_retention
+                if legacy_retention is not None
+                else AccuracyConstraint()
+            )
+        if not isinstance(retention, AccuracyConstraint):
+            raise TypeError(
+                "latency_accuracy_retention must be an AccuracyConstraint"
+            )
+        object.__setattr__(self, "latency_accuracy_retention", retention)
+        object.__setattr__(self, "accuracy_constraint", retention)
+        if self.multi_objective_min_accuracy is not None:
+            object.__setattr__(
+                self,
+                "multi_objective_min_accuracy",
+                MultiObjectiveAccuracyPolicy.from_raw(
+                    self.multi_objective_min_accuracy
+                ),
+            )
         for name in ("accuracy_tolerance", "latency_tolerance", "score_tolerance"):
             value = normalize_finite_number(
                 getattr(self, name),
@@ -167,7 +293,14 @@ class SelectionConfig:
             "mode": self.mode,
             "accuracy_metric": self.accuracy_metric,
             "latency_metric": self.latency_metric,
-            "accuracy_constraint": self.accuracy_constraint.to_dict(),
+            "latency_accuracy_retention": (
+                self.latency_accuracy_retention.to_dict()
+            ),
+            "multi_objective_min_accuracy": (
+                self.multi_objective_min_accuracy.to_dict()
+                if self.multi_objective_min_accuracy is not None
+                else None
+            ),
             "accuracy_tolerance": self.accuracy_tolerance,
             "latency_tolerance": self.latency_tolerance,
             "score_tolerance": self.score_tolerance,
@@ -191,7 +324,9 @@ class CandidateAudit:
     latency: float | None = None
     latency_ci95_low: float | None = None
     latency_ci95_high: float | None = None
+    # Compatibility name for latency-mode retention feasibility.
     accuracy_feasible: bool = False
+    multi_objective_accuracy_feasible: bool = False
     pareto_rank: int | None = None
     dominated_by: tuple[str, ...] = ()
     feasible_pareto_rank: int | None = None
@@ -219,10 +354,16 @@ class CandidateAudit:
             "latency_ci95_low": self.latency_ci95_low,
             "latency_ci95_high": self.latency_ci95_high,
             "accuracy_feasible": self.accuracy_feasible,
+            "latency_accuracy_feasible": self.accuracy_feasible,
+            "multi_objective_accuracy_feasible": (
+                self.multi_objective_accuracy_feasible
+            ),
             "pareto_rank": self.pareto_rank,
             "dominated_by": list(self.dominated_by),
             "feasible_pareto_rank": self.feasible_pareto_rank,
             "feasible_dominated_by": list(self.feasible_dominated_by),
+            "multi_objective_pareto_rank": self.feasible_pareto_rank,
+            "multi_objective_dominated_by": list(self.feasible_dominated_by),
             "duplicate_representative": self.duplicate_representative,
             "duplicate_aliases": list(self.duplicate_aliases),
             "normalized_accuracy_objective": self.normalized_accuracy_regret,
@@ -299,8 +440,26 @@ class SelectionAnalysis:
     accuracy_reference_candidate_id: str | None
     accuracy_reference_value: float | None
     accuracy_threshold: float | None
+    multi_objective_accuracy_reference_candidate_id: str | None
+    multi_objective_accuracy_reference_value: float | None
+    multi_objective_accuracy_threshold: float | None
     normalization_bounds: dict[str, dict[str, float | bool]]
     objective_weights: dict[str, float]
+
+    @property
+    def latency_accuracy_reference_candidate_id(self) -> str | None:
+        """Return the accuracy anchor used only by latency-mode retention."""
+        return self.accuracy_reference_candidate_id
+
+    @property
+    def latency_accuracy_reference_value(self) -> float | None:
+        """Return the latency-mode retained-accuracy reference value."""
+        return self.accuracy_reference_value
+
+    @property
+    def latency_accuracy_threshold(self) -> float | None:
+        """Return the threshold used only to choose the latency winner."""
+        return self.accuracy_threshold
 
     def selection_for(self, mode: str | None = None) -> ModeSelection:
         resolved = (mode or self.config.mode).lower()
@@ -331,6 +490,22 @@ class SelectionAnalysis:
                 "accuracy_reference_candidate_id": self.accuracy_reference_candidate_id,
                 "accuracy_reference_value": self.accuracy_reference_value,
                 "accuracy_threshold": self.accuracy_threshold,
+                "latency_accuracy_reference_candidate_id": (
+                    self.latency_accuracy_reference_candidate_id
+                ),
+                "latency_accuracy_reference_value": (
+                    self.latency_accuracy_reference_value
+                ),
+                "latency_accuracy_threshold": self.latency_accuracy_threshold,
+                "multi_objective_accuracy_reference_candidate_id": (
+                    self.multi_objective_accuracy_reference_candidate_id
+                ),
+                "multi_objective_accuracy_reference_value": (
+                    self.multi_objective_accuracy_reference_value
+                ),
+                "multi_objective_accuracy_threshold": (
+                    self.multi_objective_accuracy_threshold
+                ),
             },
             "selections": {
                 "accuracy": self.accuracy.to_dict(),
@@ -796,37 +971,37 @@ def analyze_archive(
             accuracy_reference_candidate_id=None,
             accuracy_reference_value=None,
             accuracy_threshold=None,
+            multi_objective_accuracy_reference_candidate_id=None,
+            multi_objective_accuracy_reference_value=None,
+            multi_objective_accuracy_threshold=None,
             normalization_bounds={},
             objective_weights=weights,
         )
 
     accuracy_winner.accuracy_winner = True
+    retention = config.latency_accuracy_retention
+    assert retention is not None
     reference_value = (
-        config.accuracy_constraint.reference_value
-        if config.accuracy_constraint.reference_value is not None
+        retention.reference_value
+        if retention.reference_value is not None
         else float(accuracy_winner.accuracy)
     )
     reference_candidate_id = (
-        config.accuracy_constraint.reference_candidate_id
-        if config.accuracy_constraint.reference_value is not None
+        retention.reference_candidate_id
+        if retention.reference_value is not None
         else accuracy_winner.candidate_id
     )
-    threshold = config.accuracy_constraint.threshold(reference_value)
-    feasible = []
+    threshold = retention.threshold(reference_value)
+    latency_feasible = []
     for item in valid:
         assert item.accuracy is not None
         item.accuracy_feasible = (
             item.accuracy >= threshold - config.accuracy_tolerance
         )
         if item.accuracy_feasible:
-            feasible.append(item)
+            latency_feasible.append(item)
 
-    feasible_ranks, feasible_dominated_by = _nondominated_sort(feasible, config)
-    for item in feasible:
-        item.feasible_pareto_rank = feasible_ranks[item.candidate_id]
-        item.feasible_dominated_by = feasible_dominated_by[item.candidate_id]
-
-    latency_winner, latency_ties = _choose_latency(feasible, config)
+    latency_winner, latency_ties = _choose_latency(latency_feasible, config)
     if latency_winner is None:
         latency_selection = ModeSelection(
             mode="latency",
@@ -851,17 +1026,65 @@ def analyze_archive(
             latency_tied_candidate_ids=latency_ties,
         )
 
+    multi_objective_feasible = []
+    multi_objective_policy = config.multi_objective_min_accuracy
+    if multi_objective_policy is None:
+        multi_objective_floor = None
+        multi_objective_reference_value = None
+        multi_objective_reference_candidate_id = None
+    else:
+        assert isinstance(
+            multi_objective_policy,
+            MultiObjectiveAccuracyPolicy,
+        )
+        if multi_objective_policy.kind == "relative":
+            multi_objective_reference_value = float(accuracy_winner.accuracy)
+            multi_objective_reference_candidate_id = (
+                accuracy_winner.candidate_id
+            )
+        else:
+            multi_objective_reference_value = None
+            multi_objective_reference_candidate_id = None
+        multi_objective_floor = multi_objective_policy.threshold(
+            float(accuracy_winner.accuracy)
+        )
+    for item in valid:
+        assert item.accuracy is not None
+        item.multi_objective_accuracy_feasible = (
+            multi_objective_floor is None
+            or item.accuracy
+            >= multi_objective_floor - config.accuracy_tolerance
+        )
+        if item.multi_objective_accuracy_feasible:
+            multi_objective_feasible.append(item)
+
+    feasible_ranks, feasible_dominated_by = _nondominated_sort(
+        multi_objective_feasible,
+        config,
+    )
+    for item in multi_objective_feasible:
+        item.feasible_pareto_rank = feasible_ranks[item.candidate_id]
+        item.feasible_dominated_by = feasible_dominated_by[item.candidate_id]
+
     feasible_front_all = [
-        item for item in feasible if item.feasible_pareto_rank == 0
+        item
+        for item in multi_objective_feasible
+        if item.feasible_pareto_rank == 0
     ]
     feasible_front = _deduplicate_objective_points(feasible_front_all)
     bounds = _normalization_bounds(feasible_front, config)
     _set_normalized_scores(audits, bounds, config, weights)
     compromise_winner = _choose_compromise(feasible_front, config)
+    multi_objective_latency_extreme, _ = _choose_latency(
+        multi_objective_feasible,
+        config,
+    )
 
     distinct_candidates: list[CandidateAudit] = []
     extremes = [
-        item for item in (accuracy_winner, latency_winner) if item is not None
+        item
+        for item in (accuracy_winner, multi_objective_latency_extreme)
+        if item is not None
     ]
     for item in feasible_front:
         equivalent_to_extreme = any(
@@ -883,14 +1106,21 @@ def analyze_archive(
     )
 
     if compromise_winner is None:
+        if multi_objective_floor is None:
+            reason = (
+                "No valid candidate is available for Pareto compromise "
+                "selection."
+            )
+        else:
+            reason = (
+                "No candidate satisfies the optional multi-objective minimum "
+                f"accuracy {multi_objective_floor:.12g}."
+            )
         multi_selection = ModeSelection(
             mode="multi_objective",
-            status="no_accuracy_feasible_candidates",
+            status="no_multi_objective_accuracy_feasible_candidates",
             winner_id=None,
-            reason=(
-                "No accuracy-feasible candidate is available for Pareto "
-                "compromise selection."
-            ),
+            reason=reason,
             distinct_compromise=False,
         )
     else:
@@ -898,7 +1128,8 @@ def analyze_archive(
         if winner_is_distinct:
             reason = (
                 "Minimum front-normalized augmented-Chebyshev regret on the "
-                "feasible Pareto front selected a distinct compromise."
+                "multi-objective-eligible Pareto front selected a distinct "
+                "compromise."
             )
         elif not has_distinct_candidate:
             reason = (
@@ -909,8 +1140,9 @@ def analyze_archive(
         else:
             reason = (
                 "Minimum front-normalized augmented-Chebyshev regret selected "
-                "an extreme point even though distinct feasible Pareto points "
-                "exist; this result is not reported as a distinct compromise."
+                "an extreme point even though distinct multi-objective-eligible "
+                "Pareto points exist; this result is not reported as a distinct "
+                "compromise."
             )
         multi_selection = ModeSelection(
             mode="multi_objective",
@@ -927,11 +1159,13 @@ def analyze_archive(
         for item in valid:
             item.acquisition_score = float(item.accuracy)
     elif config.mode == "latency":
-        if feasible:
-            feasible_latencies = [float(item.latency) for item in feasible]
+        if latency_feasible:
+            feasible_latencies = [
+                float(item.latency) for item in latency_feasible
+            ]
             latency_min = min(feasible_latencies)
             latency_range = max(feasible_latencies) - latency_min
-            for item in feasible:
+            for item in latency_feasible:
                 item.acquisition_score = (
                     0.0
                     if latency_range <= config.latency_tolerance
@@ -943,14 +1177,22 @@ def analyze_archive(
                 item.acquisition_score = float(
                     -1.0 - (threshold - float(item.accuracy)) / violation_scale
                 )
-    else:
+    elif multi_objective_floor is not None:
         infeasible_base = -(len(valid) + 1.0)
-        violation_scale = max(abs(reference_value), config.accuracy_tolerance, 1e-12)
+        violation_scale = max(
+            abs(multi_objective_floor),
+            abs(float(accuracy_winner.accuracy)),
+            config.accuracy_tolerance,
+            1e-12,
+        )
         for item in valid:
-            if not item.accuracy_feasible:
+            if not item.multi_objective_accuracy_feasible:
                 item.acquisition_score = float(
                     infeasible_base
-                    - (threshold - float(item.accuracy)) / violation_scale
+                    - (
+                        multi_objective_floor - float(item.accuracy)
+                    )
+                    / violation_scale
                 )
 
     return SelectionAnalysis(
@@ -970,6 +1212,13 @@ def analyze_archive(
         accuracy_reference_candidate_id=reference_candidate_id,
         accuracy_reference_value=reference_value,
         accuracy_threshold=threshold,
+        multi_objective_accuracy_reference_candidate_id=(
+            multi_objective_reference_candidate_id
+        ),
+        multi_objective_accuracy_reference_value=(
+            multi_objective_reference_value
+        ),
+        multi_objective_accuracy_threshold=multi_objective_floor,
         normalization_bounds=bounds,
         objective_weights=weights,
     )
@@ -979,6 +1228,7 @@ __all__ = [
     "AccuracyConstraint",
     "CandidateAudit",
     "ModeSelection",
+    "MultiObjectiveAccuracyPolicy",
     "SelectionAnalysis",
     "SelectionConfig",
     "analyze_archive",
