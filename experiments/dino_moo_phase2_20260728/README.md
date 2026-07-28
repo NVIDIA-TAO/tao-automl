@@ -83,9 +83,22 @@ unpinned replacement.
 
 ## Expanded shared-archive harness
 
-`expanded_search_runner.py` consumes only the immutable
-`expanded_search_manifest.v1.json` produced by
-`expanded_search_manifest_generator.py`. It does not choose axes or ranges.
+The first expanded-search launch is preserved as failed pre-selection
+evidence: TAO emitted finite mAP50 values as JSON-number strings, the v1
+runner rejected them, no latency measurement or Bayesian response was
+recorded, and no selector ran. `expanded_search_runtime_erratum.v1.json` and
+`expanded_search_v1_failure_audit.md` prohibit reuse of that runtime.
+
+`expanded_search_runner.py` now consumes only the immutable
+`expanded_search_manifest.v2.json` produced by
+`expanded_search_manifest_generator.py`. V2 changes only strict finite metric
+parsing, manifest/supersession identity, and the fresh runtime path; the
+search space, seeds, budget, training, latency, and selection contracts remain
+byte-identical to v1. The runner does not choose axes or ranges.
+Before spawning a seed controller, a fresh launch atomically creates
+`runtime_contract.v2.json`, bound to the exact manifest and v2 runtime path.
+Fresh launches reject any pre-existing seed or SDK state; resumes require the
+same marker, a manifest-bound candidate ledger, and an exact state allowlist.
 The manifest pins the absolute launcher path and exact launcher SHA256.
 Dry-run reports whether that source is tracked, committed, and clean; launch
 refuses unless all three conditions hold and the self-hash still matches.
@@ -147,7 +160,7 @@ Dry-run after the expanded manifest is generated:
 
 ```bash
 MANIFEST_SHA256="$(sha256sum \
-  experiments/dino_moo_phase2_20260728/expanded_search_manifest.v1.json \
+  experiments/dino_moo_phase2_20260728/expanded_search_manifest.v2.json \
   | awk '{print $1}')"
 /localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
   experiments/dino_moo_phase2_20260728/expanded_search_runner.py \
@@ -158,7 +171,7 @@ MANIFEST_SHA256="$(sha256sum \
 The launch path additionally requires `--verify-remote` and the exact
 acknowledgement
 `USER_AUTHORIZED_3X8GPU_SLURM_DINO_EXPANDED_SEARCH_20260728`. It writes
-runtime-only mutable ledgers below `runtime/expanded_search/`, then seals one
+runtime-only mutable ledgers below `runtime/expanded_search_v2/`, then seals one
 `seed_archive.v1.json` per seed and emits
 `expanded_combined_selection.json`, complete JSON/CSV candidate tables, and
 `expanded_integrity_audit.json`.

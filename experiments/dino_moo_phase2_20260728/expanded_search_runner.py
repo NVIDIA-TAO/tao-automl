@@ -57,9 +57,39 @@ from tao_automl.selection import analyze_archive
 
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_MANIFEST = HERE / "expanded_search_manifest.v1.json"
-DEFAULT_RUNTIME = HERE / "runtime" / "expanded_search"
+DEFAULT_MANIFEST = HERE / "expanded_search_manifest.v2.json"
+DEFAULT_RUNTIME = HERE / "runtime" / "expanded_search_v2"
 DEFAULT_REPORT = DEFAULT_RUNTIME / "dry_run.json"
+RUNTIME_CONTRACT_MARKER_NAME = "runtime_contract.v2.json"
+RUNTIME_ROOT_RESUME_NAMES = frozenset(
+    {
+        ".selection_latency_contract.lock",
+        "dry_run.json",
+        "expanded_candidate_table.csv",
+        "expanded_candidate_table.json",
+        "expanded_combined_selection.json",
+        "expanded_completion.json",
+        "expanded_integrity_audit.json",
+        RUNTIME_CONTRACT_MARKER_NAME,
+        "selection_latency_hardware_contract.json",
+        "selection_latency_input_contract.json",
+        "seed_process_status.json",
+    }
+)
+SEED_RUNTIME_NAMES = frozenset(
+    {
+        "candidate_evaluations.json",
+        "events.jsonl",
+        "result.json",
+        "seed_archive.v1.json",
+        "slurm_state.db",
+        "slurm_state.db-journal",
+        "slurm_state.db-shm",
+        "slurm_state.db-wal",
+        "slurm_state.json",
+        "workspace",
+    }
+)
 SKILL_DIR = Path(
     "/localhome/local-rarunachalam/tao-skills-external/"
     "skills/models/tao-train-dino"
@@ -81,6 +111,31 @@ EXPECTED_TRAINING_SEED = 1234
 EXPECTED_ACKNOWLEDGEMENT = (
     "USER_AUTHORIZED_3X8GPU_SLURM_DINO_EXPANDED_SEARCH_20260728"
 )
+EXPECTED_V1_MANIFEST_SHA256 = (
+    "57e331686b8896989263a39f72edb69543fc58833f20a1e6e698c31f34d2e8be"
+)
+EXPECTED_V1_INTERNAL_MANIFEST_SHA256 = (
+    "39fb50997a39ff4bfaa8036cd6222127f3ce8dda25a704ac188eab4dd6b75b82"
+)
+EXPECTED_RUNTIME_ERRATUM_SHA256 = (
+    "a89b5816b45e1df9c6286c25ccbe8314daee53843decc4400882ec33f10ffa17"
+)
+EXPECTED_RUNTIME_ERRATUM_INTERNAL_SHA256 = (
+    "b61196e5b76153fa71f4e73c58e4bc6f58eeba1f8fed3783482ba8c3156e5954"
+)
+EXPECTED_RUNTIME_ERRATUM_ID = (
+    "dino_expanded_search_runtime_erratum_20260728_v1"
+)
+EXPECTED_STRICT_METRIC_PARSER_CONTRACT = {
+    "function": "parse_finite_numeric_metric",
+    "accept_native_int_or_float": True,
+    "accept_strict_json_number_string": True,
+    "reject_bool": True,
+    "reject_empty_or_whitespace": True,
+    "reject_nan_or_infinity": True,
+    "reject_junk": True,
+    "finite_result_required": True,
+}
 TERMINAL_JOB_STATUSES = frozenset({"Complete", "Error", "Canceled"})
 SUCCESS_REC_STATUSES = frozenset({"success", "done"})
 TERMINAL_CANDIDATE_STATUSES = frozenset(
@@ -108,6 +163,9 @@ MAP50_PATTERNS = (
         r"\btest_mAP50\b[^0-9+\-]*"
         r"([0-9]*\.?[0-9]+(?:[eE][-+]?\d+)?)"
     ),
+)
+JSON_NUMBER_PATTERN = re.compile(
+    r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\Z"
 )
 
 
@@ -190,6 +248,37 @@ def atomic_json(path: Path, payload: Any) -> None:
     pending.replace(path)
 
 
+def atomic_create_json(path: Path, payload: Any) -> None:
+    """Atomically create immutable JSON without replacing an existing file."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pending = path.with_name(f".{path.name}.{os.getpid()}.pending")
+    if pending.exists():
+        raise ContractError(f"stale pending immutable JSON: {pending}")
+    try:
+        with pending.open("x", encoding="utf-8") as stream:
+            json.dump(
+                payload,
+                stream,
+                indent=2,
+                sort_keys=True,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(pending, path)
+        except FileExistsError as error:
+            raise ContractError(
+                f"immutable JSON already exists: {path}"
+            ) from error
+    finally:
+        if pending.exists():
+            pending.unlink()
+
+
 def load_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(
@@ -225,6 +314,43 @@ def finite_number(value: Any, label: str) -> float:
     ):
         raise ContractError(f"{label} must be a finite number")
     return float(value)
+
+
+def parse_finite_numeric_metric(value: Any, label: str) -> float:
+    """Parse a finite metric encoded as a number or strict JSON-number text."""
+
+    if isinstance(value, bool):
+        raise ContractError(
+            f"{label} must be a finite number or JSON-number string"
+        )
+    if isinstance(value, str):
+        if JSON_NUMBER_PATTERN.fullmatch(value) is None:
+            raise ContractError(
+                f"{label} must be a finite number or JSON-number string"
+            )
+        try:
+            parsed = json.loads(value)
+        except (json.JSONDecodeError, OverflowError, ValueError) as error:
+            raise ContractError(
+                f"{label} must be a finite number or JSON-number string"
+            ) from error
+    elif isinstance(value, (int, float)):
+        parsed = value
+    else:
+        raise ContractError(
+            f"{label} must be a finite number or JSON-number string"
+        )
+    try:
+        numeric = float(parsed)
+    except (OverflowError, TypeError, ValueError) as error:
+        raise ContractError(
+            f"{label} must be a finite number or JSON-number string"
+        ) from error
+    if isinstance(parsed, bool) or not math.isfinite(numeric):
+        raise ContractError(
+            f"{label} must be a finite number or JSON-number string"
+        )
+    return numeric
 
 
 def require_equal(actual: Any, expected: Any, label: str) -> None:
@@ -320,11 +446,335 @@ def load_manifest(
     return manifest, actual_file_sha
 
 
+def validate_runtime_supersession_contract(
+    manifest: dict[str, Any],
+) -> None:
+    """Reject v1 reuse and bind v2 to its immutable failure audit."""
+
+    v1_manifest_path = (HERE / "expanded_search_manifest.v1.json").resolve()
+    v1_runtime_path = (HERE / "runtime" / "expanded_search").resolve()
+    v2_runtime_path = DEFAULT_RUNTIME.resolve()
+    erratum_path = (
+        HERE / "expanded_search_runtime_erratum.v1.json"
+    ).resolve()
+    require_equal(
+        manifest.get("supersedes"),
+        {
+            "manifest_id": "dino_expanded_search_20260728_v1",
+            "manifest_path": str(v1_manifest_path),
+            "manifest_whole_file_sha256": EXPECTED_V1_MANIFEST_SHA256,
+            "manifest_internal_sha256": (
+                EXPECTED_V1_INTERNAL_MANIFEST_SHA256
+            ),
+            "runtime_path": str(v1_runtime_path),
+            "disposition": (
+                "failed_preselection_superseded_preserved_read_only"
+            ),
+            "resume_permitted": False,
+            "runtime_reuse_permitted": False,
+        },
+        "expanded v2 supersession identity",
+    )
+    runtime = manifest.get("runtime_supersession")
+    if not isinstance(runtime, dict):
+        raise ContractError("expanded v2 runtime_supersession must be an object")
+    require_equal(
+        set(runtime),
+        {
+            "erratum_path",
+            "erratum_sha256",
+            "erratum_internal_sha256",
+            "erratum_id",
+            "target_runtime_path",
+            "strict_metric_parser",
+            "valid_objective_observations_reused",
+            "v1_runtime_reused",
+            "corrected_runner_commit_identity",
+        },
+        "expanded v2 runtime_supersession keys",
+    )
+    require_equal(
+        {
+            key: runtime.get(key)
+            for key in (
+                "erratum_path",
+                "erratum_sha256",
+                "erratum_internal_sha256",
+                "erratum_id",
+                "target_runtime_path",
+                "strict_metric_parser",
+                "valid_objective_observations_reused",
+                "v1_runtime_reused",
+            )
+        },
+        {
+            "erratum_path": str(erratum_path),
+            "erratum_sha256": EXPECTED_RUNTIME_ERRATUM_SHA256,
+            "erratum_internal_sha256": (
+                EXPECTED_RUNTIME_ERRATUM_INTERNAL_SHA256
+            ),
+            "erratum_id": EXPECTED_RUNTIME_ERRATUM_ID,
+            "target_runtime_path": str(v2_runtime_path),
+            "strict_metric_parser": EXPECTED_STRICT_METRIC_PARSER_CONTRACT,
+            "valid_objective_observations_reused": 0,
+            "v1_runtime_reused": False,
+        },
+        "expanded v2 runtime supersession contract",
+    )
+    if v1_runtime_path == v2_runtime_path:
+        raise ContractError("expanded v2 runtime must differ from preserved v1")
+
+    identity = runtime.get("corrected_runner_commit_identity")
+    if not isinstance(identity, dict):
+        raise ContractError(
+            "corrected runner commit identity must be an object"
+        )
+    require_equal(
+        set(identity),
+        {
+            "repository",
+            "relative_path",
+            "head_commit",
+            "git_blob",
+            "sha256",
+        },
+        "corrected runner commit identity keys",
+    )
+    repository = identity.get("repository")
+    relative_path = identity.get("relative_path")
+    if (
+        not isinstance(repository, str)
+        or not Path(repository).is_absolute()
+        or not isinstance(relative_path, str)
+        or Path(relative_path).is_absolute()
+        or relative_path != Path(relative_path).as_posix()
+        or ".." in Path(relative_path).parts
+    ):
+        raise ContractError("corrected runner repository/path identity is invalid")
+    expected_repository = Path(
+        manifest["frozen_identity"]["source_repositories"]["tao_automl"][
+            "path"
+        ]
+    ).resolve()
+    require_equal(
+        Path(repository).resolve(),
+        expected_repository,
+        "corrected runner repository",
+    )
+    expected_relative_path = Path(
+        manifest["derivation"]["runner_path"]
+    ).resolve().relative_to(expected_repository).as_posix()
+    require_equal(
+        relative_path,
+        expected_relative_path,
+        "corrected runner repository-relative path",
+    )
+    require_equal(
+        (Path(repository) / relative_path).resolve(),
+        Path(manifest["derivation"]["runner_path"]).resolve(),
+        "corrected runner committed path",
+    )
+    for key in ("head_commit", "git_blob"):
+        value = identity.get(key)
+        if (
+            not isinstance(value, str)
+            or re.fullmatch(r"[0-9a-f]{40}", value) is None
+        ):
+            raise ContractError(
+                f"corrected runner {key} must be a lowercase 40-hex git object"
+            )
+    require_equal(
+        require_sha256(identity.get("sha256"), "corrected runner SHA256"),
+        manifest["derivation"]["runner_sha256"],
+        "corrected runner committed SHA256",
+    )
+
+
+def validate_runtime_target(
+    manifest: dict[str, Any],
+    runtime_dir: Path,
+) -> None:
+    expected = Path(
+        manifest["runtime_supersession"]["target_runtime_path"]
+    ).resolve()
+    require_equal(
+        runtime_dir.resolve(),
+        expected,
+        "expanded v2 runtime path",
+    )
+    if runtime_dir.resolve() == (HERE / "runtime" / "expanded_search").resolve():
+        raise ContractError("superseded v1 runtime cannot be resumed or reused")
+
+
+def runtime_contract_payload(
+    manifest: dict[str, Any],
+    manifest_path: Path,
+    manifest_file_sha256: str,
+    runtime_dir: Path,
+) -> dict[str, Any]:
+    """Build the immutable identity for all mutable v2 runtime state."""
+
+    payload = {
+        "schema_version": 1,
+        "contract_id": "dino_expanded_search_runtime_20260728_v2",
+        "manifest_id": manifest["manifest_id"],
+        "manifest_path": str(manifest_path.resolve()),
+        "manifest_file_sha256": require_sha256(
+            manifest_file_sha256,
+            "runtime marker manifest whole-file SHA256",
+        ),
+        "manifest_internal_sha256": manifest["manifest_sha256"],
+        "target_runtime_path": str(runtime_dir.resolve()),
+        "supersedes_manifest_id": manifest["supersedes"]["manifest_id"],
+        "superseded_runtime_path": manifest["supersedes"]["runtime_path"],
+        "valid_objective_observations_reused": 0,
+        "v1_runtime_reused": False,
+    }
+    payload["contract_sha256"] = sha256_value(payload)
+    return payload
+
+
+def validate_runtime_contract_marker(
+    manifest: dict[str, Any],
+    manifest_path: Path,
+    manifest_file_sha256: str,
+    runtime_dir: Path,
+) -> dict[str, Any]:
+    """Require the exact immutable marker before reading mutable state."""
+
+    validate_runtime_target(manifest, runtime_dir)
+    marker = runtime_dir / RUNTIME_CONTRACT_MARKER_NAME
+    if not marker.is_file() or marker.is_symlink():
+        raise ContractError(
+            f"expanded v2 runtime contract marker is missing or invalid: {marker}"
+        )
+    observed = load_json(marker)
+    expected = runtime_contract_payload(
+        manifest,
+        manifest_path,
+        manifest_file_sha256,
+        runtime_dir,
+    )
+    require_equal(observed, expected, "expanded v2 runtime contract marker")
+    unhashed = copy.deepcopy(observed)
+    claimed = unhashed.pop("contract_sha256", None)
+    require_equal(
+        sha256_value(unhashed),
+        claimed,
+        "expanded v2 runtime marker canonical SHA256",
+    )
+    return observed
+
+
+def validate_runtime_root_entries(
+    manifest: dict[str, Any],
+    runtime_dir: Path,
+) -> None:
+    """Reject files and seed directories outside the v2 runtime contract."""
+
+    expected_seed_names = {
+        f"seed_{seed}" for seed in manifest["search_design"]["search_seeds"]
+    }
+    for entry in runtime_dir.iterdir():
+        if entry.name in RUNTIME_ROOT_RESUME_NAMES:
+            if entry.name != RUNTIME_CONTRACT_MARKER_NAME and (
+                not entry.is_file() or entry.is_symlink()
+            ):
+                raise ContractError(
+                    f"invalid expanded v2 runtime root entry: {entry}"
+                )
+            continue
+        if entry.name in expected_seed_names:
+            if not entry.is_dir() or entry.is_symlink():
+                raise ContractError(
+                    f"invalid expanded v2 seed runtime directory: {entry}"
+                )
+            continue
+        raise ContractError(f"unexpected expanded v2 runtime state: {entry}")
+
+
+def prepare_runtime_contract(
+    manifest: dict[str, Any],
+    manifest_path: Path,
+    manifest_file_sha256: str,
+    runtime_dir: Path,
+    *,
+    resume: bool,
+) -> dict[str, Any]:
+    """Create a fresh marker or validate the exact resume identity."""
+
+    validate_runtime_target(manifest, runtime_dir)
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    if resume:
+        marker = validate_runtime_contract_marker(
+            manifest,
+            manifest_path,
+            manifest_file_sha256,
+            runtime_dir,
+        )
+        validate_runtime_root_entries(manifest, runtime_dir)
+        return marker
+
+    existing = sorted(entry.name for entry in runtime_dir.iterdir())
+    if any(name != "dry_run.json" for name in existing):
+        raise ContractError(
+            "fresh expanded v2 launch requires an empty runtime except for "
+            f"dry_run.json; found {existing}"
+        )
+    marker = runtime_contract_payload(
+        manifest,
+        manifest_path,
+        manifest_file_sha256,
+        runtime_dir,
+    )
+    atomic_create_json(runtime_dir / RUNTIME_CONTRACT_MARKER_NAME, marker)
+    validate_runtime_root_entries(manifest, runtime_dir)
+    return marker
+
+
+def validate_seed_runtime_entries(
+    seed_dir: Path,
+    *,
+    resume: bool,
+) -> None:
+    """Reject copied or stale per-seed state before initializing the SDK."""
+
+    if not seed_dir.exists():
+        return
+    if not seed_dir.is_dir() or seed_dir.is_symlink():
+        raise ContractError(f"invalid expanded v2 seed runtime path: {seed_dir}")
+    entries = sorted(seed_dir.iterdir(), key=lambda path: path.name)
+    if not resume and entries:
+        raise ContractError(
+            f"fresh expanded v2 seed runtime is not empty: {seed_dir}: "
+            f"{[entry.name for entry in entries]}"
+        )
+    if resume and entries and not any(
+        entry.name == "candidate_evaluations.json" for entry in entries
+    ):
+        raise ContractError(
+            "resumed expanded v2 seed state lacks its manifest-bound "
+            f"candidate ledger: {seed_dir}"
+        )
+    for entry in entries:
+        if entry.name not in SEED_RUNTIME_NAMES or entry.is_symlink():
+            raise ContractError(f"unexpected expanded v2 seed state: {entry}")
+        if entry.name == "workspace":
+            if not entry.is_dir():
+                raise ContractError(
+                    f"expanded v2 workspace is not a directory: {entry}"
+                )
+        elif not entry.is_file():
+            raise ContractError(
+                f"expanded v2 seed state is not a regular file: {entry}"
+            )
+
+
 def validate_manifest_contract(manifest: dict[str, Any]) -> None:
     require_equal(manifest.get("schema_version"), 1, "manifest schema_version")
     require_equal(
         manifest.get("manifest_id"),
-        "dino_expanded_search_20260728_v1",
+        "dino_expanded_search_20260728_v2",
         "manifest_id",
     )
     require_equal(
@@ -348,6 +798,7 @@ def validate_manifest_contract(manifest: dict[str, Any]) -> None:
         True,
         "algorithm_only_selection_required",
     )
+    validate_runtime_supersession_contract(manifest)
 
     derivation = manifest["derivation"]
     require_equal(
@@ -728,11 +1179,79 @@ def validate_runner_source_provenance(
         ]
     )
     git_provenance = git_path_provenance(repository, actual_path)
+    identity = manifest["runtime_supersession"][
+        "corrected_runner_commit_identity"
+    ]
+    current_head = git_value(repository, "rev-parse", "HEAD")
+    recorded_commit_exists = (
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "cat-file",
+                "-e",
+                f"{identity['head_commit']}^{{commit}}",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        ).returncode
+        == 0
+    )
+    recorded_commit_is_ancestor = (
+        recorded_commit_exists
+        and git_is_ancestor(
+            repository,
+            identity["head_commit"],
+            current_head,
+        )
+    )
+    recorded_blob = (
+        git_value(
+            repository,
+            "rev-parse",
+            f"{identity['head_commit']}:{identity['relative_path']}",
+        )
+        if recorded_commit_exists
+        else None
+    )
+    identity_checks = {
+        "repository_matches": identity["repository"]
+        == str(repository.resolve()),
+        "relative_path_matches": identity["relative_path"]
+        == git_provenance["relative_path"],
+        "recorded_commit_exists": recorded_commit_exists,
+        "recorded_commit_is_ancestor": recorded_commit_is_ancestor,
+        "recorded_commit_blob_matches": identity["git_blob"]
+        == recorded_blob,
+        "git_blob_matches_current": identity["git_blob"]
+        == git_provenance["current_git_blob"],
+        "git_blob_matches_head": identity["git_blob"]
+        == git_provenance["head_git_blob"],
+        "sha256_matches": identity["sha256"] == observed_sha256,
+    }
+    blockers = list(git_provenance["blockers"])
+    blockers.extend(
+        f"corrected_runner_identity_{key}"
+        for key, matched in identity_checks.items()
+        if not matched
+    )
+    launch_source_ready = (
+        git_provenance["launch_source_ready"]
+        and all(identity_checks.values())
+    )
     return {
         "path": str(actual_path),
         "expected_sha256": derivation["runner_sha256"],
         "observed_sha256": observed_sha256,
         **git_provenance,
+        "corrected_runner_commit_identity": copy.deepcopy(identity),
+        "current_head_commit": current_head,
+        "commit_identity_checks": identity_checks,
+        "launch_source_ready": launch_source_ready,
+        "blockers": blockers,
     }
 
 
@@ -764,6 +1283,100 @@ def validate_local_provenance(
             require_equal(head, expected["commit"], f"{key} commit")
         checks[key] = {"path": str(repo), "branch": branch, "commit": head}
     checks["runner_source"] = validate_runner_source_provenance(manifest)
+
+    supersedes = manifest["supersedes"]
+    v1_manifest_path = Path(supersedes["manifest_path"]).resolve()
+    require_equal(
+        sha256_file(v1_manifest_path),
+        EXPECTED_V1_MANIFEST_SHA256,
+        "preserved expanded v1 whole-file SHA256",
+    )
+    v1_manifest = load_json(v1_manifest_path)
+    require_equal(
+        v1_manifest.get("manifest_id"),
+        "dino_expanded_search_20260728_v1",
+        "preserved expanded v1 manifest ID",
+    )
+    require_equal(
+        v1_manifest.get("manifest_sha256"),
+        EXPECTED_V1_INTERNAL_MANIFEST_SHA256,
+        "preserved expanded v1 internal SHA256",
+    )
+    v1_unhashed = copy.deepcopy(v1_manifest)
+    del v1_unhashed["manifest_sha256"]
+    require_equal(
+        sha256_value(v1_unhashed),
+        EXPECTED_V1_INTERNAL_MANIFEST_SHA256,
+        "preserved expanded v1 canonical internal SHA256",
+    )
+
+    runtime_contract = manifest["runtime_supersession"]
+    erratum_path = Path(runtime_contract["erratum_path"]).resolve()
+    require_equal(
+        sha256_file(erratum_path),
+        EXPECTED_RUNTIME_ERRATUM_SHA256,
+        "expanded runtime erratum whole-file SHA256",
+    )
+    erratum = load_json(erratum_path)
+    require_equal(
+        {
+            "erratum_id": erratum.get("erratum_id"),
+            "status": erratum.get("status"),
+            "audit_sha256": erratum.get("audit_sha256"),
+            "valid_objective_observation_count": erratum.get(
+                "bayesian_state_audit", {}
+            ).get("valid_objective_observation_count"),
+            "selection_invoked": erratum.get(
+                "bayesian_state_audit", {}
+            ).get("selection_invoked"),
+            "v1_runtime_reuse_permitted": erratum.get(
+                "v1_disposition", {}
+            ).get("runtime_reuse_permitted"),
+            "v2_manifest_id": erratum.get("v2_contract", {}).get(
+                "manifest_id"
+            ),
+            "v2_runtime_path": erratum.get("v2_contract", {}).get(
+                "runtime_path"
+            ),
+        },
+        {
+            "erratum_id": EXPECTED_RUNTIME_ERRATUM_ID,
+            "status": "approved_preselection_runtime_failure_audit",
+            "audit_sha256": EXPECTED_RUNTIME_ERRATUM_INTERNAL_SHA256,
+            "valid_objective_observation_count": 0,
+            "selection_invoked": False,
+            "v1_runtime_reuse_permitted": False,
+            "v2_manifest_id": "dino_expanded_search_20260728_v2",
+            "v2_runtime_path": "runtime/expanded_search_v2",
+        },
+        "expanded runtime erratum audit identity",
+    )
+    erratum_unhashed = copy.deepcopy(erratum)
+    del erratum_unhashed["audit_sha256"]
+    require_equal(
+        sha256_value(erratum_unhashed),
+        EXPECTED_RUNTIME_ERRATUM_INTERNAL_SHA256,
+        "expanded runtime erratum canonical internal SHA256",
+    )
+    checks["runtime_supersession"] = {
+        "preserved_v1_manifest": {
+            "path": str(v1_manifest_path),
+            "whole_file_sha256": EXPECTED_V1_MANIFEST_SHA256,
+            "internal_manifest_sha256": (
+                EXPECTED_V1_INTERNAL_MANIFEST_SHA256
+            ),
+        },
+        "runtime_erratum": {
+            "path": str(erratum_path),
+            "whole_file_sha256": EXPECTED_RUNTIME_ERRATUM_SHA256,
+            "internal_audit_sha256": (
+                EXPECTED_RUNTIME_ERRATUM_INTERNAL_SHA256
+            ),
+        },
+        "source_runtime_reused": False,
+        "valid_objective_observations_reused": 0,
+        "target_runtime_path": runtime_contract["target_runtime_path"],
+    }
 
     derivation = manifest["derivation"]
     sensitivity_path = Path(derivation["sensitivity_result_path"]).resolve()
@@ -1516,7 +2129,9 @@ def read_status_map50(sdk: Any, eval_job_id: str) -> float | None:
         if isinstance(kpi, dict):
             value = kpi.get("test_mAP50", kpi.get("val_mAP50"))
             if value is not None:
-                values.append(finite_number(value, "evaluation mAP50"))
+                values.append(
+                    parse_finite_numeric_metric(value, "evaluation mAP50")
+                )
     return values[-1] if values else None
 
 
@@ -2335,6 +2950,14 @@ def run_seed(
         Path(manifest_path),
         supplied_file_sha256=manifest_file_sha256,
     )
+    runtime_dir = Path(runtime_dir_path).resolve()
+    validate_runtime_target(manifest, runtime_dir)
+    validate_runtime_contract_marker(
+        manifest,
+        Path(manifest_path),
+        manifest_file_sha256,
+        runtime_dir,
+    )
     local_checks = validate_local_provenance(manifest, Path(manifest_path))
     sensitivity_manifest_path = Path(
         manifest["derivation"]["source_identity"]["sensitivity_manifest_path"]
@@ -2363,14 +2986,18 @@ def run_seed(
     )
     require_equal(evaluate_action["config_format"], "yaml", "evaluate format")
 
-    runtime_dir = Path(runtime_dir_path)
     seed_dir = runtime_dir / f"seed_{seed}"
+    validate_seed_runtime_entries(seed_dir, resume=resume)
     seed_dir.mkdir(parents=True, exist_ok=True)
     event_path = seed_dir / "events.jsonl"
     ledger_path = seed_dir / "candidate_evaluations.json"
     result_path = seed_dir / "result.json"
     ledger = read_candidate_ledger(ledger_path)
     existing_manifest_sha = ledger.get("manifest_file_sha256")
+    if resume and ledger_path.exists() and existing_manifest_sha is None:
+        raise ContractError(
+            "resumed candidate ledger lacks its expanded v2 manifest SHA256"
+        )
     if existing_manifest_sha is not None:
         require_equal(
             existing_manifest_sha,
@@ -2557,7 +3184,10 @@ def run_seed(
                     },
                 )
             else:
-                map50 = finite_number(record["mAP50"], "cached mAP50")
+                map50 = parse_finite_numeric_metric(
+                    record["mAP50"],
+                    "cached mAP50",
+                )
 
             cached_latency = record.get("selection_time_latency")
             latency_metrics, latency_job = launch_latency_benchmark(
@@ -3106,6 +3736,14 @@ def combine_results(
     manifest_file_sha256: str,
     runtime_dir: Path,
 ) -> dict[str, Any]:
+    validate_runtime_target(manifest, runtime_dir)
+    validate_runtime_contract_marker(
+        manifest,
+        manifest_path,
+        manifest_file_sha256,
+        runtime_dir,
+    )
+    validate_runtime_root_entries(manifest, runtime_dir)
     records, successful = load_complete_archive(
         manifest,
         manifest_file_sha256,
@@ -3256,6 +3894,9 @@ def dry_run_report(
             "whole_file_sha256": manifest_file_sha256,
             "internal_manifest_sha256": manifest["manifest_sha256"],
         },
+        "runtime_supersession": copy.deepcopy(
+            manifest["runtime_supersession"]
+        ),
         "scope": copy.deepcopy(manifest["scope"]),
         "source_checks": local_checks,
         "runner_source": copy.deepcopy(local_checks["runner_source"]),
@@ -3359,7 +4000,13 @@ def launch_all_seeds(
     *,
     resume: bool,
 ) -> dict[int, int | None]:
-    runtime_dir.mkdir(parents=True, exist_ok=True)
+    prepare_runtime_contract(
+        manifest,
+        manifest_path,
+        manifest_file_sha256,
+        runtime_dir,
+        resume=resume,
+    )
     context = mp.get_context("spawn")
     processes = {
         seed: context.Process(
@@ -3410,6 +4057,14 @@ def main() -> int:
         manifest_path,
         supplied_file_sha256=args.manifest_file_sha256,
     )
+    validate_runtime_target(manifest, runtime_dir)
+    report_path = args.report.resolve()
+    expected_report_path = (runtime_dir / "dry_run.json").resolve()
+    if report_path != expected_report_path:
+        raise ContractError(
+            "expanded v2 dry-run report path must be exactly "
+            f"{expected_report_path}"
+        )
     local_checks = validate_local_provenance(manifest, manifest_path)
     if args.launch:
         require_launch_source_ready(local_checks["runner_source"])
@@ -3442,7 +4097,7 @@ def main() -> int:
         local_checks,
         remote_checks,
     )
-    atomic_json(args.report.resolve(), report)
+    atomic_json(report_path, report)
     if not args.launch:
         print(
             json.dumps(
@@ -3451,7 +4106,7 @@ def main() -> int:
                     "manifest_file_sha256": manifest_file_sha256,
                     "search_parameters": report["search"]["parameters"],
                     "total_candidate_budget": EXPECTED_TOTAL_CANDIDATES,
-                    "report": str(args.report.resolve()),
+                    "report": str(report_path),
                     "launched": False,
                 },
                 indent=2,

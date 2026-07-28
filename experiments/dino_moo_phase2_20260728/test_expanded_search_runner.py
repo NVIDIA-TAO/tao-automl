@@ -43,6 +43,114 @@ def load_module():
 runner = load_module()
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (0, 0.0),
+        (1, 1.0),
+        (-2, -2.0),
+        (0.5728509799562066, 0.5728509799562066),
+        ("0", 0.0),
+        ("-0", 0.0),
+        ("0.499933605841208", 0.499933605841208),
+        ("1e-3", 0.001),
+        ("-2.5E+2", -250.0),
+    ],
+)
+def test_strict_numeric_metric_parser_accepts_json_numbers(raw, expected):
+    assert runner.parse_finite_numeric_metric(raw, "metric") == pytest.approx(
+        expected
+    )
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        True,
+        False,
+        None,
+        "",
+        " ",
+        " 0.5",
+        "0.5 ",
+        "+0.5",
+        ".5",
+        "01",
+        "NaN",
+        "nan",
+        "Inf",
+        "Infinity",
+        "-Infinity",
+        "1.0ms",
+        "1 2",
+        [],
+        {},
+        float("nan"),
+        float("inf"),
+        float("-inf"),
+        pytest.param(10**10000, id="overflow-native-integer"),
+        pytest.param("1e10000", id="overflow-json-exponent"),
+        pytest.param("9" * 10000, id="oversized-json-integer"),
+    ],
+)
+def test_strict_numeric_metric_parser_rejects_non_json_or_nonfinite(raw):
+    with pytest.raises(
+        runner.ContractError,
+        match="finite number or JSON-number string",
+    ):
+        runner.parse_finite_numeric_metric(raw, "metric")
+
+
+def test_status_map50_accepts_tao_decimal_string(monkeypatch):
+    sdk = SimpleNamespace(
+        get_job_results_dir=lambda _job_id: (
+            "lustre:///lustre/results/eval-job"
+        )
+    )
+    monkeypatch.setattr(
+        runner,
+        "remote_output",
+        lambda *_args, **_kwargs: "\n".join(
+            [
+                json.dumps(
+                    {
+                        "kpi": {
+                            "test_mAP50": "0.499933605841208",
+                        }
+                    }
+                ),
+                json.dumps(
+                    {
+                        "kpi": {
+                            "test_mAP50": "0.5728509799562066",
+                        }
+                    }
+                ),
+            ]
+        ),
+    )
+    assert runner.read_status_map50(sdk, "eval-job") == pytest.approx(
+        0.5728509799562066
+    )
+
+
+def test_status_map50_rejects_nonfinite_or_junk_string(monkeypatch):
+    sdk = SimpleNamespace(
+        get_job_results_dir=lambda _job_id: (
+            "lustre:///lustre/results/eval-job"
+        )
+    )
+    monkeypatch.setattr(
+        runner,
+        "remote_output",
+        lambda *_args, **_kwargs: json.dumps(
+            {"kpi": {"test_mAP50": "NaN"}}
+        ),
+    )
+    with pytest.raises(runner.ContractError):
+        runner.read_status_map50(sdk, "eval-job")
+
+
 def fixture_manifest() -> dict:
     policy = json.loads(POLICY_PATH.read_text())
     one = json.loads(ONE_FACTOR_PATH.read_text())
@@ -87,14 +195,74 @@ def fixture_manifest() -> dict:
     )
     selection = copy.deepcopy(policy["selection_contract"])
     selection["latency_tolerance"]["value_ms"] = 0.75
+    repository = Path(
+        policy["frozen_identity"]["source_repositories"]["tao_automl"][
+            "path"
+        ]
+    ).resolve()
+    relative_runner = MODULE_PATH.resolve().relative_to(repository).as_posix()
+    runner_sha256 = runner.sha256_file(MODULE_PATH)
     manifest = {
         "schema_version": 1,
-        "manifest_id": "dino_expanded_search_20260728_v1",
+        "manifest_id": "dino_expanded_search_20260728_v2",
         "status": "preregistered_ready_to_launch",
         "scope": copy.deepcopy(policy["scope"]),
         "feeds_final_selection": True,
         "manual_override_permitted": False,
         "algorithm_only_selection_required": True,
+        "supersedes": {
+            "manifest_id": "dino_expanded_search_20260728_v1",
+            "manifest_path": str(
+                (HERE / "expanded_search_manifest.v1.json").resolve()
+            ),
+            "manifest_whole_file_sha256": (
+                runner.EXPECTED_V1_MANIFEST_SHA256
+            ),
+            "manifest_internal_sha256": (
+                runner.EXPECTED_V1_INTERNAL_MANIFEST_SHA256
+            ),
+            "runtime_path": str(
+                (HERE / "runtime" / "expanded_search").resolve()
+            ),
+            "disposition": (
+                "failed_preselection_superseded_preserved_read_only"
+            ),
+            "resume_permitted": False,
+            "runtime_reuse_permitted": False,
+        },
+        "runtime_supersession": {
+            "erratum_path": str(
+                (
+                    HERE / "expanded_search_runtime_erratum.v1.json"
+                ).resolve()
+            ),
+            "erratum_sha256": runner.EXPECTED_RUNTIME_ERRATUM_SHA256,
+            "erratum_internal_sha256": (
+                runner.EXPECTED_RUNTIME_ERRATUM_INTERNAL_SHA256
+            ),
+            "erratum_id": runner.EXPECTED_RUNTIME_ERRATUM_ID,
+            "target_runtime_path": str(
+                (HERE / "runtime" / "expanded_search_v2").resolve()
+            ),
+            "strict_metric_parser": copy.deepcopy(
+                runner.EXPECTED_STRICT_METRIC_PARSER_CONTRACT
+            ),
+            "valid_objective_observations_reused": 0,
+            "v1_runtime_reused": False,
+            "corrected_runner_commit_identity": {
+                "repository": str(repository),
+                "relative_path": relative_runner,
+                "head_commit": runner.git_value(
+                    repository, "rev-parse", "HEAD"
+                ),
+                "git_blob": runner.git_value(
+                    repository,
+                    "hash-object",
+                    str(MODULE_PATH.resolve()),
+                ),
+                "sha256": runner_sha256,
+            },
+        },
         "derivation": {
             "sensitivity_result_path": str(HERE / "synthetic_result.json"),
             "sensitivity_result_sha256": (
@@ -104,7 +272,7 @@ def fixture_manifest() -> dict:
                 runner.EXPECTED_SENSITIVITY_REPORT_SHA256
             ),
             "runner_path": str(MODULE_PATH.resolve()),
-            "runner_sha256": runner.sha256_file(MODULE_PATH),
+            "runner_sha256": runner_sha256,
             "analysis_erratum_contract_sha256": (
                 runner.EXPECTED_ANALYSIS_ERRATUM_CONTRACT_SHA256
             ),
@@ -189,6 +357,227 @@ def test_manifest_contract_separates_latency_and_multiobjective_constraints():
     assert settings["multi_objective_min_accuracy"] is None
     assert parsed["parsed_selection"]["latency_accuracy_retention"]["value"] == 0.98
     assert parsed["parsed_selection"]["multi_objective_min_accuracy"] is None
+
+
+def test_v1_manifest_and_superseded_runtime_are_rejected():
+    manifest = fixture_manifest()
+    manifest["manifest_id"] = "dino_expanded_search_20260728_v1"
+    with pytest.raises(runner.ContractError, match="manifest_id"):
+        runner.validate_manifest_contract(manifest)
+
+    manifest = fixture_manifest()
+    runner.validate_runtime_target(
+        manifest,
+        HERE / "runtime" / "expanded_search_v2",
+    )
+    with pytest.raises(runner.ContractError, match="v2 runtime path"):
+        runner.validate_runtime_target(
+            manifest,
+            HERE / "runtime" / "expanded_search",
+        )
+    with pytest.raises(runner.ContractError, match="v2 runtime path"):
+        runner.validate_runtime_target(
+            manifest,
+            HERE / "runtime" / "arbitrary",
+        )
+
+
+def runtime_contract_fixture(tmp_path, monkeypatch):
+    manifest = fixture_manifest()
+    runtime_dir = (tmp_path / "expanded_search_v2").resolve()
+    monkeypatch.setattr(runner, "DEFAULT_RUNTIME", runtime_dir)
+    manifest["runtime_supersession"]["target_runtime_path"] = str(runtime_dir)
+    return manifest, runtime_dir, tmp_path / "expanded_search_manifest.v2.json"
+
+
+def test_fresh_runtime_marker_is_create_only_and_resume_validates_it(
+    tmp_path,
+    monkeypatch,
+):
+    manifest, runtime_dir, manifest_path = runtime_contract_fixture(
+        tmp_path,
+        monkeypatch,
+    )
+    runtime_dir.mkdir()
+    runner.atomic_json(runtime_dir / "dry_run.json", {"status": "preflight"})
+    marker = runner.prepare_runtime_contract(
+        manifest,
+        manifest_path,
+        "a" * 64,
+        runtime_dir,
+        resume=False,
+    )
+
+    marker_path = runtime_dir / runner.RUNTIME_CONTRACT_MARKER_NAME
+    assert runner.load_json(marker_path) == marker
+    assert marker["valid_objective_observations_reused"] == 0
+    assert marker["v1_runtime_reused"] is False
+    assert runner.prepare_runtime_contract(
+        manifest,
+        manifest_path,
+        "a" * 64,
+        runtime_dir,
+        resume=True,
+    ) == marker
+    with pytest.raises(
+        runner.ContractError,
+        match="fresh expanded v2 launch",
+    ):
+        runner.prepare_runtime_contract(
+            manifest,
+            manifest_path,
+            "a" * 64,
+            runtime_dir,
+            resume=False,
+        )
+
+
+def test_resume_rejects_wrong_runtime_marker(tmp_path, monkeypatch):
+    manifest, runtime_dir, manifest_path = runtime_contract_fixture(
+        tmp_path,
+        monkeypatch,
+    )
+    runtime_dir.mkdir()
+    runner.atomic_json(runtime_dir / "dry_run.json", {"status": "preflight"})
+    runner.prepare_runtime_contract(
+        manifest,
+        manifest_path,
+        "b" * 64,
+        runtime_dir,
+        resume=False,
+    )
+    marker_path = runtime_dir / runner.RUNTIME_CONTRACT_MARKER_NAME
+    marker = runner.load_json(marker_path)
+    marker["manifest_file_sha256"] = "c" * 64
+    runner.atomic_json(marker_path, marker)
+
+    with pytest.raises(
+        runner.ContractError,
+        match="runtime contract marker",
+    ):
+        runner.prepare_runtime_contract(
+            manifest,
+            manifest_path,
+            "b" * 64,
+            runtime_dir,
+            resume=True,
+        )
+
+
+@pytest.mark.parametrize(
+    "state_name",
+    [
+        "slurm_state.db",
+        "slurm_state.json",
+        "events.jsonl",
+        "result.json",
+        "candidate_evaluations.json",
+        "seed_archive.v1.json",
+        "unknown.json",
+    ],
+)
+def test_fresh_seed_rejects_every_preexisting_state(tmp_path, state_name):
+    seed_dir = tmp_path / "seed_314159"
+    seed_dir.mkdir()
+    (seed_dir / state_name).write_text("stale", encoding="utf-8")
+    with pytest.raises(
+        runner.ContractError,
+        match="fresh expanded v2 seed runtime is not empty",
+    ):
+        runner.validate_seed_runtime_entries(seed_dir, resume=False)
+
+
+def test_resume_seed_allowlist_and_root_provenance(tmp_path, monkeypatch):
+    manifest, runtime_dir, manifest_path = runtime_contract_fixture(
+        tmp_path,
+        monkeypatch,
+    )
+    runtime_dir.mkdir()
+    runner.atomic_json(runtime_dir / "dry_run.json", {"status": "preflight"})
+    runner.prepare_runtime_contract(
+        manifest,
+        manifest_path,
+        "d" * 64,
+        runtime_dir,
+        resume=False,
+    )
+    seed_dir = runtime_dir / "seed_314159"
+    seed_dir.mkdir()
+    (seed_dir / "workspace").mkdir()
+    (seed_dir / "candidate_evaluations.json").write_text(
+        "{}\n",
+        encoding="utf-8",
+    )
+    (seed_dir / "slurm_state.db").write_bytes(b"sqlite")
+
+    runner.prepare_runtime_contract(
+        manifest,
+        manifest_path,
+        "d" * 64,
+        runtime_dir,
+        resume=True,
+    )
+    runner.validate_seed_runtime_entries(seed_dir, resume=True)
+
+    (seed_dir / "copied_v1_state.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(
+        runner.ContractError,
+        match="unexpected expanded v2 seed state",
+    ):
+        runner.validate_seed_runtime_entries(seed_dir, resume=True)
+
+
+def test_resume_seed_rejects_sdk_state_without_manifest_bound_ledger(tmp_path):
+    seed_dir = tmp_path / "seed_314159"
+    seed_dir.mkdir()
+    (seed_dir / "slurm_state.db").write_bytes(b"copied")
+    with pytest.raises(
+        runner.ContractError,
+        match="lacks its manifest-bound candidate ledger",
+    ):
+        runner.validate_seed_runtime_entries(seed_dir, resume=True)
+
+
+@pytest.mark.parametrize(
+    ("path", "replacement"),
+    [
+        (
+            ("runtime_supersession", "erratum_sha256"),
+            "0" * 64,
+        ),
+        (
+            (
+                "runtime_supersession",
+                "strict_metric_parser",
+                "reject_nan_or_infinity",
+            ),
+            False,
+        ),
+        (
+            (
+                "runtime_supersession",
+                "valid_objective_observations_reused",
+            ),
+            1,
+        ),
+        (
+            ("runtime_supersession", "v1_runtime_reused"),
+            True,
+        ),
+        (
+            ("supersedes", "runtime_reuse_permitted"),
+            True,
+        ),
+    ],
+)
+def test_v2_supersession_contract_tampering_is_rejected(path, replacement):
+    manifest = fixture_manifest()
+    cursor = manifest
+    for component in path[:-1]:
+        cursor = cursor[component]
+    cursor[path[-1]] = replacement
+    with pytest.raises(runner.ContractError):
+        runner.validate_manifest_contract(manifest)
 
 
 def test_manifest_rejects_erratum_or_post_front_contract_drift():
@@ -413,7 +802,7 @@ def test_union_selector_is_order_independent_and_returns_nondominated_middle():
 
 def test_manifest_requires_both_internal_and_whole_file_hashes(tmp_path):
     manifest = fixture_manifest()
-    path = tmp_path / "expanded_search_manifest.v1.json"
+    path = tmp_path / "expanded_search_manifest.v2.json"
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     whole_file_sha = runner.sha256_file(path)
 
