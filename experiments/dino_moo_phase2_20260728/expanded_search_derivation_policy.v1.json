@@ -1,8 +1,17 @@
 {
   "schema_version": 1,
   "policy_id": "dino_expanded_search_derivation_20260728_v1",
-  "status": "preregistered_before_sensitivity_latency_results",
+  "policy_revision": 2,
+  "status": "amended_after_approved_analysis_erratum_before_expanded_search_launch",
   "created_at_utc": "2026-07-28T00:00:00Z",
+  "amendment": {
+    "reason": "Bind the previously frozen derivation rule to the approved analysis-only sensitivity erratum and preregister the required post-front matched validation before any expanded-search manifest or job exists.",
+    "original_derivation_rule_changed": false,
+    "search_domains_changed": false,
+    "selection_rule_changed": false,
+    "expanded_manifest_existed_at_amendment": false,
+    "expanded_job_launched_at_amendment": false
+  },
   "scope": {
     "model_family": "DINO ResNet50",
     "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
@@ -22,6 +31,9 @@
   },
   "sensitivity_evidence_contract": {
     "result_schema_version": 1,
+    "result_path": "sensitivity_latency_analysis.v2.json",
+    "result_sha256": "33aea1c13ece0ce632587abd16ed6020ecc88c63220f89891a5f30183322eaea",
+    "result_report_sha256": "40a8bccb6e43b8238c2cf6b47eaf3253e735d82fd160212d12915b3137a3fa79",
     "manifest_id": "dino_sensitivity_latency_20260728_v2",
     "required_status": "complete",
     "required_blockers": [],
@@ -54,6 +66,70 @@
       "checkpoint_artifact_sha256": "20188a8858a9329ce4b861730ad3b0b2f6185389c8af1b02ad29284e5ed1b012",
       "accuracy_artifact_path": "sensitivity_training_accuracy.v1.json",
       "accuracy_artifact_id": "dino_sensitivity_training_accuracy_20260728_v1"
+    },
+    "analysis_erratum": {
+      "path": "sensitivity_latency_analysis_erratum.v1.json",
+      "sha256": "8e19287bf2ffd674f62b21cdaf11e000b0eae1ed8af9d0ada1238491588993f2",
+      "schema_version": 1,
+      "erratum_id": "dino_sensitivity_latency_analysis_erratum_20260728_v1",
+      "status": "approved_analysis_only",
+      "scope": "aggregation_validation_evidence_access_and_descendant_commit_only",
+      "reason_code": "allocation_torch_version_used_full_string_instead_of_declared_base_release",
+      "required_flags": {
+        "measurement_generation_unchanged": true,
+        "qualification_policy_unchanged": true,
+        "objective_values_altered": false,
+        "winner_selected": false,
+        "feeds_final_selection": false,
+        "manual_promotion_permitted": false
+      },
+      "measurement_contract": {
+        "manifest_id": "dino_sensitivity_latency_20260728_v2",
+        "manifest_path": "sensitivity_latency_manifest.v2.json",
+        "manifest_sha256": "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655",
+        "submission_ledger_path": "runtime/sensitivity_latency_v2/block_submissions.json",
+        "submission_ledger_sha256": "b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54",
+        "launch_automl_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "launch_automl_commit": "cb62ef447704b95980b17aa82604992564b4e71f"
+      },
+      "source_files": {
+        "original_aggregator_path": "sensitivity_latency_aggregate.py",
+        "original_aggregator_sha256": "5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967",
+        "corrected_aggregator_path": "sensitivity_latency_aggregate_erratum.py",
+        "corrected_aggregator_sha256": "9209e748093e0555fe5cba339327a8216744ec9ca6b9dae276c7041703a409c6",
+        "validation_test_path": "test_sensitivity_latency_analysis_erratum.py",
+        "validation_test_sha256": "e9bfe695b0142e8a944d412fa78a2235e8bd960c5c5ad0320ddd006e20460f59"
+      },
+      "contract_fingerprints": {
+        "measurement_contract_sha256": "b45ca6efb1ea623524c1a7db4af1d98994e8f6b9cc7df847ca2119d8af5aed23",
+        "source_pins_sha256": "56ed0724d476c865652f9f916346ade0080bd3dc8434bb4e774b44986a5e956b",
+        "unchanged_policy_pins_sha256": "22656d80fa343dbec1547b0de8acbee63a3cb2d2f5de14a68e7c2bb4358bfb2c",
+        "correction_sha256": "df70c2f1d2d2c53bfa025a6739f1f2ac0720f3192023bedc4ad689d2e89e59c0",
+        "evidence_acquisition_policy_sha256": "77958eeb9c400715aae98d1b0cfd28bae241c44182d9a5d029688217fee82558",
+        "sdk_state_inspection_policy_sha256": "84dea8b0f9cc9b95f6ece50aed7d85c8f1294b12250f5dd5f5b89a2415b3bc58",
+        "analysis_commit_correction_sha256": "c61c656a21a7887a1cb20cc2c56c73a37be5a739a90326e8b091d1313026eb53",
+        "analysis_guards_sha256": "baf32a81afc3e187d41d9d247b2f2fa196863725499f674a45c180c89a3ebb3d"
+      },
+      "unchanged_policy_pins": {
+        "measurement_policy_sha256": "3a158b7018a298b2bd7fb7d3340f066d11e1720f1eb0c383e493c98d973c2918",
+        "qualification_policy_sha256": "f64e2e472ffa1487ce3a56cd5c5e13ab6b61dadbdcfd037cc88901069cc0f962"
+      },
+      "correction": {
+        "field": "allocation.hardware.runtime.torch",
+        "old_comparison": "full_string_exact",
+        "new_comparison": "major_minor_patch",
+        "declared_by": "measurement_manifest.runtime_contract.torch_version_match",
+        "raw_runtime_string_preserved": true,
+        "measurement_values_recomputed": false
+      },
+      "result_binding": {
+        "result_field": "analysis_erratum",
+        "require_exact_erratum_identity": true,
+        "require_exact_measurement_manifest_and_submission_ledger": true,
+        "require_exact_original_and_corrected_aggregator_hashes": true,
+        "require_exact_policy_and_acquisition_fingerprints": true,
+        "objective_values_altered_must_be_false": true
+      }
     }
   },
   "architecture_axis_policy": {
@@ -248,6 +324,73 @@
     "failed_or_nonfinite_candidate_policy": "exclude before ranking",
     "dominated_multi_objective_winner_permitted": false,
     "manual_winner_override_permitted": false
+  },
+  "post_front_matched_validation": {
+    "status": "preregistered_before_expanded_search_results",
+    "purpose": "Measure allocation-stable relative latency for every algorithmic global Pareto-front candidate without changing the frozen selection.",
+    "candidate_set": {
+      "source": "expanded_combined_selection.json produced by tao_automl.selection.analyze_archive over the complete shared archive",
+      "rule": "Include every valid candidate whose global pareto_rank is exactly zero, regardless of mode winner status, candidate ID, parameter values, or expected desirability.",
+      "canonical_order": "ascending UTF-8 candidate_id",
+      "manual_addition_or_removal_permitted": false,
+      "selection_time_objective_replacement_permitted": false,
+      "empty_front_policy": "block with an integrity error",
+      "missing_checkpoint_policy": "report blocked; never substitute or manually promote another candidate"
+    },
+    "allocation_design": {
+      "allocation_count": 6,
+      "nodes_per_allocation": 1,
+      "gpus_per_node": 8,
+      "hardware_and_runtime_identity": "exactly the expanded-search frozen runtime identity",
+      "matching": "Every allocation benchmarks every global rank-zero candidate exactly once on the same node; candidate-pair differences are matched within allocation.",
+      "independence": "six distinct TAO SDK jobs and SLURM allocations",
+      "execution": "candidates run sequentially within each allocation using their exact retained checkpoint and resolved model mapping",
+      "incomplete_allocation_policy": "Exclude the entire allocation and rerun the complete front under a new TAO job ID; never combine a partial block."
+    },
+    "ordering": {
+      "algorithm": "balanced_williams_rows_v1",
+      "base_row": "For n canonical candidates, form index order [0,1,n-1,2,n-2,3,n-3,...] without duplicates until all n indices appear.",
+      "design_rows": "Create n modulo-addition rotations of the base row. If n is odd, append the reversal of each rotation, giving 2n design rows.",
+      "selected_rows": "Let R be the design-row count. Allocation k in [0,5] uses design row floor(k*R/6).",
+      "determinism": "Candidate IDs, n, allocation index, and this formula are the only ordering inputs; observed objectives and measurements are forbidden inputs.",
+      "audit": "Record canonical candidate IDs, every design-row index used, all six candidate orders, position counts, immediate ordered-adjacency counts, and a canonical schedule SHA256."
+    },
+    "latency_protocol": {
+      "source": "frozen_identity.latency_protocol",
+      "warmup_iterations": 50,
+      "timed_iterations_per_round": 100,
+      "repeated_rounds": 5,
+      "gpu_count": 8,
+      "raw_samples_per_candidate_allocation": 4000,
+      "same_input_digest_required": true,
+      "same_batch_size_precision_timed_scope_and_synchronization_required": true,
+      "invalid_measurement_policy": "invalidate the complete allocation block"
+    },
+    "paired_analysis": {
+      "comparison_set": "all unordered pairs of global rank-zero candidates",
+      "pairing_unit": "allocation",
+      "endpoints": [
+        "median_ms",
+        "p95_ms"
+      ],
+      "estimator": "median of the six allocation-level paired differences, first candidate minus second candidate",
+      "bootstrap": "paired percentile bootstrap resampling the six allocation-level differences with replacement",
+      "bootstrap_resamples": 10000,
+      "bootstrap_confidence_level": 0.95,
+      "bootstrap_seed": 20260728,
+      "practical_tolerance_source": "selection.latency_tolerance.value_ms imported exactly from sensitivity_result.noise_floor.effective_noise_floor_ms",
+      "practical_tolerance_changes_permitted": false,
+      "stable_difference_rule": "Claim a relative latency direction only when the paired 95 percent CI lies wholly below negative practical tolerance or wholly above positive practical tolerance.",
+      "equivalence_rule": "Report practical equivalence when the complete paired 95 percent CI lies within the plus-or-minus practical tolerance band; otherwise report uncertainty.",
+      "allocation_variability_must_be_reported": true
+    },
+    "selection_isolation": {
+      "measurements_feed_reselection": false,
+      "winner_reselection_permitted": false,
+      "original_selection_time_measurements_replaced": false,
+      "algorithm_selected_candidate_overridden": false,
+      "allowed_use": "stability analysis and hypothesis verdict only"
+    }
   },
   "frozen_identity": {
     "source_repositories": {
