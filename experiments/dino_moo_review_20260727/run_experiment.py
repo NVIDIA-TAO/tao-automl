@@ -1083,7 +1083,11 @@ def write_candidate_csv(result: dict[str, Any]) -> None:
         "checkpoint",
     ]
     with path.open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=columns)
+        writer = csv.DictWriter(
+            stream,
+            fieldnames=columns,
+            lineterminator="\n",
+        )
         writer.writeheader()
         for candidate_id in sorted(records):
             record = records[candidate_id]

@@ -1,0 +1,1736 @@
+{
+  "result": {
+    "baseline": {
+      "comparison_to_best": {
+        "delta": 0.6053014449865857,
+        "direction": "maximize",
+        "improved": true
+      },
+      "enabled": true,
+      "metric_name": "mAP50",
+      "metric_value": 0.007808934173321529,
+      "status": "provided"
+    },
+    "best": {
+      "adjustments": [],
+      "metric_value": 0.6131103791599072,
+      "objective_score": -0.5000005,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.0798964999999896,
+        "latency_ci95_high": 79.988636,
+        "latency_ci95_low": 79.90873950000001,
+        "latency_device_range_fraction": 0.005840316677216769,
+        "latency_iqr_ms": 0.19899875000001543,
+        "latency_mad_ms": 0.09866650000000021,
+        "latency_ms": 79.94746275,
+        "latency_p95_ms": 80.304166,
+        "latency_robust_cv": 0.0018297385291317493,
+        "latency_round_drift_fraction": 0.0010894842313177553,
+        "latency_synchronized_median_ms": 80.27411599999999,
+        "latency_synchronized_p95_ms": 80.4555725,
+        "mAP50": 0.6131103791599072
+      },
+      "rec_id": 4,
+      "specs": {
+        "model.num_queries": 469,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 1.1000000000000001e-05
+      }
+    },
+    "final_evaluation": {
+      "comparison_to_baseline": {
+        "delta": 0.6053014449865857,
+        "direction": "maximize",
+        "improved": true
+      },
+      "enabled": true,
+      "metric_name": "mAP50",
+      "metric_value": 0.6131103791599072,
+      "source": "best_selection_metric",
+      "status": "reused_best"
+    },
+    "history": [
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "6b36ef24-9207-4d6f-bd5d-ef0783ad13e1",
+        "metric": 0.5279109255336222,
+        "objective_score": -11.118962667281911,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.1265460000000047,
+          "latency_ci95_high": 79.42632475,
+          "latency_ci95_low": 79.29977875,
+          "latency_device_range_fraction": 0.005343817647090675,
+          "latency_iqr_ms": 0.2062772499999852,
+          "latency_mad_ms": 0.08708250000000106,
+          "latency_ms": 79.330832,
+          "latency_p95_ms": 79.7035575,
+          "latency_robust_cv": 0.0016274695631580112,
+          "latency_round_drift_fraction": 0.0006812735809957698,
+          "latency_synchronized_median_ms": 79.6772225,
+          "latency_synchronized_p95_ms": 79.8604595,
+          "mAP50": 0.5279109255336222
+        },
+        "rec_id": 0,
+        "selection_audit": {
+          "accuracy": 0.5279109255336222,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.118962667281911,
+          "balance_gap": 6.028225660662162,
+          "candidate_id": "0",
+          "dominated_by": [],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "3260a63c2a9dac64ce81b481622893fc95f40d1c6055bb2f87a58407772361a7",
+          "ideal_distance": 5.20498754738523,
+          "invalid_reason": null,
+          "latency": 79.330832,
+          "latency_ci95_high": 79.42632475,
+          "latency_ci95_low": 79.29977875,
+          "multi_objective_compromise_score": 5.126241939679082,
+          "normalized_accuracy_objective": 10.252475430858624,
+          "normalized_latency_objective": -1.8039758904657013,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5279109255336222,
+              "candidate_id": "0",
+              "fingerprint": "3260a63c2a9dac64ce81b481622893fc95f40d1c6055bb2f87a58407772361a7",
+              "latency": 79.330832
+            },
+            "latency_mode": {
+              "accuracy": 0.5279109255336222,
+              "candidate_id": "0",
+              "fingerprint": "3260a63c2a9dac64ce81b481622893fc95f40d1c6055bb2f87a58407772361a7",
+              "latency": 79.330832,
+              "latency_ci95_high": 79.42632475,
+              "latency_ci95_low": 79.29977875
+            },
+            "multi_objective_mode": {
+              "balance_gap": 6.028225660662162,
+              "candidate_id": "0",
+              "compromise_score": 5.126241939679082,
+              "fingerprint": "3260a63c2a9dac64ce81b481622893fc95f40d1c6055bb2f87a58407772361a7",
+              "ideal_distance": 5.20498754738523,
+              "normalized_accuracy_objective": 10.252475430858624
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 636,
+          "train.optim.lr": 8.818759502582175e-05,
+          "train.optim.weight_decay": 0.00041383427965251606
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "baa72a84-88ce-4285-a7eb-f34185023524",
+        "metric": 0.5754530654219836,
+        "objective_score": -11.041420121103679,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.07420625000000314,
+          "latency_ci95_high": 79.64990075,
+          "latency_ci95_low": 79.5756945,
+          "latency_device_range_fraction": 0.009478593295087113,
+          "latency_iqr_ms": 0.28371649999999704,
+          "latency_mad_ms": 0.10841700000000998,
+          "latency_ms": 79.60279299999999,
+          "latency_p95_ms": 80.401804,
+          "latency_robust_cv": 0.0020192638743217815,
+          "latency_round_drift_fraction": 0.0027690422872473264,
+          "latency_synchronized_median_ms": 80.163547,
+          "latency_synchronized_p95_ms": 82.70426214999999,
+          "mAP50": 0.5754530654219836
+        },
+        "rec_id": 1,
+        "selection_audit": {
+          "accuracy": 0.5754530654219836,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.041420121103679,
+          "balance_gap": 2.5493964817901773,
+          "candidate_id": "1",
+          "dominated_by": [
+            "2"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "3b4fd84a17da47558cd2849f4aad7d066ac9dd71942d81640b39eb1a59898b15",
+          "ideal_distance": 2.283432393343085,
+          "invalid_reason": null,
+          "latency": 79.60279299999999,
+          "latency_ci95_high": 79.64990075,
+          "latency_ci95_low": 79.5756945,
+          "multi_objective_compromise_score": 2.2657482249280476,
+          "normalized_accuracy_objective": 4.531492485664088,
+          "normalized_latency_objective": -0.567300477916267,
+          "pareto_rank": 1,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5754530654219836,
+              "candidate_id": "1",
+              "fingerprint": "3b4fd84a17da47558cd2849f4aad7d066ac9dd71942d81640b39eb1a59898b15",
+              "latency": 79.60279299999999
+            },
+            "latency_mode": {
+              "accuracy": 0.5754530654219836,
+              "candidate_id": "1",
+              "fingerprint": "3b4fd84a17da47558cd2849f4aad7d066ac9dd71942d81640b39eb1a59898b15",
+              "latency": 79.60279299999999,
+              "latency_ci95_high": 79.64990075,
+              "latency_ci95_low": 79.5756945
+            },
+            "multi_objective_mode": {
+              "balance_gap": 2.5493964817901773,
+              "candidate_id": "1",
+              "compromise_score": 2.2657482249280476,
+              "fingerprint": "3b4fd84a17da47558cd2849f4aad7d066ac9dd71942d81640b39eb1a59898b15",
+              "ideal_distance": 2.283432393343085,
+              "normalized_accuracy_objective": 4.531492485664088
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 672,
+          "train.optim.lr": 0.00037299167765394693,
+          "train.optim.weight_decay": 0.000607346295509618
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "07502f42-5cfe-4ca3-8d0d-762f4b60b235",
+        "metric": 0.5780608108132506,
+        "objective_score": -11.037166816185174,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.23586450000000525,
+          "latency_ci95_high": 79.62258825,
+          "latency_ci95_low": 79.38672375,
+          "latency_device_range_fraction": 0.004577473466286263,
+          "latency_iqr_ms": 0.3074757499999947,
+          "latency_mad_ms": 0.1499524999999977,
+          "latency_ms": 79.5114385,
+          "latency_p95_ms": 79.756012,
+          "latency_robust_cv": 0.002796070360367038,
+          "latency_round_drift_fraction": 0.0007328693971499182,
+          "latency_synchronized_median_ms": 79.698605,
+          "latency_synchronized_p95_ms": 79.8606545,
+          "mAP50": 0.5780608108132506
+        },
+        "rec_id": 2,
+        "selection_audit": {
+          "accuracy": 0.5780608108132506,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.037166816185174,
+          "balance_gap": 2.600200975448424,
+          "candidate_id": "2",
+          "dominated_by": [],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "b0c9557184beabb618d3e07b7b686f06b14570cbf40230ff6416632585673692",
+          "ideal_distance": 2.1653307068386143,
+          "invalid_reason": null,
+          "latency": 79.5114385,
+          "latency_ci95_high": 79.62258825,
+          "latency_ci95_low": 79.38672375,
+          "multi_objective_compromise_score": 2.1088463520598615,
+          "normalized_accuracy_objective": 4.217689469142735,
+          "normalized_latency_objective": -0.9827124817541121,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5780608108132506,
+              "candidate_id": "2",
+              "fingerprint": "b0c9557184beabb618d3e07b7b686f06b14570cbf40230ff6416632585673692",
+              "latency": 79.5114385
+            },
+            "latency_mode": {
+              "accuracy": 0.5780608108132506,
+              "candidate_id": "2",
+              "fingerprint": "b0c9557184beabb618d3e07b7b686f06b14570cbf40230ff6416632585673692",
+              "latency": 79.5114385,
+              "latency_ci95_high": 79.62258825,
+              "latency_ci95_low": 79.38672375
+            },
+            "multi_objective_mode": {
+              "balance_gap": 2.600200975448424,
+              "candidate_id": "2",
+              "compromise_score": 2.1088463520598615,
+              "fingerprint": "b0c9557184beabb618d3e07b7b686f06b14570cbf40230ff6416632585673692",
+              "ideal_distance": 2.1653307068386143,
+              "normalized_accuracy_objective": 4.217689469142735
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 311,
+          "train.optim.lr": 0.0004060061439459554,
+          "train.optim.weight_decay": 0.0007521168489046003
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "a882b3f8-e385-4ce5-9361-23ececbe4234",
+        "metric": 0.5685110586144432,
+        "objective_score": -11.052742726369393,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.10042449999998837,
+          "latency_ci95_high": 80.1666815,
+          "latency_ci95_low": 80.06625700000001,
+          "latency_device_range_fraction": 0.005016167477987396,
+          "latency_iqr_ms": 0.20928050000000553,
+          "latency_mad_ms": 0.10081149999999894,
+          "latency_ms": 80.1013925,
+          "latency_p95_ms": 80.43076295,
+          "latency_robust_cv": 0.0018659242397065499,
+          "latency_round_drift_fraction": 0.0010544011453982576,
+          "latency_synchronized_median_ms": 80.3845475,
+          "latency_synchronized_p95_ms": 80.60185495,
+          "mAP50": 0.5685110586144432
+        },
+        "rec_id": 3,
+        "selection_audit": {
+          "accuracy": 0.5685110586144432,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.052742726369393,
+          "balance_gap": 1.8334506623735347,
+          "candidate_id": "3",
+          "dominated_by": [
+            "1",
+            "2",
+            "4",
+            "5",
+            "6",
+            "8"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "99c79bca193f69bf33d807ce17ad763b6f0f22cadb3ea84c995a440bf17e105d",
+          "ideal_distance": 2.8148280990557994,
+          "invalid_reason": null,
+          "latency": 80.1013925,
+          "latency_ci95_high": 80.1666815,
+          "latency_ci95_low": 80.06625700000001,
+          "multi_objective_compromise_score": 2.6834329373749455,
+          "normalized_accuracy_objective": 5.3668588079336,
+          "normalized_latency_objective": 1.6999574831865303,
+          "pareto_rank": 2,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5685110586144432,
+              "candidate_id": "3",
+              "fingerprint": "99c79bca193f69bf33d807ce17ad763b6f0f22cadb3ea84c995a440bf17e105d",
+              "latency": 80.1013925
+            },
+            "latency_mode": {
+              "accuracy": 0.5685110586144432,
+              "candidate_id": "3",
+              "fingerprint": "99c79bca193f69bf33d807ce17ad763b6f0f22cadb3ea84c995a440bf17e105d",
+              "latency": 80.1013925,
+              "latency_ci95_high": 80.1666815,
+              "latency_ci95_low": 80.06625700000001
+            },
+            "multi_objective_mode": {
+              "balance_gap": 1.8334506623735347,
+              "candidate_id": "3",
+              "compromise_score": 2.6834329373749455,
+              "fingerprint": "99c79bca193f69bf33d807ce17ad763b6f0f22cadb3ea84c995a440bf17e105d",
+              "ideal_distance": 2.8148280990557994,
+              "normalized_accuracy_objective": 5.3668588079336
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 427,
+          "train.optim.lr": 0.00045,
+          "train.optim.weight_decay": 0.0009
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "cbb31c19-6bbd-4874-940d-571faf9b608c",
+        "metric": 0.6131103791599072,
+        "objective_score": -0.5000005,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.0798964999999896,
+          "latency_ci95_high": 79.988636,
+          "latency_ci95_low": 79.90873950000001,
+          "latency_device_range_fraction": 0.005840316677216769,
+          "latency_iqr_ms": 0.19899875000001543,
+          "latency_mad_ms": 0.09866650000000021,
+          "latency_ms": 79.94746275,
+          "latency_p95_ms": 80.304166,
+          "latency_robust_cv": 0.0018297385291317493,
+          "latency_round_drift_fraction": 0.0010894842313177553,
+          "latency_synchronized_median_ms": 80.27411599999999,
+          "latency_synchronized_p95_ms": 80.4555725,
+          "mAP50": 0.6131103791599072
+        },
+        "rec_id": 4,
+        "selection_audit": {
+          "accuracy": 0.6131103791599072,
+          "accuracy_feasible": true,
+          "acquisition_score": -0.5000005,
+          "balance_gap": 0.5,
+          "candidate_id": "4",
+          "dominated_by": [],
+          "duplicate_aliases": [
+            "4"
+          ],
+          "duplicate_representative": "4",
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": 0,
+          "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+          "ideal_distance": 0.5,
+          "invalid_reason": null,
+          "latency": 79.94746275,
+          "latency_ci95_high": 79.988636,
+          "latency_ci95_low": 79.90873950000001,
+          "multi_objective_compromise_score": 0.5000005,
+          "normalized_accuracy_objective": 0.0,
+          "normalized_latency_objective": 1.0,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.6131103791599072,
+              "candidate_id": "4",
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "latency": 79.94746275
+            },
+            "latency_mode": {
+              "accuracy": 0.6131103791599072,
+              "candidate_id": "4",
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "latency": 79.94746275,
+              "latency_ci95_high": 79.988636,
+              "latency_ci95_low": 79.90873950000001
+            },
+            "multi_objective_mode": {
+              "balance_gap": 0.5,
+              "candidate_id": "4",
+              "compromise_score": 0.5000005,
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "ideal_distance": 0.5,
+              "normalized_accuracy_objective": 0.0
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": true,
+            "latency": false,
+            "multi_objective": true
+          }
+        },
+        "specs": {
+          "model.num_queries": 469,
+          "train.optim.lr": 0.00045,
+          "train.optim.weight_decay": 1.1000000000000001e-05
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "89c60414-4b45-43a8-91b1-b99f9420f90a",
+        "metric": 0.6012344187576898,
+        "objective_score": -1.758359891916343,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.07591149999998947,
+          "latency_ci95_high": 80.1036135,
+          "latency_ci95_low": 80.027702,
+          "latency_device_range_fraction": 0.005525174208988946,
+          "latency_iqr_ms": 0.23854525000000137,
+          "latency_mad_ms": 0.09319049999999152,
+          "latency_ms": 80.0610955,
+          "latency_p95_ms": 80.4219965,
+          "latency_robust_cv": 0.0017257350082099168,
+          "latency_round_drift_fraction": 0.0006293755997879999,
+          "latency_synchronized_median_ms": 80.388926,
+          "latency_synchronized_p95_ms": 80.56973805000001,
+          "mAP50": 0.6012344187576898
+        },
+        "rec_id": 5,
+        "selection_audit": {
+          "accuracy": 0.6012344187576898,
+          "accuracy_feasible": true,
+          "acquisition_score": -1.758359891916343,
+          "balance_gap": 0.04381162874850253,
+          "candidate_id": "5",
+          "dominated_by": [
+            "4",
+            "8"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [
+            "4",
+            "8"
+          ],
+          "feasible_pareto_rank": 1,
+          "fingerprint": "df81f01162dfbd3a031a660290cd87c39c49e6206a40396619c1da5e04257a35",
+          "ideal_distance": 1.0419619029310498,
+          "invalid_reason": null,
+          "latency": 80.0610955,
+          "latency_ci95_high": 80.1036135,
+          "latency_ci95_low": 80.027702,
+          "multi_objective_compromise_score": 0.7583598919163429,
+          "normalized_accuracy_objective": 1.4290935805252623,
+          "normalized_latency_objective": 1.5167168380222673,
+          "pareto_rank": 1,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.6012344187576898,
+              "candidate_id": "5",
+              "fingerprint": "df81f01162dfbd3a031a660290cd87c39c49e6206a40396619c1da5e04257a35",
+              "latency": 80.0610955
+            },
+            "latency_mode": {
+              "accuracy": 0.6012344187576898,
+              "candidate_id": "5",
+              "fingerprint": "df81f01162dfbd3a031a660290cd87c39c49e6206a40396619c1da5e04257a35",
+              "latency": 80.0610955,
+              "latency_ci95_high": 80.1036135,
+              "latency_ci95_low": 80.027702
+            },
+            "multi_objective_mode": {
+              "balance_gap": 0.04381162874850253,
+              "candidate_id": "5",
+              "compromise_score": 0.7583598919163429,
+              "fingerprint": "df81f01162dfbd3a031a660290cd87c39c49e6206a40396619c1da5e04257a35",
+              "ideal_distance": 1.0419619029310498,
+              "normalized_accuracy_objective": 1.4290935805252623
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 390,
+          "train.optim.lr": 0.00042067257344835616,
+          "train.optim.weight_decay": 0.00029484690693347225
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "5a1b3fda-bf1d-4ad4-8957-bb2670d93650",
+        "metric": 0.5747133064895296,
+        "objective_score": -11.042626688399876,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.1308520000000044,
+          "latency_ci95_high": 79.621679,
+          "latency_ci95_low": 79.490827,
+          "latency_device_range_fraction": 0.00300532669542798,
+          "latency_iqr_ms": 0.18778549999998972,
+          "latency_mad_ms": 0.0928364999999971,
+          "latency_ms": 79.54326575,
+          "latency_p95_ms": 79.81152110000001,
+          "latency_robust_cv": 0.0017303714349947428,
+          "latency_round_drift_fraction": 0.0006017542723283844,
+          "latency_synchronized_median_ms": 79.7204285,
+          "latency_synchronized_p95_ms": 80.18870605000001,
+          "mAP50": 0.5747133064895296
+        },
+        "rec_id": 6,
+        "selection_audit": {
+          "accuracy": 0.5747133064895296,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.042626688399876,
+          "balance_gap": 2.7292486502350277,
+          "candidate_id": "6",
+          "dominated_by": [
+            "2"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "a23e7b60adbbd9612b9e1715a3b623e72652c1360805a5fba8d99ee6440e17cf",
+          "ideal_distance": 2.3479430219593365,
+          "invalid_reason": null,
+          "latency": 79.54326575,
+          "latency_ci95_high": 79.621679,
+          "latency_ci95_low": 79.490827,
+          "multi_objective_compromise_score": 2.310257576097824,
+          "normalized_accuracy_objective": 4.62051136967021,
+          "normalized_latency_objective": -0.837985930799846,
+          "pareto_rank": 1,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5747133064895296,
+              "candidate_id": "6",
+              "fingerprint": "a23e7b60adbbd9612b9e1715a3b623e72652c1360805a5fba8d99ee6440e17cf",
+              "latency": 79.54326575
+            },
+            "latency_mode": {
+              "accuracy": 0.5747133064895296,
+              "candidate_id": "6",
+              "fingerprint": "a23e7b60adbbd9612b9e1715a3b623e72652c1360805a5fba8d99ee6440e17cf",
+              "latency": 79.54326575,
+              "latency_ci95_high": 79.621679,
+              "latency_ci95_low": 79.490827
+            },
+            "multi_objective_mode": {
+              "balance_gap": 2.7292486502350277,
+              "candidate_id": "6",
+              "compromise_score": 2.310257576097824,
+              "fingerprint": "a23e7b60adbbd9612b9e1715a3b623e72652c1360805a5fba8d99ee6440e17cf",
+              "ideal_distance": 2.3479430219593365,
+              "normalized_accuracy_objective": 4.62051136967021
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 300,
+          "train.optim.lr": 0.00035563124753991963,
+          "train.optim.weight_decay": 1.1000000000000001e-05
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "0279b5df-3ad1-4d94-bdc2-b818ed233806",
+        "metric": 0.5501852933348778,
+        "objective_score": -11.082632556818318,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.09690750000000037,
+          "latency_ci95_high": 79.649781,
+          "latency_ci95_low": 79.5528735,
+          "latency_device_range_fraction": 0.0055700271416822995,
+          "latency_iqr_ms": 0.23222349999998926,
+          "latency_mad_ms": 0.11402249999999725,
+          "latency_ms": 79.61002500000001,
+          "latency_p95_ms": 79.86761544999999,
+          "latency_robust_cv": 0.002123473249757124,
+          "latency_round_drift_fraction": 0.0010674472216282167,
+          "latency_synchronized_median_ms": 79.81085999999999,
+          "latency_synchronized_p95_ms": 80.0999545,
+          "mAP50": 0.5501852933348778
+        },
+        "rec_id": 7,
+        "selection_audit": {
+          "accuracy": 0.5501852933348778,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.082632556818318,
+          "balance_gap": 4.053252171017186,
+          "candidate_id": "7",
+          "dominated_by": [
+            "1",
+            "2",
+            "6"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "59f7d927b54c9e69b17653933b26b4c5ce8975200e2be1d142092129cd5cd72e",
+          "ideal_distance": 3.7954624215466044,
+          "invalid_reason": null,
+          "latency": 79.61002500000001,
+          "latency_ci95_high": 79.649781,
+          "latency_ci95_low": 79.5528735,
+          "multi_objective_compromise_score": 3.786048316938994,
+          "normalized_accuracy_objective": 7.572089596203138,
+          "normalized_latency_objective": -0.5344147458312337,
+          "pareto_rank": 2,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5501852933348778,
+              "candidate_id": "7",
+              "fingerprint": "59f7d927b54c9e69b17653933b26b4c5ce8975200e2be1d142092129cd5cd72e",
+              "latency": 79.61002500000001
+            },
+            "latency_mode": {
+              "accuracy": 0.5501852933348778,
+              "candidate_id": "7",
+              "fingerprint": "59f7d927b54c9e69b17653933b26b4c5ce8975200e2be1d142092129cd5cd72e",
+              "latency": 79.61002500000001,
+              "latency_ci95_high": 79.649781,
+              "latency_ci95_low": 79.5528735
+            },
+            "multi_objective_mode": {
+              "balance_gap": 4.053252171017186,
+              "candidate_id": "7",
+              "compromise_score": 3.786048316938994,
+              "fingerprint": "59f7d927b54c9e69b17653933b26b4c5ce8975200e2be1d142092129cd5cd72e",
+              "ideal_distance": 3.7954624215466044,
+              "normalized_accuracy_objective": 7.572089596203138
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 510,
+          "train.optim.lr": 0.00012479148122745244,
+          "train.optim.weight_decay": 0.0001831487401936998
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "d62dbe33-8d33-47b9-afb0-64b3383c382a",
+        "metric": 0.6048002442855679,
+        "objective_score": -0.5000005,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.11762000000000228,
+          "latency_ci95_high": 79.78245575,
+          "latency_ci95_low": 79.66483575,
+          "latency_device_range_fraction": 0.003985040315377136,
+          "latency_iqr_ms": 0.19901149999999745,
+          "latency_mad_ms": 0.09906974999999107,
+          "latency_ms": 79.72754975,
+          "latency_p95_ms": 79.94668349999999,
+          "latency_robust_cv": 0.0018422842770229092,
+          "latency_round_drift_fraction": 0.0011454854725421618,
+          "latency_synchronized_median_ms": 79.90815599999999,
+          "latency_synchronized_p95_ms": 80.06685345000001,
+          "mAP50": 0.6048002442855679
+        },
+        "rec_id": 8,
+        "selection_audit": {
+          "accuracy": 0.6048002442855679,
+          "accuracy_feasible": true,
+          "acquisition_score": -0.5000005,
+          "balance_gap": 0.5,
+          "candidate_id": "8",
+          "dominated_by": [],
+          "duplicate_aliases": [
+            "8"
+          ],
+          "duplicate_representative": "8",
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": 0,
+          "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+          "ideal_distance": 0.5,
+          "invalid_reason": null,
+          "latency": 79.72754975,
+          "latency_ci95_high": 79.78245575,
+          "latency_ci95_low": 79.66483575,
+          "multi_objective_compromise_score": 0.5000005,
+          "normalized_accuracy_objective": 1.0,
+          "normalized_latency_objective": 0.0,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.6048002442855679,
+              "candidate_id": "8",
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "latency": 79.72754975
+            },
+            "latency_mode": {
+              "accuracy": 0.6048002442855679,
+              "candidate_id": "8",
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "latency": 79.72754975,
+              "latency_ci95_high": 79.78245575,
+              "latency_ci95_low": 79.66483575
+            },
+            "multi_objective_mode": {
+              "balance_gap": 0.5,
+              "candidate_id": "8",
+              "compromise_score": 0.5000005,
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "ideal_distance": 0.5,
+              "normalized_accuracy_objective": 1.0
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": true,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 900,
+          "train.optim.lr": 0.0004897936696945464,
+          "train.optim.weight_decay": 0.00021758635876237026
+        },
+        "status": "success"
+      },
+      {
+        "adjustments": [],
+        "failure_reason": null,
+        "job_id": "f7075d9a-abc9-40f3-b0ab-c9002be6a241",
+        "metric": 0.4174749954599677,
+        "objective_score": -11.299086726223754,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.17952425000000005,
+          "latency_ci95_high": 79.71669425,
+          "latency_ci95_low": 79.53717,
+          "latency_device_range_fraction": 0.009117522550941417,
+          "latency_iqr_ms": 0.27252699999999663,
+          "latency_mad_ms": 0.13450799999999674,
+          "latency_ms": 79.63528425000001,
+          "latency_p95_ms": 80.15138305,
+          "latency_robust_cv": 0.0025041859607601654,
+          "latency_round_drift_fraction": 0.0014792092614402102,
+          "latency_synchronized_median_ms": 80.0891025,
+          "latency_synchronized_p95_ms": 80.90620355,
+          "mAP50": 0.4174749954599677
+        },
+        "rec_id": 9,
+        "selection_audit": {
+          "accuracy": 0.4174749954599677,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.299086726223754,
+          "balance_gap": 11.98066828143407,
+          "candidate_id": "9",
+          "dominated_by": [
+            "0",
+            "1",
+            "2",
+            "6",
+            "7"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "aa472c5c6c5ca46441a688ac37f354be0ab553e632852d72679fcfbc79759be3",
+          "ideal_distance": 11.772760151193657,
+          "invalid_reason": null,
+          "latency": 79.63528425000001,
+          "latency_ci95_high": 79.71669425,
+          "latency_ci95_low": 79.53717,
+          "multi_objective_compromise_score": 11.770902566988875,
+          "normalized_accuracy_objective": 23.54178201175029,
+          "normalized_latency_objective": -0.4195545511178506,
+          "pareto_rank": 3,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.4174749954599677,
+              "candidate_id": "9",
+              "fingerprint": "aa472c5c6c5ca46441a688ac37f354be0ab553e632852d72679fcfbc79759be3",
+              "latency": 79.63528425000001
+            },
+            "latency_mode": {
+              "accuracy": 0.4174749954599677,
+              "candidate_id": "9",
+              "fingerprint": "aa472c5c6c5ca46441a688ac37f354be0ab553e632852d72679fcfbc79759be3",
+              "latency": 79.63528425000001,
+              "latency_ci95_high": 79.71669425,
+              "latency_ci95_low": 79.53717
+            },
+            "multi_objective_mode": {
+              "balance_gap": 11.98066828143407,
+              "candidate_id": "9",
+              "compromise_score": 11.770902566988875,
+              "fingerprint": "aa472c5c6c5ca46441a688ac37f354be0ab553e632852d72679fcfbc79759be3",
+              "ideal_distance": 11.772760151193657,
+              "normalized_accuracy_objective": 23.54178201175029
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 365,
+          "train.optim.lr": 1.1000000000000001e-05,
+          "train.optim.weight_decay": 0.00019510358347995776
+        },
+        "status": "success"
+      }
+    ],
+    "pareto_front": [
+      {
+        "metric_value": 0.6131103791599072,
+        "objective_score": -0.5000005,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.0798964999999896,
+          "latency_ci95_high": 79.988636,
+          "latency_ci95_low": 79.90873950000001,
+          "latency_device_range_fraction": 0.005840316677216769,
+          "latency_iqr_ms": 0.19899875000001543,
+          "latency_mad_ms": 0.09866650000000021,
+          "latency_ms": 79.94746275,
+          "latency_p95_ms": 80.304166,
+          "latency_robust_cv": 0.0018297385291317493,
+          "latency_round_drift_fraction": 0.0010894842313177553,
+          "latency_synchronized_median_ms": 80.27411599999999,
+          "latency_synchronized_p95_ms": 80.4555725,
+          "mAP50": 0.6131103791599072
+        },
+        "rec_id": 4,
+        "selection_audit": {
+          "accuracy": 0.6131103791599072,
+          "accuracy_feasible": true,
+          "acquisition_score": -0.5000005,
+          "balance_gap": 0.5,
+          "candidate_id": "4",
+          "dominated_by": [],
+          "duplicate_aliases": [
+            "4"
+          ],
+          "duplicate_representative": "4",
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": 0,
+          "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+          "ideal_distance": 0.5,
+          "invalid_reason": null,
+          "latency": 79.94746275,
+          "latency_ci95_high": 79.988636,
+          "latency_ci95_low": 79.90873950000001,
+          "multi_objective_compromise_score": 0.5000005,
+          "normalized_accuracy_objective": 0.0,
+          "normalized_latency_objective": 1.0,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.6131103791599072,
+              "candidate_id": "4",
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "latency": 79.94746275
+            },
+            "latency_mode": {
+              "accuracy": 0.6131103791599072,
+              "candidate_id": "4",
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "latency": 79.94746275,
+              "latency_ci95_high": 79.988636,
+              "latency_ci95_low": 79.90873950000001
+            },
+            "multi_objective_mode": {
+              "balance_gap": 0.5,
+              "candidate_id": "4",
+              "compromise_score": 0.5000005,
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "ideal_distance": 0.5,
+              "normalized_accuracy_objective": 0.0
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": true,
+            "latency": false,
+            "multi_objective": true
+          }
+        },
+        "specs": {
+          "model.num_queries": 469,
+          "train.optim.lr": 0.00045,
+          "train.optim.weight_decay": 1.1000000000000001e-05
+        }
+      },
+      {
+        "metric_value": 0.6048002442855679,
+        "objective_score": -0.5000005,
+        "objective_values": {
+          "latency_bootstrap_ci_width_ms": 0.11762000000000228,
+          "latency_ci95_high": 79.78245575,
+          "latency_ci95_low": 79.66483575,
+          "latency_device_range_fraction": 0.003985040315377136,
+          "latency_iqr_ms": 0.19901149999999745,
+          "latency_mad_ms": 0.09906974999999107,
+          "latency_ms": 79.72754975,
+          "latency_p95_ms": 79.94668349999999,
+          "latency_robust_cv": 0.0018422842770229092,
+          "latency_round_drift_fraction": 0.0011454854725421618,
+          "latency_synchronized_median_ms": 79.90815599999999,
+          "latency_synchronized_p95_ms": 80.06685345000001,
+          "mAP50": 0.6048002442855679
+        },
+        "rec_id": 8,
+        "selection_audit": {
+          "accuracy": 0.6048002442855679,
+          "accuracy_feasible": true,
+          "acquisition_score": -0.5000005,
+          "balance_gap": 0.5,
+          "candidate_id": "8",
+          "dominated_by": [],
+          "duplicate_aliases": [
+            "8"
+          ],
+          "duplicate_representative": "8",
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": 0,
+          "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+          "ideal_distance": 0.5,
+          "invalid_reason": null,
+          "latency": 79.72754975,
+          "latency_ci95_high": 79.78245575,
+          "latency_ci95_low": 79.66483575,
+          "multi_objective_compromise_score": 0.5000005,
+          "normalized_accuracy_objective": 1.0,
+          "normalized_latency_objective": 0.0,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.6048002442855679,
+              "candidate_id": "8",
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "latency": 79.72754975
+            },
+            "latency_mode": {
+              "accuracy": 0.6048002442855679,
+              "candidate_id": "8",
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "latency": 79.72754975,
+              "latency_ci95_high": 79.78245575,
+              "latency_ci95_low": 79.66483575
+            },
+            "multi_objective_mode": {
+              "balance_gap": 0.5,
+              "candidate_id": "8",
+              "compromise_score": 0.5000005,
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "ideal_distance": 0.5,
+              "normalized_accuracy_objective": 1.0
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": true,
+            "multi_objective": false
+          }
+        },
+        "specs": {
+          "model.num_queries": 900,
+          "train.optim.lr": 0.0004897936696945464,
+          "train.optim.weight_decay": 0.00021758635876237026
+        }
+      }
+    ],
+    "progress": {
+      "algorithm": "bayesian",
+      "best_metric": 0.6131103791599072,
+      "best_objective_score": -0.5000005,
+      "best_rec_id": 4,
+      "completed": 10,
+      "objectives": {
+        "objectives": [
+          {
+            "direction": "maximize",
+            "metric": "mAP50",
+            "scale": 1.0,
+            "weight": 1.0
+          },
+          {
+            "direction": "minimize",
+            "metric": "latency_ms",
+            "scale": 1.0,
+            "weight": 1.0
+          }
+        ],
+        "primary_metric": "mAP50",
+        "score_direction": "maximize",
+        "selection": {
+          "accuracy_constraint": {
+            "reference": "accuracy_winner",
+            "reference_candidate_id": null,
+            "reference_value": null,
+            "type": "relative",
+            "value": 0.98
+          },
+          "accuracy_metric": "mAP50",
+          "accuracy_tolerance": 1e-12,
+          "augmentation_rho": 1e-06,
+          "latency_ci_high_metric": "latency_ci95_high",
+          "latency_ci_low_metric": "latency_ci95_low",
+          "latency_metric": "latency_ms",
+          "latency_tolerance": 0.0,
+          "mode": "multi_objective",
+          "normalization": "pareto_front",
+          "score_tolerance": 1e-12
+        }
+      },
+      "pareto_front_size": 2,
+      "random_seed": 161803,
+      "total": 10
+    },
+    "selection_analysis": {
+      "algorithm": {
+        "accuracy_reference_candidate_id": "4",
+        "accuracy_reference_value": 0.6131103791599072,
+        "accuracy_threshold": 0.600848171576709,
+        "configuration": {
+          "accuracy_constraint": {
+            "reference": "accuracy_winner",
+            "reference_candidate_id": null,
+            "reference_value": null,
+            "type": "relative",
+            "value": 0.98
+          },
+          "accuracy_metric": "mAP50",
+          "accuracy_tolerance": 1e-12,
+          "augmentation_rho": 1e-06,
+          "latency_ci_high_metric": "latency_ci95_high",
+          "latency_ci_low_metric": "latency_ci95_low",
+          "latency_metric": "latency_ms",
+          "latency_tolerance": 0.0,
+          "mode": "multi_objective",
+          "normalization": "pareto_front",
+          "score_tolerance": 1e-12
+        },
+        "normalization_bounds": {
+          "latency_ms": {
+            "direction": "minimize",
+            "ideal": 79.72754975,
+            "inactive": false,
+            "nadir": 79.94746275,
+            "range": 0.21991300000000535
+          },
+          "mAP50": {
+            "direction": "maximize",
+            "ideal": 0.6131103791599072,
+            "inactive": false,
+            "nadir": 0.6048002442855679,
+            "range": 0.008310134874339292
+          }
+        },
+        "objective_weights": {
+          "latency_ms": 0.5,
+          "mAP50": 0.5
+        },
+        "selector": "feasible_pareto_augmented_chebyshev"
+      },
+      "candidates": [
+        {
+          "accuracy": 0.6131103791599072,
+          "accuracy_feasible": true,
+          "acquisition_score": -0.5000005,
+          "balance_gap": 0.5,
+          "candidate_id": "4",
+          "dominated_by": [],
+          "duplicate_aliases": [
+            "4"
+          ],
+          "duplicate_representative": "4",
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": 0,
+          "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+          "ideal_distance": 0.5,
+          "invalid_reason": null,
+          "latency": 79.94746275,
+          "latency_ci95_high": 79.988636,
+          "latency_ci95_low": 79.90873950000001,
+          "multi_objective_compromise_score": 0.5000005,
+          "normalized_accuracy_objective": 0.0,
+          "normalized_latency_objective": 1.0,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.6131103791599072,
+              "candidate_id": "4",
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "latency": 79.94746275
+            },
+            "latency_mode": {
+              "accuracy": 0.6131103791599072,
+              "candidate_id": "4",
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "latency": 79.94746275,
+              "latency_ci95_high": 79.988636,
+              "latency_ci95_low": 79.90873950000001
+            },
+            "multi_objective_mode": {
+              "balance_gap": 0.5,
+              "candidate_id": "4",
+              "compromise_score": 0.5000005,
+              "fingerprint": "037f08d6d74f398769cc84635dc2405167463062099b58836ae33746bca83c7d",
+              "ideal_distance": 0.5,
+              "normalized_accuracy_objective": 0.0
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": true,
+            "latency": false,
+            "multi_objective": true
+          }
+        },
+        {
+          "accuracy": 0.5279109255336222,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.118962667281911,
+          "balance_gap": 6.028225660662162,
+          "candidate_id": "0",
+          "dominated_by": [],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "3260a63c2a9dac64ce81b481622893fc95f40d1c6055bb2f87a58407772361a7",
+          "ideal_distance": 5.20498754738523,
+          "invalid_reason": null,
+          "latency": 79.330832,
+          "latency_ci95_high": 79.42632475,
+          "latency_ci95_low": 79.29977875,
+          "multi_objective_compromise_score": 5.126241939679082,
+          "normalized_accuracy_objective": 10.252475430858624,
+          "normalized_latency_objective": -1.8039758904657013,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5279109255336222,
+              "candidate_id": "0",
+              "fingerprint": "3260a63c2a9dac64ce81b481622893fc95f40d1c6055bb2f87a58407772361a7",
+              "latency": 79.330832
+            },
+            "latency_mode": {
+              "accuracy": 0.5279109255336222,
+              "candidate_id": "0",
+              "fingerprint": "3260a63c2a9dac64ce81b481622893fc95f40d1c6055bb2f87a58407772361a7",
+              "latency": 79.330832,
+              "latency_ci95_high": 79.42632475,
+              "latency_ci95_low": 79.29977875
+            },
+            "multi_objective_mode": {
+              "balance_gap": 6.028225660662162,
+              "candidate_id": "0",
+              "compromise_score": 5.126241939679082,
+              "fingerprint": "3260a63c2a9dac64ce81b481622893fc95f40d1c6055bb2f87a58407772361a7",
+              "ideal_distance": 5.20498754738523,
+              "normalized_accuracy_objective": 10.252475430858624
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        {
+          "accuracy": 0.5754530654219836,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.041420121103679,
+          "balance_gap": 2.5493964817901773,
+          "candidate_id": "1",
+          "dominated_by": [
+            "2"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "3b4fd84a17da47558cd2849f4aad7d066ac9dd71942d81640b39eb1a59898b15",
+          "ideal_distance": 2.283432393343085,
+          "invalid_reason": null,
+          "latency": 79.60279299999999,
+          "latency_ci95_high": 79.64990075,
+          "latency_ci95_low": 79.5756945,
+          "multi_objective_compromise_score": 2.2657482249280476,
+          "normalized_accuracy_objective": 4.531492485664088,
+          "normalized_latency_objective": -0.567300477916267,
+          "pareto_rank": 1,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5754530654219836,
+              "candidate_id": "1",
+              "fingerprint": "3b4fd84a17da47558cd2849f4aad7d066ac9dd71942d81640b39eb1a59898b15",
+              "latency": 79.60279299999999
+            },
+            "latency_mode": {
+              "accuracy": 0.5754530654219836,
+              "candidate_id": "1",
+              "fingerprint": "3b4fd84a17da47558cd2849f4aad7d066ac9dd71942d81640b39eb1a59898b15",
+              "latency": 79.60279299999999,
+              "latency_ci95_high": 79.64990075,
+              "latency_ci95_low": 79.5756945
+            },
+            "multi_objective_mode": {
+              "balance_gap": 2.5493964817901773,
+              "candidate_id": "1",
+              "compromise_score": 2.2657482249280476,
+              "fingerprint": "3b4fd84a17da47558cd2849f4aad7d066ac9dd71942d81640b39eb1a59898b15",
+              "ideal_distance": 2.283432393343085,
+              "normalized_accuracy_objective": 4.531492485664088
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        {
+          "accuracy": 0.5501852933348778,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.082632556818318,
+          "balance_gap": 4.053252171017186,
+          "candidate_id": "7",
+          "dominated_by": [
+            "1",
+            "2",
+            "6"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "59f7d927b54c9e69b17653933b26b4c5ce8975200e2be1d142092129cd5cd72e",
+          "ideal_distance": 3.7954624215466044,
+          "invalid_reason": null,
+          "latency": 79.61002500000001,
+          "latency_ci95_high": 79.649781,
+          "latency_ci95_low": 79.5528735,
+          "multi_objective_compromise_score": 3.786048316938994,
+          "normalized_accuracy_objective": 7.572089596203138,
+          "normalized_latency_objective": -0.5344147458312337,
+          "pareto_rank": 2,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5501852933348778,
+              "candidate_id": "7",
+              "fingerprint": "59f7d927b54c9e69b17653933b26b4c5ce8975200e2be1d142092129cd5cd72e",
+              "latency": 79.61002500000001
+            },
+            "latency_mode": {
+              "accuracy": 0.5501852933348778,
+              "candidate_id": "7",
+              "fingerprint": "59f7d927b54c9e69b17653933b26b4c5ce8975200e2be1d142092129cd5cd72e",
+              "latency": 79.61002500000001,
+              "latency_ci95_high": 79.649781,
+              "latency_ci95_low": 79.5528735
+            },
+            "multi_objective_mode": {
+              "balance_gap": 4.053252171017186,
+              "candidate_id": "7",
+              "compromise_score": 3.786048316938994,
+              "fingerprint": "59f7d927b54c9e69b17653933b26b4c5ce8975200e2be1d142092129cd5cd72e",
+              "ideal_distance": 3.7954624215466044,
+              "normalized_accuracy_objective": 7.572089596203138
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        {
+          "accuracy": 0.5685110586144432,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.052742726369393,
+          "balance_gap": 1.8334506623735347,
+          "candidate_id": "3",
+          "dominated_by": [
+            "1",
+            "2",
+            "4",
+            "5",
+            "6",
+            "8"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "99c79bca193f69bf33d807ce17ad763b6f0f22cadb3ea84c995a440bf17e105d",
+          "ideal_distance": 2.8148280990557994,
+          "invalid_reason": null,
+          "latency": 80.1013925,
+          "latency_ci95_high": 80.1666815,
+          "latency_ci95_low": 80.06625700000001,
+          "multi_objective_compromise_score": 2.6834329373749455,
+          "normalized_accuracy_objective": 5.3668588079336,
+          "normalized_latency_objective": 1.6999574831865303,
+          "pareto_rank": 2,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5685110586144432,
+              "candidate_id": "3",
+              "fingerprint": "99c79bca193f69bf33d807ce17ad763b6f0f22cadb3ea84c995a440bf17e105d",
+              "latency": 80.1013925
+            },
+            "latency_mode": {
+              "accuracy": 0.5685110586144432,
+              "candidate_id": "3",
+              "fingerprint": "99c79bca193f69bf33d807ce17ad763b6f0f22cadb3ea84c995a440bf17e105d",
+              "latency": 80.1013925,
+              "latency_ci95_high": 80.1666815,
+              "latency_ci95_low": 80.06625700000001
+            },
+            "multi_objective_mode": {
+              "balance_gap": 1.8334506623735347,
+              "candidate_id": "3",
+              "compromise_score": 2.6834329373749455,
+              "fingerprint": "99c79bca193f69bf33d807ce17ad763b6f0f22cadb3ea84c995a440bf17e105d",
+              "ideal_distance": 2.8148280990557994,
+              "normalized_accuracy_objective": 5.3668588079336
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        {
+          "accuracy": 0.5747133064895296,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.042626688399876,
+          "balance_gap": 2.7292486502350277,
+          "candidate_id": "6",
+          "dominated_by": [
+            "2"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "a23e7b60adbbd9612b9e1715a3b623e72652c1360805a5fba8d99ee6440e17cf",
+          "ideal_distance": 2.3479430219593365,
+          "invalid_reason": null,
+          "latency": 79.54326575,
+          "latency_ci95_high": 79.621679,
+          "latency_ci95_low": 79.490827,
+          "multi_objective_compromise_score": 2.310257576097824,
+          "normalized_accuracy_objective": 4.62051136967021,
+          "normalized_latency_objective": -0.837985930799846,
+          "pareto_rank": 1,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5747133064895296,
+              "candidate_id": "6",
+              "fingerprint": "a23e7b60adbbd9612b9e1715a3b623e72652c1360805a5fba8d99ee6440e17cf",
+              "latency": 79.54326575
+            },
+            "latency_mode": {
+              "accuracy": 0.5747133064895296,
+              "candidate_id": "6",
+              "fingerprint": "a23e7b60adbbd9612b9e1715a3b623e72652c1360805a5fba8d99ee6440e17cf",
+              "latency": 79.54326575,
+              "latency_ci95_high": 79.621679,
+              "latency_ci95_low": 79.490827
+            },
+            "multi_objective_mode": {
+              "balance_gap": 2.7292486502350277,
+              "candidate_id": "6",
+              "compromise_score": 2.310257576097824,
+              "fingerprint": "a23e7b60adbbd9612b9e1715a3b623e72652c1360805a5fba8d99ee6440e17cf",
+              "ideal_distance": 2.3479430219593365,
+              "normalized_accuracy_objective": 4.62051136967021
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        {
+          "accuracy": 0.4174749954599677,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.299086726223754,
+          "balance_gap": 11.98066828143407,
+          "candidate_id": "9",
+          "dominated_by": [
+            "0",
+            "1",
+            "2",
+            "6",
+            "7"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "aa472c5c6c5ca46441a688ac37f354be0ab553e632852d72679fcfbc79759be3",
+          "ideal_distance": 11.772760151193657,
+          "invalid_reason": null,
+          "latency": 79.63528425000001,
+          "latency_ci95_high": 79.71669425,
+          "latency_ci95_low": 79.53717,
+          "multi_objective_compromise_score": 11.770902566988875,
+          "normalized_accuracy_objective": 23.54178201175029,
+          "normalized_latency_objective": -0.4195545511178506,
+          "pareto_rank": 3,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.4174749954599677,
+              "candidate_id": "9",
+              "fingerprint": "aa472c5c6c5ca46441a688ac37f354be0ab553e632852d72679fcfbc79759be3",
+              "latency": 79.63528425000001
+            },
+            "latency_mode": {
+              "accuracy": 0.4174749954599677,
+              "candidate_id": "9",
+              "fingerprint": "aa472c5c6c5ca46441a688ac37f354be0ab553e632852d72679fcfbc79759be3",
+              "latency": 79.63528425000001,
+              "latency_ci95_high": 79.71669425,
+              "latency_ci95_low": 79.53717
+            },
+            "multi_objective_mode": {
+              "balance_gap": 11.98066828143407,
+              "candidate_id": "9",
+              "compromise_score": 11.770902566988875,
+              "fingerprint": "aa472c5c6c5ca46441a688ac37f354be0ab553e632852d72679fcfbc79759be3",
+              "ideal_distance": 11.772760151193657,
+              "normalized_accuracy_objective": 23.54178201175029
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        {
+          "accuracy": 0.5780608108132506,
+          "accuracy_feasible": false,
+          "acquisition_score": -11.037166816185174,
+          "balance_gap": 2.600200975448424,
+          "candidate_id": "2",
+          "dominated_by": [],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": null,
+          "fingerprint": "b0c9557184beabb618d3e07b7b686f06b14570cbf40230ff6416632585673692",
+          "ideal_distance": 2.1653307068386143,
+          "invalid_reason": null,
+          "latency": 79.5114385,
+          "latency_ci95_high": 79.62258825,
+          "latency_ci95_low": 79.38672375,
+          "multi_objective_compromise_score": 2.1088463520598615,
+          "normalized_accuracy_objective": 4.217689469142735,
+          "normalized_latency_objective": -0.9827124817541121,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.5780608108132506,
+              "candidate_id": "2",
+              "fingerprint": "b0c9557184beabb618d3e07b7b686f06b14570cbf40230ff6416632585673692",
+              "latency": 79.5114385
+            },
+            "latency_mode": {
+              "accuracy": 0.5780608108132506,
+              "candidate_id": "2",
+              "fingerprint": "b0c9557184beabb618d3e07b7b686f06b14570cbf40230ff6416632585673692",
+              "latency": 79.5114385,
+              "latency_ci95_high": 79.62258825,
+              "latency_ci95_low": 79.38672375
+            },
+            "multi_objective_mode": {
+              "balance_gap": 2.600200975448424,
+              "candidate_id": "2",
+              "compromise_score": 2.1088463520598615,
+              "fingerprint": "b0c9557184beabb618d3e07b7b686f06b14570cbf40230ff6416632585673692",
+              "ideal_distance": 2.1653307068386143,
+              "normalized_accuracy_objective": 4.217689469142735
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        },
+        {
+          "accuracy": 0.6048002442855679,
+          "accuracy_feasible": true,
+          "acquisition_score": -0.5000005,
+          "balance_gap": 0.5,
+          "candidate_id": "8",
+          "dominated_by": [],
+          "duplicate_aliases": [
+            "8"
+          ],
+          "duplicate_representative": "8",
+          "feasible_dominated_by": [],
+          "feasible_pareto_rank": 0,
+          "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+          "ideal_distance": 0.5,
+          "invalid_reason": null,
+          "latency": 79.72754975,
+          "latency_ci95_high": 79.78245575,
+          "latency_ci95_low": 79.66483575,
+          "multi_objective_compromise_score": 0.5000005,
+          "normalized_accuracy_objective": 1.0,
+          "normalized_latency_objective": 0.0,
+          "pareto_rank": 0,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.6048002442855679,
+              "candidate_id": "8",
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "latency": 79.72754975
+            },
+            "latency_mode": {
+              "accuracy": 0.6048002442855679,
+              "candidate_id": "8",
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "latency": 79.72754975,
+              "latency_ci95_high": 79.78245575,
+              "latency_ci95_low": 79.66483575
+            },
+            "multi_objective_mode": {
+              "balance_gap": 0.5,
+              "candidate_id": "8",
+              "compromise_score": 0.5000005,
+              "fingerprint": "d6c0353e17a7bdd05bbe2cbb6a8cc7e383242df97ff03fe6beade5b561958d66",
+              "ideal_distance": 0.5,
+              "normalized_accuracy_objective": 1.0
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": true,
+            "multi_objective": false
+          }
+        },
+        {
+          "accuracy": 0.6012344187576898,
+          "accuracy_feasible": true,
+          "acquisition_score": -1.758359891916343,
+          "balance_gap": 0.04381162874850253,
+          "candidate_id": "5",
+          "dominated_by": [
+            "4",
+            "8"
+          ],
+          "duplicate_aliases": [],
+          "duplicate_representative": null,
+          "feasible_dominated_by": [
+            "4",
+            "8"
+          ],
+          "feasible_pareto_rank": 1,
+          "fingerprint": "df81f01162dfbd3a031a660290cd87c39c49e6206a40396619c1da5e04257a35",
+          "ideal_distance": 1.0419619029310498,
+          "invalid_reason": null,
+          "latency": 80.0610955,
+          "latency_ci95_high": 80.1036135,
+          "latency_ci95_low": 80.027702,
+          "multi_objective_compromise_score": 0.7583598919163429,
+          "normalized_accuracy_objective": 1.4290935805252623,
+          "normalized_latency_objective": 1.5167168380222673,
+          "pareto_rank": 1,
+          "tie_breaking_values": {
+            "accuracy_mode": {
+              "accuracy": 0.6012344187576898,
+              "candidate_id": "5",
+              "fingerprint": "df81f01162dfbd3a031a660290cd87c39c49e6206a40396619c1da5e04257a35",
+              "latency": 80.0610955
+            },
+            "latency_mode": {
+              "accuracy": 0.6012344187576898,
+              "candidate_id": "5",
+              "fingerprint": "df81f01162dfbd3a031a660290cd87c39c49e6206a40396619c1da5e04257a35",
+              "latency": 80.0610955,
+              "latency_ci95_high": 80.1036135,
+              "latency_ci95_low": 80.027702
+            },
+            "multi_objective_mode": {
+              "balance_gap": 0.04381162874850253,
+              "candidate_id": "5",
+              "compromise_score": 0.7583598919163429,
+              "fingerprint": "df81f01162dfbd3a031a660290cd87c39c49e6206a40396619c1da5e04257a35",
+              "ideal_distance": 1.0419619029310498,
+              "normalized_accuracy_objective": 1.4290935805252623
+            }
+          },
+          "valid": true,
+          "winner": {
+            "accuracy": false,
+            "latency": false,
+            "multi_objective": false
+          }
+        }
+      ],
+      "selections": {
+        "accuracy": {
+          "distinct_compromise": null,
+          "fallback_used": false,
+          "latency_tied_candidate_ids": [],
+          "mode": "accuracy",
+          "reason": "Highest valid accuracy; accuracy-equivalent ties use lower stabilized latency then canonical configuration hash.",
+          "status": "selected",
+          "winner_id": "4"
+        },
+        "latency": {
+          "distinct_compromise": null,
+          "fallback_used": false,
+          "latency_tied_candidate_ids": [
+            "8"
+          ],
+          "mode": "latency",
+          "reason": "Lowest stabilized latency among candidates satisfying the accuracy-winner-relative constraint; statistically equivalent latencies use higher accuracy then canonical configuration hash.",
+          "status": "selected",
+          "winner_id": "8"
+        },
+        "multi_objective": {
+          "distinct_compromise": false,
+          "fallback_used": true,
+          "latency_tied_candidate_ids": [],
+          "mode": "multi_objective",
+          "reason": "No distinct Pareto compromise exists in the evaluated search space. The deterministic augmented-Chebyshev fallback selected an extreme point.",
+          "status": "selected",
+          "winner_id": "4"
+        }
+      }
+    }
+  },
+  "seed": 161803,
+  "status": "success"
+}
