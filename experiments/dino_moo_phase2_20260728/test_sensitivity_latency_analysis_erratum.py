@@ -194,6 +194,95 @@ def test_erratum_source_pin_tampering_is_rejected(
         )
 
 
+def launch_and_current_source_checks() -> tuple[
+    dict[str, str], dict[str, str], dict[str, Any]
+]:
+    ledger = json.loads(LEDGER.read_text())
+    launch = ledger["source_checks"]
+    current = {
+        key: value
+        for key, value in launch.items()
+        if key != "submission_source_state"
+    }
+    current["automl_commit"] = erratum.git_output(
+        HERE.parent.parent, "rev-parse", "HEAD"
+    )
+    contract = json.loads(MANIFEST.read_text())
+    return launch, current, contract
+
+
+def test_descendant_analysis_commit_is_accepted_with_exact_sources() -> None:
+    launch, current, contract = launch_and_current_source_checks()
+    launch_checks, proof = erratum.validate_launch_analysis_provenance(
+        LEDGER,
+        LEDGER_SHA256,
+        contract,
+        current,
+    )
+    assert launch_checks == launch
+    assert proof["launch_commit"] == launch["automl_commit"]
+    assert proof["analysis_commit"] == current["automl_commit"]
+    assert proof["launch_commit_ancestor_of_analysis"] is True
+    assert proof["merge_base"] == launch["automl_commit"]
+    assert proof["measurement_source_hashes_exact"] is True
+
+
+def test_unrelated_analysis_commit_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    launch, current, contract = launch_and_current_source_checks()
+    real_ancestor = erratum.git_is_ancestor
+
+    def ancestry(repo: Path, ancestor: str, descendant: str) -> bool:
+        if (
+            ancestor == launch["automl_commit"]
+            and descendant == current["automl_commit"]
+        ):
+            return False
+        return real_ancestor(repo, ancestor, descendant)
+
+    monkeypatch.setattr(erratum, "git_is_ancestor", ancestry)
+    with pytest.raises(ValueError, match="not a descendant"):
+        erratum.validate_launch_analysis_provenance(
+            LEDGER,
+            LEDGER_SHA256,
+            contract,
+            current,
+        )
+
+
+def test_launch_or_analysis_branch_drift_is_rejected() -> None:
+    launch, current, contract = launch_and_current_source_checks()
+    changed_launch = {**launch, "automl_branch": "unrelated/branch"}
+    with pytest.raises(ValueError, match="launch source drift: automl_branch"):
+        erratum.validate_launch_source_checks(
+            changed_launch, current, contract
+        )
+    changed_current = {**current, "automl_branch": "unrelated/branch"}
+    with pytest.raises(
+        ValueError, match="current analysis source drift: automl_branch"
+    ):
+        erratum.validate_launch_source_checks(
+            launch, changed_current, contract
+        )
+
+
+def test_launch_or_analysis_measurement_source_drift_is_rejected() -> None:
+    launch, current, contract = launch_and_current_source_checks()
+    changed_launch = {**launch, "launcher_sha256": "0" * 64}
+    with pytest.raises(ValueError, match="launch source drift: launcher"):
+        erratum.validate_launch_source_checks(
+            changed_launch, current, contract
+        )
+    changed_current = {**current, "latency_stats_sha256": "0" * 64}
+    with pytest.raises(
+        ValueError, match="current analysis source drift: latency_stats"
+    ):
+        erratum.validate_launch_source_checks(
+            launch, changed_current, contract
+        )
+
+
 def test_expected_remote_inventory_is_exact_and_discovery_free() -> None:
     (
         contract,

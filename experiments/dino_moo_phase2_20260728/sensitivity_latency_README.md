@@ -36,7 +36,7 @@ matching TAO SDK/SLURM state.
   source. Its allocation-level runtime check incorrectly used full-string
   PyTorch equality even though v2 declares a major.minor.patch comparison.
 - `sensitivity_latency_analysis_erratum.v1.json`, SHA256
-  `2f432cd2efc82fd8ebb8a290cbd9d625808c9d6e67532fa748780b9d96af8658`,
+  `a86a66822137433882af079b8384698cbf9b06124cc173a8b36c666aefa60a80`,
   pins the immutable v2 manifest, submission ledger, measurement-generation
   sources, unchanged measurement and qualification policies, and corrected
   analysis source. It also pins the exact remote-evidence acquisition policy.
@@ -49,6 +49,11 @@ matching TAO SDK/SLURM state.
   regenerated plans, hashes them through read-only SSH, fetches only the exact
   missing paths through `rsync --files-from`, and aggregates from a verified
   local mirror. It does not rewrite measurements or objective values.
+  The immutable ledger's launch commit
+  `cb62ef447704b95980b17aa82604992564b4e71f` is retained as the
+  measurement-generation identity. Analysis from a later commit is accepted
+  only on the exact same branch when Git proves that launch commit is its
+  ancestor and every manifest-pinned measurement source hash remains exact.
 
 ## Frozen execution design
 
@@ -178,7 +183,7 @@ python experiments/dino_moo_phase2_20260728/sensitivity_latency_aggregate_erratu
   --analysis-erratum \
   experiments/dino_moo_phase2_20260728/sensitivity_latency_analysis_erratum.v1.json \
   --analysis-erratum-sha256 \
-  2f432cd2efc82fd8ebb8a290cbd9d625808c9d6e67532fa748780b9d96af8658 \
+  a86a66822137433882af079b8384698cbf9b06124cc173a8b36c666aefa60a80 \
   --manifest \
   experiments/dino_moo_phase2_20260728/sensitivity_latency_manifest.v2.json \
   --checkpoint-artifact \
@@ -209,6 +214,16 @@ then validates the allocation seed, repeat, Williams row, profile positions,
 config/model/checkpoint digests, hostname/node assignment, eight stable and
 distinct GPU UUIDs, runtime, protocol, benchmark-input identity, and all 1008
 raw rank-file hashes.
+
+Before original ledger reconciliation, the erratum strict-reads and hashes the
+already pinned ledger, validates its complete launch-time `source_checks`
+against the immutable manifest, and proves the current analysis HEAD is a
+descendant of the recorded launch commit on the same configured branch. It
+then passes the original launch-time source-check mapping to the original
+ledger validator. Regenerated plans and command hashes are still compared
+exactly. The report records launch commit, analysis commit, merge base, commit
+distance, both source-check mappings, and the ancestry result. Unrelated
+history, branch drift, or any measurement-source drift fails closed.
 
 The evidence snapshot path is explicit and must be a dedicated child beneath
 `runtime/sensitivity_latency_v2`. Remote paths are never discovered with

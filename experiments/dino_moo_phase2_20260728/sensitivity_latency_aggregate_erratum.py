@@ -42,6 +42,21 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_ERRATUM = HERE / "sensitivity_latency_analysis_erratum.v1.json"
 CORRECTED_SOURCE_PATH = Path(__file__).resolve()
 ORIGINAL_AGGREGATOR_PATH = HERE / "sensitivity_latency_aggregate.py"
+EXPECTED_LAUNCH_SOURCE_KEYS = {
+    "aggregator_sha256",
+    "automl_branch",
+    "automl_commit",
+    "automl_required_ancestor_commit",
+    "benchmark_sha256",
+    "block_runner_sha256",
+    "common_sha256",
+    "evaluate_template_sha256",
+    "latency_stats_sha256",
+    "launcher_sha256",
+    "sdk_branch",
+    "sdk_commit",
+    "submission_source_state",
+}
 EXPECTED_EVIDENCE_ACQUISITION_POLICY = {
     "mode": "read_only_remote_exact_inventory_snapshot",
     "remote_transport": "ssh_batch_mode_plus_rsync_files_from",
@@ -149,7 +164,8 @@ def validate_analysis_erratum(
         or erratum.get("erratum_id")
         != "dino_sensitivity_latency_analysis_erratum_20260728_v1"
         or erratum.get("status") != "approved_analysis_only"
-        or erratum.get("scope") != "aggregation_validation_only"
+        or erratum.get("scope")
+        != "aggregation_validation_evidence_access_and_descendant_commit_only"
         or erratum.get("measurement_generation_unchanged") is not True
         or erratum.get("qualification_policy_unchanged") is not True
         or erratum.get("objective_values_altered") is not False
@@ -158,6 +174,15 @@ def validate_analysis_erratum(
         or erratum.get("manual_promotion_permitted") is not False
         or erratum.get("reason_code")
         != "allocation_torch_version_used_full_string_instead_of_declared_base_release"
+        or erratum.get("reason_codes")
+        != [
+            (
+                "allocation_torch_version_used_full_string_instead_of_"
+                "declared_base_release"
+            ),
+            "analysis_head_descends_from_immutable_launch_commit",
+            "remote_results_not_locally_mounted",
+        ]
     ):
         raise ValueError("analysis erratum identity or policy mismatch")
 
@@ -196,6 +221,10 @@ def validate_analysis_erratum(
         or actual_ledger_sha256 != expected_submission_ledger_sha256
         or actual_ledger_sha256
         != "b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54"
+        or measurement.get("launch_automl_branch")
+        != "rarunachalam/pre-platform-sdk-removal-20260714"
+        or measurement.get("launch_automl_commit")
+        != "cb62ef447704b95980b17aa82604992564b4e71f"
     ):
         raise ValueError("analysis erratum submission ledger mismatch")
 
@@ -256,6 +285,23 @@ def validate_analysis_erratum(
     acquisition_policy = erratum.get("evidence_acquisition_policy")
     if acquisition_policy != EXPECTED_EVIDENCE_ACQUISITION_POLICY:
         raise ValueError("analysis erratum evidence acquisition policy mismatch")
+    commit_correction = erratum.get("analysis_commit_correction")
+    if (
+        not isinstance(commit_correction, dict)
+        or commit_correction.get("launch_identity_source")
+        != "immutable_submission_ledger.source_checks"
+        or commit_correction.get("analysis_identity_source")
+        != "git_HEAD_and_current_validated_source_checks"
+        or commit_correction.get("branch_policy") != "exact_same_branch"
+        or commit_correction.get("commit_policy")
+        != "launch_commit_is_ancestor_of_analysis_commit"
+        or commit_correction.get("measurement_source_hash_policy")
+        != "exact_immutable_manifest_values"
+        or commit_correction.get("command_plan_policy")
+        != "regenerate_current_and_reconcile_against_immutable_ledger"
+        or commit_correction.get("source_hash_weakening_permitted") is not False
+    ):
+        raise ValueError("analysis erratum commit correction mismatch")
 
     identity = {
         "erratum_id": erratum["erratum_id"],
@@ -280,6 +326,184 @@ def validate_analysis_erratum(
         "raw_runtime_string_preserved": True,
     }
     return erratum, manifest, identity
+
+
+def git_output(repo: Path, *arguments: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(repo), *arguments],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip()
+
+
+def git_is_ancestor(repo: Path, ancestor: str, descendant: str) -> bool:
+    completed = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "merge-base",
+            "--is-ancestor",
+            ancestor,
+            descendant,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode not in {0, 1}:
+        raise RuntimeError(
+            "git ancestry verification failed: "
+            f"{completed.stderr.strip()}"
+        )
+    return completed.returncode == 0
+
+
+def expected_fixed_launch_source_checks(
+    contract: dict[str, Any],
+) -> dict[str, str]:
+    frozen = contract["frozen_inputs"]
+    runtime = contract["runtime_contract"]
+    sources = runtime["source_code_sha256"]
+    return {
+        "aggregator_sha256": sources["aggregator"],
+        "automl_branch": runtime["automl_branch"],
+        "automl_required_ancestor_commit": runtime[
+            "automl_required_ancestor_commit"
+        ],
+        "benchmark_sha256": frozen["benchmark_sha256"],
+        "block_runner_sha256": sources["block_runner"],
+        "common_sha256": sources["common"],
+        "evaluate_template_sha256": frozen["evaluate_template_sha256"],
+        "latency_stats_sha256": sources["latency_stats"],
+        "launcher_sha256": sources["launcher"],
+        "sdk_branch": runtime["sdk_branch"],
+        "sdk_commit": runtime["sdk_commit"],
+        "submission_source_state": "tracked_and_clean",
+    }
+
+
+def validate_launch_source_checks(
+    recorded: Any,
+    current: dict[str, str],
+    contract: dict[str, Any],
+) -> tuple[str, str]:
+    """Validate immutable launch sources and current analysis sources."""
+
+    if not isinstance(recorded, dict) or set(recorded) != (
+        EXPECTED_LAUNCH_SOURCE_KEYS
+    ):
+        raise ValueError("submission ledger launch source key set drift")
+    fixed = expected_fixed_launch_source_checks(contract)
+    for key, expected in fixed.items():
+        if recorded.get(key) != expected:
+            raise ValueError(f"submission ledger launch source drift: {key}")
+    launch_commit = recorded.get("automl_commit")
+    if (
+        not isinstance(launch_commit, str)
+        or len(launch_commit) != 40
+        or any(
+            character not in "0123456789abcdef"
+            for character in launch_commit
+        )
+    ):
+        raise ValueError("submission ledger launch commit is invalid")
+
+    expected_current_keys = EXPECTED_LAUNCH_SOURCE_KEYS - {
+        "submission_source_state"
+    }
+    if set(current) != expected_current_keys:
+        raise ValueError("current analysis source key set drift")
+    for key, expected in fixed.items():
+        if key == "submission_source_state":
+            continue
+        if current.get(key) != expected:
+            raise ValueError(f"current analysis source drift: {key}")
+    analysis_commit = current.get("automl_commit")
+    if (
+        not isinstance(analysis_commit, str)
+        or len(analysis_commit) != 40
+        or any(
+            character not in "0123456789abcdef"
+            for character in analysis_commit
+        )
+    ):
+        raise ValueError("current analysis commit is invalid")
+    return launch_commit, analysis_commit
+
+
+def validate_launch_analysis_provenance(
+    ledger_path: Path,
+    expected_ledger_sha256: str,
+    contract: dict[str, Any],
+    current_source_checks: dict[str, str],
+) -> tuple[dict[str, str], dict[str, Any]]:
+    """Prove that analysis HEAD descends from the exact launch commit."""
+
+    ledger, actual_sha256 = original.read_hashed_json(
+        ledger_path.resolve(), "submission ledger ancestry proof"
+    )
+    if (
+        actual_sha256 != expected_ledger_sha256
+        or actual_sha256
+        != "b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54"
+    ):
+        raise RuntimeError("immutable submission ledger digest mismatch")
+    recorded = ledger.get("source_checks")
+    launch_commit, analysis_commit = validate_launch_source_checks(
+        recorded, current_source_checks, contract
+    )
+    repo = Path(contract["runtime_contract"]["automl_path"]).resolve()
+    actual_head = git_output(repo, "rev-parse", "HEAD")
+    actual_branch = git_output(repo, "branch", "--show-current")
+    required_branch = contract["runtime_contract"]["automl_branch"]
+    if (
+        actual_head != analysis_commit
+        or actual_branch != required_branch
+        or recorded["automl_branch"] != required_branch
+        or current_source_checks["automl_branch"] != required_branch
+    ):
+        raise ValueError("launch/analysis branch or HEAD identity drift")
+    required_ancestor = contract["runtime_contract"][
+        "automl_required_ancestor_commit"
+    ]
+    if not git_is_ancestor(repo, required_ancestor, launch_commit):
+        raise ValueError(
+            "launch commit does not contain the manifest-required ancestor"
+        )
+    if not git_is_ancestor(repo, launch_commit, analysis_commit):
+        raise ValueError(
+            "analysis commit is not a descendant of the launch commit"
+        )
+    merge_base = git_output(
+        repo, "merge-base", launch_commit, analysis_commit
+    )
+    if merge_base != launch_commit:
+        raise ValueError("launch/analysis merge-base proof mismatch")
+    distance_text = git_output(
+        repo, "rev-list", "--count", f"{launch_commit}..{analysis_commit}"
+    )
+    if not distance_text.isdigit():
+        raise ValueError("launch/analysis commit distance is invalid")
+    proof = {
+        "policy": "launch_commit_is_ancestor_of_analysis_commit",
+        "automl_branch": required_branch,
+        "launch_commit": launch_commit,
+        "analysis_commit": analysis_commit,
+        "manifest_required_ancestor_commit": required_ancestor,
+        "manifest_required_ancestor_of_launch": True,
+        "launch_commit_ancestor_of_analysis": True,
+        "merge_base": merge_base,
+        "commit_distance": int(distance_text),
+        "launch_source_checks": dict(recorded),
+        "analysis_source_checks": dict(current_source_checks),
+        "measurement_source_hashes_exact": True,
+        "branch_exact": True,
+        "ledger_sha256": actual_sha256,
+    }
+    return dict(recorded), proof
 
 
 @dataclass(frozen=True)
@@ -1257,6 +1481,14 @@ def main() -> int:
         manifest_sha256,
         args.checkpoint_artifact_sha256,
     )
+    launch_source_checks, commit_provenance = (
+        validate_launch_analysis_provenance(
+            args.submission_ledger.resolve(),
+            args.submission_ledger_sha256,
+            contract,
+            source_checks,
+        )
+    )
     ledger, ledger_sha256 = original.load_submission_ledger(
         args.submission_ledger.resolve(),
         args.submission_ledger_sha256,
@@ -1266,7 +1498,7 @@ def main() -> int:
         schedule_sha256,
         schedule,
         summaries,
-        source_checks,
+        launch_source_checks,
     )
     secrets_path = (
         args.secrets_env.resolve()
@@ -1321,6 +1553,9 @@ def main() -> int:
     erratum_identity = {
         **erratum_identity,
         "correction": erratum["correction"],
+        "analysis_commit_correction": erratum[
+            "analysis_commit_correction"
+        ],
     }
     report = {
         "schema_version": 1,
@@ -1339,7 +1574,9 @@ def main() -> int:
         "submission_ledger_path": str(args.submission_ledger.resolve()),
         "submission_ledger_sha256": ledger_sha256,
         "schedule_sha256": schedule_sha256,
-        "measurement_generation_source_checks": source_checks,
+        "measurement_generation_source_checks": launch_source_checks,
+        "current_analysis_measurement_source_checks": source_checks,
+        "launch_analysis_commit_provenance": commit_provenance,
         "analysis_source_checks": {
             "original_aggregator": erratum_identity[
                 "original_aggregator_sha256"
