@@ -369,6 +369,10 @@ def validate_candidate_evidence(
         raise RuntimeError(
             "manifest candidate set differs from historical global Pareto front"
         )
+    recovery_jobs = {
+        item["candidate_id"]: item
+        for item in manifest.get("recovery_provenance", {}).get("jobs", [])
+    }
     for candidate in manifest["candidates"]:
         candidate_id = candidate["candidate_id"]
         audit = audits[candidate_id]
@@ -376,7 +380,6 @@ def validate_candidate_evidence(
         if audit["dominated_by"] or audit["pareto_rank"] != 0:
             raise RuntimeError(f"{candidate_id} is not globally nondominated")
         expected = {
-            "checkpoint": record["checkpoint"],
             "num_queries": record["num_queries"],
             "specs": record["specs"],
             "mAP50": record["objective_values"]["mAP50"],
@@ -395,10 +398,36 @@ def validate_candidate_evidence(
         for key, value in expected.items():
             if candidate[key] != value:
                 raise RuntimeError(f"historical evidence drift: {candidate_id}.{key}")
+        if candidate.get("checkpoint_origin") == "exact_config_retrain":
+            recovery = recovery_jobs.get(candidate_id)
+            if recovery is None:
+                raise RuntimeError(
+                    f"{candidate_id} lacks immutable recovery provenance"
+                )
+            if candidate.get("checkpoint_status_at_audit") != "recovered":
+                raise RuntimeError(f"{candidate_id} is not marked recovered")
+            recovered_expected = {
+                "checkpoint": recovery["checkpoint"]["path"],
+                "checkpoint_sha256": recovery["checkpoint"]["sha256"],
+                "recovery_tao_job_id": recovery["tao_job_id"],
+                "recovery_slurm_job_id": recovery["slurm_job_id"],
+            }
+            for key, value in recovered_expected.items():
+                if candidate.get(key) != value:
+                    raise RuntimeError(
+                        f"recovery evidence drift: {candidate_id}.{key}"
+                    )
+        elif candidate["checkpoint"] != record["checkpoint"]:
+            raise RuntimeError(
+                f"historical checkpoint drift: {candidate_id}.checkpoint"
+            )
     return {
         "candidate_count": len(manifest_ids),
         "global_pareto_front_match": "pass",
         "all_dominated_by_sets_empty": "pass",
+        "recovered_checkpoint_provenance": (
+            "pass" if recovery_jobs else "not_applicable"
+        ),
     }
 
 
