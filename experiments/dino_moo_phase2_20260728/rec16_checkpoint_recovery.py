@@ -382,6 +382,22 @@ def main() -> int:
     runtime = manifest["frozen_identity"]["runtime"]
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     sdk = SlurmSDK(poll_interval=10, state_file=state_path)
+    if args.allowed_node is not None:
+        # The pinned SDK facade does not expose the handler's supported
+        # ``allowed_nodes`` keyword.  Inject it at the one facade-to-handler
+        # boundary while preserving the exact pinned SDK implementation.
+        handler_create_job = sdk._handler.create_job
+
+        def node_pinned_handler_create_job(
+            *positional: Any,
+            **keywords: Any,
+        ) -> Any:
+            if "allowed_nodes" in keywords:
+                raise RecoveryError("duplicate allowed_nodes injection")
+            keywords["allowed_nodes"] = [args.allowed_node]
+            return handler_create_job(*positional, **keywords)
+
+        sdk._handler.create_job = node_pinned_handler_create_job
     job = sdk.create_job(
         image=runtime["sqsh_path"],
         command=command,
@@ -389,11 +405,6 @@ def main() -> int:
         num_nodes=1,
         partition=runtime["partition"],
         account=runtime["account"],
-        allowed_nodes=(
-            [args.allowed_node]
-            if args.allowed_node is not None
-            else None
-        ),
     )
     identity = runner._runtime_identity_from_store(sdk, job.id)
     submission = {
