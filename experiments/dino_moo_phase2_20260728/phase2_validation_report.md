@@ -1,9 +1,10 @@
 # DINO multi-objective AutoML phase-2 validation
 
 Current sealed-evidence cutoff: AutoML commit
-`2307d86a9a2cf6c0883a977a6dfcd8e1f885ea77`. The matched analysis records
-`created_at_utc=2026-07-28T10:44:10Z`; that is the artifact creation time,
-not the commit timestamp. The corrected runtime implementation is commit
+`bb9bfad86ca18091532d196ad9a96ccb3ad116d0`. The feasible-cohort matched
+analysis records `created_at_utc=2026-07-28T20:07:12Z`; that is the artifact
+creation time, not the commit timestamp. The corrected runtime implementation
+is commit
 `e4b6a412545614668affd371a82231e090998ec0`; the corrected v2 manifest was
 frozen at commit `b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d`; the
 60-candidate archive and algorithmic selections were sealed at
@@ -12,7 +13,11 @@ manifest was frozen at
 `a3099803f4a4fa7494c9564c0b6806576a203d7b`; all six post-front
 allocations were durably submitted at
 `8289d5988f55149857c8e04340c0580d470de11e`; and their complete matched
-analysis was sealed at the current evidence cutoff.
+analysis was sealed at `2307d86a9a2cf6c0883a977a6dfcd8e1f885ea77`.
+The separate four-candidate feasible-cohort manifest, checkpoint-recovery
+evidence, overlay, six-allocation ledger, complete 24-cell analysis, and
+post-submission integrity audit were sealed through the current evidence
+cutoff.
 
 The phase-two protocol erratum was issued at `2026-07-28T06:36:41Z` and
 committed at
@@ -41,12 +46,14 @@ Scope: DINO ResNet50 only, using
 `s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/`.
 No other model family, PTM compatibility repair, or dataset is included.
 
-This report for MR !22 records immutable sensitivity
-evidence, the failed-and-excluded v1 execution, the complete corrected v2
-archive, the algorithm-only mode selections, the frozen four-candidate
-post-front manifest, six completed matched allocations, and the immutable
-post-front analysis. Matched results are validation-only: no matched value
-replaced a selection-time objective or altered a winner.
+This report for MR !22 records immutable sensitivity evidence, the
+failed-and-excluded v1 execution, the complete corrected v2 archive, the
+algorithm-only mode selections, and two independent matched studies: the
+completed four-candidate global-Pareto-front validation and the separate
+four-candidate 98%-accuracy-feasible-cohort validation. Neither study supplies
+objectives to selection or reselection; no matched value replaced a
+selection-time objective or altered a winner. The two four-candidate
+populations are different and are reported separately.
 
 ## Current status
 
@@ -63,9 +70,12 @@ replaced a selection-time objective or altered a winner.
 | Corrected expanded shared 60-candidate archive | Complete and sealed | 60/60 successful, 20 per deterministic search seed, zero failures, zero manual injections. Accuracy and constrained-latency select `seed_271828_rec_18`; no-floor multi-objective selects `seed_271828_rec_19`. |
 | Pre-post-front protocol erratum | Complete and immutable before final selection or post-front data | Issued at `2026-07-28T06:36:41Z`, committed at `ba2cf95…`, whole-file SHA-256 `95bba650…`. It preserves the original bootstrap classification and separately makes the stricter exact-sign-flip/all-six rule authoritative for effective directional claims. |
 | Post-front hardening and protocol binding | Complete and frozen | Exact reconstruction binds the three seed archives, canonical 60-record union, semantic JSON and byte-exact CSV projections, combined selection, integrity audit, four retained checkpoints, and the protocol erratum. Manifest whole/internal hashes are `d468d5d2…` / `c49eb5eb…`. |
-| Matched remeasurement of final Pareto front | Complete | Six one-node/eight-A100 jobs completed `COMPLETED/0:0`; all 24 candidate/allocation cells are valid with 4,000 samples each. Five of six median pairs have an effective stable direction; `rec_15` versus `rec_3` has no stable direction. |
+| Matched remeasurement of global Pareto front | Complete | Six one-node/eight-A100 jobs completed `COMPLETED/0:0`; all 24 candidate/allocation cells are valid with 4,000 samples each. Five of six median pairs have an effective stable direction; `rec_15` versus `rec_3` has no stable direction. |
+| Frozen 98%-feasible-cohort manifest and launch | Complete | The selector-derived population contains exactly `seed_161803_rec_14`, `seed_271828_rec_16`, `seed_271828_rec_18`, and `seed_314159_rec_12`. Six balanced one-node/eight-A100 jobs were submitted together with no retries or replacement. |
+| Matched remeasurement of 98%-feasible cohort | Complete | Six distinct A100 allocations completed `COMPLETED/0:0`; 24/24 cells passed all quality and provenance gates with 4,000 samples each. Every median and p95 pair has no effective direction and a descriptive interval wholly inside `±0.73553775 ms`. |
+| Feasible-cohort outcome | **Outcome B** | All 12 pair/endpoint descriptive intervals lie inside the practical band and no effective direction exists. Latency mode selected the highest-accuracy member of this descriptively practically equivalent cohort; no algorithm change or reselection is required. |
 | Final combined selection | Complete and sealed | Algorithm-only winners are `seed_271828_rec_18` (accuracy), `seed_271828_rec_18` (98%-retained latency), and `seed_271828_rec_19` (multi-objective). |
-| Final hypothesis verdict | **Partially supported** | The selector found a nondominated, stable geometric compromise, but accuracy and 98%-constrained latency both select `rec_18`; therefore the multi-objective point cannot lie strictly between two distinct actual mode extremes. |
+| Revised mode-specific hypothesis verdict | **Fully supported** | Accuracy returns the maximum mAP50; latency returns the highest-accuracy member of the equivalent-fastest 98%-feasible cohort; multi-objective returns the deterministic, normalized, globally nondominated compromise; shared winners are permitted and no winner was manually changed. |
 
 The required historical correction is:
 
@@ -180,11 +190,28 @@ Latency mode uses its own configurable retained-accuracy rule:
 
 \[
 F_L=\{x\in V:A(x)\ge rA^*\},\qquad
-x_L=\arg\min_{x\in F_L}L(x).
+L_{\min}=\min_{x\in F_L}L(x).
 \]
 
-For this validation, \(r=0.98\). Absolute maximum degradation is also
-supported. If \(F_L\) is empty, the selector returns
+It then forms the equivalent-fastest cohort around the raw-minimum anchor:
+
+\[
+T_L=\{x\in F_L:
+L(x)-L_{\min}\le\epsilon_L
+\ \lor\
+CI_L(x)\cap CI_L(x_{\min})\ne\varnothing\}.
+\]
+
+The selected latency-mode point is the highest-accuracy member of \(T_L\);
+remaining ties use canonical specification fingerprint and candidate ID.
+Thus meaningful latency differences select the fastest feasible point, while
+differences covered by the configured latency-tie policy select the
+highest-accuracy member of the equivalent-fastest feasible cohort. No
+multi-objective regret, score, or weight enters this path.
+
+For this validation, \(r=0.98\) and
+\(\epsilon_L=0.73553775\) ms. Absolute maximum degradation is also supported.
+If \(F_L\) is empty, the selector returns
 `no_accuracy_feasible_candidates`; it does not silently fall back.
 
 Multi-objective mode now has a separate optional policy:
@@ -279,12 +306,13 @@ The deterministic Chebyshev ordering may still return an extreme, but the
 audit sets `distinct_compromise=false` and distinguishes a fallback from a
 successful compromise.
 
-The phase-two hypothesis uses a second, non-selector definition. It compares
-the frozen multi-objective winner with the actual accuracy winner and the
-actual 98%-constrained latency-mode winner, then evaluates the selection-time
-accuracy/latency geometry and the matched post-front latency evidence. This
-verdict-only comparison never changes the selector's geometric flag, candidate
-identity, or winner.
+The actual accuracy and constrained-latency endpoints remain useful context,
+but the revised mode-specific hypothesis does not require three distinct
+winners. Multi-objective mode is evaluated against its independently eligible
+global Pareto geometry; it need not lie between two actual mode winners when
+the accuracy and constrained-latency policies legitimately select the same
+candidate. This interpretation never changes the selector's geometric flag,
+candidate identity, or winner.
 
 ### 2.5 Alternatives considered
 
@@ -328,6 +356,33 @@ The erratum records
 `pareto_ranks_changed=false`, and
 `algorithm_winner_changed_or_overridden=false`.
 
+### 2.7 Focused latency tied-cohort code review
+
+The follow-up review traced the production path at the frozen selector source
+without changing it:
+
+| Requirement | Result | Production behavior |
+| --- | --- | --- |
+| Apply 98% threshold before latency ranking | Confirmed | `analyze_archive` resolves \(rA^*\), marks `latency_accuracy_feasible`, and passes only that list to `_choose_latency`. |
+| Anchor at raw minimum latency | Confirmed | `_choose_latency` takes the minimum `(latency, fingerprint)` audit from the canonical audit order. |
+| Form configured tie cohort | Confirmed | Membership is raw-anchor delta within `latency_tolerance` **or** reported confidence-interval overlap with the anchor. |
+| Prefer accuracy inside cohort | Confirmed | Final ordering begins with descending accuracy. |
+| Deterministic fallback | Confirmed | Fingerprint and candidate ID complete the final ordering; audits are canonicalized before selection. |
+| Enumeration-order independence | Confirmed | Forward and reverse archive order return the same candidate and tied cohort. |
+| Multi-objective leakage | Absent | Latency mode consumes no normalized regret, compromise score, or multi-objective weight. |
+
+For the frozen DINO archive, `rec_18` is the raw-minimum anchor at
+`66.23099475 ms`. The other three feasible candidates are `0.35841475`,
+`0.45412625`, and `0.59086950 ms` slower, all inside the
+`0.73553775 ms` policy tolerance. Their selection-time confidence intervals
+do not overlap the anchor's interval, so the historical four-way cohort was
+formed by the practical-tolerance branch alone.
+
+No algorithm correctness defect was found, and the selector was left
+unchanged. The historical serialized phrase “statistically equivalent” is
+therefore treated as a reporting shorthand; the precise product term is
+“equivalent under the configured latency tie policy.”
+
 ## 3. Test coverage
 
 The original Pareto-hardening suite covers dominated-point exclusion, valid and
@@ -353,6 +408,23 @@ Commit `83d9d7e` adds the independent-policy cases:
   selection.
 
 The added parameterization contributes 13 test cases.
+
+The 98%-feasible-cohort follow-up adds 17 focused cases:
+
+- practical-tolerance ties without confidence intervals;
+- confidence-interval-overlap ties outside the numeric tolerance;
+- raw-minimum-anchor-relative, rather than chained, cohort membership;
+- candidate-ID fallback after equal accuracy and equal fingerprint;
+- latency-winner invariance to multi-objective weights and archive order;
+- exact four-candidate derivation from the independent frozen selector replay;
+- rejection of retention-policy, threshold, feasibility-flag, or population
+  drift;
+- isolated manifest/runtime/source reconstruction and six-row schedule;
+- exact 50-warm-up, 5×100×8, 4,000-sample block-plan enforcement;
+- all-five matched-measurement isolation flags;
+- exact shifted sign-flip plus all-six practical-margin directionality;
+- separation of “no direction” from descriptive equivalence; and
+- explicit Outcome A, B, and C behavior without frozen-winner override.
 
 At the pre-post-front protocol cutoff
 `6850d71c2f3dea5f37505dd6831d41cb07a4d255`, the focused protocol and
@@ -409,6 +481,24 @@ git diff --check: clean
 The core run emitted one non-failing scikit-learn warning; there were no test
 failures. Commit `2307d86a9a2cf6c0883a977a6dfcd8e1f885ea77` adds only the
 immutable analysis artifact and does not change selector or experiment code.
+
+The feasible-cohort completion adds 12 read-only campaign-integrity tests.
+They cover the exact sealed campaign, final-analysis binding, absence of
+selector/SDK/network calls, and fail-closed mutations of overlay scope,
+isolation keys, recovery provenance, effective checkpoint, candidate order,
+plan, command, staging digest, and scheduler identity. The verifier
+reconstructs all six launch bundles and refuses to overwrite its audit.
+
+The final reruns at evidence commit
+`bb9bfad86ca18091532d196ad9a96ccb3ad116d0` were:
+
+```text
+focused latency-selector and feasible-cohort suite: 91 passed in 2.65s
+complete phase-two experiment package: 299 passed in 4.46s
+production core: 392 passed, 1 skipped in 4.74s
+matched-validation tools: 8/8 compiled
+git diff --check: clean
+```
 
 The combined phase-two run covers the provenance-safe analysis erratum,
 immutable runtime contract, strict native-number/JSON-number-string metric
@@ -1239,6 +1329,10 @@ latencies all fall in the configured `0.73553775 ms` tied cohort anchored at
 the raw minimum. The deterministic higher-accuracy tie-break selects
 `seed_271828_rec_18`, which is also the accuracy winner.
 
+This is the immutable selection-time decision. Section 7.5 tests its
+allocation stability without replacing these measurements or rerunning the
+selector.
+
 Multi-objective mode has no accuracy floor, so all 60 valid candidates are
 eligible. Its front-relative bounds are:
 
@@ -1344,7 +1438,7 @@ retained in `expanded_candidate_table.json` and
 | `seed_314159_rec_8` | 3/6 | 0.0001987779698535635 | 7.772603220386812e-05 | 0.4565118130625365 | 64.66067225 | 64.82202844999999 | 0.05224650000000253 / 0.10625149999999906 | N/Y | 8 | 161803/0, 161803/11, 161803/12, 161803/15, 161803/17, 161803/18, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 271828/1, 271828/10, 271828/12, 271828/15, 271828/17, 271828/19, 271828/3, 271828/5, 271828/6, 271828/7, 271828/9, 314159/1, 314159/10, 314159/13, 314159/16, 314159/6, 314159/9 | 1.7211748417055097 | 0.8892727858364835 | 0.8605887260765687 | — |
 | `seed_314159_rec_9` | 4/3 | 0.00045 | 0.0009262898467818477 | 0.5805845050638105 | 57.31344675 | 57.4978615 | 0.07946699999999751 / 0.15983650000000438 | N/Y | 3 | 161803/3, 271828/19, 271828/6 | 0.6475266123309424 | 0.3712022548174423 | 0.3237638155299048 | — |
 
-### 7.3 Final Pareto-front matched remeasurement
+### 7.3 Global-Pareto-front matched remeasurement
 
 The immutable manifest contains every and only expanded global-rank-zero
 candidate: `seed_271828_rec_15`, `seed_271828_rec_18`,
@@ -1356,6 +1450,8 @@ candidate-set SHA-256 is
 `b19e3be3e99d3bee0c0180e567dfd608dcfdf94a50975df73fc89b7c55075a44`;
 and schedule SHA-256 is
 `ec53c4e5088201d10eb65270511180a274d1aa4c9746cf6c51097b15d17c2cb9`.
+This global-front campaign is independent of the separate 98%-feasible-cohort
+follow-up in Section 7.5; both are validation-only.
 
 The six-allocation ledger was committed at
 `8289d5988f55149857c8e04340c0580d470de11e`. Its whole-file/internal
@@ -1643,12 +1739,12 @@ Two different questions must remain separate:
    accuracy and unconstrained-latency extremes of the
    multi-objective-eligible Pareto population. This is a selector output and
    remains unchanged.
-2. **Actual-mode-winner distinctness.** The hypothesis comparison asks whether
-   the same frozen multi-objective winner differs from both the actual
-   accuracy-mode winner and the actual latency-mode winner produced under 98%
-   retained accuracy. It separately reports identity, accuracy position,
-   selection-time latency position, and matched-latency evidence against
-   those two actual winners.
+2. **Actual-mode-winner context.** The report records whether the same frozen
+   multi-objective winner differs from the actual accuracy-mode winner and the
+   actual latency-mode winner produced under 98% retained accuracy. Winner
+   distinctness is not a requirement of the revised mode-specific hypothesis.
+   Identity, accuracy position, selection-time latency position, and matched
+   latency evidence remain useful contextual comparisons.
 
 Selection-time mAP50 and latency are the only objective values used to build
 the archive, construct Pareto ranks, normalize regrets, score the compromise,
@@ -1725,7 +1821,11 @@ intermediate on the global front, but not as a point between the actual
 accuracy and 98%-constrained latency winners: those two actual winners are the
 same `rec_18` candidate.
 
-### 7.4 Final combined selection and integrity audit
+Its position relative to two distinct actual-mode endpoints is contextual
+only and is not a revised-hypothesis failure when accuracy and constrained
+latency legitimately share a winner.
+
+### 7.4 Frozen combined selection and global-front integrity audit
 
 | Artifact or binding | SHA-256 |
 | --- | --- |
@@ -1767,17 +1867,238 @@ zero-submission resume reconciled that no prior job existed; consequently the
 final ledger contains no adopted-job recovery event or supersession. There
 were no complete-invalid allocation replacements.
 
+### 7.5 98%-feasible-cohort matched validation
+
+This follow-up tests the immutable latency-mode decision from Section 7.1.3.
+It is separate from the global-Pareto-front study in Section 7.3. The
+production replay first re-derived the frozen accuracy reference
+\(A^*=0.6554138278683255\) and threshold
+\(0.98A^*=0.6423055513109589\), then admitted every and only:
+
+- `seed_161803_rec_14`;
+- `seed_271828_rec_16`;
+- `seed_271828_rec_18`; and
+- `seed_314159_rec_12`.
+
+No candidate was manually added or removed. The manifest contains six
+complete four-candidate permutations using Williams rows `[0, 0, 1, 2, 2,
+3]`. Every candidate occupies every position one or two times, which is the
+theoretical optimum for six allocations, and every one of the 12 ordered
+adjacencies occurs one or two times.
+
+#### 7.5.1 Frozen identities and protocol
+
+| Binding | Whole-file SHA-256 | Internal/canonical SHA-256 |
+| --- | --- | --- |
+| Feasible-cohort manifest | `f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4` | `32c268f11742c26bdc47c61272f73a6d9f651317606e9102e75585bc7d2100e9` |
+| Candidate set | — | `143a2cf63b3b6d700cc2cd124f15a12ef6bdf58b85c2a6af5fdc4bcbfc73bce1` |
+| Schedule | — | `19cb88f9a061ab1dc46eb7aa1177fe9a93ae148524850d502d99af98089c4f9d` |
+| rec16 recovery evidence | `923284e51f9e41f6954a1615f683ea6221b62fce0f490c3d5252b7c0d67f3e56` | `01715fecc26c3f2b5085650f3bd17f62a502dfc6a85560f11cfa968d08ac9456` |
+| rec16 checkpoint overlay | `d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa` | `e2e6446e3dca7f52e7b2bac682c26bc5b711067b0a18dae71cfbb24f5a44402c` |
+| Launch contract | `a9fdc853d5847b9a945a012c5c281877a0e8d70c5bec09b5caea31382639b84d` | `9a29cad7a9863b7a5b9c961d62a0761a2462422468499948ff840667a608d94f` |
+| Six-job submission ledger | `a5768627797d91f8c9ab88d5893bcf607705b83ce30a1ceef9d5bc20ce39fd81` | `0c0a69ca6203a88fac9f04aaf62bc7a7ed2644b18307c1664243af2d389ad168` |
+| Complete matched analysis | `30505ee6fd1635ac4edba01f95136f527a2df9e54257675a1fb505bd0b422efd` | `8ff21a404357e59949dfde7c9889710e854b0e5721ef53f39f439e71478c7351` |
+| 198-artifact raw-input inventory | — | `0f8ed28335d68f7d6359f11dd8e617dc71b75f6a0b73460b31a9b9745391a0d5` |
+| Post-submission integrity audit | `03784ce116783c12d6373ad4e5842974deae75898b37af08cf672354c1611e7b` | `03083c5c1f604c3e47eee2644e1ef932266610bec41cf19a2dbf78b5ae483ac4` |
+
+The protocol is identical for every cell: one node and eight A100 replicas;
+batch size one; FP32 with TF32 disabled; input identity
+`1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08`;
+timed model-forward-plus-DINO-postprocessing scope; 50 warm-ups; five rounds
+of 100 timed requests per replica; 4,000 raw samples per
+candidate/allocation; device-round cluster bootstrap; median and pooled p95;
+and the frozen MAD, IQR, robust-CV, round-drift, device-spread, runtime,
+input, hardware, and complete-block quality gates. The practical tolerance is
+`0.73553775 ms`.
+
+The historical `seed_271828_rec_16` checkpoint had been garbage-collected.
+Its execution projection therefore uses the immutable earliest-submitted
+exact-configuration retrain, SHA-256
+`931bc787eb7b9b1752bd7613558a2e0f1d26ae7cc5a983d8f4333ef59abbd304`,
+as a latency-only surrogate. It is not represented as byte-identical to the
+historical checkpoint. The parent manifest continues to record historical
+SHA-256
+`4b5ff50181ff919a2796cdd54027fff92eb57c908701a34408d29136d5565b4d`;
+accuracy, selection-time latency, audits, ranks, normalization, and winners
+remain frozen.
+
+#### 7.5.2 Six-allocation provenance
+
+| Allocation | TAO job | SLURM job | Node | Candidate order | Terminal state |
+| --- | --- | ---: | --- | --- | --- |
+| `00` | `32862ad8-e015-46a1-892d-e399ae71a4a5` | `31004302` | `batch-block7-00886` | `rec_14 → rec_16 → rec_12 → rec_18` | `Complete / COMPLETED / 0:0` |
+| `01` | `ee1f5f87-ef4a-4e4a-b13c-fdbf3a90d792` | `31004303` | `batch-block7-01632` | `rec_14 → rec_16 → rec_12 → rec_18` | `Complete / COMPLETED / 0:0` |
+| `02` | `eecf47a7-aed4-4d5b-8921-7e50f644a5a6` | `31004306` | `batch-block7-00064` | `rec_16 → rec_18 → rec_14 → rec_12` | `Complete / COMPLETED / 0:0` |
+| `03` | `a789904e-a852-406b-b392-5b2c733dda3c` | `31004308` | `batch-block7-00288` | `rec_18 → rec_12 → rec_16 → rec_14` | `Complete / COMPLETED / 0:0` |
+| `04` | `2e7d214e-b5a3-44d5-b402-88a25db016d5` | `31004316` | `batch-block7-01760` | `rec_18 → rec_12 → rec_16 → rec_14` | `Complete / COMPLETED / 0:0` |
+| `05` | `2d88ee5f-1fd0-4644-b446-fa75c205e8a2` | `31004322` | `batch-block7-03295` | `rec_12 → rec_14 → rec_18 → rec_16` | `Complete / COMPLETED / 0:0` |
+
+The six node names are distinct and every allocation reports eight unique GPU
+UUIDs, for 48 distinct NVIDIA A100-SXM4-80GB devices across the campaign.
+There were no retries, adopted jobs, supersessions, or
+complete-invalid replacements.
+
+#### 7.5.3 Complete 24-cell measurement evidence
+
+Every row below passed all frozen gates. The interval is the
+within-allocation device-round cluster-bootstrap 95% interval for the median.
+“Drift/spread” reports round drift followed by device-median range.
+
+| Alloc | Candidate | Pos | Median ms | p95 ms | Median 95% CI | MAD / IQR ms | Robust CV | Drift / spread ms | Samples | Gate |
+| ---: | --- | ---: | ---: | ---: | --- | --- | ---: | --- | ---: | --- |
+| 00 | `seed_161803_rec_14` | 0 | 66.58585375 | 66.91980550 | [66.50118043, 66.68616050] | 0.13441475 / 0.26947225 | 0.00299288 | 0.06430350 / 0.36855250 | 4000 | pass |
+| 00 | `seed_271828_rec_16` | 1 | 66.60602850 | 67.75998100 | [66.56626325, 66.67760700] | 0.08633850 / 0.17880550 | 0.00192183 | 0.06959100 / 0.29176050 | 4000 | pass |
+| 00 | `seed_314159_rec_12` | 2 | 66.64559350 | 67.43967505 | [66.61086550, 66.66819875] | 0.07474650 / 0.14932800 | 0.00166281 | -0.47652400 / 0.21281400 | 4000 | pass |
+| 00 | `seed_271828_rec_18` | 3 | 66.62762500 | 67.29286400 | [66.57474200, 66.66751100] | 0.11684300 / 0.23200700 | 0.00259999 | 0.07044850 / 0.33360700 | 4000 | pass |
+| 01 | `seed_161803_rec_14` | 0 | 66.54912675 | 66.84897350 | [66.44529400, 66.66602900] | 0.14028325 / 0.31378700 | 0.00312527 | 0.03491050 / 0.39394400 | 4000 | pass |
+| 01 | `seed_271828_rec_16` | 1 | 66.61576225 | 67.02921405 | [66.56436900, 66.67424850] | 0.08918700 / 0.18075675 | 0.00198495 | 0.07312875 / 0.51832150 | 4000 | pass |
+| 01 | `seed_314159_rec_12` | 2 | 66.65118225 | 66.87195405 | [66.50588125, 66.67822250] | 0.13363275 / 0.28136925 | 0.00297255 | 0.04630100 / 0.45360500 | 4000 | pass |
+| 01 | `seed_271828_rec_18` | 3 | 66.60359000 | 66.89651055 | [66.51280850, 66.69169975] | 0.13664300 / 0.27990125 | 0.00304168 | 0.06243400 / 0.40322300 | 4000 | pass |
+| 02 | `seed_271828_rec_16` | 0 | 66.43022000 | 66.73729350 | [66.37435325, 66.53745000] | 0.14649350 / 0.29837075 | 0.00326946 | 0.03140300 / 0.43446650 | 4000 | pass |
+| 02 | `seed_271828_rec_18` | 1 | 66.39347075 | 66.77865995 | [66.35602475, 66.52746175] | 0.10951075 / 0.26004450 | 0.00244543 | 0.05042050 / 0.46314250 | 4000 | pass |
+| 02 | `seed_161803_rec_14` | 2 | 66.47002425 | 66.84194805 | [66.42081275, 66.52470325] | 0.08345775 / 0.18342275 | 0.00186151 | 0.01360750 / 0.40763600 | 4000 | pass |
+| 02 | `seed_314159_rec_12` | 3 | 66.36806075 | 66.76542595 | [66.32789475, 66.44868575] | 0.12363350 / 0.34254500 | 0.00276186 | 0.03874075 / 0.57738550 | 4000 | pass |
+| 03 | `seed_271828_rec_18` | 0 | 66.70728100 | 67.11657800 | [66.67600200, 66.91219800] | 0.17453100 / 0.33939975 | 0.00387903 | 0.05750800 / 0.59981850 | 4000 | pass |
+| 03 | `seed_314159_rec_12` | 1 | 66.71874725 | 67.03843000 | [66.52987600, 66.86202325] | 0.22061450 / 0.45536075 | 0.00490242 | 0.10640775 / 0.66545450 | 4000 | pass |
+| 03 | `seed_271828_rec_16` | 2 | 66.66699025 | 67.13832350 | [66.63281500, 66.76723800] | 0.12184325 / 0.23224750 | 0.00270966 | 0.03178300 / 0.65588450 | 4000 | pass |
+| 03 | `seed_161803_rec_14` | 3 | 66.66278450 | 66.99538045 | [66.63925100, 66.72559550] | 0.10388750 / 0.20310300 | 0.00231049 | 0.05443300 / 0.45003000 | 4000 | pass |
+| 04 | `seed_271828_rec_18` | 0 | 66.32756575 | 66.57480800 | [66.30494500, 66.38963250] | 0.07745700 / 0.16200150 | 0.00173137 | 0.04656575 / 0.34739750 | 4000 | pass |
+| 04 | `seed_314159_rec_12` | 1 | 66.37413200 | 66.56194505 | [66.30681500, 66.40861475] | 0.09335750 / 0.18683175 | 0.00208533 | 0.03276725 / 0.36885350 | 4000 | pass |
+| 04 | `seed_271828_rec_16` | 2 | 66.37334100 | 66.60615950 | [66.33710050, 66.40643175] | 0.08539700 / 0.17203725 | 0.00190754 | 0.02807075 / 0.32982200 | 4000 | pass |
+| 04 | `seed_161803_rec_14` | 3 | 66.35442450 | 66.51253105 | [66.30567825, 66.40080300] | 0.07176150 / 0.14272825 | 0.00160341 | 0.06530150 / 0.26653100 | 4000 | pass |
+| 05 | `seed_314159_rec_12` | 0 | 66.63283950 | 66.88530790 | [66.54846950, 66.69716475] | 0.10200550 / 0.20591425 | 0.00226965 | 0.08360150 / 0.36335700 | 4000 | pass |
+| 05 | `seed_161803_rec_14` | 1 | 66.70310025 | 67.02820140 | [66.65920425, 66.72492650] | 0.08779225 / 0.18660150 | 0.00195135 | 0.05606600 / 0.45481650 | 4000 | pass |
+| 05 | `seed_271828_rec_18` | 2 | 66.64605575 | 66.91226145 | [66.60881200, 66.73901600] | 0.11613075 / 0.24523550 | 0.00258343 | 0.05882500 / 0.40557700 | 4000 | pass |
+| 05 | `seed_271828_rec_16` | 3 | 66.63964650 | 67.00401600 | [66.58705500, 66.81214150] | 0.11929150 / 0.29810650 | 0.00265400 | 0.07983000 / 0.43763550 | 4000 | pass |
+
+Between-allocation summaries use the median of the six allocation statistics:
+
+| Candidate | Stable median ms | Median range / SD ms | Stable p95 ms | p95 range / SD ms |
+| --- | ---: | --- | ---: | --- |
+| `seed_161803_rec_14` | 66.567490250 | 0.348675750 / 0.128051069 | 66.884389500 | 0.515670350 / 0.185121332 |
+| `seed_271828_rec_16` | 66.610895375 | 0.293649250 / 0.122124679 | 67.016615025 | 1.153821500 / 0.402267602 |
+| `seed_271828_rec_18` | 66.615607500 | 0.379715250 / 0.152862517 | 66.904386000 | 0.718056000 / 0.251782234 |
+| `seed_314159_rec_12` | 66.639216500 | 0.350686500 / 0.153217961 | 66.878630975 | 0.877730000 / 0.296442858 |
+
+All 24 rows pass every quality gate. The worst observed normalized value
+remains below its frozen limit:
+
+| Quality gate | Maximum observed | Limit |
+| --- | ---: | ---: |
+| Robust CV | 0.004902 | 0.10 |
+| Round-median range / median | 0.013727 | 0.05 |
+| Absolute round drift / median | 0.007150 | 0.05 |
+| Device-median range / median | 0.009974 | 0.05 |
+| Median-bootstrap width / median | 0.004978 | 0.03 |
+
+#### 7.5.4 Allocation-matched pairwise analysis
+
+Delta is first minus second; a negative value means the first candidate is
+faster. Each delta vector is ordered allocation 00 through 05. “Exact p”
+reports the one-sided tolerance-shifted sign-flip p-values for first-faster
+and second-faster. “All six” reports the corresponding negative/positive
+tolerance-boundary unanimity gates.
+
+| First − second | Median deltas ms | Median Δ / descriptive 95% CI ms | Exact p; all six | Median result | p95 deltas ms | p95 Δ / descriptive 95% CI ms | Exact p; all six | p95 result |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `seed_161803_rec_14 − seed_271828_rec_16` | -0.02017475, -0.06663550, +0.03980425, -0.00420575, -0.01891650, +0.06345375 | -0.01156112 / [-0.04340512, +0.05162900] | 1/1; false/false | No stable direction; descriptive practical equivalence | -0.84017550, -0.18024055, +0.10465455, -0.14294305, -0.09362845, +0.02418540 | -0.11828575 / [-0.51020803, +0.06441998] | 0.984375/1; false/false | No stable direction; descriptive practical equivalence |
+| `seed_161803_rec_14 − seed_271828_rec_18` | -0.04177125, -0.05446325, +0.07655350, -0.04449650, +0.02685875, +0.05704450 | -0.00745625 / [-0.04947987, +0.06679900] | 1/1; false/false | No stable direction; descriptive practical equivalence | -0.37305850, -0.04753705, +0.06328810, -0.12119755, -0.06227695, +0.11593995 | -0.05490700 / [-0.24712803, +0.08961402] | 1/1; false/false | No stable direction; descriptive practical equivalence |
+| `seed_161803_rec_14 − seed_314159_rec_12` | -0.05973975, -0.10205550, +0.10196350, -0.05596275, -0.01970750, +0.07026075 | -0.03783513 / [-0.08089762, +0.08611212] | 1/1; false/false | No stable direction; descriptive practical equivalence | -0.51986955, -0.02298055, +0.07652210, -0.04304955, -0.04941400, +0.14289350 | -0.03301505 / [-0.28464178, +0.10970780] | 1/1; false/false | No stable direction; descriptive practical equivalence |
+| `seed_271828_rec_16 − seed_271828_rec_18` | -0.02159650, +0.01217225, +0.03674925, -0.04029075, +0.04577525, -0.00640925 | +0.00288150 / [-0.03094362, +0.04126225] | 1/1; false/false | No stable direction; descriptive practical equivalence | +0.46711700, +0.13270350, -0.04136645, +0.02174550, +0.03135150, +0.09175455 | +0.06155302 / [-0.00981048, +0.29991025] | 1/1; false/false | No stable direction; descriptive practical equivalence |
+| `seed_271828_rec_16 − seed_314159_rec_12` | -0.03956500, -0.03542000, +0.06215925, -0.05175700, -0.00079100, +0.00680700 | -0.01810550 / [-0.04566100, +0.03448312] | 1/1; false/false | No stable direction; descriptive practical equivalence | +0.32030595, +0.15726000, -0.02813245, +0.09989350, +0.04421445, +0.11870810 | +0.10930080 / [+0.00804100, +0.23878297] | 1/1; false/false | No stable direction; descriptive practical equivalence |
+| `seed_271828_rec_18 − seed_314159_rec_12` | -0.01796850, -0.04759225, +0.02541000, -0.01146625, -0.04656625, +0.01321625 | -0.01471738 / [-0.04707925, +0.01931313] | 1/1; false/false | No stable direction; descriptive practical equivalence | -0.14681105, +0.02455650, +0.01323400, +0.07814800, +0.01286295, +0.02695355 | +0.01889525 / [-0.06697405, +0.05255078] | 1/1; false/false | No stable direction; descriptive practical equivalence |
+
+All 12 endpoint/pair descriptive intervals lie wholly inside the practical
+tolerance band, and neither endpoint has an effective stable edge. One raw
+`rec_14 − rec_16` p95 allocation difference is `-0.84017550 ms`, but the
+other five do not cross the negative boundary; the all-six gate therefore
+correctly rejects direction. Failure to prove a direction is not itself
+equivalence. Here the separate descriptive-interval rule supplies the
+practical-equivalence statement. No simultaneous total ordering is claimed.
+
+#### 7.5.5 Outcome, isolation, and integrity
+
+The preregistered classifier emitted
+`B_all_feasible_candidates_practically_equivalent`:
+
+> Latency mode selected the highest-accuracy member of the statistically and
+> practically equivalent fastest feasible cohort.
+
+More precisely, all four candidates form a descriptively practically
+equivalent cohort at both endpoints; no confirmatory directional claim exists.
+`seed_271828_rec_18` has the cohort's highest frozen mAP50, so the existing
+higher-accuracy tie-break remains justified. It is not claimed to be
+measurably the raw-fastest candidate. This is expected product behavior, not
+an algorithm failure, and no selector change is required.
+
+| Validation question | Answer |
+| --- | --- |
+| Is `rec_18` measurably the fastest feasible candidate? | No; it has no effective median or p95 edge over any peer. |
+| Are all feasible candidates practically equivalent? | Yes under the descriptive interval rule at both endpoints. |
+| Is another feasible candidate stably faster? | No. |
+| Does the higher-accuracy tie-break remain justified? | Yes; it deterministically resolves the equivalent-fastest cohort. |
+| Does the reported latency-mode semantic match production behavior? | Yes: feasibility first, raw-minimum-anchored tie cohort second, then accuracy, fingerprint, and candidate ID. |
+
+The matched analysis records:
+
+```text
+selector_invoked_on_matched_measurements = false
+selection_time_objectives_replaced = false
+measurements_feed_selection = false
+measurements_feed_reselection = false
+algorithm_selected_candidate_overridden = false
+```
+
+The separate read-only integrity verifier reconstructed every execution
+configuration, augmented plan, pretty-JSON staged plan, command, compressed
+bundle, launch contract, and ledger identity; it then bound all six completed
+results and 24 effective checkpoint/plan pairs. Input hashes were identical
+before and after. It called no selector, SDK, scheduler, network, benchmark,
+selection, or reselection path and emitted:
+
+```text
+launch_artifacts_modified = false
+measurements_reused = true
+rerun_required = false
+```
+
 ## 8. Final mode comparison
 
-| Mode | Candidate | Accuracy | Stable median latency | Eligibility rule | Pareto status | Selection reason |
-| --- | --- | ---: | ---: | --- | --- | --- |
-| Accuracy | `seed_271828_rec_18` | 0.6554138278683255 | 66.49666775 ms | All 60 valid candidates | Global rank zero, nondominated | Highest valid mAP50; no accuracy tie required |
-| Latency | `seed_271828_rec_18` | 0.6554138278683255 | 66.49666775 ms | mAP50 ≥ 0.6423055513109589 (98% of accuracy winner); 4 candidates | Global rank zero, nondominated | Raw minimum selection-time latency in the feasible cohort; all four are within the frozen latency tie rule, then highest accuracy chooses `rec_18` |
-| Multi-objective | `seed_271828_rec_19` | 0.6175134981289873 | 57.089795375 ms | All 60 valid candidates; independent minimum-accuracy floor unset | Global rank zero, nondominated | Minimum front-normalized augmented-Chebyshev score, 0.1797199345585883; selector-geometric distinct compromise |
+| Mode | Candidate | Accuracy | Stable median latency (campaign) | Eligibility rule | Pareto status | Selection reason |
+| --- | --- | ---: | --- | --- | --- | --- |
+| Accuracy | `seed_271828_rec_18` | 0.6554138278683255 | 66.49666775 ms (global front) | All 60 valid candidates | Global rank zero, nondominated | Highest valid mAP50; no accuracy tie required |
+| Latency | `seed_271828_rec_18` | 0.6554138278683255 | 66.61560750 ms (98%-feasible cohort) | mAP50 ≥ 0.6423055513109589 (98% of accuracy winner); 4 candidates | Global rank zero, nondominated | Equivalent-fastest cohort anchored at the raw selection-time minimum; highest accuracy chooses `rec_18` |
+| Multi-objective | `seed_271828_rec_19` | 0.6175134981289873 | 57.089795375 ms (global front) | All 60 valid candidates; independent minimum-accuracy floor unset | Global rank zero, nondominated | Minimum front-normalized augmented-Chebyshev score, 0.1797199345585883; selector-geometric distinct compromise |
 
 Candidate identity, accuracy, Pareto status, and selection reason come only
-from the immutable selection-time snapshot. Stable median and p95 come only
-from matched validation and were never input to a second selection.
+from the immutable selection-time snapshot. Matched values are labeled by
+campaign and were never input to a second selection. A repeated campaign can
+give the same candidate a slightly different aggregate latency; values from
+the global-front and feasible-cohort campaigns are not silently substituted
+for one another.
+
+The complete 98%-feasible cohort is:
+
+| Candidate | mAP50 | Stable median | Stable p95 | Feasible at 98% | Pairwise latency conclusion | Latency-mode interpretation |
+| --- | ---: | ---: | ---: | --- | --- | --- |
+| `seed_161803_rec_14` | 0.6503731411565659 | 66.567490250 ms | 66.884389500 ms | Yes | Descriptively practically equivalent to all three peers; no stable median or p95 direction | Equivalent-fastest cohort member; lower accuracy than `rec_18` |
+| `seed_271828_rec_16` | 0.6544218576499151 | 66.610895375 ms | 67.016615025 ms | Yes | Descriptively practically equivalent to all three peers; no stable median or p95 direction | Equivalent-fastest cohort member; lower accuracy than `rec_18` |
+| `seed_271828_rec_18` | 0.6554138278683255 | 66.615607500 ms | 66.904386000 ms | Yes | Descriptively practically equivalent to all three peers; no stable median or p95 direction | Selected as the cohort's highest-accuracy candidate |
+| `seed_314159_rec_12` | 0.6517250365478822 | 66.639216500 ms | 66.878630975 ms | Yes | Descriptively practically equivalent to all three peers; no stable median or p95 direction | Equivalent-fastest cohort member; lower accuracy than `rec_18` |
+
+The slightly lower descriptive median for `rec_14` and slightly lower
+descriptive p95 for `rec_12` are not directional claims. All complete
+descriptive pair intervals are inside the tolerance band, and all effective
+edge sets are empty.
+
+| Mode | Candidate | Selection-time reason | Matched-validation conclusion | Algorithm change required |
+| --- | --- | --- | --- | --- |
+| Accuracy | `seed_271828_rec_18` | Maximum valid mAP50 over the shared 60-candidate archive | Remains the accuracy reference; feasible-cohort latency is descriptively equivalent to its three feasible peers | No |
+| Latency | `seed_271828_rec_18` | Four candidates pass 98%; each lies within `0.73553775 ms` of the raw minimum, so higher accuracy resolves the tied cohort | **Outcome B:** highest-accuracy member of the descriptively practically equivalent fastest feasible cohort | No |
+| Multi-objective | `seed_271828_rec_19` | Minimum normalized augmented-Chebyshev score on the independently eligible global rank-zero front | Global-front study establishes a stable nondominated compromise; the feasible-cohort study neither includes nor reselects it | No |
+
+The following delta table is specifically the completed global-front campaign;
+it is retained for the multi-objective geometry comparison:
 
 | Mode | Accuracy delta from A | Selection-time median ms | Selection-time delta from A / L | Matched p95 ms | Stable median delta from A / L | Exceeds uncertainty? |
 | --- | ---: | ---: | --- | ---: | --- | --- |
@@ -1803,28 +2124,30 @@ the actual accuracy and 98%-constrained latency modes both selected
 | Criterion | Result | Evidence |
 | --- | --- | --- |
 | Accuracy mode selects the highest-accuracy valid candidate | Supported | `seed_271828_rec_18`, mAP50 `0.6554138278683255`, is the maximum across all 60 valid rows. |
-| Latency mode selects the fastest candidate satisfying 98% retention | Supported under the frozen tolerance rule | Threshold `0.6423055513109589` admits four candidates. `rec_18` has the raw minimum selection-time median (`66.23099475 ms`); the four-point latency-tied cohort is resolved by higher accuracy, which also selects `rec_18`. |
-| Multi-objective winner is Pareto-nondominated | Supported | `seed_271828_rec_19` has global and eligible Pareto rank zero and empty `dominated_by`. |
-| Winner is produced entirely by the documented algorithm | Supported | No manual injection, reorder, promotion, override, reselection, or matched-objective replacement occurred; three archive orderings reproduce the same result. |
-| A distinct intermediate point exists in the eligible global front | Supported geometrically | `rec_19` has regret pair `(0.3279659791, 0.3594391817)`, score `0.1797199346`, and differs from both global-front extremes. |
-| Multi-objective selection differs from both actual mode winners | Supported by identity, but actual extremes are degenerate | Accuracy and constrained latency both select `rec_18`; multi-objective selects `rec_19`. There are not two distinct actual extreme candidates. |
-| Multi-objective accuracy lies between the actual extreme winners | Not supported | Both actual winners have mAP50 `0.6554138278683255`; `rec_19` has `0.6175134981289873`. |
-| Multi-objective latency lies between the actual extreme winners | Not supported | Both actual winners have stable median `66.49666775 ms`; `rec_19` has `57.089795375 ms`. |
-| Relative latency position is stable across matched allocations | Supported for global Pareto geometry | `rec_3` is stably faster than `rec_19`, and `rec_19` is stably faster than `rec_18`; each effective test has p=`0.015625` and all six differences beyond tolerance. |
-| Stable across repeated runs or seeds | Partially established | Relative latency is stable across six independent matched allocations. Candidate generation used three deterministic search seeds. The final winner identity was not independently retrained under multiple training seeds, so full training-seed winner stability is not claimed. |
+| Latency mode selects the fastest accuracy-feasible candidate or the highest-accuracy member of its equivalent-fastest cohort | Supported: Outcome B | Threshold `0.6423055513109589` admits exactly four candidates. All six median-pair and six p95-pair descriptive intervals lie inside `±0.73553775 ms`; no effective directional edge exists. `rec_18` has the greatest mAP50 in that cohort. |
+| Multi-objective mode returns a deterministic normalized Pareto compromise on its independent front | Supported | `seed_271828_rec_19` has global and eligible rank zero, empty `dominated_by`, front-normalized regret pair `(0.3279659791, 0.3594391817)`, and minimum augmented-Chebyshev score `0.1797199346`. |
+| Global compromise latency position is allocation-stable | Supported | In the separate global-front study, `rec_3` is stably faster than `rec_19`, and `rec_19` is stably faster than `rec_18`; each effective median test has p=`0.015625` and all six differences beyond tolerance. |
+| Accuracy and latency modes may legitimately share a winner | Supported by observed policy behavior | Both select `rec_18`: accuracy because it maximizes mAP50, latency because it is the highest-accuracy member of the equivalent-fastest feasible cohort. Shared identity is not a failure. |
+| Winner selection is entirely algorithm-driven | Supported | No manual injection, reorder, promotion, override, reselection, or matched-objective replacement occurred; three archive orderings reproduce the same selection signature. |
+| Matched feasible-cohort evidence is isolated from selection | Supported | All five required flags are false; the integrity audit invoked no selector, SDK, benchmark, selection, or reselection path and observed identical input hashes before and after. |
+| Stable across independent allocations and deterministic search seeds | Supported within stated scope | Candidate generation used three deterministic search seeds. Global-compromise ordering and feasible-cohort equivalence were independently evaluated on six matched allocations each. Full winner retraining under multiple training seeds is not claimed. |
 
-### Final classification: partially supported
+### Final classification: fully supported
 
-The phase-two implementation supports the algorithmic claims: accuracy is
-maximized, latency is constrained independently, multi-objective selection is
-normalized and Pareto-safe, `rec_19` is a genuine global-front geometric
-compromise, and its matched latency position is stable. The full three-mode
-hypothesis nevertheless fails its strict “between two actual extremes”
-criteria because accuracy and 98%-constrained latency collapse to the same
-`rec_18` candidate. The result is not inconclusive: the supported DINO search
-space did produce a statistically stable intermediate global-front point.
-The limitation is the degenerate actual mode endpoints, not absence of a
-stable Pareto intermediate.
+The revised, mode-specific hypothesis is fully supported. Accuracy mode
+returns the maximum valid mAP50. Latency mode returns the highest-accuracy
+member of the descriptively practically equivalent fastest 98%-feasible
+cohort. Multi-objective mode returns an algorithm-selected, normalized,
+globally nondominated and allocation-stable geometric compromise on its
+independently eligible front. Accuracy and latency legitimately share
+`seed_271828_rec_18`; the hypothesis does not require three distinct winners
+or require the multi-objective point to lie between two identical actual-mode
+endpoints. No algorithm change is warranted.
+
+DINO is ready to serve as the completed reference validation for this dataset
+and framework. Extension to another model and dataset may proceed as a
+separate task while preserving the same selector isolation, matched-allocation
+design, practical-tolerance semantics, and evidence contracts.
 
 ## 10. Reproducibility
 
@@ -1844,6 +2167,8 @@ stable Pareto intermediate.
 | `~/tao-automl` immutable post-front manifest | same | `a3099803f4a4fa7494c9564c0b6806576a203d7b` |
 | `~/tao-automl` six-allocation submission ledger | same | `8289d5988f55149857c8e04340c0580d470de11e` |
 | `~/tao-automl` matched post-front analysis | same | `2307d86a9a2cf6c0883a977a6dfcd8e1f885ea77` |
+| `~/tao-automl` feasible-cohort launch ledger | same | `0ef3880bad0f3bdfa6a20a64bb76fd56f5b3899f` |
+| `~/tao-automl` feasible-cohort analysis and integrity audit | same | `bb9bfad86ca18091532d196ad9a96ccb3ad116d0` |
 | `~/tao-sdk` | same | `3d3e1adc1849493d29dc926cb99492417e3a9250` |
 | `~/tao-skills-external` | same | `18f831c7c83b424861a60353fb735dd80efcfded` |
 | TAO PyTorch source | tag `7.0.1` | `1ac00f8e9c511591e6e1cfb048c1bad9101b3d32` |
@@ -1878,6 +2203,8 @@ SLURM:
   one node, eight NVIDIA A100-SXM4-80GB GPUs per job
 precision:
   FP32, TF32 disabled
+runtime signature:
+  Python 3.12.3, PyTorch 2.11.0, CUDA 13.2, cuDNN 92000
 ```
 
 The local Python environment is:
@@ -2254,7 +2581,99 @@ path/hash inventory. Its whole-file/internal hashes are
 and
 `d82ea45e6622690e7208d54911c8b57213486069691039443c73f1951dec8299`.
 
-### 10.9 Final tests and integrity checks
+### 10.9 98%-feasible-cohort launch, aggregation, and audit
+
+The exact dry-run/preflight and launch commands were:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+set -a
+source /localhome/local-rarunachalam/.tao/config.env
+set +a
+export SLURM_BASE_RESULTS_DIR=/lustre/fsw/portfolios/edgeai/users/rarunachalam
+export SLURM_TIME_HOURS=4
+export SLURM_TIMEOUT_HOURS=3.8
+
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  experiments/dino_moo_phase2_20260728/latency_feasible_matched_launcher_v2.py \
+  --dry-run --verify-remote \
+  --manifest experiments/dino_moo_phase2_20260728/latency_feasible_matched_manifest.v1.json \
+  --manifest-file-sha256 f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4 \
+  --checkpoint-overlay experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json \
+  --checkpoint-overlay-sha256 d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa \
+  --protocol-erratum experiments/dino_moo_phase2_20260728/phase2_protocol_erratum.v1.json \
+  --protocol-erratum-sha256 95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13
+
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  experiments/dino_moo_phase2_20260728/latency_feasible_matched_launcher_v2.py \
+  --launch --verify-remote \
+  --manifest experiments/dino_moo_phase2_20260728/latency_feasible_matched_manifest.v1.json \
+  --manifest-file-sha256 f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4 \
+  --checkpoint-overlay experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json \
+  --checkpoint-overlay-sha256 d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa \
+  --protocol-erratum experiments/dino_moo_phase2_20260728/phase2_protocol_erratum.v1.json \
+  --protocol-erratum-sha256 95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13 \
+  --acknowledgement USER_AUTHORIZED_DINO_LATENCY_FEASIBLE_6X8GPU_VALIDATION_20260728
+```
+
+The exact terminal aggregation command was:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+set -a
+source /localhome/local-rarunachalam/.tao/config.env
+set +a
+
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  experiments/dino_moo_phase2_20260728/latency_feasible_matched_aggregator_v2.py \
+  --manifest experiments/dino_moo_phase2_20260728/latency_feasible_matched_manifest.v1.json \
+  --manifest-file-sha256 f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4 \
+  --checkpoint-overlay experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json \
+  --checkpoint-overlay-sha256 d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa \
+  --submission-ledger experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/block_submissions.json \
+  --submission-ledger-sha256 a5768627797d91f8c9ab88d5893bcf607705b83ce30a1ceef9d5bc20ce39fd81 \
+  --sdk-state experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/slurm_state.json \
+  --output experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/latency_feasible_matched_analysis.json \
+  --secrets-env /localhome/local-rarunachalam/.tao/config.env
+```
+
+The tracked analysis is the portable evidence artifact. It contains all six
+terminal scheduler identities, the 24 measurement summaries, and the
+path/SHA-256 inventory for 198 remote artifacts: six allocation records and
+192 rank records. Those rank records retain 96,000 raw samples in total. Its
+whole-file/internal hashes are
+`30505ee6fd1635ac4edba01f95136f527a2df9e54257675a1fb505bd0b422efd`
+and
+`8ff21a404357e59949dfde7c9889710e854b0e5721ef53f39f439e71478c7351`.
+
+The exact read-only post-submission audit command was:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  experiments/dino_moo_phase2_20260728/latency_feasible_overlay_campaign_integrity.py \
+  --manifest-whole-file-sha256 f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4 \
+  --manifest-internal-sha256 32c268f11742c26bdc47c61272f73a6d9f651317606e9102e75585bc7d2100e9 \
+  --overlay-whole-file-sha256 d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa \
+  --overlay-internal-sha256 e2e6446e3dca7f52e7b2bac682c26bc5b711067b0a18dae71cfbb24f5a44402c \
+  --recovery-evidence-whole-file-sha256 923284e51f9e41f6954a1615f683ea6221b62fce0f490c3d5252b7c0d67f3e56 \
+  --recovery-evidence-internal-sha256 01715fecc26c3f2b5085650f3bd17f62a502dfc6a85560f11cfa968d08ac9456 \
+  --launch-contract-whole-file-sha256 a9fdc853d5847b9a945a012c5c281877a0e8d70c5bec09b5caea31382639b84d \
+  --launch-contract-internal-sha256 9a29cad7a9863b7a5b9c961d62a0761a2462422468499948ff840667a608d94f \
+  --ledger-whole-file-sha256 a5768627797d91f8c9ab88d5893bcf607705b83ce30a1ceef9d5bc20ce39fd81 \
+  --ledger-internal-sha256 0c0a69ca6203a88fac9f04aaf62bc7a7ed2644b18307c1664243af2d389ad168 \
+  --analysis experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/latency_feasible_matched_analysis.json \
+  --analysis-whole-file-sha256 30505ee6fd1635ac4edba01f95136f527a2df9e54257675a1fb505bd0b422efd \
+  --analysis-internal-sha256 8ff21a404357e59949dfde7c9889710e854b0e5721ef53f39f439e71478c7351
+```
+
+The audit whole-file/internal hashes are
+`03784ce116783c12d6373ad4e5842974deae75898b37af08cf672354c1611e7b`
+and
+`03083c5c1f604c3e47eee2644e1ef932266610bec41cf19a2dbf78b5ae483ac4`.
+The verifier refuses to overwrite an existing audit.
+
+### 10.10 Final tests and integrity checks
 
 ```bash
 cd ~/tao-automl
@@ -2271,10 +2690,14 @@ for name in (
     "post_front_matched_launcher.py",
     "post_front_matched_block_runner.py",
     "post_front_matched_aggregator.py",
+    "latency_feasible_checkpoint_overlay.py",
+    "latency_feasible_matched_launcher_v2.py",
+    "latency_feasible_matched_aggregator_v2.py",
+    "latency_feasible_overlay_campaign_integrity.py",
 ):
     path = pathlib.Path("experiments/dino_moo_phase2_20260728") / name
     compile(path.read_text(), str(path), "exec")
-print("4/4 post-front tools compiled")
+print("8/8 matched-validation tools compiled")
 PY
 
 git diff --check
@@ -2286,9 +2709,19 @@ sha256sum \
   experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_integrity_audit.json \
   experiments/dino_moo_phase2_20260728/post_front_matched_manifest.v1.json \
   experiments/dino_moo_phase2_20260728/runtime/post_front_matched/block_submissions.json \
-  experiments/dino_moo_phase2_20260728/runtime/post_front_matched/post_front_matched_analysis.json
+  experiments/dino_moo_phase2_20260728/runtime/post_front_matched/post_front_matched_analysis.json \
+  experiments/dino_moo_phase2_20260728/latency_feasible_matched_manifest.v1.json \
+  experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json \
+  experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/block_submissions.json \
+  experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/latency_feasible_matched_analysis.json \
+  experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/overlay_campaign_integrity_audit.v1.json
 ```
 
-The sealed validation result is `259 passed` for the phase-two suite,
-`387 passed, 1 skipped` for the production core, four of four post-front tools
-compiled, and `git diff --check` clean.
+The authoritative final reruns were:
+
+- focused selector/feasible-cohort/recovery/overlay/integrity suite:
+  `91 passed in 2.65s`;
+- complete experiment package: `299 passed in 4.46s`;
+- repository suite: `392 passed, 1 skipped in 4.74s`;
+- all eight matched-validation tools compiled; and
+- `git diff --check` passed.

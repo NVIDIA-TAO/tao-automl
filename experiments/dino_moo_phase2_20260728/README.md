@@ -3,7 +3,9 @@
 This directory contains the completed DINO-only phase-2 investigation: the
 frozen historical six-candidate-front replay and latency comparison, the
 expanded 60-candidate shared archive, and the matched validation of its
-four-candidate global Pareto front. No matched-validation measurement changes
+four-candidate global Pareto front. It also contains a separate matched
+validation of the exact four-candidate cohort admitted by latency mode's
+frozen 98% accuracy-retention rule. No matched-validation measurement changes
 an archive objective or feeds AutoML reselection.
 
 ## Final status
@@ -16,7 +18,10 @@ record. The production selectors independently chose
 rank-zero front contains exactly four candidates:
 `seed_271828_rec_15`, `seed_271828_rec_18`,
 `seed_271828_rec_19`, and `seed_271828_rec_3`. This expanded front is distinct
-from the historical six-candidate front discussed below.
+from both the historical six-candidate front and the four-candidate
+98%-accuracy-feasible latency cohort discussed below.
+
+### Expanded global-front study
 
 All six post-front jobs finished as `Complete / COMPLETED / 0:0` on six
 distinct A100 nodes. Every job measured every front candidate, yielding 24/24
@@ -37,14 +42,108 @@ p95. `rec_3` versus `rec_15` has no effective directional claim; its preserved
 bootstrap interval lies within the tolerance band. These are pairwise claims,
 not a simultaneous total order.
 
-The matched results were used only for stability analysis and the hypothesis
-verdict: the selector was not invoked on them, the selection-time objectives
-were not replaced, and no winner was overridden. The overall verdict is
-**partially supported**. `rec_19` is the algorithm-selected, stable
-global-front geometric compromise, but the actual accuracy and
-98%-constrained-latency winners coincide at `rec_18`; therefore a strict
-three-distinct-mode ordering relative to the two actual extreme winners cannot
-be demonstrated.
+These global-front measurements validate `rec_19` as the
+algorithm-selected, Pareto-nondominated, allocation-stable geometric
+compromise. They do not require the compromise to lie between the actual
+accuracy and constrained-latency winners when those modes legitimately share
+`rec_18`.
+
+### Separate 98%-accuracy-feasible latency-cohort study
+
+The latency-cohort manifest independently replayed the pinned production
+selector and froze exactly the four candidates satisfying
+`mAP50 >= 0.98 * 0.6554138278683255 = 0.6423055513109589`:
+
+- `seed_161803_rec_14`
+- `seed_271828_rec_16`
+- `seed_271828_rec_18`
+- `seed_314159_rec_12`
+
+This is a retained-accuracy cohort, not another global Pareto front. Only
+`seed_271828_rec_18` is common to the expanded global rank-zero front.
+Candidate membership, execution order, and the six-allocation Williams
+schedule were frozen before matched measurement and did not use measured
+latency values.
+
+All six one-node/eight-A100 jobs completed as
+`Complete / COMPLETED / 0:0` on six distinct nodes. Every candidate was
+measured in every allocation: 24/24 cells passed the frozen provenance and
+quality gates. Each cell contains five rounds of 100 timed requests on each of
+eight replicas after 50 warm-ups, or 4,000 raw samples per
+candidate/allocation and 96,000 samples in total.
+
+| Allocation | TAO job | SLURM job | Node | Terminal status |
+| --- | --- | ---: | --- | --- |
+| `00` | `32862ad8-e015-46a1-892d-e399ae71a4a5` | 31004302 | `batch-block7-00886` | `Complete / COMPLETED / 0:0` |
+| `01` | `ee1f5f87-ef4a-4e4a-b13c-fdbf3a90d792` | 31004303 | `batch-block7-01632` | `Complete / COMPLETED / 0:0` |
+| `02` | `eecf47a7-aed4-4d5b-8921-7e50f644a5a6` | 31004306 | `batch-block7-00064` | `Complete / COMPLETED / 0:0` |
+| `03` | `a789904e-a852-406b-b392-5b2c733dda3c` | 31004308 | `batch-block7-00288` | `Complete / COMPLETED / 0:0` |
+| `04` | `2e7d214e-b5a3-44d5-b402-88a25db016d5` | 31004316 | `batch-block7-01760` | `Complete / COMPLETED / 0:0` |
+| `05` | `2d88ee5f-1fd0-4644-b446-fa75c205e8a2` | 31004322 | `batch-block7-03295` | `Complete / COMPLETED / 0:0` |
+
+For all six unordered candidate pairs, the allocation-matched descriptive
+bootstrap 95% intervals for both median and p95 lie wholly inside
+`[-0.73553775, +0.73553775] ms`. No pair passes the effective directional
+rule, and there are no median or p95 stable-direction edges. The result is
+therefore **Outcome B**: the complete cohort is descriptively practically
+equivalent, and latency mode selected its highest-accuracy member.
+
+| Candidate | mAP50 | Stable median | Stable p95 | Feasible at 98% | Pairwise latency conclusion | Latency-mode interpretation |
+| --------- | ----: | ------------: | ---------: | :-------------: | --------------------------- | --------------------------- |
+| `seed_161803_rec_14` | 0.6503731412 | 66.567490250 ms | 66.884389500 ms | Yes | Descriptively practically equivalent to the other three; no stable median or p95 direction | Equivalent-fastest cohort member; lower accuracy than `rec_18` |
+| `seed_271828_rec_16` | 0.6544218576 | 66.610895375 ms | 67.016615025 ms | Yes | Descriptively practically equivalent to the other three; no stable median or p95 direction | Equivalent-fastest cohort member; lower accuracy than `rec_18` |
+| `seed_271828_rec_18` | 0.6554138279 | 66.615607500 ms | 66.904386000 ms | Yes | Descriptively practically equivalent to the other three; no stable median or p95 direction | Frozen winner and highest-accuracy member of the equivalent-fastest cohort |
+| `seed_314159_rec_12` | 0.6517250365 | 66.639216500 ms | 66.878630975 ms | Yes | Descriptively practically equivalent to the other three; no stable median or p95 direction | Equivalent-fastest cohort member; lower accuracy than `rec_18` |
+
+The product semantics validated by the two distinct matched studies are:
+
+- **Accuracy mode:** select the highest-accuracy valid candidate; use latency
+  only as a deterministic tie-break within the configured accuracy tolerance.
+- **Latency mode:** first apply the configured accuracy-retention rule. Select
+  the fastest feasible candidate when latency differences are meaningful; if
+  candidates are tied under the latency tolerance or configured statistical
+  rule, select the highest-accuracy member of the equivalent fastest cohort,
+  followed by deterministic fingerprint and candidate-ID tie-breaks.
+- **Multi-objective mode:** select a deterministic, normalized,
+  Pareto-nondominated balance over its independently eligible front. It does
+  not silently inherit latency mode's retained-accuracy constraint.
+
+| Mode | Candidate | Selection-time reason | Matched-validation conclusion | Algorithm change required |
+| ---- | --------- | --------------------- | ----------------------------- | ------------------------- |
+| Accuracy | `seed_271828_rec_18` | Highest valid mAP50, `0.6554138279` | Preserved; matched latency is not an accuracy reselection input | No |
+| Latency, 98% retention | `seed_271828_rec_18` | All four feasible candidates were within `0.73553775 ms` of the raw-minimum anchor; the higher-accuracy tie-break selected `rec_18` | Outcome B: all four are descriptively practically equivalent, so `rec_18` remains the highest-accuracy member of the equivalent-fastest cohort | No |
+| Multi-objective | `seed_271828_rec_19` | Minimum deterministic normalized augmented-Chebyshev compromise score on the independently eligible global rank-zero front | Stable, Pareto-nondominated global-front compromise; it is distinct from the global accuracy and unconstrained-latency extremes | No |
+
+The feasible-cohort measurements are validation-only. The following audit
+values are all exactly `false`:
+
+```text
+selector_invoked_on_matched_measurements = false
+selection_time_objectives_replaced = false
+measurements_feed_selection = false
+measurements_feed_reselection = false
+algorithm_selected_candidate_overridden = false
+```
+
+The revised mode-specific hypothesis is **fully supported**: accuracy mode
+returns the highest-accuracy valid candidate; latency mode returns the fastest
+accuracy-feasible candidate or the highest-accuracy member of its equivalent
+fastest cohort; multi-objective mode returns a deterministic, normalized,
+Pareto-nondominated compromise over an independently eligible front; shared
+winners are allowed; and no candidate was manually promoted or overridden.
+The earlier requirement for three distinct mode winners is not a valid product
+semantic.
+
+DINO is ready to serve as the completed reference validation before applying
+the same frozen-selection and matched-measurement framework to another model
+and dataset. No multi-objective or latency-selector algorithm change is
+recommended from this validation.
+
+The feasible-cohort launch ledger is sealed at AutoML commit
+`0ef3880bad0f3bdfa6a20a64bb76fd56f5b3899f`; its complete analysis,
+read-only integrity verifier, and integrity audit are sealed at
+`bb9bfad86ca18091532d196ad9a96ccb3ad116d0`. The runtime uses TAO SDK
+commit `3d3e1adc1849493d29dc926cb99492417e3a9250`.
 
 Committed authority artifacts and whole-file SHA256 values:
 
@@ -58,6 +157,139 @@ Committed authority artifacts and whole-file SHA256 values:
   `d468d5d26f607b115c7c1732966f0ac98664fd232ce83abfa6becc0ce062b7b6`
 - `runtime/post_front_matched/post_front_matched_analysis.json`:
   `150d66fd1648c458807bdce9871313b5b17a7a33c63564f34b86156e392094b9`
+- `latency_feasible_matched_manifest.v1.json`: whole-file
+  `f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4`;
+  internal
+  `32c268f11742c26bdc47c61272f73a6d9f651317606e9102e75585bc7d2100e9`
+- `latency_feasible_rec16_checkpoint_overlay.v2.json`: whole-file
+  `d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa`;
+  internal
+  `e2e6446e3dca7f52e7b2bac682c26bc5b711067b0a18dae71cfbb24f5a44402c`
+- `rec16_checkpoint_recovery_evidence.v1.json`: whole-file
+  `923284e51f9e41f6954a1615f683ea6221b62fce0f490c3d5252b7c0d67f3e56`;
+  internal
+  `01715fecc26c3f2b5085650f3bd17f62a502dfc6a85560f11cfa968d08ac9456`
+- `runtime/latency_feasible_matched/launch_contract.v1.json`: whole-file
+  `a9fdc853d5847b9a945a012c5c281877a0e8d70c5bec09b5caea31382639b84d`;
+  internal
+  `9a29cad7a9863b7a5b9c961d62a0761a2462422468499948ff840667a608d94f`
+- `runtime/latency_feasible_matched/block_submissions.json`: whole-file
+  `a5768627797d91f8c9ab88d5893bcf607705b83ce30a1ceef9d5bc20ce39fd81`;
+  internal
+  `0c0a69ca6203a88fac9f04aaf62bc7a7ed2644b18307c1664243af2d389ad168`
+- `runtime/latency_feasible_matched/latency_feasible_matched_analysis.json`:
+  whole-file
+  `30505ee6fd1635ac4edba01f95136f527a2df9e54257675a1fb505bd0b422efd`;
+  internal
+  `8ff21a404357e59949dfde7c9889710e854b0e5721ef53f39f439e71478c7351`;
+  raw-input inventory
+  `0f8ed28335d68f7d6359f11dd8e617dc71b75f6a0b73460b31a9b9745391a0d5`
+- `runtime/latency_feasible_matched/overlay_campaign_integrity_audit.v1.json`:
+  whole-file
+  `03784ce116783c12d6373ad4e5842974deae75898b37af08cf672354c1611e7b`;
+  internal
+  `03083c5c1f604c3e47eee2644e1ef932266610bec41cf19a2dbf78b5ae483ac4`
+
+## 98%-feasible cohort reproducibility
+
+The launch used the exact TAO 7.0.1 SQSH at
+`/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh`,
+one node and eight A100 GPUs per allocation, the pinned dataset input digest,
+batch size one, FP32 with TF32 disabled, synchronized forward plus DINO
+postprocessing, 50 warm-ups, and five rounds of 100 timed samples on every
+replica. The Williams schedule and all candidate/config/checkpoint identities
+are embedded in the manifest and launch contract.
+
+The exact dry-run/preflight and historical six-job launch command was:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+set -a
+source /localhome/local-rarunachalam/.tao/config.env
+set +a
+export SLURM_BASE_RESULTS_DIR=/lustre/fsw/portfolios/edgeai/users/rarunachalam
+export SLURM_TIME_HOURS=4
+export SLURM_TIMEOUT_HOURS=3.8
+
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  experiments/dino_moo_phase2_20260728/latency_feasible_matched_launcher_v2.py \
+  --dry-run --verify-remote \
+  --manifest experiments/dino_moo_phase2_20260728/latency_feasible_matched_manifest.v1.json \
+  --manifest-file-sha256 f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4 \
+  --checkpoint-overlay experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json \
+  --checkpoint-overlay-sha256 d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa \
+  --protocol-erratum experiments/dino_moo_phase2_20260728/phase2_protocol_erratum.v1.json \
+  --protocol-erratum-sha256 95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13
+
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  experiments/dino_moo_phase2_20260728/latency_feasible_matched_launcher_v2.py \
+  --launch --verify-remote \
+  --manifest experiments/dino_moo_phase2_20260728/latency_feasible_matched_manifest.v1.json \
+  --manifest-file-sha256 f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4 \
+  --checkpoint-overlay experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json \
+  --checkpoint-overlay-sha256 d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa \
+  --protocol-erratum experiments/dino_moo_phase2_20260728/phase2_protocol_erratum.v1.json \
+  --protocol-erratum-sha256 95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13 \
+  --acknowledgement USER_AUTHORIZED_DINO_LATENCY_FEASIBLE_6X8GPU_VALIDATION_20260728
+```
+
+The exact terminal aggregation command was:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  experiments/dino_moo_phase2_20260728/latency_feasible_matched_aggregator_v2.py \
+  --manifest experiments/dino_moo_phase2_20260728/latency_feasible_matched_manifest.v1.json \
+  --manifest-file-sha256 f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4 \
+  --checkpoint-overlay experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json \
+  --checkpoint-overlay-sha256 d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa \
+  --submission-ledger experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/block_submissions.json \
+  --submission-ledger-sha256 a5768627797d91f8c9ab88d5893bcf607705b83ce30a1ceef9d5bc20ce39fd81 \
+  --sdk-state experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/slurm_state.json \
+  --output experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/latency_feasible_matched_analysis.json \
+  --secrets-env /localhome/local-rarunachalam/.tao/config.env
+```
+
+The exact read-only campaign-integrity audit command was:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  experiments/dino_moo_phase2_20260728/latency_feasible_overlay_campaign_integrity.py \
+  --manifest-whole-file-sha256 f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4 \
+  --manifest-internal-sha256 32c268f11742c26bdc47c61272f73a6d9f651317606e9102e75585bc7d2100e9 \
+  --overlay-whole-file-sha256 d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa \
+  --overlay-internal-sha256 e2e6446e3dca7f52e7b2bac682c26bc5b711067b0a18dae71cfbb24f5a44402c \
+  --recovery-evidence-whole-file-sha256 923284e51f9e41f6954a1615f683ea6221b62fce0f490c3d5252b7c0d67f3e56 \
+  --recovery-evidence-internal-sha256 01715fecc26c3f2b5085650f3bd17f62a502dfc6a85560f11cfa968d08ac9456 \
+  --launch-contract-whole-file-sha256 a9fdc853d5847b9a945a012c5c281877a0e8d70c5bec09b5caea31382639b84d \
+  --launch-contract-internal-sha256 9a29cad7a9863b7a5b9c961d62a0761a2462422468499948ff840667a608d94f \
+  --ledger-whole-file-sha256 a5768627797d91f8c9ab88d5893bcf607705b83ce30a1ceef9d5bc20ce39fd81 \
+  --ledger-internal-sha256 0c0a69ca6203a88fac9f04aaf62bc7a7ed2644b18307c1664243af2d389ad168 \
+  --analysis experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched/latency_feasible_matched_analysis.json \
+  --analysis-whole-file-sha256 30505ee6fd1635ac4edba01f95136f527a2df9e54257675a1fb505bd0b422efd \
+  --analysis-internal-sha256 8ff21a404357e59949dfde7c9889710e854b0e5721ef53f39f439e71478c7351
+```
+
+The focused feasible-cohort and latency tie-policy regression command is:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  -m pytest -q \
+  tests/test_multi_objective_selection.py \
+  experiments/dino_moo_phase2_20260728/test_freeze_rec16_checkpoint_recovery.py \
+  experiments/dino_moo_phase2_20260728/test_latency_feasible_checkpoint_overlay.py \
+  experiments/dino_moo_phase2_20260728/test_latency_feasible_matched_manifest_launcher.py \
+  experiments/dino_moo_phase2_20260728/test_latency_feasible_matched_runner_aggregator.py \
+  experiments/dino_moo_phase2_20260728/test_latency_feasible_overlay_campaign_integrity.py
+```
+
+The authoritative final reruns reported `91 passed` for the focused
+selector/feasible-cohort/recovery/overlay/integrity suite, `299 passed` for
+the complete experiment package, and `392 passed, 1 skipped` for the
+repository suite. Exact timings and compile checks are recorded in
+`phase2_validation_report.md`.
 
 ## Frozen archive replay
 
@@ -257,9 +489,13 @@ runtime-only mutable ledgers below `runtime/expanded_search_v2/`, then seals one
 ## Completed historical six-front matched design
 
 This design and its `0.75 ms` tolerance apply only to the completed historical
-six-candidate-front comparison. The expanded four-candidate-front validation
-described in **Final status** uses the exact `0.73553775 ms` protocol-erratum
-tolerance recorded in `post_front_matched_manifest.v1.json`.
+six-candidate-front comparison. The expanded global-Pareto-front
+four-candidate validation described in **Final status** uses the exact
+`0.73553775 ms` protocol-erratum tolerance recorded in
+`post_front_matched_manifest.v1.json`. The separate four-candidate
+98%-accuracy-feasible latency-cohort study uses that same exact tolerance
+through `latency_feasible_matched_manifest.v1.json`; it is not a Pareto-front
+study.
 
 - Six independent SLURM jobs requested one node and eight GPUs each.
 - Every job benchmarked every historical-front candidate sequentially on its
