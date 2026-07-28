@@ -106,6 +106,51 @@ def _minimal_manifest(
 ) -> dict[str, Any]:
     candidate_ids = sorted(candidate_ids)
     candidates = [_candidate(candidate_id) for candidate_id in candidate_ids]
+    erratum = generator.load_json(generator.DEFAULT_PROTOCOL_ERRATUM)
+    paired_policy = erratum["corrections"][
+        "post_front_paired_classification"
+    ]
+    archive_candidate_ids = sorted(
+        [
+            *candidate_ids,
+            *[
+                f"synthetic_archive_filler_{index:02d}"
+                for index in range(
+                    generator.EXPECTED_TOTAL_CANDIDATES
+                    - len(candidate_ids)
+                )
+            ],
+        ]
+    )
+    seed_archives = [
+        {
+            "path": (
+                f"/tmp/expanded_search_v2/seed_{seed}/"
+                "seed_archive.v1.json"
+            ),
+            "whole_file_sha256": SHA_A,
+            "internal_archive_sha256": SHA_B,
+            "search_seed": seed,
+            "record_count": generator.EXPECTED_RECOMMENDATIONS_PER_SEED,
+            "terminal_record_count": (
+                generator.EXPECTED_RECOMMENDATIONS_PER_SEED
+            ),
+            "successful_record_count": (
+                generator.EXPECTED_RECOMMENDATIONS_PER_SEED
+            ),
+            "failed_record_count": 0,
+            "candidate_ids_sha256": generator.sha256_value(
+                sorted(
+                    f"seed_{seed}_rec_{rec_id}"
+                    for rec_id in range(
+                        generator.EXPECTED_RECOMMENDATIONS_PER_SEED
+                    )
+                )
+            ),
+            "full_records_sha256": SHA_C,
+        }
+        for seed in generator.EXPECTED_SEARCH_SEEDS
+    ]
     schedule = generator.build_schedule(candidate_ids)
     output_contract = {
         "root_expression": "$TAO_RESULTS_ROOT/$TAO_JOB_ID",
@@ -179,6 +224,17 @@ def _minimal_manifest(
             "winner_identity_used": False,
             "objective_values_used_for_schedule": False,
             "selector_replay_proof": {
+                "selector_settings": {
+                    "latency_accuracy_retention": {
+                        "type": "relative",
+                        "retained_fraction": 0.98,
+                        "reference": "accuracy_winner",
+                    },
+                    "multi_objective_min_accuracy": None,
+                    "accuracy_metric": "mAP50",
+                    "latency_metric": "latency_ms",
+                    "accuracy_tolerance": 1e-12,
+                },
                 "global_rank_zero_candidate_ids": candidate_ids,
                 "global_rank_zero_candidate_set_sha256": (
                     generator.sha256_value(candidate_ids)
@@ -194,7 +250,10 @@ def _minimal_manifest(
             "selections": {
                 "accuracy": {"winner_id": candidate_ids[0]},
                 "latency": {"winner_id": candidate_ids[-1]},
-                "multi_objective": {"winner_id": candidate_ids[0]},
+                "multi_objective": {
+                    "winner_id": candidate_ids[len(candidate_ids) // 2],
+                    "distinct_compromise": len(candidate_ids) >= 3,
+                },
             },
             "selection_authority": {
                 "module": "tao_automl.selection",
@@ -214,6 +273,50 @@ def _minimal_manifest(
             "practical_tolerance_ms": (
                 generator.EXPECTED_PRACTICAL_TOLERANCE_MS
             ),
+            "policy_erratum_id": generator.EXPECTED_PROTOCOL_ERRATUM_ID,
+            "policy_erratum_sha256": (
+                generator.EXPECTED_PROTOCOL_ERRATUM_FILE_SHA256
+            ),
+            "both_policy_branches_must_be_emitted": True,
+            "original_preregistered_bootstrap_classification": (
+                copy.deepcopy(
+                    paired_policy[
+                        "original_preregistered_bootstrap_classification"
+                    ]
+                )
+            ),
+            "effective_erratum_directional_classification": (
+                copy.deepcopy(
+                    paired_policy[
+                        "effective_erratum_directional_classification"
+                    ]
+                )
+            ),
+        },
+        "expanded_archive_snapshot": {
+            "search_seeds": list(generator.EXPECTED_SEARCH_SEEDS),
+            "recommendations_per_seed": (
+                generator.EXPECTED_RECOMMENDATIONS_PER_SEED
+            ),
+            "candidate_count": generator.EXPECTED_TOTAL_CANDIDATES,
+            "terminal_candidate_count": generator.EXPECTED_TOTAL_CANDIDATES,
+            "successful_candidate_count": (
+                generator.EXPECTED_TOTAL_CANDIDATES
+            ),
+            "failed_candidate_count": 0,
+            "manual_candidate_injection_used": False,
+            "canonical_order": "ascending UTF-8 candidate_id",
+            "candidate_ids": archive_candidate_ids,
+            "candidate_ids_sha256": generator.sha256_value(
+                archive_candidate_ids
+            ),
+            "full_record_union_sha256": SHA_A,
+            "candidate_table_projection_sha256": SHA_B,
+            "expanded_combined_selection_sha256": SHA_A,
+            "expanded_candidate_table_sha256": SHA_B,
+            "expanded_candidate_table_csv_sha256": SHA_C,
+            "expanded_integrity_audit_sha256": SHA_A,
+            "seed_archives": seed_archives,
         },
         "selection_isolation": {
             "measurements_feed_reselection": False,
@@ -227,6 +330,27 @@ def _minimal_manifest(
             "under a new TAO job ID; never combine a partial block."
         ),
         "source_artifacts": {
+            "phase2_protocol_erratum": {
+                "path": str(generator.DEFAULT_PROTOCOL_ERRATUM.resolve()),
+                "sha256": generator.EXPECTED_PROTOCOL_ERRATUM_FILE_SHA256,
+                "erratum_id": generator.EXPECTED_PROTOCOL_ERRATUM_ID,
+                "issued_at_utc": (
+                    generator.EXPECTED_PROTOCOL_ERRATUM_ISSUED_AT_UTC
+                ),
+            },
+            "expanded_combined_selection": {"sha256": SHA_A},
+            "expanded_candidate_table": {"sha256": SHA_B},
+            "expanded_candidate_table_csv": {"sha256": SHA_C},
+            "expanded_integrity_audit": {"sha256": SHA_A},
+            "expanded_seed_archives": [
+                {
+                    "path": item["path"],
+                    "sha256": item["whole_file_sha256"],
+                    "internal_sha256": item["internal_archive_sha256"],
+                    "search_seed": item["search_seed"],
+                }
+                for item in seed_archives
+            ],
             "dino_latency_benchmark": {"sha256": SHA_A},
             "latency_stats": {"sha256": SHA_C},
             "post_front_tools": {
@@ -1393,12 +1517,18 @@ def test_comparative_analysis_covers_every_unordered_pair() -> None:
         len(item["paired_median_differences_ms"]) == 6 for item in pairs
     )
     assert all(
-        "p95_descriptive_bootstrap_interval_classification" in item
+        "p95_bootstrap_interval_position" in item
         for item in pairs
     )
     assert all(
-        item["median_bootstrap_ci_is_descriptive_only"] is True
-        and item["p95_bootstrap_ci_is_descriptive_only"] is True
+        item[
+            "median_bootstrap_ci_is_descriptive_only_under_effective_erratum"
+        ]
+        is True
+        and item[
+            "p95_bootstrap_ci_is_descriptive_only_under_effective_erratum"
+        ]
+        is True
         and item["pairwise_directional_evidence"]["scope"]
         == "pairwise_only"
         for item in pairs
@@ -1521,7 +1651,27 @@ def test_validation_artifacts_preserve_selection_and_never_reselect() -> None:
         "algorithm_selected_candidate_overridden": False,
         "allowed_use": "stability analysis and hypothesis verdict only",
     }
-    assert "winner" not in json.dumps(report["analysis"]).lower()
+    verdict = report["analysis"]["hypothesis_distinctness_evidence"]
+    assert verdict["selector_invoked_on_matched_measurements"] is False
+    assert verdict["feeds_selection"] is False
+    assert verdict["feeds_reselection"] is False
+    assert verdict["actual_mode_winner_ids"] == {
+        "accuracy": manifest["selection_snapshot"]["selections"][
+            "accuracy"
+        ]["winner_id"],
+        "latency_98_percent_constrained": manifest["selection_snapshot"][
+            "selections"
+        ]["latency"]["winner_id"],
+        "multi_objective": manifest["selection_snapshot"]["selections"][
+            "multi_objective"
+        ]["winner_id"],
+    }
+    assert (
+        report["selection_isolation"][
+            "algorithm_selected_candidate_overridden"
+        ]
+        is False
+    )
     assert report["submission_recovery_events"] == []
 
 
@@ -1546,8 +1696,20 @@ def test_postfront_analysis_does_not_invoke_selector_or_mutate_selection(
     analysis = aggregator.comparative_analysis(manifest, measurements)
     assert manifest["selection_snapshot"] == frozen_selection
     assert measurements == frozen_measurements
-    assert "winner" not in json.dumps(analysis).lower()
-    assert "selected_candidate" not in json.dumps(analysis).lower()
+    verdict = analysis["hypothesis_distinctness_evidence"]
+    assert verdict["selector_invoked_on_matched_measurements"] is False
+    assert verdict["feeds_selection"] is False
+    assert verdict["feeds_reselection"] is False
+    assert verdict["selection_time_objectives_replaced"] is False
+    assert verdict["actual_mode_winner_ids"] == {
+        "accuracy": frozen_selection["selections"]["accuracy"]["winner_id"],
+        "latency_98_percent_constrained": frozen_selection["selections"][
+            "latency"
+        ]["winner_id"],
+        "multi_objective": frozen_selection["selections"][
+            "multi_objective"
+        ]["winner_id"],
+    }
 
 
 def test_report_distinguishes_archive_replay_from_postfront_reselection() -> None:

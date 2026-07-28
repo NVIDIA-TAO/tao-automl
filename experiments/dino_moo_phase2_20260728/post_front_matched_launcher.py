@@ -128,6 +128,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--manifest-file-sha256", required=True)
+    parser.add_argument(
+        "--protocol-erratum",
+        type=Path,
+        required=True,
+        help="Exact pre-data phase-2 protocol erratum pinned by the manifest.",
+    )
+    parser.add_argument(
+        "--protocol-erratum-sha256",
+        required=True,
+        help="Exact whole-file SHA256 of --protocol-erratum.",
+    )
     parser.add_argument("--runtime-dir", type=Path, default=DEFAULT_RUNTIME)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument(
@@ -259,6 +270,192 @@ def validate_schedule(manifest: dict[str, Any]) -> None:
         raise ContractError("manifest candidate IDs must be unique and non-empty")
     expected = manifest_generator.build_schedule(candidate_ids)
     require_equal(manifest.get("schedule"), expected, "manifest schedule")
+
+
+def validate_archive_snapshot_contract(manifest: dict[str, Any]) -> None:
+    sources = manifest.get("source_artifacts")
+    if not isinstance(sources, dict):
+        raise ContractError("manifest source artifacts are missing")
+    erratum = sources.get("phase2_protocol_erratum")
+    require_equal(
+        erratum,
+        {
+            "path": erratum.get("path") if isinstance(erratum, dict) else None,
+            "sha256": (
+                manifest_generator.EXPECTED_PROTOCOL_ERRATUM_FILE_SHA256
+            ),
+            "erratum_id": manifest_generator.EXPECTED_PROTOCOL_ERRATUM_ID,
+            "issued_at_utc": (
+                manifest_generator.EXPECTED_PROTOCOL_ERRATUM_ISSUED_AT_UTC
+            ),
+        },
+        "manifest protocol-erratum source binding",
+    )
+    if not isinstance(erratum.get("path"), str) or not Path(
+        erratum["path"]
+    ).is_absolute():
+        raise ContractError("protocol-erratum source path must be absolute")
+
+    snapshot = manifest.get("expanded_archive_snapshot")
+    if not isinstance(snapshot, dict):
+        raise ContractError("manifest expanded-archive snapshot is missing")
+    require_equal(
+        {
+            "search_seeds": snapshot.get("search_seeds"),
+            "recommendations_per_seed": snapshot.get(
+                "recommendations_per_seed"
+            ),
+            "candidate_count": snapshot.get("candidate_count"),
+            "terminal_candidate_count": snapshot.get(
+                "terminal_candidate_count"
+            ),
+            "manual_candidate_injection_used": snapshot.get(
+                "manual_candidate_injection_used"
+            ),
+            "canonical_order": snapshot.get("canonical_order"),
+        },
+        {
+            "search_seeds": list(manifest_generator.EXPECTED_SEARCH_SEEDS),
+            "recommendations_per_seed": (
+                manifest_generator.EXPECTED_RECOMMENDATIONS_PER_SEED
+            ),
+            "candidate_count": manifest_generator.EXPECTED_TOTAL_CANDIDATES,
+            "terminal_candidate_count": (
+                manifest_generator.EXPECTED_TOTAL_CANDIDATES
+            ),
+            "manual_candidate_injection_used": False,
+            "canonical_order": "ascending UTF-8 candidate_id",
+        },
+        "expanded-archive snapshot contract",
+    )
+    successful = snapshot.get("successful_candidate_count")
+    failed = snapshot.get("failed_candidate_count")
+    if (
+        isinstance(successful, bool)
+        or not isinstance(successful, int)
+        or isinstance(failed, bool)
+        or not isinstance(failed, int)
+        or successful <= 0
+        or failed < 0
+        or successful + failed
+        != manifest_generator.EXPECTED_TOTAL_CANDIDATES
+    ):
+        raise ContractError("expanded-archive terminal counts are invalid")
+    candidate_ids = snapshot.get("candidate_ids")
+    if (
+        not isinstance(candidate_ids, list)
+        or len(candidate_ids)
+        != manifest_generator.EXPECTED_TOTAL_CANDIDATES
+        or candidate_ids != sorted(candidate_ids)
+        or len(set(candidate_ids)) != len(candidate_ids)
+    ):
+        raise ContractError("expanded-archive candidate IDs are invalid")
+    require_equal(
+        snapshot.get("candidate_ids_sha256"),
+        manifest_generator.sha256_value(candidate_ids),
+        "expanded-archive candidate-ID digest",
+    )
+    for key in (
+        "full_record_union_sha256",
+        "candidate_table_projection_sha256",
+        "expanded_combined_selection_sha256",
+        "expanded_candidate_table_sha256",
+        "expanded_candidate_table_csv_sha256",
+        "expanded_integrity_audit_sha256",
+    ):
+        manifest_generator.require_sha256(
+            snapshot.get(key),
+            f"expanded-archive snapshot {key}",
+        )
+    require_equal(
+        snapshot["expanded_combined_selection_sha256"],
+        sources.get("expanded_combined_selection", {}).get("sha256"),
+        "snapshot/combined selection SHA256",
+    )
+    require_equal(
+        snapshot["expanded_candidate_table_sha256"],
+        sources.get("expanded_candidate_table", {}).get("sha256"),
+        "snapshot/candidate table JSON SHA256",
+    )
+    require_equal(
+        snapshot["expanded_candidate_table_csv_sha256"],
+        sources.get("expanded_candidate_table_csv", {}).get("sha256"),
+        "snapshot/candidate table CSV SHA256",
+    )
+    require_equal(
+        snapshot["expanded_integrity_audit_sha256"],
+        sources.get("expanded_integrity_audit", {}).get("sha256"),
+        "snapshot/integrity audit SHA256",
+    )
+    snapshot_seeds = snapshot.get("seed_archives")
+    source_seeds = sources.get("expanded_seed_archives")
+    if (
+        not isinstance(snapshot_seeds, list)
+        or not isinstance(source_seeds, list)
+        or len(snapshot_seeds) != len(manifest_generator.EXPECTED_SEARCH_SEEDS)
+        or len(source_seeds) != len(snapshot_seeds)
+    ):
+        raise ContractError("exactly three pinned seed archives are required")
+    expected_sources = []
+    observed_seeds = set()
+    for item in snapshot_seeds:
+        if not isinstance(item, dict):
+            raise ContractError("seed-archive snapshot entry is invalid")
+        seed = item.get("search_seed")
+        if seed in observed_seeds:
+            raise ContractError(f"duplicate seed snapshot for {seed!r}")
+        observed_seeds.add(seed)
+        require_equal(
+            item.get("record_count"),
+            manifest_generator.EXPECTED_RECOMMENDATIONS_PER_SEED,
+            f"seed {seed} archive record count",
+        )
+        require_equal(
+            item.get("terminal_record_count"),
+            manifest_generator.EXPECTED_RECOMMENDATIONS_PER_SEED,
+            f"seed {seed} archive terminal count",
+        )
+        successful_count = item.get("successful_record_count")
+        failed_count = item.get("failed_record_count")
+        if (
+            isinstance(successful_count, bool)
+            or not isinstance(successful_count, int)
+            or isinstance(failed_count, bool)
+            or not isinstance(failed_count, int)
+            or successful_count < 0
+            or failed_count < 0
+            or successful_count + failed_count
+            != manifest_generator.EXPECTED_RECOMMENDATIONS_PER_SEED
+        ):
+            raise ContractError(f"seed {seed} terminal counts are invalid")
+        for key in (
+            "whole_file_sha256",
+            "internal_archive_sha256",
+            "candidate_ids_sha256",
+            "full_records_sha256",
+        ):
+            manifest_generator.require_sha256(
+                item.get(key),
+                f"seed {seed} snapshot {key}",
+            )
+        expected_sources.append(
+            {
+                "path": item.get("path"),
+                "sha256": item.get("whole_file_sha256"),
+                "internal_sha256": item.get("internal_archive_sha256"),
+                "search_seed": seed,
+            }
+        )
+    require_equal(
+        [item["search_seed"] for item in snapshot_seeds],
+        list(manifest_generator.EXPECTED_SEARCH_SEEDS),
+        "seed-archive snapshot frozen search-seed order",
+    )
+    require_equal(
+        source_seeds,
+        expected_sources,
+        "seed-archive source/snapshot bindings",
+    )
 
 
 def validate_manifest_contract(manifest: dict[str, Any]) -> None:
@@ -432,6 +629,35 @@ def validate_manifest_contract(manifest: dict[str, Any]) -> None:
         manifest_generator.EXPECTED_PRACTICAL_TOLERANCE_MS,
         "practical tolerance",
     )
+    erratum_source = manifest.get("source_artifacts", {}).get(
+        "phase2_protocol_erratum", {}
+    )
+    require_equal(
+        paired.get("policy_erratum_id"),
+        manifest_generator.EXPECTED_PROTOCOL_ERRATUM_ID,
+        "paired-analysis protocol erratum ID",
+    )
+    require_equal(
+        paired.get("policy_erratum_sha256"),
+        manifest_generator.EXPECTED_PROTOCOL_ERRATUM_FILE_SHA256,
+        "paired-analysis protocol erratum SHA256",
+    )
+    require_equal(
+        paired.get("policy_erratum_sha256"),
+        erratum_source.get("sha256"),
+        "paired-analysis/source protocol erratum SHA256",
+    )
+    require_equal(
+        paired.get("both_policy_branches_must_be_emitted"),
+        True,
+        "paired-analysis branch emission",
+    )
+    for branch in (
+        "original_preregistered_bootstrap_classification",
+        "effective_erratum_directional_classification",
+    ):
+        if not isinstance(paired.get(branch), dict):
+            raise ContractError(f"paired-analysis branch is missing: {branch}")
     require_equal(
         manifest.get("selection_isolation"),
         {
@@ -451,6 +677,7 @@ def validate_manifest_contract(manifest: dict[str, Any]) -> None:
         ),
         "incomplete allocation policy",
     )
+    validate_archive_snapshot_contract(manifest)
 
 
 def load_pinned_source(source: dict[str, Any], label: str) -> Path:
@@ -463,8 +690,76 @@ def load_pinned_source(source: dict[str, Any], label: str) -> Path:
     return path
 
 
-def validate_final_source_evidence(manifest: dict[str, Any]) -> dict[str, Any]:
+def validate_paired_policy_binding(
+    manifest: dict[str, Any],
+    paired_policy: dict[str, Any],
+) -> None:
+    paired_analysis = manifest.get("paired_analysis", {})
+    require_equal(
+        {
+            "original_preregistered_bootstrap_classification": (
+                paired_analysis.get(
+                    "original_preregistered_bootstrap_classification"
+                )
+            ),
+            "effective_erratum_directional_classification": (
+                paired_analysis.get(
+                    "effective_erratum_directional_classification"
+                )
+            ),
+            "both_policy_branches_must_be_emitted": paired_analysis.get(
+                "both_policy_branches_must_be_emitted"
+            ),
+        },
+        paired_policy,
+        "manifest/erratum paired-analysis policy",
+    )
+    require_equal(
+        paired_analysis.get("policy_erratum_id"),
+        manifest_generator.EXPECTED_PROTOCOL_ERRATUM_ID,
+        "manifest/erratum paired-analysis policy ID",
+    )
+    require_equal(
+        paired_analysis.get("policy_erratum_sha256"),
+        manifest_generator.EXPECTED_PROTOCOL_ERRATUM_FILE_SHA256,
+        "manifest/erratum paired-analysis policy SHA256",
+    )
+
+
+def validate_final_source_evidence(
+    manifest: dict[str, Any],
+    protocol_erratum_path: Path | None = None,
+    protocol_erratum_sha256: str | None = None,
+) -> dict[str, Any]:
     sources = manifest["source_artifacts"]
+    erratum_source = sources["phase2_protocol_erratum"]
+    resolved_erratum_path = (
+        Path(erratum_source["path"]).resolve()
+        if protocol_erratum_path is None
+        else protocol_erratum_path.resolve()
+    )
+    supplied_erratum_sha256 = (
+        erratum_source["sha256"]
+        if protocol_erratum_sha256 is None
+        else protocol_erratum_sha256
+    )
+    protocol_erratum, erratum_actual, paired_policy = (
+        manifest_generator.load_and_validate_protocol_erratum(
+            resolved_erratum_path,
+            supplied_erratum_sha256,
+        )
+    )
+    require_equal(
+        {
+            "path": str(resolved_erratum_path),
+            "sha256": erratum_actual,
+            "erratum_id": protocol_erratum["erratum_id"],
+            "issued_at_utc": protocol_erratum["issued_at_utc"],
+        },
+        erratum_source,
+        "CLI/manifest protocol-erratum binding",
+    )
+    validate_paired_policy_binding(manifest, paired_policy)
     expanded_path = load_pinned_source(
         sources["expanded_manifest"],
         "expanded manifest",
@@ -481,6 +776,10 @@ def validate_final_source_evidence(manifest: dict[str, Any]) -> dict[str, Any]:
     table_path = load_pinned_source(
         sources["expanded_candidate_table"],
         "candidate table",
+    )
+    candidate_table_csv_path = load_pinned_source(
+        sources["expanded_candidate_table_csv"],
+        "candidate table CSV",
     )
     integrity_path = load_pinned_source(
         sources["expanded_integrity_audit"],
@@ -499,6 +798,33 @@ def validate_final_source_evidence(manifest: dict[str, Any]) -> dict[str, Any]:
         integrity=integrity,
         combined=combined,
         table=table,
+    )
+    seed_archive_paths = []
+    for source in sources["expanded_seed_archives"]:
+        path = load_pinned_source(
+            source,
+            f"seed {source.get('search_seed')} archive",
+        )
+        seed_archive_paths.append(path)
+    archive_snapshot = (
+        manifest_generator.validate_expanded_archive_authority(
+            seed_archive_paths=seed_archive_paths,
+            expanded_manifest_sha256=sources["expanded_manifest"]["sha256"],
+            combined=combined,
+            combined_sha256=sources["expanded_combined_selection"]["sha256"],
+            table=table,
+            table_sha256=sources["expanded_candidate_table"]["sha256"],
+            candidate_table_csv_path=candidate_table_csv_path,
+            candidate_table_csv_sha256=sources[
+                "expanded_candidate_table_csv"
+            ]["sha256"],
+            integrity_sha256=sources["expanded_integrity_audit"]["sha256"],
+        )
+    )
+    require_equal(
+        manifest.get("expanded_archive_snapshot"),
+        archive_snapshot,
+        "reconstructed expanded-archive snapshot",
     )
     selector_replay = manifest_generator.validate_completed_archive(
         combined,
@@ -647,8 +973,14 @@ def validate_final_source_evidence(manifest: dict[str, Any]) -> dict[str, Any]:
         sources["expanded_combined_selection"]["sha256"],
         table_path,
         sources["expanded_candidate_table"]["sha256"],
+        candidate_table_csv_path,
+        sources["expanded_candidate_table_csv"]["sha256"],
         integrity_path,
         sources["expanded_integrity_audit"]["sha256"],
+        resolved_erratum_path,
+        erratum_actual,
+        protocol_erratum,
+        archive_snapshot,
         expanded,
         selector_replay,
     )
@@ -673,6 +1005,8 @@ def validate_final_source_evidence(manifest: dict[str, Any]) -> dict[str, Any]:
         sensitivity_manifest=sensitivity,
         combined=combined,
         selector_replay=selector_replay,
+        protocol_erratum=protocol_erratum,
+        archive_snapshot=archive_snapshot,
     )
     require_exact_reconstructed_manifest(manifest, reconstructed_manifest)
     return {
@@ -683,9 +1017,33 @@ def validate_final_source_evidence(manifest: dict[str, Any]) -> dict[str, Any]:
         "candidate_table_sha256": sources["expanded_candidate_table"][
             "sha256"
         ],
+        "candidate_table_csv_sha256": sources[
+            "expanded_candidate_table_csv"
+        ]["sha256"],
         "integrity_audit_sha256": sources["expanded_integrity_audit"][
             "sha256"
         ],
+        "protocol_erratum_sha256": erratum_actual,
+        "protocol_erratum_canonical_sha256": (
+            manifest_generator.sha256_value(protocol_erratum)
+        ),
+        "seed_archive_whole_file_sha256": {
+            str(item["search_seed"]): item["whole_file_sha256"]
+            for item in archive_snapshot["seed_archives"]
+        },
+        "seed_archive_internal_sha256": {
+            str(item["search_seed"]): item["internal_archive_sha256"]
+            for item in archive_snapshot["seed_archives"]
+        },
+        "expanded_archive_candidate_ids_sha256": archive_snapshot[
+            "candidate_ids_sha256"
+        ],
+        "expanded_archive_full_record_union_sha256": archive_snapshot[
+            "full_record_union_sha256"
+        ],
+        "expanded_archive_candidate_table_projection_sha256": (
+            archive_snapshot["candidate_table_projection_sha256"]
+        ),
         "expanded_runtime_contract_sha256": sources[
             "expanded_runtime_contract"
         ]["sha256"],
@@ -3772,7 +4130,11 @@ def main() -> int:
         runtime_dir / "dry_run.json",
         "CLI dry-run report path",
     )
-    source_checks = validate_final_source_evidence(manifest)
+    source_checks = validate_final_source_evidence(
+        manifest,
+        protocol_erratum_path=args.protocol_erratum.resolve(),
+        protocol_erratum_sha256=args.protocol_erratum_sha256,
+    )
     configs = generate_configs(manifest)
     rendered = []
     for allocation in manifest["schedule"]["allocations"]:
