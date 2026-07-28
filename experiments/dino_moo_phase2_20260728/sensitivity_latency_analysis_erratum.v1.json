@@ -2,9 +2,14 @@
   "schema_version": 1,
   "erratum_id": "dino_sensitivity_latency_analysis_erratum_20260728_v1",
   "status": "approved_analysis_only",
-  "scope": "aggregation_validation_only",
+  "scope": "aggregation_validation_evidence_access_and_descendant_commit_only",
   "reason_code": "allocation_torch_version_used_full_string_instead_of_declared_base_release",
-  "reason": "The immutable v2 measurement contract declares torch_version_match=major_minor_patch and both the block preflight and rank-record validator apply that policy. The original analysis aggregator instead compared allocation.hardware.runtime.torch as a full string to required_torch=2.11.0, incorrectly rejecting the valid NVIDIA build string 2.11.0a0+a6c236b9fd.nv26.03.46836102 after measurements completed.",
+  "reason_codes": [
+    "allocation_torch_version_used_full_string_instead_of_declared_base_release",
+    "analysis_head_descends_from_immutable_launch_commit",
+    "remote_results_not_locally_mounted"
+  ],
+  "reason": "The immutable v2 measurement contract declares torch_version_match=major_minor_patch and both the block preflight and rank-record validator apply that policy. The original analysis aggregator instead compared allocation.hardware.runtime.torch as a full string to required_torch=2.11.0, incorrectly rejecting the valid NVIDIA build string after measurements completed. The immutable ledger records launch commit cb62ef447704b95980b17aa82604992564b4e71f, while analysis runs from a later commit on the same branch containing only descendant analysis work; all manifest-pinned measurement source hashes remain exact. The remote /lustre/fs11 results filesystem is not mounted on the analysis host, requiring an exact read-only evidence snapshot.",
   "measurement_generation_unchanged": true,
   "qualification_policy_unchanged": true,
   "objective_values_altered": false,
@@ -16,7 +21,9 @@
     "manifest_path": "sensitivity_latency_manifest.v2.json",
     "manifest_sha256": "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655",
     "submission_ledger_path": "runtime/sensitivity_latency_v2/block_submissions.json",
-    "submission_ledger_sha256": "b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54"
+    "submission_ledger_sha256": "b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54",
+    "launch_automl_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+    "launch_automl_commit": "cb62ef447704b95980b17aa82604992564b4e71f"
   },
   "source_pins": {
     "measurement_generation": {
@@ -27,7 +34,7 @@
       "latency_stats": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d"
     },
     "original_aggregator_sha256": "5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967",
-    "corrected_aggregator_sha256": "e29e0d121caa01558eadabf7807738f698a2b97778b0a3bfa08106e60a2fe356"
+    "corrected_aggregator_sha256": "91337679311aa589bdcef8d6c7cc7e3d5c03194d2043c67abc8af1ccd2dfbfe5"
   },
   "unchanged_policy_pins": {
     "measurement_policy_sha256": "3a158b7018a298b2bd7fb7d3340f066d11e1720f1eb0c383e493c98d973c2918",
@@ -62,10 +69,22 @@
     "embedded_remote_path_policy": "validate_without_rewriting",
     "remote_write_permitted": false
   },
+  "analysis_commit_correction": {
+    "launch_identity_source": "immutable_submission_ledger.source_checks",
+    "analysis_identity_source": "git_HEAD_and_current_validated_source_checks",
+    "branch_policy": "exact_same_branch",
+    "commit_policy": "launch_commit_is_ancestor_of_analysis_commit",
+    "measurement_source_hash_policy": "exact_immutable_manifest_values",
+    "command_plan_policy": "regenerate_current_and_reconcile_against_immutable_ledger",
+    "source_hash_weakening_permitted": false
+  },
   "analysis_guards": {
     "regenerate_execution_plans_and_command_hashes": true,
     "validate_measurement_generation_source_identities": true,
     "validate_immutable_submission_ledger": true,
+    "validate_launch_commit_and_branch_from_immutable_ledger": true,
+    "require_launch_commit_ancestor_of_analysis_head": true,
+    "pass_launch_source_checks_to_original_ledger_reconciler": true,
     "validate_raw_result_and_rank_file_digests": true,
     "derive_remote_paths_without_discovery_globs": true,
     "require_remote_local_sha256_equality": true,
