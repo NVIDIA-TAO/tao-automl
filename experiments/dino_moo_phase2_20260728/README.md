@@ -22,9 +22,36 @@ python experiments/dino_moo_phase2_20260728/replay_phase1_archive.py --check
 
 With no multi-objective floor, the selector independently returns
 `seed_271828_rec_1` as a distinct compromise on the six-point global front.
-This remains a frozen-measurement replay only; its small historical latency
-differences are not treated as allocation-stable until the matched experiment
-finishes.
+This remains a frozen-measurement replay only. The completed matched experiment
+shows that its small historical latency differences are not
+allocation-stable.
+
+## Completed historical-front latency comparison
+
+`matched_pareto_latency_comparison.json` contains 36 measurements: all six
+historical global-front candidates on each of six independent eight-GPU
+allocations and six distinct A100 nodes. Every allocation completed through
+the TAO SDK and SLURM with `Complete / COMPLETED / 0:0` evidence.
+
+The descriptive median ordering is not a stable total order. All 15 paired
+candidate comparisons are practically equivalent under the preregistered
+`0.75 ms` tolerance, and no paired-bootstrap confidence interval lies wholly
+beyond that equivalence band. These measurements never replace the frozen
+historical objective values and do not rerun selection.
+
+## Completed sensitivity accuracy evidence
+
+The one-factor study completed 33 exact SQSH training jobs and 42 controlled
+accuracy evaluations across three training seeds. The immutable artifacts are:
+
+- `sensitivity_training_checkpoints.v1.json`, SHA256
+  `20188a8858a9329ce4b861730ad3b0b2f6185389c8af1b02ad29284e5ed1b012`;
+- `sensitivity_training_accuracy.v1.json`, SHA256
+  `459da2ebe557ec26947dc723b2864f2bc31880ae3181ad1216c3a47825ec466b`.
+
+The accuracy artifact is descriptive input to the independently matched
+latency-sensitivity analysis. It selects no winner and cannot alter the frozen
+30-candidate archive.
 
 ## Design
 
