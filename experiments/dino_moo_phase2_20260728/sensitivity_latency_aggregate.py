@@ -111,6 +111,13 @@ def read_hashed_json(path: Path, label: str) -> tuple[Any, str]:
     return strict_json_bytes(raw, label), hashlib.sha256(raw).hexdigest()
 
 
+def major_minor_patch(version: Any, label: str) -> str:
+    match = re.match(r"^(\d+\.\d+\.\d+)", str(version))
+    if match is None:
+        raise ValueError(f"{label} has no major.minor.patch prefix: {version}")
+    return match.group(1)
+
+
 def load_env_file(path: Path) -> list[str]:
     if not path.is_file():
         raise FileNotFoundError(f"required secrets env file not found: {path}")
@@ -727,7 +734,9 @@ def validate_rank_record(
         raise ValueError("GPU UUID is empty")
     runtime = record.get("runtime", {})
     if (
-        runtime.get("torch") != runtime_contract["required_torch"]
+        runtime_contract.get("torch_version_match") != "major_minor_patch"
+        or major_minor_patch(runtime.get("torch"), "rank torch version")
+        != runtime_contract["required_torch"]
         or runtime.get("cuda") != runtime_contract["required_cuda"]
         or runtime.get("cudnn") != runtime_contract["required_cudnn"]
     ):

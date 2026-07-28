@@ -213,10 +213,34 @@ def validate_policy(policy: dict[str, Any]) -> None:
         "normalized_augmented_chebyshev",
         "multi-objective selector",
     )
+    evidence = policy["sensitivity_evidence_contract"]
     require_equal(
-        policy["sensitivity_evidence_contract"]["source_manifest"]["sha256"],
-        "c569f858f4513139292d7189ab5e57f897b8794fdbe5b2dcafc45b0efcd663aa",
+        evidence["manifest_id"],
+        "dino_sensitivity_latency_20260728_v2",
+        "pinned sensitivity manifest ID",
+    )
+    source_manifest = evidence["source_manifest"]
+    require_equal(
+        source_manifest["path"],
+        "sensitivity_latency_manifest.v2.json",
+        "pinned sensitivity manifest path",
+    )
+    require_equal(
+        source_manifest["sha256"],
+        "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655",
         "pinned sensitivity manifest SHA256",
+    )
+    require_equal(
+        source_manifest["supersedes"],
+        {
+            "manifest_id": "dino_sensitivity_latency_20260728_v1",
+            "manifest_sha256": (
+                "c569f858f4513139292d7189ab5e57f8"
+                "97b8794fdbe5b2dcafc45b0efcd663aa"
+            ),
+            "disposition": "preflight_failed_no_latency_measurements",
+        },
+        "pinned sensitivity manifest supersession",
     )
     axis_policy = policy["architecture_axis_policy"]
     axes = axis_policy["axes"]
@@ -542,6 +566,14 @@ def validate_source_identity(
         source.get("manual_promotion_permitted"),
         False,
         "sensitivity manifest manual_promotion_permitted",
+    )
+    require_equal(
+        {
+            key: source.get("supersedes", {}).get(key)
+            for key in ("manifest_id", "manifest_sha256", "disposition")
+        },
+        source_policy["supersedes"],
+        "sensitivity manifest supersession",
     )
     require_equal(
         result.get("manifest_sha256"),

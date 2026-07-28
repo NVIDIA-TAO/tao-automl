@@ -9,8 +9,18 @@ matching TAO SDK/SLURM state.
 
 ## Files
 
-- `sensitivity_latency_manifest.v1.json` freezes the nine-block design,
-  runtime, benchmark, aggregation, and effect-qualification contracts.
+- `sensitivity_latency_manifest.v1.json`, SHA256
+  `c569f858f4513139292d7189ab5e57f897b8794fdbe5b2dcafc45b0efcd663aa`,
+  is retained as immutable failed-attempt evidence. All nine v1 allocations
+  stopped in runtime preflight before the first benchmark invocation, so v1
+  produced no latency measurements.
+- `sensitivity_latency_manifest.v2.json`, SHA256
+  `aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655`,
+  supersedes v1. It preserves the nine-block design, benchmark, aggregation,
+  and effect-qualification contracts while matching the public
+  major.minor.patch prefix of the SQSH's full NVIDIA PyTorch build string. It
+  also disables SDK SLURM requeue handling so a non-timeout `srun` failure
+  cannot be masked by the wrapper's requeue tail.
 - `sensitivity_latency_checkpoint_artifact.schema.json` documents the immutable
   33-entry training checkpoint artifact.
 - `sensitivity_latency_accuracy_artifact.schema.json` documents the completed
@@ -88,11 +98,15 @@ and commands without reading remote state or creating jobs:
 cd /localhome/local-rarunachalam/tao-automl
 python experiments/dino_moo_phase2_20260728/sensitivity_latency_launcher.py \
   --dry-run \
+  --manifest \
+  experiments/dino_moo_phase2_20260728/sensitivity_latency_manifest.v2.json \
+  --runtime-dir \
+  experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency_v2 \
   --checkpoint-artifact \
   experiments/dino_moo_phase2_20260728/sensitivity_training_checkpoints.v1.json \
   --checkpoint-artifact-sha256 \
   20188a8858a9329ce4b861730ad3b0b2f6185389c8af1b02ad29284e5ed1b012 \
-  --report /tmp/sensitivity_latency_dry_run.json
+  --report /tmp/sensitivity_latency_v2_dry_run.json
 ```
 
 Add `--verify-remote` to perform read-only SSH verification of the SQSH,
@@ -107,12 +121,16 @@ user-authorized acknowledgement matches exactly:
 python experiments/dino_moo_phase2_20260728/sensitivity_latency_launcher.py \
   --submit-blocks \
   --verify-remote \
+  --manifest \
+  experiments/dino_moo_phase2_20260728/sensitivity_latency_manifest.v2.json \
+  --runtime-dir \
+  experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency_v2 \
   --checkpoint-artifact \
   experiments/dino_moo_phase2_20260728/sensitivity_training_checkpoints.v1.json \
   --checkpoint-artifact-sha256 \
   20188a8858a9329ce4b861730ad3b0b2f6185389c8af1b02ad29284e5ed1b012 \
   --acknowledgement \
-  USER_AUTHORIZED_CONCURRENT_9X8GPU_SLURM_DINO_SENSITIVITY_LATENCY_20260728
+  USER_AUTHORIZED_CONCURRENT_9X8GPU_SLURM_DINO_SENSITIVITY_LATENCY_V2_20260728
 ```
 
 This queues all nine independent eight-GPU blocks through
@@ -142,6 +160,8 @@ verifying SDK and scheduler identity:
 
 ```bash
 python experiments/dino_moo_phase2_20260728/sensitivity_latency_aggregate.py \
+  --manifest \
+  experiments/dino_moo_phase2_20260728/sensitivity_latency_manifest.v2.json \
   --checkpoint-artifact \
   experiments/dino_moo_phase2_20260728/sensitivity_training_checkpoints.v1.json \
   --checkpoint-artifact-sha256 \
@@ -151,10 +171,10 @@ python experiments/dino_moo_phase2_20260728/sensitivity_latency_aggregate.py \
   --accuracy-artifact-sha256 \
   459da2ebe557ec26947dc723b2864f2bc31880ae3181ad1216c3a47825ec466b \
   --submission-ledger \
-  experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency/block_submissions.json \
+  experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency_v2/block_submissions.json \
   --submission-ledger-sha256 <immutable-nine-entry-ledger-sha256> \
   --sdk-state \
-  experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency/slurm_state.json \
+  experiments/dino_moo_phase2_20260728/runtime/sensitivity_latency_v2/slurm_state.json \
   --output /path/to/sensitivity_latency_aggregation.json
 ```
 

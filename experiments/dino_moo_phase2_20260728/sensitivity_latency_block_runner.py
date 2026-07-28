@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import socket
 import subprocess
 import time
@@ -49,6 +50,13 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def major_minor_patch(version: Any, label: str) -> str:
+    match = re.match(r"^(\d+\.\d+\.\d+)", str(version))
+    if match is None:
+        raise RuntimeError(f"{label} has no major.minor.patch prefix: {version}")
+    return match.group(1)
 
 
 def atomic_json(path: Path, payload: Any) -> None:
@@ -152,10 +160,15 @@ def validate_hardware(expected: dict[str, Any]) -> dict[str, Any]:
         devices.append(record)
     runtime = {
         "torch": torch.__version__,
+        "torch_major_minor_patch": major_minor_patch(
+            torch.__version__, "torch version"
+        ),
         "cuda": torch.version.cuda,
         "cudnn": torch.backends.cudnn.version(),
     }
-    if runtime["torch"] != expected["torch"]:
+    if expected.get("torch_version_match") != "major_minor_patch":
+        raise RuntimeError("unsupported torch version-match contract")
+    if runtime["torch_major_minor_patch"] != expected["torch"]:
         raise RuntimeError(f"torch mismatch: {runtime['torch']}")
     if runtime["cuda"] != expected["cuda"]:
         raise RuntimeError(f"CUDA mismatch: {runtime['cuda']}")

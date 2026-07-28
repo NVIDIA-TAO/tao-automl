@@ -53,6 +53,30 @@ The accuracy artifact is descriptive input to the independently matched
 latency-sensitivity analysis. It selects no winner and cannot alter the frozen
 30-candidate archive.
 
+## Current latency-sensitivity execution contract
+
+The first nine-allocation attempt is preserved under
+`sensitivity_latency_manifest.v1.json`, SHA256
+`c569f858f4513139292d7189ab5e57f897b8794fdbe5b2dcafc45b0efcd663aa`.
+Every v1 allocation failed runtime preflight before its first benchmark
+invocation because the exact SQSH reports an NVIDIA prerelease/local PyTorch
+build string while v1 required literal equality with the public `2.11.0`
+version. Consequently, v1 produced no latency measurements and none of its
+allocations can enter the sensitivity analysis. The SDK's default requeue
+wrapper then masked those non-timeout `srun` failures at the root-job level;
+the per-allocation preflight records, rather than the apparent root success,
+are the authoritative v1 evidence.
+
+`sensitivity_latency_manifest.v2.json`, SHA256
+`aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655`,
+explicitly supersedes v1. V2 retains and reports the complete runtime string
+but validates its major.minor.patch prefix. It also freezes
+`SLURM_USE_REQUEUE=false`, ensuring non-timeout `srun` failures propagate
+instead of being hidden by the SDK wrapper. The frozen benchmark design,
+profile order, statistical decision rule, and expanded-search derivation rule
+are unchanged. `expanded_search_derivation_policy.v1.json` is pinned to this
+exact v2 manifest; it cannot consume v1 or an unpinned replacement.
+
 ## Design
 
 - Six independent SLURM jobs request one node and eight GPUs each.
