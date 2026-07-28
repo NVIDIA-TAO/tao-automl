@@ -170,11 +170,14 @@ automl_settings = {
         {"metric": "val_mAP50", "direction": "maximize", "weight": 1.0},
         {"metric": "latency_ms", "direction": "minimize", "weight": 1.0},
     ],
-    "accuracy_constraint": {
+    "latency_accuracy_retention": {
         "type": "relative",
         "retained_fraction": 0.98,
         "reference": "accuracy_winner",
     },
+    # Optional and independent of latency_accuracy_retention. None includes
+    # every valid candidate in multi-objective Pareto analysis.
+    "multi_objective_min_accuracy": None,
     "objective_normalization": "pareto_front",
     "augmentation_rho": 1.0e-6,
     "accuracy_tolerance": 1.0e-12,
@@ -187,15 +190,14 @@ automl_settings = {
 An absolute accuracy rule is also supported:
 
 ```python
-accuracy_constraint = {
+latency_accuracy_retention = {
     "type": "absolute",
     "max_absolute_degradation": 0.02,
     "reference": "accuracy_winner",
 }
 ```
 
-For accuracy \(A\), latency \(L\), and feasible Pareto front \(P\), the default
-relative rule is:
+For accuracy \(A\) and latency \(L\), the default latency-mode relative rule is:
 
 ```text
 A(x) >= 0.98 * A*
@@ -206,6 +208,33 @@ latency subject to this constraint. It returns an explicit
 `no_accuracy_feasible_candidates` status instead of applying a penalty or
 silently falling back.
 
+Multi-objective eligibility is separate. By default,
+`multi_objective_min_accuracy` is unset and every candidate with finite valid
+measurements is eligible for Pareto analysis. An optional absolute metric floor
+can be written as a number or explicitly:
+
+```python
+multi_objective_min_accuracy = {
+    "type": "absolute",
+    "value": 0.80,
+}
+```
+
+A reference-relative sensitivity policy must be explicit, avoiding ambiguity
+between an absolute `0.90` metric floor and 90% retention:
+
+```python
+multi_objective_min_accuracy = {
+    "type": "relative",
+    "value": 0.90,
+    "reference": "accuracy_winner",
+}
+```
+
+This resolves to \(A(x) \mathrel{\ge} 0.90 A^*\), independently of the
+latency-mode retention fraction. The resolved reference candidate, reference
+accuracy, and threshold are persisted in the selection audit.
+
 The compromise selector orients both objectives as regrets:
 
 ```text
@@ -213,9 +242,10 @@ r_accuracy(x) = (A_max - A(x)) / (A_max - A_min)
 r_latency(x)  = (L(x) - L_min) / (L_max - L_min)
 ```
 
-The bounds are persisted from the feasible rank-zero front. A zero-range
-objective is inactive and contributes zero regret. With normalized positive
-weights \(w_A,w_L\), the selected candidate minimizes:
+The bounds are persisted from the rank-zero front under the configured
+multi-objective eligibility policy. A zero-range objective is inactive and
+contributes zero regret. With normalized positive weights \(w_A,w_L\), the
+selected candidate minimizes:
 
 ```text
 max(w_A * r_accuracy, w_L * r_latency)
@@ -249,20 +279,22 @@ improvement. Thus statistical equivalence can withhold a dominance claim but
 can never allow a numerically worse point to dominate.
 
 If no distinct non-dominated point exists between the accuracy and latency
-extremes, the result contains:
+extremes under the configured multi-objective eligibility policy, the result
+contains:
 
 ```text
-No distinct Pareto compromise exists in the evaluated search space.
+No distinct Pareto compromise exists under the configured multi-objective eligibility policy.
 ```
 
 The augmented-Chebyshev ordering then supplies the deterministic extreme-point
 fallback. The result does not claim that this fallback is a middle ground.
 
 `get_status()` and runner results expose the constraint reference and threshold,
-normalization bounds, per-candidate validity and feasibility, both global and
-feasible Pareto ranks, dominated-by IDs, normalized regrets, compromise and
-acquisition scores, confidence bounds, canonical fingerprint, tie-break values,
-and all three mode-winner flags.
+normalization bounds, per-candidate validity, latency feasibility,
+multi-objective eligibility, both global and multi-objective Pareto ranks,
+dominated-by IDs, normalized regrets, compromise and acquisition scores,
+confidence bounds, canonical fingerprint, tie-break values, and all three
+mode-winner flags.
 
 For two-objective benchmarking, `eval_fn` is required by default. An exception
 or missing required metric invalidates the trial instead of falling back to a

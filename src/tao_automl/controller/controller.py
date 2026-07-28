@@ -755,7 +755,7 @@ class Controller:
                 audit.candidate
                 for audit in analysis.audits
                 if audit.valid
-                and audit.accuracy_feasible
+                and audit.multi_objective_accuracy_feasible
                 and audit.feasible_pareto_rank == 0
             ]
         return self.objective_config.pareto_front(completed)

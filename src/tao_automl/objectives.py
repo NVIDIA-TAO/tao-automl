@@ -319,13 +319,50 @@ class ObjectiveConfig:
         return result
 
 
-def _parse_accuracy_constraint(settings: dict[str, Any]) -> AccuracyConstraint:
-    raw = settings.get("accuracy_constraint") or {}
-    if not isinstance(raw, dict):
-        raise TypeError("automl_settings['accuracy_constraint'] must be a dictionary")
-
+def _parse_latency_accuracy_retention(
+    settings: dict[str, Any],
+) -> AccuracyConstraint:
+    preferred = settings.get("latency_accuracy_retention")
+    legacy_raw = settings.get("accuracy_constraint")
     flattened_relative = settings.get("accuracy_retention_fraction")
     flattened_absolute = settings.get("max_accuracy_degradation")
+    legacy_configured = any(
+        value is not None
+        for value in (
+            legacy_raw,
+            flattened_relative,
+            flattened_absolute,
+        )
+    )
+    if preferred is not None and legacy_configured:
+        raise ValueError(
+            "Configure latency_accuracy_retention or legacy accuracy constraint "
+            "settings, not both"
+        )
+
+    if preferred is None:
+        raw = legacy_raw or {}
+        if not isinstance(raw, dict):
+            raise TypeError(
+                "automl_settings['accuracy_constraint'] must be a dictionary"
+            )
+    elif isinstance(preferred, dict):
+        raw = preferred
+        flattened_relative = None
+        flattened_absolute = None
+    elif (
+        isinstance(preferred, (int, float))
+        and not isinstance(preferred, bool)
+    ):
+        raw = {"type": "relative", "value": preferred}
+        flattened_relative = None
+        flattened_absolute = None
+    else:
+        raise TypeError(
+            "automl_settings['latency_accuracy_retention'] must be a number "
+            "or dictionary"
+        )
+
     nested_relative = raw.get(
         "retained_fraction",
         raw.get("min_retained_fraction"),
@@ -346,21 +383,23 @@ def _parse_accuracy_constraint(settings: dict[str, Any]) -> AccuracyConstraint:
     )
     if relative is not None and absolute is not None:
         raise ValueError(
-            "Configure either retained accuracy fraction or maximum absolute "
-            "accuracy degradation, not both"
+            "Configure either a retained accuracy fraction or maximum absolute "
+            "accuracy degradation for latency mode, not both"
         )
 
     kind = raw.get("type")
     raw_value = raw.get("value")
     if relative is not None:
         if kind not in (None, "relative"):
-            raise ValueError("accuracy constraint type conflicts with retained fraction")
+            raise ValueError(
+                "latency accuracy-retention type conflicts with retained fraction"
+            )
         kind = "relative"
         raw_value = relative
     elif absolute is not None:
         if kind not in (None, "absolute"):
             raise ValueError(
-                "accuracy constraint type conflicts with absolute degradation"
+                "latency accuracy-retention type conflicts with absolute degradation"
             )
         kind = "absolute"
         raw_value = absolute
@@ -417,7 +456,10 @@ def _build_selection_config(
         mode=mode,
         accuracy_metric=accuracy_metric,
         latency_metric=latency_metric,
-        accuracy_constraint=_parse_accuracy_constraint(settings),
+        latency_accuracy_retention=_parse_latency_accuracy_retention(settings),
+        multi_objective_min_accuracy=settings.get(
+            "multi_objective_min_accuracy"
+        ),
         accuracy_tolerance=settings.get("accuracy_tolerance", 1e-12),
         latency_tolerance=settings.get("latency_tolerance", 0.0),
         score_tolerance=settings.get("selection_score_tolerance", 1e-12),
