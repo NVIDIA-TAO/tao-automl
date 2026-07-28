@@ -974,8 +974,11 @@ def union_candidate_records() -> list[dict[str, Any]]:
     return records
 
 
-def select_union_archive() -> dict[str, Any]:
-    records = union_candidate_records()
+def analyze_candidate_records(
+    records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Run the product selector over persisted measurements only."""
+
     candidates = [
         SimpleNamespace(
             id=record["candidate_id"],
@@ -986,8 +989,43 @@ def select_union_archive() -> dict[str, Any]:
         for record in records
     ]
     objective_config = parse_objective_config(automl_settings(SEARCH_SEEDS[0]))
-    analysis = objective_config.analyze_archive(candidates)
-    result = analysis.to_dict()
+    return objective_config.analyze_archive(candidates).to_dict()
+
+
+def write_per_seed_selection() -> dict[str, Any]:
+    """Persist read-only selector replays used to assess search-seed stability."""
+
+    payload: dict[str, Any] = {
+        "schema_version": 1,
+        "purpose": (
+            "Read-only stability replay. These per-seed selections do not "
+            "change or override the shared-union winner."
+        ),
+        "feeds_union_selection": False,
+        "seeds": {},
+    }
+    for seed in SEARCH_SEEDS:
+        path = EXPERIMENT_DIR / f"seed_{seed}" / "candidate_evaluations.json"
+        seed_payload = json.loads(path.read_text())
+        records = [
+            record
+            for record in seed_payload["evaluations"]
+            if record.get("status") == "success"
+        ]
+        analysis = analyze_candidate_records(records)
+        payload["seeds"][str(seed)] = {
+            "successful_candidates": len(records),
+            "algorithm": analysis["algorithm"],
+            "selections": analysis["selections"],
+            "candidates": analysis["candidates"],
+        }
+    atomic_json(EXPERIMENT_DIR / "per_seed_selection.json", payload)
+    return payload
+
+
+def select_union_archive() -> dict[str, Any]:
+    records = union_candidate_records()
+    result = analyze_candidate_records(records)
     result["search"] = {
         "seeds": list(SEARCH_SEEDS),
         "recommendations_per_seed": RECOMMENDATIONS_PER_SEED,
@@ -1001,6 +1039,7 @@ def select_union_archive() -> dict[str, Any]:
     }
     atomic_json(EXPERIMENT_DIR / "combined_selection.json", result)
     write_candidate_csv(result)
+    write_per_seed_selection()
     return result
 
 
@@ -1235,10 +1274,6 @@ def require_successful_smoke() -> None:
 
 def main() -> int:
     args = parse_args()
-    write_launch_manifest()
-    if args.smoke:
-        run_smoke()
-        return 0
     if args.combine_only:
         combined = select_union_archive()
         print(
@@ -1246,6 +1281,10 @@ def main() -> int:
             + json.dumps(combined["selections"], sort_keys=True),
             flush=True,
         )
+        return 0
+    write_launch_manifest()
+    if args.smoke:
+        run_smoke()
         return 0
     require_successful_smoke()
 
