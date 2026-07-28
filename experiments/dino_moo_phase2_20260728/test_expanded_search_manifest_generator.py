@@ -147,6 +147,8 @@ class ExpandedSearchDerivationTests(unittest.TestCase):
             "policy_sha256": "b" * 64,
             "generator_path": Path("/generator/generator.py"),
             "generator_sha256": "c" * 64,
+            "runner_path": Path("/runner/expanded_search_runner.py"),
+            "runner_sha256": "e" * 64,
             "sensitivity_report_sha256": "d" * 64,
         }
         expected = GENERATOR.build_manifest(frozen, rows, **kwargs)
@@ -155,6 +157,49 @@ class ExpandedSearchDerivationTests(unittest.TestCase):
         actual = GENERATOR.build_manifest(frozen, shuffled, **kwargs)
         self.assertEqual(actual, expected)
         self.assertEqual(actual["manifest_sha256"], expected["manifest_sha256"])
+        self.assertEqual(
+            actual["derivation"]["runner_path"],
+            "/runner/expanded_search_runner.py",
+        )
+        self.assertEqual(actual["derivation"]["runner_sha256"], "e" * 64)
+        self.assertEqual(
+            actual["derivation"]["analysis_erratum_contract_sha256"],
+            GENERATOR.EXPECTED_ANALYSIS_ERRATUM_CONTRACT_SHA256,
+        )
+        self.assertEqual(
+            actual["derivation"]["post_front_contract_sha256"],
+            GENERATOR.EXPECTED_POST_FRONT_CONTRACT_SHA256,
+        )
+        self.assertEqual(
+            actual["post_front_matched_validation"],
+            frozen["post_front_matched_validation"],
+        )
+
+    def test_runner_source_identity_cannot_be_omitted_or_malformed(self):
+        frozen = policy()
+        rows = decisions(frozen)
+        rows[0]["latency_effect_qualified"] = True
+        kwargs = {
+            "sensitivity_result_path": Path("/evidence/result.json"),
+            "sensitivity_result_sha256": "a" * 64,
+            "source_identity": {
+                "reference_model_spec": {"num_queries": 594},
+                "reference_optimizer": {"lr": 0.1, "weight_decay": 0.01},
+            },
+            "latency_tolerance": 0.75,
+            "policy_path": Path("/policy/policy.json"),
+            "policy_sha256": "b" * 64,
+            "generator_path": Path("/generator/generator.py"),
+            "generator_sha256": "c" * 64,
+            "runner_path": Path("/runner/expanded_search_runner.py"),
+            "runner_sha256": "not-a-digest",
+            "sensitivity_report_sha256": "d" * 64,
+        }
+        with self.assertRaisesRegex(
+            GENERATOR.ContractError,
+            "expanded runner source SHA256",
+        ):
+            GENERATOR.build_manifest(frozen, rows, **kwargs)
 
     def test_latency_retention_annotation_is_independent(self):
         frozen = policy()
@@ -246,6 +291,181 @@ class ExpandedSearchDerivationTests(unittest.TestCase):
             selection["multi_objective_mode"][
                 "multi_objective_min_accuracy"
             ]
+        )
+        analysis_erratum = frozen["sensitivity_evidence_contract"][
+            "analysis_erratum"
+        ]
+        self.assertEqual(
+            analysis_erratum["erratum_id"],
+            "dino_sensitivity_latency_analysis_erratum_20260728_v1",
+        )
+        self.assertEqual(
+            analysis_erratum["sha256"],
+            (
+                "8e19287bf2ffd674f62b21cdaf11e000"
+                "b0eae1ed8af9d0ada1238491588993f2"
+            ),
+        )
+        self.assertFalse(
+            frozen["post_front_matched_validation"][
+                "selection_isolation"
+            ]["measurements_feed_reselection"]
+        )
+
+    def test_erratum_and_post_front_contract_tampering_is_rejected(self):
+        frozen = policy()
+        frozen["sensitivity_evidence_contract"]["result_sha256"] = "0" * 64
+        with self.assertRaisesRegex(
+            GENERATOR.ContractError,
+            "approved sensitivity analysis result",
+        ):
+            GENERATOR.validate_policy(frozen)
+
+        frozen = policy()
+        frozen["sensitivity_evidence_contract"]["analysis_erratum"][
+            "sha256"
+        ] = "0" * 64
+        with self.assertRaisesRegex(
+            GENERATOR.ContractError,
+            "analysis erratum preregistration contract",
+        ):
+            GENERATOR.validate_policy(frozen)
+
+        frozen = policy()
+        frozen["post_front_matched_validation"]["allocation_design"][
+            "allocation_count"
+        ] = 5
+        with self.assertRaisesRegex(
+            GENERATOR.ContractError,
+            "post-front matched-validation contract",
+        ):
+            GENERATOR.validate_policy(frozen)
+
+    def test_approved_erratum_source_and_result_binding_are_exact(self):
+        frozen = policy()
+        contract = frozen["sensitivity_evidence_contract"][
+            "analysis_erratum"
+        ]
+        erratum = json.loads(
+            (HERE / contract["path"]).read_text(encoding="utf-8")
+        )
+        measurement = contract["measurement_contract"]
+        source_files = contract["source_files"]
+        fingerprints = contract["contract_fingerprints"]
+        result = {
+            "analysis_erratum": {
+                "erratum_id": contract["erratum_id"],
+                "erratum_path": str((HERE / contract["path"]).resolve()),
+                "erratum_sha256": contract["sha256"],
+                "reason_code": contract["reason_code"],
+                "measurement_manifest_id": measurement["manifest_id"],
+                "measurement_manifest_path": str(
+                    (HERE / measurement["manifest_path"]).resolve()
+                ),
+                "measurement_manifest_sha256": measurement[
+                    "manifest_sha256"
+                ],
+                "submission_ledger_path": str(
+                    (HERE / measurement["submission_ledger_path"]).resolve()
+                ),
+                "submission_ledger_sha256": measurement[
+                    "submission_ledger_sha256"
+                ],
+                "original_aggregator_sha256": source_files[
+                    "original_aggregator_sha256"
+                ],
+                "corrected_aggregator_sha256": source_files[
+                    "corrected_aggregator_sha256"
+                ],
+                "measurement_policy_sha256": contract[
+                    "unchanged_policy_pins"
+                ]["measurement_policy_sha256"],
+                "qualification_policy_sha256": contract[
+                    "unchanged_policy_pins"
+                ]["qualification_policy_sha256"],
+                "evidence_acquisition_policy_sha256": fingerprints[
+                    "evidence_acquisition_policy_sha256"
+                ],
+                "sdk_state_inspection_policy_sha256": fingerprints[
+                    "sdk_state_inspection_policy_sha256"
+                ],
+                "measurement_generation_unchanged": True,
+                "qualification_policy_unchanged": True,
+                "objective_values_altered": False,
+                "raw_runtime_string_preserved": True,
+                "correction": copy.deepcopy(contract["correction"]),
+                "analysis_commit_correction": copy.deepcopy(
+                    erratum["analysis_commit_correction"]
+                ),
+            },
+            "analysis_source_checks": {
+                "original_aggregator": source_files[
+                    "original_aggregator_sha256"
+                ],
+                "corrected_aggregator": source_files[
+                    "corrected_aggregator_sha256"
+                ],
+                "analysis_erratum": contract["sha256"],
+            },
+        }
+        identity = GENERATOR.validate_analysis_erratum_source(
+            frozen,
+            result,
+            HERE,
+            json.loads(
+                (HERE / measurement["manifest_path"]).read_text(
+                    encoding="utf-8"
+                )
+            ),
+        )
+        self.assertEqual(identity["sha256"], contract["sha256"])
+
+        tampered = copy.deepcopy(result)
+        tampered["analysis_erratum"]["objective_values_altered"] = True
+        with self.assertRaisesRegex(
+            GENERATOR.ContractError,
+            "approved analysis_erratum identity",
+        ):
+            GENERATOR.validate_analysis_erratum_source(
+                frozen,
+                tampered,
+                HERE,
+                json.loads(
+                    (HERE / measurement["manifest_path"]).read_text(
+                        encoding="utf-8"
+                    )
+                ),
+            )
+
+    def test_final_approved_sensitivity_result_passes_exact_preflight(self):
+        frozen = policy()
+        result_path = HERE / frozen["sensitivity_evidence_contract"][
+            "result_path"
+        ]
+        result = GENERATOR.load_json(result_path)
+        rows, source, tolerance = GENERATOR.validate_sensitivity_result(
+            frozen,
+            result,
+            result_path=result_path,
+            supplied_sha256=GENERATOR.sha256_file(result_path),
+            source_base=HERE,
+        )
+        self.assertEqual(tolerance, 0.73553775)
+        self.assertEqual(
+            [item["path"] for item in GENERATOR.derive_architecture_axes(
+                frozen, rows
+            )],
+            ["model.enc_layers", "model.dec_layers"],
+        )
+        self.assertEqual(
+            source["analysis_erratum"]["contract_sha256"],
+            GENERATOR.EXPECTED_ANALYSIS_ERRATUM_CONTRACT_SHA256,
+        )
+        self.assertEqual(
+            result["report_sha256"],
+            frozen["sensitivity_evidence_contract"][
+                "result_report_sha256"
+            ],
         )
 
     def test_superseded_v1_sensitivity_manifest_cannot_be_reintroduced(self):

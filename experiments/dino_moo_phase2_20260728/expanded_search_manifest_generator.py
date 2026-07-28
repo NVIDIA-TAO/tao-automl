@@ -24,6 +24,18 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_POLICY = HERE / "expanded_search_derivation_policy.v1.json"
 DEFAULT_OUTPUT = HERE / "expanded_search_manifest.v1.json"
 HEX = frozenset("0123456789abcdef")
+EXPECTED_ANALYSIS_ERRATUM_CONTRACT_SHA256 = (
+    "609bc9863a7e3289fe5f374b935f9da8422860eb00c62ea3d4bab00846d2fd7f"
+)
+EXPECTED_POST_FRONT_CONTRACT_SHA256 = (
+    "aba3a961bf50caf15803f271b59d7ffbd091414816d14f3deb793452f75ec281"
+)
+EXPECTED_SENSITIVITY_RESULT_SHA256 = (
+    "33aea1c13ece0ce632587abd16ed6020ecc88c63220f89891a5f30183322eaea"
+)
+EXPECTED_SENSITIVITY_REPORT_SHA256 = (
+    "40a8bccb6e43b8238c2cf6b47eaf3253e735d82fd160212d12915b3137a3fa79"
+)
 
 
 class ContractError(ValueError):
@@ -156,6 +168,190 @@ def validate_false_audit_flags(value: Any, path: str = "result") -> None:
             validate_false_audit_flags(child, f"{path}[{index}]")
 
 
+def validate_analysis_erratum_contract(policy: dict[str, Any]) -> None:
+    evidence = policy["sensitivity_evidence_contract"]
+    require_equal(
+        {
+            key: evidence.get(key)
+            for key in (
+                "result_path",
+                "result_sha256",
+                "result_report_sha256",
+            )
+        },
+        {
+            "result_path": "sensitivity_latency_analysis.v2.json",
+            "result_sha256": EXPECTED_SENSITIVITY_RESULT_SHA256,
+            "result_report_sha256": EXPECTED_SENSITIVITY_REPORT_SHA256,
+        },
+        "approved sensitivity analysis result",
+    )
+    contract = evidence["analysis_erratum"]
+    require_equal(
+        sha256_value(contract),
+        EXPECTED_ANALYSIS_ERRATUM_CONTRACT_SHA256,
+        "analysis erratum preregistration contract",
+    )
+    require_equal(
+        {
+            key: contract.get(key)
+            for key in (
+                "path",
+                "sha256",
+                "schema_version",
+                "erratum_id",
+                "status",
+                "scope",
+                "reason_code",
+            )
+        },
+        {
+            "path": "sensitivity_latency_analysis_erratum.v1.json",
+            "sha256": (
+                "8e19287bf2ffd674f62b21cdaf11e000"
+                "b0eae1ed8af9d0ada1238491588993f2"
+            ),
+            "schema_version": 1,
+            "erratum_id": (
+                "dino_sensitivity_latency_analysis_erratum_20260728_v1"
+            ),
+            "status": "approved_analysis_only",
+            "scope": (
+                "aggregation_validation_evidence_access_and_"
+                "descendant_commit_only"
+            ),
+            "reason_code": (
+                "allocation_torch_version_used_full_string_"
+                "instead_of_declared_base_release"
+            ),
+        },
+        "analysis erratum identity",
+    )
+    require_equal(
+        contract["required_flags"],
+        {
+            "measurement_generation_unchanged": True,
+            "qualification_policy_unchanged": True,
+            "objective_values_altered": False,
+            "winner_selected": False,
+            "feeds_final_selection": False,
+            "manual_promotion_permitted": False,
+        },
+        "analysis erratum flags",
+    )
+    require_equal(
+        contract["measurement_contract"],
+        {
+            "manifest_id": "dino_sensitivity_latency_20260728_v2",
+            "manifest_path": "sensitivity_latency_manifest.v2.json",
+            "manifest_sha256": (
+                "aedc117414b2691c1a70b73fa4e9e0ac"
+                "123cb4d20dfd9d25dfe2d4aa490d7655"
+            ),
+            "submission_ledger_path": (
+                "runtime/sensitivity_latency_v2/block_submissions.json"
+            ),
+            "submission_ledger_sha256": (
+                "b1c170c0d4697463d171cbeca3e4adcbd"
+                "34cc1cb7429c236f48b58c46c3b6d54"
+            ),
+            "launch_automl_branch": (
+                "rarunachalam/pre-platform-sdk-removal-20260714"
+            ),
+            "launch_automl_commit": (
+                "cb62ef447704b95980b17aa82604992564b4e71f"
+            ),
+        },
+        "analysis erratum measurement contract",
+    )
+    require_equal(
+        contract["source_files"],
+        {
+            "original_aggregator_path": "sensitivity_latency_aggregate.py",
+            "original_aggregator_sha256": (
+                "5f5aebd4274c746ec9674f28f978af5d"
+                "228d98c6ba0af8d76cff8b1742dab967"
+            ),
+            "corrected_aggregator_path": (
+                "sensitivity_latency_aggregate_erratum.py"
+            ),
+            "corrected_aggregator_sha256": (
+                "9209e748093e0555fe5cba339327a821"
+                "6744ec9ca6b9dae276c7041703a409c6"
+            ),
+            "validation_test_path": (
+                "test_sensitivity_latency_analysis_erratum.py"
+            ),
+            "validation_test_sha256": (
+                "e9bfe695b0142e8a944d412fa78a2235"
+                "e8bd960c5c5ad0320ddd006e20460f59"
+            ),
+        },
+        "analysis erratum source files",
+    )
+
+
+def validate_post_front_contract(policy: dict[str, Any]) -> None:
+    contract = policy["post_front_matched_validation"]
+    require_equal(
+        sha256_value(contract),
+        EXPECTED_POST_FRONT_CONTRACT_SHA256,
+        "post-front matched-validation contract",
+    )
+    require_equal(
+        contract["allocation_design"]["allocation_count"],
+        6,
+        "post-front allocation count",
+    )
+    require_equal(
+        contract["allocation_design"]["gpus_per_node"],
+        8,
+        "post-front GPUs",
+    )
+    require_equal(
+        contract["ordering"]["algorithm"],
+        "balanced_williams_rows_v1",
+        "post-front ordering",
+    )
+    require_equal(
+        {
+            key: contract["latency_protocol"][key]
+            for key in (
+                "warmup_iterations",
+                "timed_iterations_per_round",
+                "repeated_rounds",
+            )
+        },
+        {
+            "warmup_iterations": 50,
+            "timed_iterations_per_round": 100,
+            "repeated_rounds": 5,
+        },
+        "post-front latency protocol",
+    )
+    require_equal(
+        contract["paired_analysis"]["bootstrap_resamples"],
+        10000,
+        "post-front paired bootstrap resamples",
+    )
+    require_equal(
+        contract["paired_analysis"]["bootstrap_confidence_level"],
+        0.95,
+        "post-front paired bootstrap confidence",
+    )
+    require_equal(
+        contract["selection_isolation"],
+        {
+            "measurements_feed_reselection": False,
+            "winner_reselection_permitted": False,
+            "original_selection_time_measurements_replaced": False,
+            "algorithm_selected_candidate_overridden": False,
+            "allowed_use": "stability analysis and hypothesis verdict only",
+        },
+        "post-front selection isolation",
+    )
+
+
 def validate_policy(policy: dict[str, Any]) -> None:
     require_equal(policy.get("schema_version"), 1, "policy schema_version")
     require_equal(
@@ -163,10 +359,28 @@ def validate_policy(policy: dict[str, Any]) -> None:
         "dino_expanded_search_derivation_20260728_v1",
         "policy_id",
     )
+    require_equal(policy.get("policy_revision"), 2, "policy revision")
     require_equal(
         policy.get("status"),
-        "preregistered_before_sensitivity_latency_results",
+        "amended_after_approved_analysis_erratum_before_expanded_search_launch",
         "policy status",
+    )
+    require_equal(
+        policy.get("amendment"),
+        {
+            "reason": (
+                "Bind the previously frozen derivation rule to the approved "
+                "analysis-only sensitivity erratum and preregister the "
+                "required post-front matched validation before any "
+                "expanded-search manifest or job exists."
+            ),
+            "original_derivation_rule_changed": False,
+            "search_domains_changed": False,
+            "selection_rule_changed": False,
+            "expanded_manifest_existed_at_amendment": False,
+            "expanded_job_launched_at_amendment": False,
+        },
+        "policy amendment audit",
     )
     require_equal(
         policy.get("manual_override_permitted"),
@@ -342,6 +556,8 @@ def validate_policy(policy: dict[str, Any]) -> None:
         ],
         "always-included training parameter ranges",
     )
+    validate_analysis_erratum_contract(policy)
+    validate_post_front_contract(policy)
     validate_false_audit_flags(policy, "policy")
 
 
@@ -535,6 +751,204 @@ def derive_architecture_axes(
     return derived
 
 
+def validate_analysis_erratum_source(
+    policy: dict[str, Any],
+    result: dict[str, Any],
+    base: Path,
+    sensitivity_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    contract = policy["sensitivity_evidence_contract"]["analysis_erratum"]
+    erratum_path = (base / contract["path"]).resolve()
+    erratum = load_json(erratum_path)
+    require_equal(
+        sha256_file(erratum_path),
+        contract["sha256"],
+        "approved analysis erratum whole-file SHA256",
+    )
+    for key in (
+        "schema_version",
+        "erratum_id",
+        "status",
+        "scope",
+        "reason_code",
+    ):
+        require_equal(
+            erratum.get(key),
+            contract[key],
+            f"approved analysis erratum {key}",
+        )
+    for key, expected in contract["required_flags"].items():
+        require_equal(
+            erratum.get(key),
+            expected,
+            f"approved analysis erratum {key}",
+        )
+    require_equal(
+        erratum.get("measurement_contract"),
+        contract["measurement_contract"],
+        "approved analysis erratum measurement contract",
+    )
+    require_equal(
+        erratum.get("unchanged_policy_pins"),
+        contract["unchanged_policy_pins"],
+        "approved analysis erratum policy pins",
+    )
+    require_equal(
+        erratum.get("correction"),
+        contract["correction"],
+        "approved analysis erratum correction",
+    )
+    fingerprints = contract["contract_fingerprints"]
+    fingerprint_sources = {
+        "measurement_contract_sha256": erratum["measurement_contract"],
+        "source_pins_sha256": erratum["source_pins"],
+        "unchanged_policy_pins_sha256": erratum["unchanged_policy_pins"],
+        "correction_sha256": erratum["correction"],
+        "evidence_acquisition_policy_sha256": erratum[
+            "evidence_acquisition_policy"
+        ],
+        "sdk_state_inspection_policy_sha256": erratum[
+            "sdk_state_inspection_policy"
+        ],
+        "analysis_commit_correction_sha256": erratum[
+            "analysis_commit_correction"
+        ],
+        "analysis_guards_sha256": erratum["analysis_guards"],
+    }
+    for key, value in fingerprint_sources.items():
+        require_equal(
+            sha256_value(value),
+            fingerprints[key],
+            f"approved analysis erratum {key}",
+        )
+
+    measurement_sources = sensitivity_manifest["runtime_contract"][
+        "source_code_sha256"
+    ]
+    require_equal(
+        erratum["source_pins"]["measurement_generation"],
+        {
+            "launcher": measurement_sources["launcher"],
+            "block_runner": measurement_sources["block_runner"],
+            "common": measurement_sources["common"],
+            "original_aggregator": measurement_sources["aggregator"],
+            "latency_stats": measurement_sources["latency_stats"],
+        },
+        "approved erratum measurement-generation sources",
+    )
+    source_files = contract["source_files"]
+    for path_key, digest_key in (
+        ("original_aggregator_path", "original_aggregator_sha256"),
+        ("corrected_aggregator_path", "corrected_aggregator_sha256"),
+        ("validation_test_path", "validation_test_sha256"),
+    ):
+        source_path = (base / source_files[path_key]).resolve()
+        require_equal(
+            sha256_file(source_path),
+            source_files[digest_key],
+            f"approved analysis source {path_key}",
+        )
+    require_equal(
+        erratum["source_pins"]["original_aggregator_sha256"],
+        source_files["original_aggregator_sha256"],
+        "erratum original aggregator pin",
+    )
+    require_equal(
+        erratum["source_pins"]["corrected_aggregator_sha256"],
+        source_files["corrected_aggregator_sha256"],
+        "erratum corrected aggregator pin",
+    )
+    measurement = contract["measurement_contract"]
+    measurement_path = (base / measurement["manifest_path"]).resolve()
+    ledger_path = (base / measurement["submission_ledger_path"]).resolve()
+    require_equal(
+        sha256_file(measurement_path),
+        measurement["manifest_sha256"],
+        "erratum measurement manifest source",
+    )
+    require_equal(
+        sha256_file(ledger_path),
+        measurement["submission_ledger_sha256"],
+        "erratum submission ledger source",
+    )
+
+    identity = result.get(contract["result_binding"]["result_field"])
+    if not isinstance(identity, dict):
+        raise ContractError(
+            "sensitivity result lacks approved analysis_erratum identity"
+        )
+    expected_identity = {
+        "erratum_id": contract["erratum_id"],
+        "erratum_path": str(erratum_path),
+        "erratum_sha256": contract["sha256"],
+        "reason_code": contract["reason_code"],
+        "measurement_manifest_id": measurement["manifest_id"],
+        "measurement_manifest_path": str(measurement_path),
+        "measurement_manifest_sha256": measurement["manifest_sha256"],
+        "submission_ledger_path": str(ledger_path),
+        "submission_ledger_sha256": measurement[
+            "submission_ledger_sha256"
+        ],
+        "original_aggregator_sha256": source_files[
+            "original_aggregator_sha256"
+        ],
+        "corrected_aggregator_sha256": source_files[
+            "corrected_aggregator_sha256"
+        ],
+        "measurement_policy_sha256": contract["unchanged_policy_pins"][
+            "measurement_policy_sha256"
+        ],
+        "qualification_policy_sha256": contract["unchanged_policy_pins"][
+            "qualification_policy_sha256"
+        ],
+        "evidence_acquisition_policy_sha256": fingerprints[
+            "evidence_acquisition_policy_sha256"
+        ],
+        "sdk_state_inspection_policy_sha256": fingerprints[
+            "sdk_state_inspection_policy_sha256"
+        ],
+        "measurement_generation_unchanged": True,
+        "qualification_policy_unchanged": True,
+        "objective_values_altered": False,
+        "raw_runtime_string_preserved": True,
+        "correction": contract["correction"],
+        "analysis_commit_correction": erratum[
+            "analysis_commit_correction"
+        ],
+    }
+    require_equal(
+        identity,
+        expected_identity,
+        "sensitivity result approved analysis_erratum identity",
+    )
+    require_equal(
+        result.get("analysis_source_checks"),
+        {
+            "original_aggregator": source_files[
+                "original_aggregator_sha256"
+            ],
+            "corrected_aggregator": source_files[
+                "corrected_aggregator_sha256"
+            ],
+            "analysis_erratum": contract["sha256"],
+        },
+        "sensitivity result analysis sources",
+    )
+    return {
+        "path": str(erratum_path),
+        "sha256": contract["sha256"],
+        "erratum_id": contract["erratum_id"],
+        "corrected_aggregator_sha256": source_files[
+            "corrected_aggregator_sha256"
+        ],
+        "submission_ledger_path": str(ledger_path),
+        "submission_ledger_sha256": measurement[
+            "submission_ledger_sha256"
+        ],
+        "contract_sha256": EXPECTED_ANALYSIS_ERRATUM_CONTRACT_SHA256,
+    }
+
+
 def validate_source_identity(
     policy: dict[str, Any],
     result: dict[str, Any],
@@ -574,6 +988,12 @@ def validate_source_identity(
         },
         source_policy["supersedes"],
         "sensitivity manifest supersession",
+    )
+    erratum_identity = validate_analysis_erratum_source(
+        policy,
+        result,
+        base,
+        source,
     )
     require_equal(
         result.get("manifest_sha256"),
@@ -876,6 +1296,7 @@ def validate_source_identity(
         "accuracy_artifact_id": source_policy["accuracy_artifact_id"],
         "accuracy_artifact_sha256": accuracy_sha256,
         "schedule_sha256": source["design"]["schedule_sha256"],
+        "analysis_erratum": erratum_identity,
         "reference_model_spec": copy.deepcopy(one["reference"]["model"]),
         "reference_optimizer": copy.deepcopy(one["reference"]["optimizer"]),
     }
@@ -892,12 +1313,25 @@ def validate_sensitivity_result(
     supplied_sha256 = require_sha256(
         supplied_sha256, "supplied sensitivity result SHA256"
     )
+    evidence = policy["sensitivity_evidence_contract"]
+    base = (
+        source_base if source_base is not None else result_path.parent
+    ).resolve()
+    require_equal(
+        result_path.resolve(),
+        (base / evidence["result_path"]).resolve(),
+        "approved sensitivity result path",
+    )
+    require_equal(
+        supplied_sha256,
+        evidence["result_sha256"],
+        "approved sensitivity result whole-file SHA256",
+    )
     require_equal(
         sha256_file(result_path),
         supplied_sha256,
         "sensitivity result whole-file SHA256",
     )
-    evidence = policy["sensitivity_evidence_contract"]
     require_equal(
         result.get("schema_version"),
         evidence["result_schema_version"],
@@ -924,6 +1358,11 @@ def validate_sensitivity_result(
     internal_digest = require_sha256(
         result.get("report_sha256"), "sensitivity result report_sha256"
     )
+    require_equal(
+        internal_digest,
+        evidence["result_report_sha256"],
+        "approved sensitivity result report_sha256",
+    )
     digest_payload = copy.deepcopy(result)
     del digest_payload["report_sha256"]
     require_equal(
@@ -934,7 +1373,7 @@ def validate_sensitivity_result(
     source = validate_source_identity(
         policy,
         result,
-        (source_base if source_base is not None else result_path.parent).resolve(),
+        base,
     )
     decisions = normalize_decisions(policy, result)
     tolerance = require_finite_positive(
@@ -956,8 +1395,13 @@ def build_manifest(
     policy_sha256: str,
     generator_path: Path,
     generator_sha256: str,
+    runner_path: Path,
+    runner_sha256: str,
     sensitivity_report_sha256: str,
 ) -> dict[str, Any]:
+    require_sha256(runner_sha256, "expanded runner source SHA256")
+    if runner_path.name != "expanded_search_runner.py":
+        raise ContractError("expanded runner source has an unexpected basename")
     derived_axes = derive_architecture_axes(policy, decisions)
     training_parameters = copy.deepcopy(
         policy["always_included_training_parameters"]
@@ -1025,10 +1469,18 @@ def build_manifest(
             "policy_sha256": policy_sha256,
             "generator_path": str(generator_path.resolve()),
             "generator_sha256": generator_sha256,
+            "runner_path": str(runner_path.resolve()),
+            "runner_sha256": runner_sha256,
             "sensitivity_result_path": str(sensitivity_result_path.resolve()),
             "sensitivity_result_sha256": sensitivity_result_sha256,
             "sensitivity_report_sha256": sensitivity_report_sha256,
             "source_identity": copy.deepcopy(source_identity),
+            "analysis_erratum_contract_sha256": (
+                EXPECTED_ANALYSIS_ERRATUM_CONTRACT_SHA256
+            ),
+            "post_front_contract_sha256": (
+                EXPECTED_POST_FRONT_CONTRACT_SHA256
+            ),
             "rule": (
                 "An axis is included iff at least one non-reference level has "
                 "complete support and direction-agnostic latency-effect "
@@ -1056,6 +1508,9 @@ def build_manifest(
         },
         "search_design": copy.deepcopy(policy["search_design"]),
         "selection": selection,
+        "post_front_matched_validation": copy.deepcopy(
+            policy["post_front_matched_validation"]
+        ),
         "frozen_identity": copy.deepcopy(policy["frozen_identity"]),
     }
     manifest["manifest_sha256"] = sha256_value(manifest)
@@ -1119,6 +1574,9 @@ def main() -> int:
         )
     )
     generator_path = Path(__file__).resolve()
+    runner_path = (generator_path.parent / "expanded_search_runner.py").resolve()
+    if not runner_path.is_file():
+        raise ContractError(f"expanded-search runner is missing: {runner_path}")
     manifest = build_manifest(
         policy,
         decisions,
@@ -1130,6 +1588,8 @@ def main() -> int:
         policy_sha256=sha256_file(policy_path),
         generator_path=generator_path,
         generator_sha256=sha256_file(generator_path),
+        runner_path=runner_path,
+        runner_sha256=sha256_file(runner_path),
         sensitivity_report_sha256=result["report_sha256"],
     )
     atomic_write_new(output_path, manifest)
