@@ -1,17 +1,31 @@
 # DINO multi-objective AutoML phase-2 validation
 
-Expanded-experiment committed-evidence cutoff: AutoML commit
-`b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d` on 2026-07-28 UTC. The
-corrected runtime implementation is commit
-`e4b6a412545614668affd371a82231e090998ec0`; the corrected v2 manifest is
-frozen by the cutoff commit. A separate live-evidence snapshot through
-`2026-07-28T05:56:16Z` records completed rec0 and rec1 measurements from
-mutable runtime state. Those six records are partial search evidence, not a
-sealed archive or selection result. The post-front implementation described
-below is tracked and committed at
-`2453079abbe93e2fd854dcf2a910256dfd164669`, with the separately hashed source
-snapshot verified at `2026-07-28T06:28:26Z`. A future launch must still pass
-the manifest-bound clean-source gate.
+Pre-post-front protocol committed-evidence cutoff: AutoML commit
+`6850d71c2f3dea5f37505dd6831d41cb07a4d255` at
+`2026-07-28T07:13:06Z`. The corrected runtime implementation is commit
+`e4b6a412545614668affd371a82231e090998ec0`; the corrected v2 manifest was
+frozen at commit `b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d`.
+
+The phase-two protocol erratum was issued at `2026-07-28T06:36:41Z` and
+committed at
+`ba2cf95211ecddc9cb38dfe51d189357b05dc8e2`. Its whole-file SHA-256 is
+`95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13`.
+At issuance, exactly 15 of 60 expanded candidates were successful—five for
+each search seed—and the complete union selection, candidate-table JSON and
+CSV, integrity audit, completion record, final global Pareto front, and every
+post-front manifest, job, and measurement were absent. The erratum therefore
+aligned stale tie-break prose to the already-pinned production selector and
+froze the two-branch post-front inference policy before a final winner or
+post-front result could be known; it did not change an objective value,
+selection setting, search range, budget, Pareto rank, or winner.
+
+A separate committed partial-evidence snapshot through
+`2026-07-28T05:56:16Z` records rec0 and rec1 measurements. Those six records
+remain partial search evidence, not a sealed archive or selection result.
+Later partial runtime progress is deliberately outside this report's
+committed-evidence cutoff. The post-front protocol-binding implementation is
+committed at `6850d71c2f3dea5f37505dd6831d41cb07a4d255`; a future launch must
+still pass its manifest-bound clean-source and immutable-archive gates.
 
 Scope: DINO ResNet50 only, using
 `s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/`.
@@ -19,11 +33,11 @@ No other model family, PTM compatibility repair, or dataset is included.
 
 This is an in-progress report for MR !22. It records immutable sensitivity
 evidence, the failed-and-excluded v1 expanded execution, the corrected
-preregistered v2 contract, and v2 measurements through recommendation one for
-all three search seeds. Recommendations 2–19, the complete expanded archive,
-the post-front measurements, and final selection remain
-`PENDING LIVE EVIDENCE`; no partial archive or manually selected value is used
-to fill those final sections.
+preregistered v2 contract, a fixed partial snapshot through recommendation
+one for all three search seeds, and the pre-post-front protocol erratum and
+bindings. The complete expanded archive, post-front measurements, and final
+selection remain `PENDING LIVE EVIDENCE`; no partial archive or manually
+selected value is used to fill those final sections.
 
 ## Current status
 
@@ -37,8 +51,9 @@ to fill those final sections.
 | Sensitivity-latency v2 | Complete | All 126 matched profile/allocation measurements passed validation. Encoder and decoder depth qualified; query and selection count did not. The effective tolerance is `0.73553775 ms`. |
 | Expanded-search v1 execution | Complete, invalid and excluded | Rec0 training/evaluation completed for all seeds, but the v1 reader rejected finite mAP50 JSON strings. No accepted accuracy, latency measurement, usable Bayesian response, seed archive, or combined selection exists; rec1 work was canceled during controller shutdown. |
 | Corrected expanded v2 manifest and remote preflight | Complete | Manifest whole/internal hashes are `9ac29e1a…` / `910744ae…`; its new runtime contract excludes all v1 state. Every SQSH, PTM, dataset, source, and directory check passed. |
-| Corrected expanded shared 60-candidate archive | In progress; rec2–rec19 **PENDING LIVE EVIDENCE** | Rec0 and rec1 completed successfully for all three seeds: six complete training/evaluation/stabilized-latency objective pairs. No seed archive is sealed, so no production selector result is reported. |
-| Post-front hardening implementation | Committed, independently re-audited with no remaining blocker, and tested; not launched | The final blocker—a self-rehashed manifest could preserve internal consistency while drifting launch-affecting runtime or latency-protocol semantics—is closed by exact deterministic reconstruction of the full manifest from pinned sources before every launcher mode and aggregation. The harness also freezes schedule derivation, stages job-private inputs, inspects status with retries disabled, applies exact pairwise direction gates, reconciles crash windows, and contains secrets/SQSH state. Its immutable manifest cannot be generated before the 60-record archive, combined selection, candidate table, and integrity audit exist. |
+| Corrected expanded shared 60-candidate archive | Live; complete archive and selection **PENDING LIVE EVIDENCE** | The report retains a six-record rec0/rec1 snapshot. The protocol erratum independently records 15 successful candidates at issuance, exactly five per seed, but no seed archive was sealed and no production selector result existed. Later partial progress is not promoted into this committed protocol report. |
+| Pre-post-front protocol erratum | Complete and immutable before final selection or post-front data | Issued at `2026-07-28T06:36:41Z`, committed at `ba2cf95…`, whole-file SHA-256 `95bba650…`. It preserves the original bootstrap classification and separately makes the stricter exact-sign-flip/all-six rule authoritative for effective directional claims. |
+| Post-front hardening and protocol binding | Committed at `6850d71…`, independently re-audited, and tested; not launched | Exact deterministic manifest reconstruction closes self-rehash drift. The generator additionally binds the three exact 20-record seed archives, canonical 60-record union, candidate-table JSON semantic projection, byte-exact CSV projection, combined selection, and integrity audit. The launcher and aggregator require the exact erratum and archive snapshot. No post-front manifest can be generated before all bound inputs exist. |
 | Matched remeasurement of final Pareto front | **PENDING LIVE EVIDENCE** | No post-front manifest, SLURM allocation, or measurement exists yet. Future measurements must not replace selection-time objectives or alter the selected winner. |
 | Final combined selection and hypothesis verdict | **PENDING LIVE EVIDENCE** | No final classification is made in this draft. |
 
@@ -230,9 +245,13 @@ before scoring and cannot be returned.
 
 ### 2.4 Extreme and fallback reporting
 
-The selector does not force a middle point. It records whether the selected
-rank-zero point is distinct from the policy-specific accuracy and latency
-extremes under the configured tolerances.
+The selector does not force a middle point. Its
+`distinct_compromise` field is a geometric property of the
+multi-objective-eligible front: it records whether the selected rank-zero
+point is distinct, under the configured tolerances, from that population's
+accuracy extreme and its unconstrained latency extreme. The latter is not
+necessarily the actual latency-mode winner, because latency mode separately
+applies the 98% accuracy-retention constraint.
 
 When no distinct eligible point exists, it emits:
 
@@ -242,6 +261,13 @@ When no distinct eligible point exists, it emits:
 The deterministic Chebyshev ordering may still return an extreme, but the
 audit sets `distinct_compromise=false` and distinguishes a fallback from a
 successful compromise.
+
+The phase-two hypothesis uses a second, non-selector definition. It compares
+the frozen multi-objective winner with the actual accuracy winner and the
+actual 98%-constrained latency-mode winner, then evaluates the selection-time
+accuracy/latency geometry and the matched post-front latency evidence. This
+verdict-only comparison never changes the selector's geometric flag, candidate
+identity, or winner.
 
 ### 2.5 Alternatives considered
 
@@ -255,6 +281,35 @@ successful compromise.
 | Hypervolume contribution | Not used for one final point because it requires a reference point and can favor endpoints; more suitable for archive acquisition. |
 | NSGA-II ranking and crowding | Nondominated ranking is adopted; a full evolutionary population is unnecessary for this small, expensive archive. |
 | qEHVI/qNEHVI | Deferred as a possible larger-budget acquisition method; it would not by itself define the final deployment point. |
+
+### 2.6 Pre-post-front tie-break documentation erratum
+
+The expanded manifest's frozen prose summarized the multi-objective tie-break
+as lower maximum regret, then lower regret sum, higher accuracy, lower
+latency, and a deterministic key. That prose was not the implementation
+executed by the already-pinned selector. The protocol erratum changes no code;
+it makes the following pre-existing production behavior authoritative:
+
+- canonical candidate-audit order is specification-fingerprint ascending,
+  then candidate ID;
+- accuracy mode takes every point within `1e-12` of the best accuracy, anchors
+  at that cohort's raw minimum latency, retains points within
+  `0.73553775 ms` of that anchor, then uses fingerprint and candidate ID;
+- latency mode first applies its accuracy-retention constraint, anchors at raw
+  minimum latency (with canonical fingerprint ordering), regards a candidate
+  as latency-tied when it is within `0.73553775 ms` of the anchor or its
+  latency confidence interval overlaps the anchor's interval, then orders the
+  tied cohort by higher accuracy, fingerprint, and candidate ID; and
+- multi-objective mode filters to its deduplicated eligible rank-zero front,
+  minimizes augmented-Chebyshev score, then uses ideal distance, balance gap,
+  normalized accuracy regret, fingerprint, and candidate ID, with
+  `1e-12` score-stage tolerances.
+
+The erratum records
+`selection_execution_changed=false`,
+`candidate_objectives_changed=false`,
+`pareto_ranks_changed=false`, and
+`algorithm_winner_changed_or_overridden=false`.
 
 ## 3. Test coverage
 
@@ -280,57 +335,64 @@ Commit `83d9d7e` adds the independent-policy cases:
 - an external latency reference cannot block unconstrained multi-objective
   selection.
 
-The added parameterization contributes 13 test cases. The MR test result after
-this change is:
+The added parameterization contributes 13 test cases.
+
+At the pre-post-front protocol cutoff
+`6850d71c2f3dea5f37505dd6831d41cb07a4d255`, the focused protocol and
+post-front suite was:
 
 ```bash
-python -m pytest -q tests
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  -m pytest -q \
+  experiments/dino_moo_phase2_20260728/test_phase2_protocol_erratum.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_protocol_binding.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_protocol_analysis.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_matched_tools.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_matched_launcher_recovery.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_complete_invalid_recovery.py
+```
+
+```text
+134 passed
+```
+
+The complete phase-two experiment suite was also rerun:
+
+```bash
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  -m pytest -q experiments/dino_moo_phase2_20260728
+```
+
+```text
+259 passed
+```
+
+The unchanged production core suite remained:
+
+```bash
+PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PATH \
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  -m pytest -q tests
 ```
 
 ```text
 387 passed, 1 skipped
 ```
 
-The committed sensitivity-analysis, expanded-search, and post-front hardening
-harnesses were rerun together:
-
-```bash
-/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
-  -m pytest -q \
-  experiments/dino_moo_phase2_20260728/test_sensitivity_latency_analysis_erratum.py \
-  experiments/dino_moo_phase2_20260728/test_sensitivity_latency_runtime_contract.py \
-  experiments/dino_moo_phase2_20260728/test_expanded_search_manifest_generator.py \
-  experiments/dino_moo_phase2_20260728/test_expanded_search_runner.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_matched_tools.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_matched_launcher_recovery.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_complete_invalid_recovery.py
-```
-
-```text
-206 passed in 1.63s
-```
-
-The post-front subset alone passed:
-
-```bash
-/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
-  -m pytest -q \
-  experiments/dino_moo_phase2_20260728/test_post_front_matched_tools.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_matched_launcher_recovery.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_complete_invalid_recovery.py
-```
-
-```text
-81 passed in 0.43s
-```
-
-The combined focused run covers the provenance-safe analysis erratum,
+The combined phase-two run covers the provenance-safe analysis erratum,
 immutable runtime contract, strict native-number/JSON-number-string metric
 parsing, rejection of booleans, NaN, infinity, whitespace, and junk, clean
 v1-to-v2 runtime supersession, manifest derivation, exact integer-domain
 encoding, remote preflight, resume/reconciliation behavior,
 complete-archive gating, candidate-order invariance, and algorithm-only union
-selection. The post-front cases additionally cover full rank-zero derivation,
+selection. The new protocol cases prove the exact phase-two erratum is
+required by generation, launch, and aggregation; the original and effective
+inference branches cannot be silently merged; the three 20-record seed
+archives form exactly one canonical 60-record union; JSON row semantics and
+the byte-exact CSV projection are derived from that union; archive order does
+not affect the canonical digests; and drift in any seed archive, combined
+selection, candidate-table JSON/CSV, or integrity-audit binding fails closed.
+The post-front cases additionally cover full rank-zero derivation,
 candidate-order independence, Williams projection for front sizes one through
 ten, immutable SQSH/runtime/no-reselection bindings, full-block
 supersession, complete matched-matrix enforcement, source and node
@@ -354,6 +416,12 @@ check; exact reconstruction from pinned source artifacts still rejects every
 semantic drift. Static call-path checks also prove that this reconstruction
 precedes dry-run rendering and every fresh-launch, resume, replacement, and
 aggregation path.
+
+The protocol-analysis tests separately verify the selector-geometric and
+actual-mode-winner distinctness definitions, preserve selection-time
+objective values, report matched aggregate medians and p95 values as
+validation-only evidence, and assert that no selector is invoked on matched
+measurements.
 
 The deterministic archive replay additionally verifies all four policy results
 under source order, reverse order, and a SHA-256-keyed permutation. Every
@@ -1104,7 +1172,7 @@ one node, eight allocated GPUs, partition `polar3`, and exit field `0:0`.
 That statement is retained as launch-time provenance; the same three jobs later
 completed as the rec0 training jobs reported below.
 
-#### 7.1.3 Live partial evidence through rec1
+#### 7.1.3 Committed partial-evidence snapshot through rec1
 
 As of `2026-07-28T05:56:16Z`, rec0 and rec1 have completed successfully for
 all three deterministic search seeds. Every one of the 18 associated training,
@@ -1140,9 +1208,12 @@ states `winner_selected_during_measurement=false`. The production
 `tao_automl.selection.analyze_archive` result is unavailable until all three
 20-record archives seal and reconcile.
 
-Recommendations 2–19 remain **PENDING LIVE EVIDENCE**. No partial six-point
-front, interim accuracy winner, interim latency winner, interim
-multi-objective winner, Pareto rank, or hypothesis conclusion is reported.
+Recommendations 2–19 are outside this fixed detailed snapshot. The later
+protocol-erratum issuance record proves only that five candidates per seed
+were then successful; it intentionally contains no partial front, interim
+accuracy winner, interim latency winner, interim multi-objective winner,
+Pareto rank, or hypothesis conclusion. The complete 60-candidate evidence
+remains **PENDING LIVE EVIDENCE** in this report.
 
 ### 7.2 Complete expanded candidate table
 
@@ -1178,13 +1249,17 @@ experimental result.
 
 The implementation snapshot audited for this report is:
 
-| Committed source or test at `2453079abbe93e2fd854dcf2a910256dfd164669` | SHA-256 |
+| Committed source or test at `6850d71c2f3dea5f37505dd6831d41cb07a4d255` | SHA-256 |
 | --- | --- |
-| `post_front_matched_manifest_generator.py` | `43f6928e5dcb7677a186e5e902ee2049ba18471ff0c37c2ee55b2934121effe8` |
-| `post_front_matched_launcher.py` | `13b15540e7992091e57f35ebebaf20093d32be580879ff24e06b8c5202708fd9` |
+| `phase2_protocol_erratum.v1.json` | `95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13` |
+| `post_front_matched_manifest_generator.py` | `e535ad59beb11b02c49527f6490719f29b1bd680ae990a7b8beb739f8c7899da` |
+| `post_front_matched_launcher.py` | `e64108dff03da40a91642217dcac453e29bdad7046cb58ad5c05e7e65fa9a887` |
 | `post_front_matched_block_runner.py` | `8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6` |
-| `post_front_matched_aggregator.py` | `00187790203f75dde6ff91b7498bc8cb3ece79683b6884668f1045726cb70a27` |
-| `test_post_front_matched_tools.py` | `ac1870da2b6f66dd7e162caf56b5215ab013341a7e1d08e56562af121a56ddb9` |
+| `post_front_matched_aggregator.py` | `ff652784fdd63b73020eb32d0b22b6fe8bca3385413b6060aa8ba1d5bdc604db` |
+| `test_phase2_protocol_erratum.py` | `8bbd4d6e64807239c479fd30fb9067dceaac83e7b35f05b83bbf589aa4ee9acc` |
+| `test_post_front_protocol_binding.py` | `ff1654ed72c745cbb59c738f145e36e4787f2ac2f313d5bfba7cb2edc71a9ef5` |
+| `test_post_front_protocol_analysis.py` | `49703256613f781f9be4f8cfe0c26a5cb49874e947e4692180a411ab6315f25e` |
+| `test_post_front_matched_tools.py` | `0c31573754d7b2c2c70feea5f75141b73e52f40b6c20bc7be36e51721cc90ff9` |
 | `test_post_front_matched_launcher_recovery.py` | `8f020f7a36222ac240830f9b3bb61984e80e4ea65c8c344de498062b4daecae4` |
 | `test_post_front_complete_invalid_recovery.py` | `6d1082d30d23db286953c310e7ba7dacdb135b3221be88c077f26cbb5e24aebe` |
 
@@ -1192,6 +1267,14 @@ These are tracked, committed identities, but they do not by themselves
 authorize a launch. The manifest generator intentionally refuses to create
 the future immutable post-front manifest until the expanded archive and all
 source inputs are complete.
+
+The protocol erratum's issuance state is itself part of the authority. It
+records 15 successful candidates (five per seed), no completed union
+selection, no known or used final Pareto front, and zero post-front manifests,
+allocations, measurements, or pairwise comparisons. It was issued to correct
+documentation and inference policy before those outcomes, not to fit a rule
+to a winner. Both the launcher and aggregator fail closed if the exact erratum
+path or whole-file hash is absent or changed.
 
 #### 7.3.1 Manifest authority, candidate derivation, and selector isolation
 
@@ -1203,8 +1286,9 @@ self-hash an authority for all launch-affecting semantics.
 
 The launcher now reconstructs the complete canonical manifest through
 `post_front_matched_manifest_generator.build_manifest` from the exact pinned
-expanded manifest, combined selection, candidate table, integrity audit,
-runtime contract, selector stack, and post-front tool sources.
+protocol erratum, expanded manifest, three seed archives, combined selection,
+candidate-table JSON and CSV, integrity audit, runtime contract, selector
+stack, and post-front tool sources.
 `require_exact_reconstructed_manifest` then requires whole-object equality,
 not merely equality of selected fields or digests. This source validation
 runs before config generation and every dry-run, fresh launch,
@@ -1214,26 +1298,42 @@ aggregation. Thus a self-rehashed drift in SQSH, SDK, SLURM, hardware, or
 latency-protocol settings fails before it can affect execution or analysis.
 
 Manifest generation fails closed until the expanded run has exactly 60
-terminal candidate-table records plus the final combined selection and
-integrity audit. It then:
+terminal records plus the final combined selection, candidate-table JSON and
+CSV, and integrity audit. It then:
 
-1. loads every successful selection-time objective record;
-2. imports the manifest-pinned production objective parser and
+1. validates exactly one complete `seed_archive.v1.json` for each frozen
+   search seed, in manifest order `314159`, `271828`, `161803`;
+2. requires exactly 20 terminal records per seed, exact candidate IDs
+   `seed_<seed>_rec_0` through `seed_<seed>_rec_19`, no manual injection,
+   exact expanded-manifest bindings, and valid whole-file and internal archive
+   hashes;
+3. canonicalizes all 60 full records by ascending UTF-8 candidate ID and
+   records per-seed full-record hashes, the union candidate-ID hash, and the
+   canonical full-record-union hash;
+4. reconstructs every candidate-table JSON row from its authoritative seed
+   record plus the combined-selection audit and requires semantic equality;
+5. reconstructs the complete candidate-table CSV byte for byte and requires
+   exact equality, while separately pinning the combined-selection JSON,
+   candidate-table JSON, candidate-table CSV, and integrity-audit hashes;
+6. imports the manifest-pinned production objective parser and
    `tao_automl.selection.analyze_archive` implementation;
-3. independently replays that frozen archive under candidate-table, reverse,
+7. independently replays that frozen archive under candidate-table, reverse,
    and candidate-ID order;
-4. requires the replayed analysis, every candidate audit, and the global
+8. requires the replayed analysis, every candidate audit, and the global
    rank-zero front to exactly match the combined-selection artifacts; and
-5. includes every and only global-rank-zero candidate, in ascending UTF-8
+9. includes every and only global-rank-zero candidate, in ascending UTF-8
    candidate-ID order, with its exact checkpoint and complete resolved model
    mapping.
 
-The production selector is therefore invoked during frozen-archive source
-validation. It is not invoked on post-front measurements. The replay result is
-used only to prove candidate-set integrity before those measurements are
-loaded. The original accuracy, latency, and multi-objective selection snapshot
-is copied unchanged into the post-front manifest; remeasurement cannot select,
-reselect, replace a selection-time objective, or override a winner.
+The manifest's `expanded_archive_snapshot` therefore binds the exact 3 × 20
+record authority, not merely a table row count or the winning candidates. The
+production selector is invoked during frozen-archive source validation. It is
+not invoked on post-front measurements. The replay result is used only to
+prove candidate-set integrity before those measurements are loaded. The
+original accuracy, latency, and multi-objective selection snapshot and its
+selection-time metrics are copied unchanged into the post-front manifest;
+remeasurement cannot select, reselect, replace a selection-time objective, or
+override a winner.
 
 An independent read-only re-audit after the exact-reconstruction change found
 no remaining prelaunch or aggregation blocker in the implemented contract.
@@ -1361,10 +1461,21 @@ operations fail closed.
 
 The aggregator requires the complete six-allocation-by-front-candidate
 measurement matrix. For each unordered pair it forms six allocation-matched
-median differences and six matched p95 differences. The preregistered
-10,000-resample paired percentile bootstrap remains descriptive only.
+median differences and six matched p95 differences. It reports two explicitly
+separate policy branches for both endpoints.
 
-A directional claim requires both:
+The original preregistered branch uses the deterministic 10,000-resample
+paired percentile bootstrap. Under that original rule, it classifies the
+first candidate as stably faster when the complete paired 95% interval is
+below `-0.73553775 ms`, the second as stably faster when the complete interval
+is above `+0.73553775 ms`, and the pair as practically equivalent when the
+complete interval is within the tolerance band; otherwise it reports
+uncertainty. That original classification is preserved and emitted as
+`original_preregistered_bootstrap_classification`. It was not originally
+defined as descriptive-only.
+
+The effective pre-post-front erratum branch makes the bootstrap descriptive
+only for effective claims. An effective directional claim requires both:
 
 1. a one-sided exact paired sign-flip permutation test after shifting by the
    relevant `±0.73553775 ms` practical-tolerance boundary, with
@@ -1373,15 +1484,43 @@ A directional claim requires both:
    claimed direction.
 
 With six allocations the exact randomization enumerates all \(2^6=64\) sign
-assignments. Claims are pairwise only. There is no multiplicity adjustment,
-so unadjusted pairwise evidence never establishes a simultaneous or stable
-total order. Descriptive sorting and bootstrap intervals are reported as such,
-not promoted into direction claims.
+assignments. Failure to establish an effective direction is not evidence of
+equivalence. Median and p95 are classified independently. Claims are pairwise
+only. There is no multiplicity adjustment, so unadjusted pairwise evidence
+never establishes a simultaneous or stable total order. Descriptive sorting
+and bootstrap intervals are not promoted into effective directional claims.
 
 When the expanded archive is complete, remeasure every final rank-zero
 candidate under this frozen contract. Preserve original selection-time
 measurements and the algorithm-selected winner. Report remeasurement only as
 stability evidence for the hypothesis verdict.
+
+#### 7.3.6 Distinctness and measurement roles
+
+Two different questions must remain separate:
+
+1. **Selector-geometric distinctness.** The frozen production selector's
+   `distinct_compromise` flag compares the multi-objective winner with the
+   accuracy and unconstrained-latency extremes of the
+   multi-objective-eligible Pareto population. This is a selector output and
+   remains unchanged.
+2. **Actual-mode-winner distinctness.** The hypothesis comparison asks whether
+   the same frozen multi-objective winner differs from both the actual
+   accuracy-mode winner and the actual latency-mode winner produced under 98%
+   retained accuracy. It separately reports identity, accuracy position,
+   selection-time latency position, and matched-latency evidence against
+   those two actual winners.
+
+Selection-time mAP50 and latency are the only objective values used to build
+the archive, construct Pareto ranks, normalize regrets, score the compromise,
+and select all three winners. The matched six-allocation median and p95 values
+are validation-only measurements. They are reported by mode with deltas from
+the accuracy and constrained-latency winners and with separate practical- and
+statistical-tolerance evidence, but they never replace selection-time metrics.
+The post-front aggregator records
+`selector_invoked_on_matched_measurements=false`,
+`selection_time_objectives_replaced=false`, and
+`feeds_reselection=false`.
 
 ### 7.4 Final combined selection and integrity audit
 
@@ -1406,8 +1545,15 @@ Required artifacts:
 | Mode | Candidate | Accuracy | Stable median latency | Eligibility rule | Pareto status | Selection reason |
 | --- | --- | ---: | ---: | --- | --- | --- |
 | Accuracy | PENDING | PENDING | PENDING | All valid candidates | PENDING | Highest valid mAP50, algorithm-selected |
-| Latency | PENDING | PENDING | PENDING | mAP50 ≥ 98% of accuracy winner | PENDING | Lowest statistically stable latency among feasible candidates |
+| Latency | PENDING | PENDING | PENDING | mAP50 ≥ 98% of accuracy winner | PENDING | Selection-time lowest-latency cohort under the frozen tolerance/CI rule, then deterministic accuracy/fingerprint/ID tie-breaking |
 | Multi-objective | PENDING | PENDING | PENDING | All valid candidates unless the frozen expanded manifest explicitly sets an independent floor | PENDING | Minimum normalized augmented-Chebyshev score on eligible rank zero |
+
+Candidate identity, accuracy, Pareto status, and selection reason in the final
+table must come from the immutable selection-time snapshot. “Stable median
+latency” must come from the matched validation and is evidence about the
+already-selected candidate, never an input to a second selection. The final
+artifact must retain both latency fields so that selection-time and
+validation-only values cannot be conflated.
 
 The completed table must additionally report:
 
@@ -1463,6 +1609,8 @@ after seeing the result.
 | `~/tao-automl` excluded v1 manifest freeze | same | `fae47d3406ea29bfc03893f9808b50958eef70c6` |
 | `~/tao-automl` corrected metric/runtime implementation | same | `e4b6a412545614668affd371a82231e090998ec0` |
 | `~/tao-automl` v2 manifest freeze / evidence cutoff | same | `b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d` |
+| `~/tao-automl` phase-two protocol erratum | same | `ba2cf95211ecddc9cb38dfe51d189357b05dc8e2` |
+| `~/tao-automl` post-front protocol binding cutoff | same | `6850d71c2f3dea5f37505dd6831d41cb07a4d255` |
 | `~/tao-sdk` | same | `3d3e1adc1849493d29dc926cb99492417e3a9250` |
 | `~/tao-skills-external` | same | `18f831c7c83b424861a60353fb735dd80efcfded` |
 | TAO PyTorch source | tag `7.0.1` | `1ac00f8e9c511591e6e1cfb048c1bad9101b3d32` |
@@ -1732,21 +1880,36 @@ cd ~/tao-automl
 
 /localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
   -m pytest -q \
+  experiments/dino_moo_phase2_20260728/test_phase2_protocol_erratum.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_protocol_binding.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_protocol_analysis.py \
   experiments/dino_moo_phase2_20260728/test_post_front_matched_tools.py \
   experiments/dino_moo_phase2_20260728/test_post_front_matched_launcher_recovery.py \
   experiments/dino_moo_phase2_20260728/test_post_front_complete_invalid_recovery.py
 
 sha256sum \
+  experiments/dino_moo_phase2_20260728/phase2_protocol_erratum.v1.json \
   experiments/dino_moo_phase2_20260728/post_front_matched_manifest_generator.py \
   experiments/dino_moo_phase2_20260728/post_front_matched_launcher.py \
   experiments/dino_moo_phase2_20260728/post_front_matched_block_runner.py \
   experiments/dino_moo_phase2_20260728/post_front_matched_aggregator.py \
+  experiments/dino_moo_phase2_20260728/test_phase2_protocol_erratum.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_protocol_binding.py \
+  experiments/dino_moo_phase2_20260728/test_post_front_protocol_analysis.py \
   experiments/dino_moo_phase2_20260728/test_post_front_matched_tools.py \
   experiments/dino_moo_phase2_20260728/test_post_front_matched_launcher_recovery.py \
   experiments/dino_moo_phase2_20260728/test_post_front_complete_invalid_recovery.py
 ```
 
-The expected focused result at the implementation snapshot is `81 passed`.
+The expected focused result at commit
+`6850d71c2f3dea5f37505dd6831d41cb07a4d255` is `134 passed`. The exact
+erratum path and
+`95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13`
+whole-file hash are mandatory inputs to future manifest generation and every
+launcher mode. The generated manifest must additionally pin the three seed
+archives, the canonical full-record union, candidate-table JSON and CSV,
+combined selection, and integrity audit described in Section 7.3.1.
+
 No post-front manifest, ledger, dry-run, invalidation evidence, analysis, TAO
 job, or SLURM job exists yet. Exact completed expanded-search,
 manifest-generation, final-front launch/aggregation, combined-selection, and
