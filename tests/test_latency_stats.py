@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for deterministic aggregation of synchronized latency samples."""
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 
 import numpy as np
 import pytest
@@ -81,7 +81,15 @@ def test_aggregate_uses_median_of_device_round_medians_as_primary_latency():
 
     # Device-round medians are [2, 2] and [3, 3].  The slowest-device
     # synchronized samples [2, 2, 4] and [2, 5, 4] are diagnostics only.
+    assert statistics.raw_sample_count_total == 12
+    assert statistics.samples_per_device == 6
+    # Backward-compatible historical field: despite its old name, this is
+    # the total sample count.
     assert statistics.per_device_sample_count == 12
+    serialized = asdict(statistics)
+    assert serialized["raw_sample_count_total"] == 12
+    assert serialized["samples_per_device"] == 6
+    assert serialized["per_device_sample_count"] == 12
     assert statistics.device_round_cluster_count == 4
     assert statistics.synchronized_sample_count == 6
     assert statistics.median_ms == pytest.approx(2.5)
@@ -150,6 +158,9 @@ def test_single_device_single_round_has_zero_repeatability_spread():
     )
 
     assert statistics.median_ms == pytest.approx(2.0)
+    assert statistics.raw_sample_count_total == 3
+    assert statistics.samples_per_device == 3
+    assert statistics.per_device_sample_count == 3
     assert statistics.round_median_range_ms == 0.0
     assert statistics.round_drift_ms == 0.0
     assert statistics.device_median_range_ms == 0.0
