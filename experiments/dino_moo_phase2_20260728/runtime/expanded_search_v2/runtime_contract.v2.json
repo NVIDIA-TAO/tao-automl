@@ -1,0 +1,14 @@
+{
+  "contract_id": "dino_expanded_search_runtime_20260728_v2",
+  "contract_sha256": "5acb00ddd33ddbba69491c4a9c2bef87148a2e43455e59aa1032242d5d979f5f",
+  "manifest_file_sha256": "9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a",
+  "manifest_id": "dino_expanded_search_20260728_v2",
+  "manifest_internal_sha256": "910744ae2fead7e4e2e9a53fc672baef1ac43307e3979671b2b876fff422de96",
+  "manifest_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_manifest.v2.json",
+  "schema_version": 1,
+  "superseded_runtime_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search",
+  "supersedes_manifest_id": "dino_expanded_search_20260728_v1",
+  "target_runtime_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2",
+  "v1_runtime_reused": false,
+  "valid_objective_observations_reused": 0
+}
