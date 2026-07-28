@@ -1,0 +1,62 @@
+{
+  "candidates": [
+    {
+      "absolute_delta": 0.031071351530822744,
+      "candidate_id": "seed_161803_rec_0",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/4f0d0454-510b-423f-816b-3b996a3188f4/results_dir/train/model_epoch_009_step_00440.pth",
+      "checkpoint_sha256": "60227d835397d6b827ffc71a1c208a2a74b073a0d153c9cd014dab2ad46c3b26",
+      "evaluation_config_sha256": "1f7248d0a4eebc7832e0c0f3d242776dc6aea9ce291d47d02554d0ae7db21a24",
+      "feeds_selection": false,
+      "historical_mAP50": 0.5279109255336222,
+      "recovered_checkpoint_mAP50": 0.5589822770644449,
+      "relative_delta": 0.058857185991017795,
+      "slurm_job_id": "30938836",
+      "tao_job_id": "53b6ce5c-796b-4cdb-bcef-1b79684fd6f1"
+    },
+    {
+      "absolute_delta": 0.0052119545820032975,
+      "candidate_id": "seed_161803_rec_2",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/fb8d61dc-792d-417d-898d-b0e991db4b69/results_dir/train/model_epoch_009_step_00440.pth",
+      "checkpoint_sha256": "a5d3249ec7daed587413774158d3c3a9af008394ebf2be83f04d83a5c59b018e",
+      "evaluation_config_sha256": "e26f0f378aa15cdc8fcda6ac55ba816b84e3cc66e0e48c52ce471f9dcc4dc090",
+      "feeds_selection": false,
+      "historical_mAP50": 0.5780608108132506,
+      "recovered_checkpoint_mAP50": 0.5832727653952539,
+      "relative_delta": 0.009016273866880559,
+      "slurm_job_id": "30938849",
+      "tao_job_id": "23a5ee38-79b5-4d65-aa8b-2e112ec624be"
+    },
+    {
+      "absolute_delta": -0.012309053491080246,
+      "candidate_id": "seed_271828_rec_1",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/3597e189-5072-4c3f-80cd-868a3f74c897/results_dir/train/model_epoch_009_step_00440.pth",
+      "checkpoint_sha256": "1048469014abc9c02101fa34b8e82af51925dcc2b511d310a4020f5ce3b8035b",
+      "evaluation_config_sha256": "723410dacb02ffddb1808c15f0737a5a2af451f7b89375de820ee5eda799844c",
+      "feeds_selection": false,
+      "historical_mAP50": 0.6064578150355908,
+      "recovered_checkpoint_mAP50": 0.5941487615445106,
+      "relative_delta": -0.020296635950445906,
+      "slurm_job_id": "30938864",
+      "tao_job_id": "b91ab63f-4382-4be7-8cf8-2557bae14ad2"
+    },
+    {
+      "absolute_delta": 0.02208972192289227,
+      "candidate_id": "seed_271828_rec_2",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/ca04ab4d-4ef4-484b-9cdd-85653a897a61/results_dir/train/model_epoch_009_step_00440.pth",
+      "checkpoint_sha256": "cb4c39cddf1fccc6071689f682b6898e1be66f7f25def4a5c7b2684492bce7b0",
+      "evaluation_config_sha256": "b8b8960cd43e6c8a00eed70f7b2f8ee98d7700e0d51ca9d382cca1be89c76fbe",
+      "feeds_selection": false,
+      "historical_mAP50": 0.5769420472162294,
+      "recovered_checkpoint_mAP50": 0.5990317691391217,
+      "relative_delta": 0.03828759236647102,
+      "slurm_job_id": "30938932",
+      "tao_job_id": "6d313f84-26ce-42e5-81dd-0b23319aaf38"
+    }
+  ],
+  "feeds_selection": false,
+  "historical_selection_unchanged": true,
+  "interpretation": "Differences quantify reconstruction variability. These values do not replace frozen archive measurements or rerank candidates.",
+  "manifest_sha256": "ccf88ad1a8c95a808bb9e217de50dc296b700e5af6e1dca474d56b967186e0d2",
+  "purpose": "Comparable DINO evaluate-action revalidation for exact-config reconstructions of four deleted historical checkpoints.",
+  "schema_version": 1
+}
