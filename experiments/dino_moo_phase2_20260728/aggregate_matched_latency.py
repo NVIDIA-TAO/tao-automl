@@ -358,8 +358,18 @@ def local_lustre_path(uri: str) -> str:
 
 
 def fetch_allocation_bundle(job: dict[str, Any]) -> dict[str, Any]:
+    sdk_result_root = Path(job["result_root"])
+    if sdk_result_root.name != job["tao_job_id"]:
+        raise ValueError(
+            f"{job['allocation_id']}: SDK result root is not scoped to "
+            f"TAO job {job['tao_job_id']}"
+        )
+    # The preregistered phase-2 runner wrote the matched block beside the
+    # SDK-scoped job directory instead of inside it. Preserve and audit that
+    # frozen legacy layout for these already-completed validation-only jobs;
+    # subsequent runners use the SDK-scoped layout.
     result_path = (
-        Path(job["result_root"])
+        sdk_result_root.parent
         / "dino_moo_phase2_20260728"
         / job["allocation_id"]
         / job["tao_job_id"]
