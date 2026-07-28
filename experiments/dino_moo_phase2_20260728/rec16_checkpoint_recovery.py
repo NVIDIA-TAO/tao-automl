@@ -36,9 +36,9 @@ ARCHIVE_PATH = (
     / "seed_archive.v1.json"
 )
 RUNTIME_DIR = HERE / "runtime" / "rec16_checkpoint_recovery"
-STATE_PATH = RUNTIME_DIR / "slurm_state.db"
-REPORT_PATH = RUNTIME_DIR / "dry_run.json"
-SUBMISSION_PATH = RUNTIME_DIR / "submission.json"
+DEFAULT_STATE_PATH = RUNTIME_DIR / "slurm_state.db"
+DEFAULT_REPORT_PATH = RUNTIME_DIR / "dry_run.json"
+DEFAULT_SUBMISSION_PATH = RUNTIME_DIR / "submission.json"
 
 CANDIDATE_ID = "seed_271828_rec_16"
 ACKNOWLEDGEMENT = (
@@ -64,6 +64,7 @@ EXPECTED_HISTORICAL_CHECKPOINT_SHA256 = (
 )
 EXPECTED_HISTORICAL_CHECKPOINT_SIZE = 506_687_042
 EXPECTED_ORIGINAL_TAO_JOB_ID = "92d8f699-a780-4229-94ba-3520806d75da"
+EXPECTED_ORIGINAL_NODE = "batch-block7-02877"
 EXPECTED_SPECS = {
     "model.dec_layers": 3,
     "model.enc_layers": 6,
@@ -163,7 +164,27 @@ def require_launch_source_ready() -> dict[str, str]:
     }
 
 
-def build_contract() -> tuple[Any, dict[str, Any], str, dict[str, Any]]:
+def recovery_paths(
+    allowed_node: str | None,
+) -> tuple[Path, Path, Path]:
+    if allowed_node is None:
+        return DEFAULT_STATE_PATH, DEFAULT_REPORT_PATH, DEFAULT_SUBMISSION_PATH
+    if allowed_node != EXPECTED_ORIGINAL_NODE:
+        raise RecoveryError(
+            "node-pinned recovery permits only the frozen original node "
+            f"{EXPECTED_ORIGINAL_NODE}"
+        )
+    label = f"allowed_node_{allowed_node}"
+    return (
+        RUNTIME_DIR / f"slurm_state.{label}.db",
+        RUNTIME_DIR / f"dry_run.{label}.json",
+        RUNTIME_DIR / f"submission.{label}.json",
+    )
+
+
+def build_contract(
+    allowed_node: str | None,
+) -> tuple[Any, dict[str, Any], str, dict[str, Any]]:
     runner = load_module()
     if sha256_file(MANIFEST_PATH) != EXPECTED_MANIFEST_SHA256:
         raise RecoveryError("expanded-search manifest digest drift")
@@ -285,6 +306,12 @@ def build_contract() -> tuple[Any, dict[str, Any], str, dict[str, Any]]:
             ],
             "command_sha256": command_sha256,
             "command_size_bytes": len(command.encode("utf-8")),
+            "allowed_node": allowed_node,
+            "node_policy": (
+                "exact historical node only"
+                if allowed_node is not None
+                else "scheduler assigned"
+            ),
         },
         "selection_isolation": {
             "selector_invoked_on_recovered_measurements": False,
@@ -311,14 +338,24 @@ def parse_args() -> argparse.Namespace:
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--launch", action="store_true")
     parser.add_argument("--acknowledgement", default="")
+    parser.add_argument(
+        "--allowed-node",
+        help=(
+            "Optional exact-node recovery; only the frozen original node "
+            f"{EXPECTED_ORIGINAL_NODE} is accepted."
+        ),
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    runner, manifest, command, contract = build_contract()
+    state_path, report_path, submission_path = recovery_paths(
+        args.allowed_node
+    )
+    runner, manifest, command, contract = build_contract(args.allowed_node)
     contract["mode"] = "launch" if args.launch else "dry_run"
-    atomic_json(REPORT_PATH, contract)
+    atomic_json(report_path, contract)
     print(json.dumps(contract, indent=2, sort_keys=True), flush=True)
     if not args.launch:
         return 0
@@ -326,8 +363,8 @@ def main() -> int:
         raise RecoveryError(
             f"launch requires --acknowledgement {ACKNOWLEDGEMENT}"
         )
-    if SUBMISSION_PATH.exists():
-        submission = json.loads(SUBMISSION_PATH.read_text(encoding="utf-8"))
+    if submission_path.exists():
+        submission = json.loads(submission_path.read_text(encoding="utf-8"))
         print(json.dumps(submission, indent=2, sort_keys=True), flush=True)
         return 0
     source = require_launch_source_ready()
@@ -344,7 +381,7 @@ def main() -> int:
 
     runtime = manifest["frozen_identity"]["runtime"]
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    sdk = SlurmSDK(poll_interval=10, state_file=STATE_PATH)
+    sdk = SlurmSDK(poll_interval=10, state_file=state_path)
     job = sdk.create_job(
         image=runtime["sqsh_path"],
         command=command,
@@ -352,6 +389,11 @@ def main() -> int:
         num_nodes=1,
         partition=runtime["partition"],
         account=runtime["account"],
+        allowed_nodes=(
+            [args.allowed_node]
+            if args.allowed_node is not None
+            else None
+        ),
     )
     identity = runner._runtime_identity_from_store(sdk, job.id)
     submission = {
@@ -360,6 +402,7 @@ def main() -> int:
         "tao_job_id": job.id,
         "slurm_job_id": str(identity.get("slurm_job_id", "")),
         "result_root": identity.get("result_root"),
+        "allowed_nodes": identity.get("allowed_nodes"),
         "source": source,
         "command_sha256": contract["reconstruction"]["command_sha256"],
         "expected_historical_checkpoint_sha256": (
@@ -372,7 +415,7 @@ def main() -> int:
         "measurements_feed_reselection": False,
         "frozen_archive_mutated": False,
     }
-    atomic_json(SUBMISSION_PATH, submission)
+    atomic_json(submission_path, submission)
     print(json.dumps(submission, indent=2, sort_keys=True), flush=True)
     return 0
 
