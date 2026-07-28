@@ -903,9 +903,10 @@ def validate_supplementary_pending(probe: RemoteProbe) -> dict[str, Any]:
         },
         "supplementary exact-node scheduler identity",
     )
-    if observed.get("reason") != "(Resources)":
+    if observed.get("reason") not in {"(Resources)", "(Priority)"}:
         raise FreezeError(
-            "supplementary exact-node replay is not pending for resources"
+            "supplementary exact-node replay is not pending for "
+            "scheduler resources or priority"
         )
     for label in ("entrypoint", "sbatch", "remote_specs"):
         validate_file_identity(

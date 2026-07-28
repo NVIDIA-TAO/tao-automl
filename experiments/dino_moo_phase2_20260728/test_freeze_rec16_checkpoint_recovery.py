@@ -207,6 +207,14 @@ def test_supplementary_replay_must_be_pending_and_node_pinned() -> None:
         build_fixture(probe)
 
     probe = FakeProbe()
+    probe.pending["reason"] = "(Priority)"
+    evidence = build_fixture(probe)
+    assert (
+        evidence["supplementary_exact_node_replay"]["pending_reason"]
+        == "(Priority)"
+    )
+
+    probe = FakeProbe()
     probe.node_line_present = False
     with pytest.raises(
         freezer.FreezeError,
