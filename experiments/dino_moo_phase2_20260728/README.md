@@ -145,6 +145,20 @@ fails if ranks, normalized scores, or winners differ. Selection-time latency
 records are preserved; later matched Pareto-front remeasurement is a separate
 analysis and cannot replace them.
 
+`phase2_protocol_erratum.v1.json` was issued at
+`2026-07-28T06:36:41Z`, when exactly 15 candidates had succeeded (five per
+search seed), before the complete union, final Pareto front, combined
+selection, candidate table, integrity audit, completion record, post-front
+manifest, post-front jobs, or post-front measurements existed. Its exact
+whole-file SHA256 is
+`95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13`.
+It leaves the frozen expanded manifest and production selection behavior
+unchanged. It records that the manifest's abbreviated tie-break prose is not
+the executable authority: the selector pinned at
+`83d9d7ecc783724f674cb954f9fbb6c91ea8b0eb` uses the complete recorded
+score, ideal-distance, balance-gap, normalized-accuracy-regret, canonical
+specification-fingerprint, and candidate-ID chain.
+
 Before any expanded-search result exists, the policy also preregisters the
 post-front validation. Every algorithmic global rank-zero candidate is included
 in ascending candidate-ID order, with no manual additions or removals. Six
@@ -155,6 +169,15 @@ percentile-bootstrap differences (`10,000` resamples, seed `20260728`) and the
 exact imported `0.73553775 ms` practical tolerance. These measurements are
 stability evidence only: they never feed reselection, replace selection-time
 objectives, or override the algorithm-selected winner.
+
+The erratum preserves two explicitly named analysis branches for both median
+and p95. The original preregistered bootstrap-CI classification is retained
+and reported. The effective directional classification treats that bootstrap
+interval as descriptive and permits a stable direction only when the exact
+one-sided, tolerance-shifted sign-flip test passes and all six paired
+differences lie strictly beyond the same practical-tolerance boundary. A lack
+of effective directional evidence is not an equivalence claim. Effective
+claims remain pairwise only and do not establish a simultaneous total order.
 
 Dry-run after the expanded manifest is generated:
 
@@ -179,9 +202,15 @@ runtime-only mutable ledgers below `runtime/expanded_search_v2/`, then seals one
 ## Design
 
 - Six independent SLURM jobs request one node and eight GPUs each.
-- Every job benchmarks all six candidates sequentially on its allocated node.
-- The six Williams/Latin-square rows place every candidate in every execution
-  position once and contain every ordered immediate adjacency once.
+- Every job benchmarks every algorithmic final-front candidate sequentially
+  on its allocated node.
+- For `n` canonical candidates, the complete deterministic Williams design has
+  `R` rows. Allocation `k` in `[0, 5]` uses design row
+  `floor(k * R / 6)`. The manifest records the actual selected row indices,
+  per-candidate position counts, ordered immediate-adjacency counts, and their
+  measured imbalances. Exact once-per-position and once-per-adjacency balance
+  is claimed only when those recorded counts establish it; it is not assumed
+  for an arbitrary final-front size.
 - Because every candidate runs in every allocation, node assignment is exactly
   matched across candidates. The six jobs are submitted together to encourage
   node diversity, but distinct physical nodes are not assumed.
