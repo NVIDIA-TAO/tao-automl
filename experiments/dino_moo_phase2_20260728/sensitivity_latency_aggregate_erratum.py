@@ -19,7 +19,9 @@ import json
 import os
 from pathlib import Path
 from pathlib import PurePosixPath
+import re
 import shlex
+import sqlite3
 import stat
 import subprocess
 import sys
@@ -84,6 +86,31 @@ EXPECTED_EVIDENCE_ACQUISITION_POLICY = {
     "duplicate_path_policy": "reject",
     "embedded_remote_path_policy": "validate_without_rewriting",
     "remote_write_permitted": False,
+}
+EXPECTED_SDK_STATE_INSPECTION_POLICY = {
+    "mode": "read_only_durable_sqlite_plus_terminal_sacct",
+    "json_sidecar_role": "optional_non_authoritative_monitor_cache",
+    "database_access": "sqlite_uri_mode_ro_query_only",
+    "database_snapshot_required_stable": True,
+    "required_database_job_set": "exact_immutable_ledger_tao_job_ids",
+    "accepted_durable_statuses": [
+        "Complete",
+        "Pending",
+        "Running",
+        "Paused",
+    ],
+    "stale_nonterminal_acceptance_gate": (
+        "exact_job_runtime_artifact_identity_and_sacct_COMPLETED_0_0"
+    ),
+    "rejected_durable_statuses": [
+        "Error",
+        "Canceled",
+        "Canceling",
+        "Unknown",
+    ],
+    "scheduler_evidence": "exact_pinned_partition_account_one_node_eight_gpu",
+    "sdk_database_mutation_permitted": False,
+    "sdk_monitor_or_retry_permitted": False,
 }
 
 
@@ -182,6 +209,7 @@ def validate_analysis_erratum(
             ),
             "analysis_head_descends_from_immutable_launch_commit",
             "remote_results_not_locally_mounted",
+            "unwatched_sdk_jobs_have_no_sidecar_and_stale_pending_rows",
         ]
     ):
         raise ValueError("analysis erratum identity or policy mismatch")
@@ -285,6 +313,9 @@ def validate_analysis_erratum(
     acquisition_policy = erratum.get("evidence_acquisition_policy")
     if acquisition_policy != EXPECTED_EVIDENCE_ACQUISITION_POLICY:
         raise ValueError("analysis erratum evidence acquisition policy mismatch")
+    sdk_state_policy = erratum.get("sdk_state_inspection_policy")
+    if sdk_state_policy != EXPECTED_SDK_STATE_INSPECTION_POLICY:
+        raise ValueError("analysis erratum SDK state inspection policy mismatch")
     commit_correction = erratum.get("analysis_commit_correction")
     if (
         not isinstance(commit_correction, dict)
@@ -319,6 +350,9 @@ def validate_analysis_erratum(
         "qualification_policy_sha256": qualification_policy_sha256,
         "evidence_acquisition_policy_sha256": sha256_value(
             acquisition_policy
+        ),
+        "sdk_state_inspection_policy_sha256": sha256_value(
+            sdk_state_policy
         ),
         "measurement_generation_unchanged": True,
         "qualification_policy_unchanged": True,
@@ -504,6 +538,241 @@ def validate_launch_analysis_provenance(
         "ledger_sha256": actual_sha256,
     }
     return dict(recorded), proof
+
+
+def inspect_optional_sdk_sidecar(
+    state_path: Path,
+    ledger_job_ids: set[str],
+) -> dict[str, Any]:
+    """Classify the non-authoritative JobMonitor JSON compatibility cache."""
+
+    if not state_path.exists():
+        return {
+            "path": str(state_path),
+            "status": "absent_expected_no_watched_jobs",
+            "present": False,
+            "authoritative": False,
+            "sha256": None,
+            "active_job_count": 0,
+        }
+    if not state_path.is_file() or state_path.is_symlink():
+        raise ValueError("SDK monitor sidecar is not a regular file")
+    raw = state_path.read_bytes()
+    payload = original.strict_json_bytes(raw, "SDK monitor sidecar")
+    active = payload.get("active_jobs") if isinstance(payload, dict) else None
+    if not isinstance(active, list):
+        raise ValueError("SDK monitor sidecar active_jobs is invalid")
+    ids = [item.get("id") for item in active if isinstance(item, dict)]
+    if (
+        len(ids) != len(active)
+        or any(not isinstance(job_id, str) for job_id in ids)
+        or len(ids) != len(set(ids))
+        or not set(ids).issubset(ledger_job_ids)
+    ):
+        raise ValueError("SDK monitor sidecar job identity drift")
+    return {
+        "path": str(state_path),
+        "status": (
+            "present_empty_non_authoritative"
+            if not active
+            else "present_stale_active_non_authoritative"
+        ),
+        "present": True,
+        "authoritative": False,
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "active_job_count": len(active),
+        "active_job_ids": ids,
+        "recorded_status_by_job_id": {
+            item["id"]: item.get("status") for item in active
+        },
+    }
+
+
+def validate_terminal_scheduler_evidence(
+    scheduler: dict[str, Any],
+    contract: dict[str, Any],
+) -> None:
+    runtime = contract["runtime_contract"]
+    gpu_match = re.search(
+        r"(?:^|,)(?:gres/)?gpu(?:=[^,:]+)?[:=](\d+)(?:,|$)",
+        str(scheduler.get("alloc_tres", "")),
+    )
+    if (
+        scheduler.get("state") != "COMPLETED"
+        or scheduler.get("exit_code") != "0:0"
+        or scheduler.get("partition") != runtime["partition"]
+        or scheduler.get("account") != runtime["account"]
+        or scheduler.get("node_count") != 1
+        or not isinstance(scheduler.get("expanded_nodes"), list)
+        or len(scheduler["expanded_nodes"]) != 1
+        or gpu_match is None
+        or int(gpu_match.group(1)) != original.EXPECTED_RANKS
+    ):
+        raise ValueError("scheduler evidence is not exact COMPLETED/0:0")
+
+
+def inspect_sdk_jobs_read_only(
+    contract: dict[str, Any],
+    ledger: dict[str, Any],
+    state_path: Path,
+    accounting: dict[str, dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Inspect immutable SDK rows without monitor construction or mutation."""
+
+    state_path = state_path.resolve()
+    database = original.sdk_db_path(state_path)
+    if not database.is_file() or database.is_symlink():
+        raise FileNotFoundError(
+            f"SDK durable state database missing: {database}"
+        )
+    ledger_by_job_id = {
+        item["tao_job_id"]: item for item in ledger["submissions"]
+    }
+    if len(ledger_by_job_id) != original.EXPECTED_ALLOCATIONS:
+        raise ValueError("immutable ledger SDK job set is not exactly nine")
+    sidecar = inspect_optional_sdk_sidecar(
+        state_path, set(ledger_by_job_id)
+    )
+    before_snapshot = original.sqlite_snapshot_sha256(database)
+    before_file_sha256 = sha256_file(database)
+    connection = sqlite3.connect(
+        f"file:{database}?mode=ro",
+        uri=True,
+    )
+    connection.row_factory = sqlite3.Row
+    try:
+        connection.execute("PRAGMA query_only = ON")
+        rows = [
+            dict(row)
+            for row in connection.execute(
+                "SELECT * FROM jobs ORDER BY job_id"
+            ).fetchall()
+        ]
+    finally:
+        connection.close()
+    by_job_id = {row.get("job_id"): row for row in rows}
+    if (
+        len(by_job_id) != len(rows)
+        or set(by_job_id) != set(ledger_by_job_id)
+    ):
+        raise ValueError(
+            "SDK durable database job set differs from immutable ledger"
+        )
+
+    runtime_contract = contract["runtime_contract"]
+    accepted_statuses = set(
+        EXPECTED_SDK_STATE_INSPECTION_POLICY["accepted_durable_statuses"]
+    )
+    rejected_statuses = set(
+        EXPECTED_SDK_STATE_INSPECTION_POLICY["rejected_durable_statuses"]
+    )
+    jobs = []
+    status_counts: dict[str, int] = defaultdict(int)
+    for submission in ledger["submissions"]:
+        allocation_id = submission["allocation_id"]
+        tao_id = submission["tao_job_id"]
+        slurm_id = str(submission["slurm_job_id"])
+        row = by_job_id[tao_id]
+        status = row.get("status")
+        status_counts[str(status)] += 1
+        if status in rejected_statuses or status not in accepted_statuses:
+            raise ValueError(
+                f"{allocation_id}: rejected durable SDK status {status!r}"
+            )
+        specs_value = row.get("specs")
+        if not isinstance(specs_value, str):
+            raise ValueError(f"{allocation_id}: SDK specs are not serialized")
+        specs = original.strict_json_bytes(
+            specs_value.encode(), f"{allocation_id} SDK specs"
+        )
+        runtime = specs.get("_slurm_runtime", {})
+        artifacts = specs.get("_tao_artifacts", {})
+        scheduler = accounting.get(slurm_id)
+        if scheduler is None:
+            raise ValueError(f"{allocation_id}: scheduler evidence is absent")
+        validate_terminal_scheduler_evidence(scheduler, contract)
+        sdk_uri = row.get("results_dir")
+        if (
+            row.get("backend_type") != "slurm"
+            or row.get("image") != runtime_contract["sqsh_path"]
+            or str(runtime.get("slurm_job_id", "")) != slurm_id
+            or int(runtime.get("retry_count", -1)) != 0
+            or runtime.get("failed_slurm_job_ids") != []
+            or runtime.get("launch_uncertain") is not False
+            or runtime.get("job_name") != row.get("backend_job_id")
+            or runtime.get("partition") != runtime_contract["partition"]
+            or runtime.get("account") != runtime_contract["account"]
+            or runtime.get("image") != runtime_contract["sqsh_path"]
+            or artifacts.get("kind") != "lustre"
+            or artifacts.get("root") != sdk_uri
+            or sdk_uri != submission["sdk_results_uri"]
+            or scheduler["job_name"] != row.get("backend_job_id")
+        ):
+            raise ValueError(
+                f"{allocation_id}: durable SDK identity/state mismatch"
+            )
+        result_root = original.local_lustre_path(str(sdk_uri))
+        if (
+            result_root.name != tao_id
+            or result_root.parent.name != "results"
+        ):
+            raise ValueError(
+                f"{allocation_id}: SDK result root is not job-scoped"
+            )
+        stale = status != "Complete"
+        jobs.append(
+            {
+                "allocation_id": allocation_id,
+                "tao_job_id": tao_id,
+                "slurm_job_id": slurm_id,
+                "sdk_status": status,
+                "sdk_status_stale_nonterminal": stale,
+                "sdk_status_interpretation": (
+                    "stale_nonterminal_accepted_by_exact_terminal_scheduler_evidence"
+                    if stale
+                    else "durable_terminal_complete"
+                ),
+                "effective_status": "Complete",
+                "effective_status_source": "sacct_COMPLETED_exit_0_0",
+                "sdk_results_uri": sdk_uri,
+                "sdk_job_scoped_result_root": str(result_root),
+                "sdk_backend_job_id": row["backend_job_id"],
+                "sdk_runtime_revision": runtime.get("revision"),
+                "sdk_retry_count": runtime.get("retry_count"),
+                "sdk_failed_slurm_job_ids": runtime.get(
+                    "failed_slurm_job_ids", []
+                ),
+                "sdk_launch_uncertain": runtime.get("launch_uncertain"),
+                "scheduler": scheduler,
+                "complete": True,
+            }
+        )
+    after_snapshot = original.sqlite_snapshot_sha256(database)
+    after_file_sha256 = sha256_file(database)
+    if (
+        after_snapshot != before_snapshot
+        or after_file_sha256 != before_file_sha256
+    ):
+        raise RuntimeError("read-only SDK inspection mutated durable state")
+    return jobs, {
+        "state_path": str(state_path),
+        "json_sidecar": sidecar,
+        "database_path": str(database),
+        "database_file_sha256": before_file_sha256,
+        "consistent_sqlite_snapshot_sha256": before_snapshot,
+        "read_only_snapshot_stable": True,
+        "database_open_mode": "sqlite_uri_mode_ro_query_only",
+        "job_count": len(rows),
+        "durable_status_counts": dict(sorted(status_counts.items())),
+        "stale_nonterminal_accepted_count": sum(
+            item["sdk_status_stale_nonterminal"] for item in jobs
+        ),
+        "effective_complete_count": len(jobs),
+        "scheduler_gate": "COMPLETED/0:0",
+        "monitor_constructed": False,
+        "retry_permitted": False,
+        "database_mutation_permitted": False,
+    }
 
 
 @dataclass(frozen=True)
@@ -1509,7 +1778,7 @@ def main() -> int:
     accounting = original.slurm_accounting(
         ledger["submissions"], contract
     )
-    jobs, sdk_provenance = original.inspect_sdk_jobs(
+    jobs, sdk_provenance = inspect_sdk_jobs_read_only(
         contract,
         ledger,
         args.sdk_state.resolve(),

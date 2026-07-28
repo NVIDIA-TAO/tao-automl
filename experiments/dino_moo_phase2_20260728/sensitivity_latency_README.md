@@ -36,11 +36,13 @@ matching TAO SDK/SLURM state.
   source. Its allocation-level runtime check incorrectly used full-string
   PyTorch equality even though v2 declares a major.minor.patch comparison.
 - `sensitivity_latency_analysis_erratum.v1.json`, SHA256
-  `a86a66822137433882af079b8384698cbf9b06124cc173a8b36c666aefa60a80`,
+  `8e19287bf2ffd674f62b21cdaf11e000b0eae1ed8af9d0ada1238491588993f2`,
   pins the immutable v2 manifest, submission ledger, measurement-generation
   sources, unchanged measurement and qualification policies, and corrected
   analysis source. It also pins the exact remote-evidence acquisition policy.
-- `sensitivity_latency_aggregate_erratum.py` is the analysis-only entrypoint.
+- `sensitivity_latency_aggregate_erratum.py`, SHA256
+  `9209e748093e0555fe5cba339327a8216744ec9ca6b9dae276c7041703a409c6`,
+  is the analysis-only entrypoint.
   It regenerates the original plans and command hashes, validates the original
   source and ledger chain, preserves the full runtime string, and corrects only
   allocation-level PyTorch validation to use the v2-declared
@@ -183,7 +185,7 @@ python experiments/dino_moo_phase2_20260728/sensitivity_latency_aggregate_erratu
   --analysis-erratum \
   experiments/dino_moo_phase2_20260728/sensitivity_latency_analysis_erratum.v1.json \
   --analysis-erratum-sha256 \
-  a86a66822137433882af079b8384698cbf9b06124cc173a8b36c666aefa60a80 \
+  8e19287bf2ffd674f62b21cdaf11e000b0eae1ed8af9d0ada1238491588993f2 \
   --manifest \
   experiments/dino_moo_phase2_20260728/sensitivity_latency_manifest.v2.json \
   --checkpoint-artifact \
@@ -207,9 +209,9 @@ python experiments/dino_moo_phase2_20260728/sensitivity_latency_aggregate_erratu
 
 The erratum aggregator requires nine distinct TAO IDs and nine distinct SLURM
 allocation IDs. For every entry it checks the submitted command and block-plan
-digests, durable SDK status `Complete`, SDK/ledger SLURM identity, exact
-job-scoped result URI, and a single `sacct` root row in `COMPLETED` state with
-exit code `0:0`, one node, eight GPUs, and the pinned partition/account. It
+digests, SDK/ledger SLURM identity, exact job-scoped result URI, and a single
+`sacct` root row in `COMPLETED` state with exit code `0:0`, one node, eight
+GPUs, and the pinned partition/account. It
 then validates the allocation seed, repeat, Williams row, profile positions,
 config/model/checkpoint digests, hostname/node assignment, eight stable and
 distinct GPU UUIDs, runtime, protocol, benchmark-input identity, and all 1008
@@ -224,6 +226,22 @@ ledger validator. Regenerated plans and command hashes are still compared
 exactly. The report records launch commit, analysis commit, merge base, commit
 distance, both source-check mappings, and the ancestry result. Unrelated
 history, branch drift, or any measurement-source drift fails closed.
+
+The launcher supplied no hooks to `SlurmSDK.create_job`. Consequently,
+`JobMonitor.watch()` and `_write_state_file()` were never invoked:
+`slurm_state.json` is correctly absent and the nine otherwise complete durable
+rows remain `Pending`. The erratum does not construct a monitor, poll through
+the retry-capable SDK path, or mutate that database. It opens
+`slurm_state.db` using SQLite read-only/query-only mode, requires its job-ID set
+to equal the immutable nine-entry ledger, and validates every stored runtime,
+artifact root, retry count, launch fence, image, SLURM ID, partition, account,
+and backend job name. A stale `Pending`, `Running`, or `Paused` row is accepted
+only when the matching exact `sacct` record is `COMPLETED` with exit `0:0` and
+the pinned one-node/eight-GPU topology. `Error`, `Canceled`, `Canceling`,
+unknown statuses, identity drift, or scheduler mismatch fail closed. The
+optional JSON sidecar is explicitly non-authoritative and reported as absent,
+empty, or stale. Consistent SQLite snapshot and database-file SHA256 values are
+captured before and after inspection and must remain identical.
 
 The evidence snapshot path is explicit and must be a dedicated child beneath
 `runtime/sensitivity_latency_v2`. Remote paths are never discovered with

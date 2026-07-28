@@ -6,6 +6,8 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import shutil
+import sqlite3
 from types import SimpleNamespace
 from typing import Any
 
@@ -281,6 +283,138 @@ def test_launch_or_analysis_measurement_source_drift_is_rejected() -> None:
         erratum.validate_launch_source_checks(
             launch, changed_current, contract
         )
+
+
+def sdk_inspection_inputs(
+    state_path: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, Any]]]:
+    contract = json.loads(MANIFEST.read_text())
+    ledger = json.loads(LEDGER.read_text())
+    database = erratum.original.sdk_db_path(state_path)
+    connection = sqlite3.connect(database)
+    try:
+        backend_names = dict(
+            connection.execute(
+                "SELECT job_id, backend_job_id FROM jobs"
+            ).fetchall()
+        )
+    finally:
+        connection.close()
+    accounting = {
+        str(item["slurm_job_id"]): {
+            "slurm_job_id": str(item["slurm_job_id"]),
+            "job_name": backend_names[item["tao_job_id"]],
+            "state": "COMPLETED",
+            "exit_code": "0:0",
+            "derived_exit_code": "0:0",
+            "partition": contract["runtime_contract"]["partition"],
+            "account": contract["runtime_contract"]["account"],
+            "node_count": 1,
+            "task_count": "1",
+            "alloc_tres": "billing=8,cpu=64,gres/gpu=8,node=1",
+            "node_list": "node-a",
+            "expanded_nodes": ["node-a"],
+        }
+        for item in ledger["submissions"]
+    }
+    return contract, ledger, accounting
+
+
+def test_read_only_sdk_inspector_accepts_exact_stale_pending_rows() -> None:
+    state_path = (
+        HERE / "runtime/sensitivity_latency_v2/slurm_state.json"
+    )
+    assert not state_path.exists()
+    contract, ledger, accounting = sdk_inspection_inputs(state_path)
+    database = erratum.original.sdk_db_path(state_path)
+    before = erratum.sha256_file(database)
+    jobs, proof = erratum.inspect_sdk_jobs_read_only(
+        contract, ledger, state_path, accounting
+    )
+    assert len(jobs) == 9
+    assert all(job["sdk_status"] == "Pending" for job in jobs)
+    assert all(job["effective_status"] == "Complete" for job in jobs)
+    assert all(job["sdk_status_stale_nonterminal"] for job in jobs)
+    assert proof["json_sidecar"]["status"] == (
+        "absent_expected_no_watched_jobs"
+    )
+    assert proof["durable_status_counts"] == {"Pending": 9}
+    assert proof["stale_nonterminal_accepted_count"] == 9
+    assert proof["monitor_constructed"] is False
+    assert proof["database_mutation_permitted"] is False
+    assert erratum.sha256_file(database) == before
+
+
+def copied_sdk_state(
+    tmp_path: Path,
+) -> Path:
+    state_path = tmp_path / "slurm_state.json"
+    source = HERE / "runtime/sensitivity_latency_v2/slurm_state.db"
+    shutil.copyfile(source, state_path.with_suffix(".db"))
+    return state_path
+
+
+@pytest.mark.parametrize("status", ["Error", "Canceled", "Unknown"])
+def test_read_only_sdk_inspector_rejects_bad_durable_status(
+    tmp_path: Path,
+    status: str,
+) -> None:
+    state_path = copied_sdk_state(tmp_path)
+    database = state_path.with_suffix(".db")
+    connection = sqlite3.connect(database)
+    try:
+        connection.execute(
+            "UPDATE jobs SET status = ? WHERE job_id = "
+            "(SELECT job_id FROM jobs ORDER BY job_id LIMIT 1)",
+            (status,),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    contract, ledger, accounting = sdk_inspection_inputs(state_path)
+    with pytest.raises(ValueError, match="rejected durable SDK status"):
+        erratum.inspect_sdk_jobs_read_only(
+            contract, ledger, state_path, accounting
+        )
+
+
+def test_read_only_sdk_inspector_rejects_scheduler_identity_drift(
+    tmp_path: Path,
+) -> None:
+    state_path = copied_sdk_state(tmp_path)
+    contract, ledger, accounting = sdk_inspection_inputs(state_path)
+    slurm_id = str(ledger["submissions"][0]["slurm_job_id"])
+    accounting[slurm_id]["job_name"] = "unrelated-job"
+    with pytest.raises(ValueError, match="identity/state mismatch"):
+        erratum.inspect_sdk_jobs_read_only(
+            contract, ledger, state_path, accounting
+        )
+
+
+def test_read_only_sdk_inspector_records_stale_sidecar(
+    tmp_path: Path,
+) -> None:
+    state_path = copied_sdk_state(tmp_path)
+    contract, ledger, accounting = sdk_inspection_inputs(state_path)
+    state_path.write_text(
+        json.dumps(
+            {
+                "active_jobs": [
+                    {
+                        "id": ledger["submissions"][0]["tao_job_id"],
+                        "status": "Pending",
+                    }
+                ]
+            }
+        )
+    )
+    _jobs, proof = erratum.inspect_sdk_jobs_read_only(
+        contract, ledger, state_path, accounting
+    )
+    assert proof["json_sidecar"]["status"] == (
+        "present_stale_active_non_authoritative"
+    )
+    assert proof["json_sidecar"]["active_job_count"] == 1
 
 
 def test_expected_remote_inventory_is_exact_and_discovery_free() -> None:
