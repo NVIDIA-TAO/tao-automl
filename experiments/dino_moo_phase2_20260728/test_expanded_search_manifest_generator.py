@@ -9,6 +9,7 @@ import importlib.util
 import json
 from pathlib import Path
 import random
+import subprocess
 import unittest
 
 
@@ -53,6 +54,19 @@ def decisions(value: dict) -> list[dict]:
                 }
             )
     return result
+
+
+def corrected_runner_identity(
+    runner_path: Path,
+    runner_sha256: str,
+) -> dict[str, str]:
+    return {
+        "repository": str(runner_path.parent),
+        "relative_path": runner_path.name,
+        "head_commit": "1" * 40,
+        "git_blob": "2" * 40,
+        "sha256": runner_sha256,
+    }
 
 
 class ExpandedSearchDerivationTests(unittest.TestCase):
@@ -149,6 +163,12 @@ class ExpandedSearchDerivationTests(unittest.TestCase):
             "generator_sha256": "c" * 64,
             "runner_path": Path("/runner/expanded_search_runner.py"),
             "runner_sha256": "e" * 64,
+            "corrected_runner_commit_identity": (
+                corrected_runner_identity(
+                    Path("/runner/expanded_search_runner.py"),
+                    "e" * 64,
+                )
+            ),
             "sensitivity_report_sha256": "d" * 64,
         }
         expected = GENERATOR.build_manifest(frozen, rows, **kwargs)
@@ -193,6 +213,12 @@ class ExpandedSearchDerivationTests(unittest.TestCase):
             "generator_sha256": "c" * 64,
             "runner_path": Path("/runner/expanded_search_runner.py"),
             "runner_sha256": "not-a-digest",
+            "corrected_runner_commit_identity": (
+                corrected_runner_identity(
+                    Path("/runner/expanded_search_runner.py"),
+                    "e" * 64,
+                )
+            ),
             "sensitivity_report_sha256": "d" * 64,
         }
         with self.assertRaisesRegex(
@@ -467,6 +493,133 @@ class ExpandedSearchDerivationTests(unittest.TestCase):
                 "result_report_sha256"
             ],
         )
+
+    def test_v2_is_behaviorally_identical_to_byte_pinned_v1(self):
+        frozen = policy()
+        result_path = HERE / frozen["sensitivity_evidence_contract"][
+            "result_path"
+        ]
+        result = GENERATOR.load_json(result_path)
+        rows, source, tolerance = GENERATOR.validate_sensitivity_result(
+            frozen,
+            result,
+            result_path=result_path,
+            supplied_sha256=GENERATOR.sha256_file(result_path),
+            source_base=HERE,
+        )
+        runner_path = HERE / "expanded_search_runner.py"
+        runner_sha256 = GENERATOR.sha256_file(runner_path)
+        repository = Path(
+            frozen["frozen_identity"]["source_repositories"]["tao_automl"][
+                "path"
+            ]
+        ).resolve()
+        identity = {
+            "repository": str(repository),
+            "relative_path": runner_path.resolve().relative_to(
+                repository
+            ).as_posix(),
+            "head_commit": subprocess.run(
+                ["git", "-C", str(repository), "rev-parse", "HEAD"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip(),
+            "git_blob": subprocess.run(
+                ["git", "-C", str(repository), "hash-object", str(runner_path)],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip(),
+            "sha256": runner_sha256,
+        }
+        manifest = GENERATOR.build_manifest(
+            frozen,
+            rows,
+            sensitivity_result_path=result_path,
+            sensitivity_result_sha256=GENERATOR.sha256_file(result_path),
+            source_identity=source,
+            latency_tolerance=tolerance,
+            policy_path=POLICY_PATH,
+            policy_sha256=GENERATOR.sha256_file(POLICY_PATH),
+            generator_path=MODULE_PATH,
+            generator_sha256=GENERATOR.sha256_file(MODULE_PATH),
+            runner_path=runner_path,
+            runner_sha256=runner_sha256,
+            corrected_runner_commit_identity=identity,
+            sensitivity_report_sha256=result["report_sha256"],
+        )
+        GENERATOR.validate_v2_behavioral_identity(manifest, frozen)
+        self.assertEqual(
+            manifest["manifest_id"],
+            "dino_expanded_search_20260728_v2",
+        )
+        self.assertEqual(
+            GENERATOR.sha256_file(HERE / "expanded_search_manifest.v1.json"),
+            (
+                "57e331686b8896989263a39f72edb6954"
+                "3fc58833f20a1e6e698c31f34d2e8be"
+            ),
+        )
+
+        tampered = copy.deepcopy(manifest)
+        tampered["selection"]["multi_objective_mode"]["rho"] = 0.5
+        with self.assertRaisesRegex(
+            GENERATOR.ContractError,
+            "unchanged behavioral contract selection",
+        ):
+            GENERATOR.validate_v2_behavioral_identity(tampered, frozen)
+
+    def test_corrected_runner_generation_gate_requires_committed_clean_file(
+        self,
+    ):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(
+                ["git", "init", "-q", str(repository)],
+                check=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(repository), "config", "user.email", "x@y"],
+                check=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(repository), "config", "user.name", "test"],
+                check=True,
+            )
+            runner_path = repository / "expanded_search_runner.py"
+            runner_path.write_text("print('v2')\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "-C", str(repository), "add", runner_path.name],
+                check=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(repository), "commit", "-qm", "runner"],
+                check=True,
+            )
+            frozen = policy()
+            frozen["frozen_identity"]["source_repositories"]["tao_automl"][
+                "path"
+            ] = str(repository)
+            identity = GENERATOR.require_corrected_runner_committed(
+                frozen,
+                runner_path,
+            )
+            self.assertEqual(
+                identity["sha256"],
+                GENERATOR.sha256_file(runner_path),
+            )
+            runner_path.write_text("print('dirty')\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                GENERATOR.ContractError,
+                "committed and clean",
+            ):
+                GENERATOR.require_corrected_runner_committed(
+                    frozen,
+                    runner_path,
+                )
 
     def test_superseded_v1_sensitivity_manifest_cannot_be_reintroduced(self):
         frozen = policy()

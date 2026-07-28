@@ -1,16 +1,19 @@
 {
   "schema_version": 1,
   "policy_id": "dino_expanded_search_derivation_20260728_v1",
-  "policy_revision": 2,
-  "status": "amended_after_approved_analysis_erratum_before_expanded_search_launch",
+  "policy_revision": 3,
+  "status": "amended_after_v1_preselection_runtime_failure_before_v2_launch",
   "created_at_utc": "2026-07-28T00:00:00Z",
   "amendment": {
-    "reason": "Bind the previously frozen derivation rule to the approved analysis-only sensitivity erratum and preregister the required post-front matched validation before any expanded-search manifest or job exists.",
+    "reason": "Preserve the failed v1 pre-selection runtime and generate a clean v2 manifest whose only operational change is strict parsing of finite numeric metrics emitted as JSON-number strings.",
     "original_derivation_rule_changed": false,
     "search_domains_changed": false,
     "selection_rule_changed": false,
-    "expanded_manifest_existed_at_amendment": false,
-    "expanded_job_launched_at_amendment": false
+    "expanded_manifest_existed_at_amendment": true,
+    "expanded_job_launched_at_amendment": true,
+    "v1_valid_objective_observation_count": 0,
+    "v1_selection_performed": false,
+    "v1_runtime_reuse_permitted": false
   },
   "scope": {
     "model_family": "DINO ResNet50",
@@ -22,7 +25,7 @@
   "result_dependent_policy_changes_permitted": false,
   "purpose": "Deterministically derive the expanded shared DINO AutoML search space from complete, immutable, direction-agnostic latency-sensitivity evidence without inspecting winner desirability.",
   "output_contract": {
-    "filename": "expanded_search_manifest.v1.json",
+    "filename": "expanded_search_manifest.v2.json",
     "overwrite_permitted": false,
     "status": "preregistered_ready_to_launch",
     "canonicalization": "UTF-8 JSON with sort_keys=true, separators comma and colon, ensure_ascii=false, allow_nan=false",
@@ -131,6 +134,58 @@
         "objective_values_altered_must_be_false": true
       }
     }
+  },
+  "runtime_supersession": {
+    "erratum_path": "expanded_search_runtime_erratum.v1.json",
+    "erratum_sha256": "a89b5816b45e1df9c6286c25ccbe8314daee53843decc4400882ec33f10ffa17",
+    "erratum_internal_sha256": "b61196e5b76153fa71f4e73c58e4bc6f58eeba1f8fed3783482ba8c3156e5954",
+    "erratum_id": "dino_expanded_search_runtime_erratum_20260728_v1",
+    "erratum_status": "approved_preselection_runtime_failure_audit",
+    "source_manifest": {
+      "path": "expanded_search_manifest.v1.json",
+      "manifest_id": "dino_expanded_search_20260728_v1",
+      "whole_file_sha256": "57e331686b8896989263a39f72edb69543fc58833f20a1e6e698c31f34d2e8be",
+      "internal_manifest_sha256": "39fb50997a39ff4bfaa8036cd6222127f3ce8dda25a704ac188eab4dd6b75b82"
+    },
+    "source_runtime_path": "runtime/expanded_search",
+    "source_runtime_status": "failed_preselection_superseded_preserved_read_only",
+    "source_runtime_resume_permitted": false,
+    "source_runtime_reuse_permitted": false,
+    "valid_objective_observation_count": 0,
+    "selection_performed": false,
+    "target_manifest": {
+      "filename": "expanded_search_manifest.v2.json",
+      "manifest_id": "dino_expanded_search_20260728_v2",
+      "runtime_path": "runtime/expanded_search_v2",
+      "overwrite_permitted": false
+    },
+    "only_permitted_changes": [
+      "manifest identity and supersession metadata",
+      "derivation policy, manifest generator, and corrected runner provenance SHA256 values",
+      "strict finite numeric metric parser contract",
+      "new runtime path",
+      "manifest-bound fresh and resume runtime-state provenance guard"
+    ],
+    "strict_metric_parser": {
+      "function": "parse_finite_numeric_metric",
+      "accept_native_int_or_float": true,
+      "accept_strict_json_number_string": true,
+      "reject_bool": true,
+      "reject_empty_or_whitespace": true,
+      "reject_nan_or_infinity": true,
+      "reject_junk": true,
+      "finite_result_required": true
+    },
+    "search_space_changed": false,
+    "search_algorithm_changed": false,
+    "search_seeds_changed": false,
+    "training_seed_changed": false,
+    "candidate_budget_changed": false,
+    "training_budget_changed": false,
+    "selection_configuration_changed": false,
+    "latency_protocol_changed": false,
+    "dataset_changed": false,
+    "runtime_hardware_changed": false
   },
   "architecture_axis_policy": {
     "inclusion_rule": "Include an axis if and only if at least one non-reference level has support_validity_repeatability_gate=true and latency_effect_qualified=true.",

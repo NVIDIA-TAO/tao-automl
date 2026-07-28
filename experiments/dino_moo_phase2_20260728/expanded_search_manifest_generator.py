@@ -16,13 +16,15 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
+import subprocess
 import sys
 from typing import Any, Iterable
 
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_POLICY = HERE / "expanded_search_derivation_policy.v1.json"
-DEFAULT_OUTPUT = HERE / "expanded_search_manifest.v1.json"
+DEFAULT_OUTPUT = HERE / "expanded_search_manifest.v2.json"
 HEX = frozenset("0123456789abcdef")
 EXPECTED_ANALYSIS_ERRATUM_CONTRACT_SHA256 = (
     "609bc9863a7e3289fe5f374b935f9da8422860eb00c62ea3d4bab00846d2fd7f"
@@ -352,6 +354,183 @@ def validate_post_front_contract(policy: dict[str, Any]) -> None:
     )
 
 
+def validate_runtime_supersession(policy: dict[str, Any]) -> None:
+    contract = policy["runtime_supersession"]
+    require_equal(
+        contract["only_permitted_changes"],
+        [
+            "manifest identity and supersession metadata",
+            (
+                "derivation policy, manifest generator, and corrected runner "
+                "provenance SHA256 values"
+            ),
+            "strict finite numeric metric parser contract",
+            "new runtime path",
+            "manifest-bound fresh and resume runtime-state provenance guard",
+        ],
+        "expanded v2 only-permitted changes",
+    )
+    require_equal(
+        {
+            key: contract.get(key)
+            for key in (
+                "erratum_path",
+                "erratum_sha256",
+                "erratum_internal_sha256",
+                "erratum_id",
+                "erratum_status",
+                "source_runtime_path",
+                "source_runtime_status",
+                "source_runtime_resume_permitted",
+                "source_runtime_reuse_permitted",
+                "valid_objective_observation_count",
+                "selection_performed",
+            )
+        },
+        {
+            "erratum_path": "expanded_search_runtime_erratum.v1.json",
+            "erratum_sha256": (
+                "a89b5816b45e1df9c6286c25ccbe8314"
+                "daee53843decc4400882ec33f10ffa17"
+            ),
+            "erratum_internal_sha256": (
+                "b61196e5b76153fa71f4e73c58e4bc6f"
+                "58eeba1f8fed3783482ba8c3156e5954"
+            ),
+            "erratum_id": (
+                "dino_expanded_search_runtime_erratum_20260728_v1"
+            ),
+            "erratum_status": (
+                "approved_preselection_runtime_failure_audit"
+            ),
+            "source_runtime_path": "runtime/expanded_search",
+            "source_runtime_status": (
+                "failed_preselection_superseded_preserved_read_only"
+            ),
+            "source_runtime_resume_permitted": False,
+            "source_runtime_reuse_permitted": False,
+            "valid_objective_observation_count": 0,
+            "selection_performed": False,
+        },
+        "expanded runtime supersession identity",
+    )
+    require_equal(
+        contract["source_manifest"],
+        {
+            "path": "expanded_search_manifest.v1.json",
+            "manifest_id": "dino_expanded_search_20260728_v1",
+            "whole_file_sha256": (
+                "57e331686b8896989263a39f72edb6954"
+                "3fc58833f20a1e6e698c31f34d2e8be"
+            ),
+            "internal_manifest_sha256": (
+                "39fb50997a39ff4bfaa8036cd6222127f"
+                "3ce8dda25a704ac188eab4dd6b75b82"
+            ),
+        },
+        "expanded v1 source manifest",
+    )
+    require_equal(
+        contract["target_manifest"],
+        {
+            "filename": "expanded_search_manifest.v2.json",
+            "manifest_id": "dino_expanded_search_20260728_v2",
+            "runtime_path": "runtime/expanded_search_v2",
+            "overwrite_permitted": False,
+        },
+        "expanded v2 target manifest",
+    )
+    for key in (
+        "search_space_changed",
+        "search_algorithm_changed",
+        "search_seeds_changed",
+        "training_seed_changed",
+        "candidate_budget_changed",
+        "training_budget_changed",
+        "selection_configuration_changed",
+        "latency_protocol_changed",
+        "dataset_changed",
+        "runtime_hardware_changed",
+    ):
+        require_equal(contract.get(key), False, f"runtime erratum {key}")
+    require_equal(
+        contract["strict_metric_parser"],
+        {
+            "function": "parse_finite_numeric_metric",
+            "accept_native_int_or_float": True,
+            "accept_strict_json_number_string": True,
+            "reject_bool": True,
+            "reject_empty_or_whitespace": True,
+            "reject_nan_or_infinity": True,
+            "reject_junk": True,
+            "finite_result_required": True,
+        },
+        "strict metric parser contract",
+    )
+    erratum_path = (HERE / contract["erratum_path"]).resolve()
+    require_equal(
+        sha256_file(erratum_path),
+        contract["erratum_sha256"],
+        "expanded runtime erratum whole-file SHA256",
+    )
+    erratum = load_json(erratum_path)
+    claimed = erratum.get("audit_sha256")
+    require_equal(
+        claimed,
+        contract["erratum_internal_sha256"],
+        "expanded runtime erratum internal SHA256",
+    )
+    unhashed = copy.deepcopy(erratum)
+    del unhashed["audit_sha256"]
+    require_equal(
+        sha256_value(unhashed),
+        claimed,
+        "expanded runtime erratum canonical digest",
+    )
+    require_equal(
+        erratum.get("erratum_id"),
+        contract["erratum_id"],
+        "expanded runtime erratum ID",
+    )
+    require_equal(
+        erratum.get("status"),
+        contract["erratum_status"],
+        "expanded runtime erratum status",
+    )
+    require_equal(
+        erratum["bayesian_state_audit"]["valid_objective_observation_count"],
+        0,
+        "v1 valid objective observations",
+    )
+    require_equal(
+        erratum["bayesian_state_audit"]["all_seed_brain_y_arrays_empty"],
+        True,
+        "v1 empty Bayesian observation arrays",
+    )
+    require_equal(
+        erratum["bayesian_state_audit"]["selection_invoked"],
+        False,
+        "v1 selection invocation",
+    )
+    source_manifest = (HERE / contract["source_manifest"]["path"]).resolve()
+    require_equal(
+        sha256_file(source_manifest),
+        contract["source_manifest"]["whole_file_sha256"],
+        "expanded v1 whole-file SHA256",
+    )
+    source = load_json(source_manifest)
+    require_equal(
+        source.get("manifest_id"),
+        contract["source_manifest"]["manifest_id"],
+        "expanded v1 manifest ID",
+    )
+    require_equal(
+        source.get("manifest_sha256"),
+        contract["source_manifest"]["internal_manifest_sha256"],
+        "expanded v1 internal SHA256",
+    )
+
+
 def validate_policy(policy: dict[str, Any]) -> None:
     require_equal(policy.get("schema_version"), 1, "policy schema_version")
     require_equal(
@@ -359,26 +538,29 @@ def validate_policy(policy: dict[str, Any]) -> None:
         "dino_expanded_search_derivation_20260728_v1",
         "policy_id",
     )
-    require_equal(policy.get("policy_revision"), 2, "policy revision")
+    require_equal(policy.get("policy_revision"), 3, "policy revision")
     require_equal(
         policy.get("status"),
-        "amended_after_approved_analysis_erratum_before_expanded_search_launch",
+        "amended_after_v1_preselection_runtime_failure_before_v2_launch",
         "policy status",
     )
     require_equal(
         policy.get("amendment"),
         {
             "reason": (
-                "Bind the previously frozen derivation rule to the approved "
-                "analysis-only sensitivity erratum and preregister the "
-                "required post-front matched validation before any "
-                "expanded-search manifest or job exists."
+                "Preserve the failed v1 pre-selection runtime and generate "
+                "a clean v2 manifest whose only operational change is "
+                "strict parsing of finite numeric metrics emitted as "
+                "JSON-number strings."
             ),
             "original_derivation_rule_changed": False,
             "search_domains_changed": False,
             "selection_rule_changed": False,
-            "expanded_manifest_existed_at_amendment": False,
-            "expanded_job_launched_at_amendment": False,
+            "expanded_manifest_existed_at_amendment": True,
+            "expanded_job_launched_at_amendment": True,
+            "v1_valid_objective_observation_count": 0,
+            "v1_selection_performed": False,
+            "v1_runtime_reuse_permitted": False,
         },
         "policy amendment audit",
     )
@@ -558,6 +740,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
     )
     validate_analysis_erratum_contract(policy)
     validate_post_front_contract(policy)
+    validate_runtime_supersession(policy)
     validate_false_audit_flags(policy, "policy")
 
 
@@ -1397,11 +1580,17 @@ def build_manifest(
     generator_sha256: str,
     runner_path: Path,
     runner_sha256: str,
+    corrected_runner_commit_identity: dict[str, str],
     sensitivity_report_sha256: str,
 ) -> dict[str, Any]:
     require_sha256(runner_sha256, "expanded runner source SHA256")
     if runner_path.name != "expanded_search_runner.py":
         raise ContractError("expanded runner source has an unexpected basename")
+    validate_corrected_runner_commit_identity(
+        corrected_runner_commit_identity,
+        runner_path=runner_path,
+        runner_sha256=runner_sha256,
+    )
     derived_axes = derive_architecture_axes(policy, decisions)
     training_parameters = copy.deepcopy(
         policy["always_included_training_parameters"]
@@ -1455,14 +1644,55 @@ def build_manifest(
     ]
     selection = copy.deepcopy(policy["selection_contract"])
     selection["latency_tolerance"]["value_ms"] = latency_tolerance
+    supersession = policy["runtime_supersession"]
+    target = supersession["target_manifest"]
     manifest = {
         "schema_version": 1,
-        "manifest_id": "dino_expanded_search_20260728_v1",
+        "manifest_id": target["manifest_id"],
         "status": policy["output_contract"]["status"],
         "scope": copy.deepcopy(policy["scope"]),
         "feeds_final_selection": True,
         "manual_override_permitted": False,
         "algorithm_only_selection_required": True,
+        "supersedes": {
+            "manifest_id": supersession["source_manifest"]["manifest_id"],
+            "manifest_path": str(
+                (HERE / supersession["source_manifest"]["path"]).resolve()
+            ),
+            "manifest_whole_file_sha256": supersession["source_manifest"][
+                "whole_file_sha256"
+            ],
+            "manifest_internal_sha256": supersession["source_manifest"][
+                "internal_manifest_sha256"
+            ],
+            "runtime_path": str(
+                (HERE / supersession["source_runtime_path"]).resolve()
+            ),
+            "disposition": supersession["source_runtime_status"],
+            "resume_permitted": False,
+            "runtime_reuse_permitted": False,
+        },
+        "runtime_supersession": {
+            "erratum_path": str(
+                (HERE / supersession["erratum_path"]).resolve()
+            ),
+            "erratum_sha256": supersession["erratum_sha256"],
+            "erratum_internal_sha256": supersession[
+                "erratum_internal_sha256"
+            ],
+            "erratum_id": supersession["erratum_id"],
+            "target_runtime_path": str(
+                (HERE / target["runtime_path"]).resolve()
+            ),
+            "strict_metric_parser": copy.deepcopy(
+                supersession["strict_metric_parser"]
+            ),
+            "valid_objective_observations_reused": 0,
+            "v1_runtime_reused": False,
+            "corrected_runner_commit_identity": copy.deepcopy(
+                corrected_runner_commit_identity
+            ),
+        },
         "derivation": {
             "policy_id": policy["policy_id"],
             "policy_path": str(policy_path.resolve()),
@@ -1515,6 +1745,295 @@ def build_manifest(
     }
     manifest["manifest_sha256"] = sha256_value(manifest)
     return manifest
+
+
+def validate_corrected_runner_commit_identity(
+    identity: Any,
+    *,
+    runner_path: Path,
+    runner_sha256: str,
+) -> None:
+    """Validate the immutable git identity of the corrected runner source."""
+
+    if not isinstance(identity, dict):
+        raise ContractError("corrected runner commit identity must be an object")
+    require_equal(
+        set(identity),
+        {
+            "repository",
+            "relative_path",
+            "head_commit",
+            "git_blob",
+            "sha256",
+        },
+        "corrected runner commit identity keys",
+    )
+    repository = identity.get("repository")
+    relative_path = identity.get("relative_path")
+    if (
+        not isinstance(repository, str)
+        or not Path(repository).is_absolute()
+        or not isinstance(relative_path, str)
+        or Path(relative_path).is_absolute()
+        or relative_path != Path(relative_path).as_posix()
+        or ".." in Path(relative_path).parts
+    ):
+        raise ContractError("corrected runner repository/path identity is invalid")
+    require_equal(
+        (Path(repository) / relative_path).resolve(),
+        runner_path.resolve(),
+        "corrected runner committed path",
+    )
+    for key in ("head_commit", "git_blob"):
+        value = identity.get(key)
+        if (
+            not isinstance(value, str)
+            or re.fullmatch(r"[0-9a-f]{40}", value) is None
+        ):
+            raise ContractError(
+                f"corrected runner {key} must be a lowercase 40-hex git object"
+            )
+    require_equal(
+        require_sha256(identity.get("sha256"), "corrected runner SHA256"),
+        runner_sha256,
+        "corrected runner committed SHA256",
+    )
+
+
+def validate_v2_behavioral_identity(
+    manifest: dict[str, Any],
+    policy: dict[str, Any],
+) -> None:
+    """Prove v2 changes no search, selection, data, or runtime behavior."""
+
+    supersession = policy["runtime_supersession"]
+    v1_path = (HERE / supersession["source_manifest"]["path"]).resolve()
+    v1 = load_json(v1_path)
+    require_equal(
+        set(manifest),
+        set(v1) | {"supersedes", "runtime_supersession"},
+        "v2 top-level manifest keys",
+    )
+    for key in ("schema_version", "status"):
+        require_equal(
+            manifest.get(key),
+            v1.get(key),
+            f"v2/v1 unchanged manifest {key}",
+        )
+    require_equal(
+        manifest.get("manifest_id"),
+        supersession["target_manifest"]["manifest_id"],
+        "v2 target manifest ID",
+    )
+    require_equal(
+        manifest.get("supersedes"),
+        {
+            "manifest_id": supersession["source_manifest"]["manifest_id"],
+            "manifest_path": str(v1_path),
+            "manifest_whole_file_sha256": supersession["source_manifest"][
+                "whole_file_sha256"
+            ],
+            "manifest_internal_sha256": supersession["source_manifest"][
+                "internal_manifest_sha256"
+            ],
+            "runtime_path": str(
+                (HERE / supersession["source_runtime_path"]).resolve()
+            ),
+            "disposition": supersession["source_runtime_status"],
+            "resume_permitted": False,
+            "runtime_reuse_permitted": False,
+        },
+        "v2 superseded v1 identity",
+    )
+    for key in (
+        "scope",
+        "feeds_final_selection",
+        "manual_override_permitted",
+        "algorithm_only_selection_required",
+        "search_space",
+        "search_design",
+        "selection",
+        "post_front_matched_validation",
+        "frozen_identity",
+    ):
+        require_equal(
+            manifest.get(key),
+            v1.get(key),
+            f"v2/v1 unchanged behavioral contract {key}",
+        )
+    for key in (
+        "policy_id",
+        "policy_path",
+        "generator_path",
+        "runner_path",
+        "sensitivity_result_path",
+        "rule",
+        "accuracy_retention_used_for_axis_derivation",
+        "qualified_value_hull_used",
+        "manual_override_used",
+        "decision_audit",
+        "source_identity",
+        "sensitivity_result_sha256",
+        "sensitivity_report_sha256",
+        "analysis_erratum_contract_sha256",
+        "post_front_contract_sha256",
+    ):
+        require_equal(
+            manifest["derivation"].get(key),
+            v1["derivation"].get(key),
+            f"v2/v1 unchanged derivation {key}",
+        )
+    require_equal(
+        manifest["runtime_supersession"][
+            "valid_objective_observations_reused"
+        ],
+        0,
+        "v1 objective observation reuse",
+    )
+    require_equal(
+        manifest["runtime_supersession"]["v1_runtime_reused"],
+        False,
+        "v1 runtime reuse",
+    )
+    require_equal(
+        {
+            key: manifest["runtime_supersession"].get(key)
+            for key in (
+                "erratum_path",
+                "erratum_sha256",
+                "erratum_internal_sha256",
+                "erratum_id",
+                "target_runtime_path",
+                "strict_metric_parser",
+            )
+        },
+        {
+            "erratum_path": str(
+                (HERE / supersession["erratum_path"]).resolve()
+            ),
+            "erratum_sha256": supersession["erratum_sha256"],
+            "erratum_internal_sha256": supersession[
+                "erratum_internal_sha256"
+            ],
+            "erratum_id": supersession["erratum_id"],
+            "target_runtime_path": str(
+                (
+                    HERE
+                    / supersession["target_manifest"]["runtime_path"]
+                ).resolve()
+            ),
+            "strict_metric_parser": supersession["strict_metric_parser"],
+        },
+        "v2 runtime supersession contract",
+    )
+    require_equal(
+        set(manifest["runtime_supersession"]),
+        {
+            "erratum_path",
+            "erratum_sha256",
+            "erratum_internal_sha256",
+            "erratum_id",
+            "target_runtime_path",
+            "strict_metric_parser",
+            "valid_objective_observations_reused",
+            "v1_runtime_reused",
+            "corrected_runner_commit_identity",
+        },
+        "v2 runtime supersession keys",
+    )
+    validate_corrected_runner_commit_identity(
+        manifest["runtime_supersession"].get(
+            "corrected_runner_commit_identity"
+        ),
+        runner_path=Path(manifest["derivation"]["runner_path"]),
+        runner_sha256=manifest["derivation"]["runner_sha256"],
+    )
+
+
+def require_corrected_runner_committed(
+    policy: dict[str, Any],
+    runner_path: Path,
+) -> dict[str, str]:
+    repo = Path(
+        policy["frozen_identity"]["source_repositories"]["tao_automl"][
+            "path"
+        ]
+    ).resolve()
+    try:
+        relative = runner_path.resolve().relative_to(repo)
+    except ValueError as error:
+        raise ContractError("expanded runner escaped TAO AutoML repository") from error
+    relative_text = relative.as_posix()
+    tracked = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "ls-files",
+            "--error-unmatch",
+            "--",
+            relative_text,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if tracked.returncode != 0:
+        raise ContractError(
+            "v2 generation requires corrected runner tracked in git"
+        )
+    for cached in (False, True):
+        command = ["git", "-C", str(repo), "diff", "--quiet"]
+        if cached:
+            command.append("--cached")
+        command.extend(["--", relative_text])
+        if subprocess.run(command, check=False).returncode != 0:
+            raise ContractError(
+                "v2 generation requires corrected runner committed and clean"
+            )
+    head_commit = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    head_blob = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "rev-parse",
+            f"{head_commit}:{relative_text}",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    current_blob = subprocess.run(
+        ["git", "-C", str(repo), "hash-object", str(runner_path.resolve())],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    require_equal(current_blob, head_blob, "corrected runner HEAD blob")
+    identity = {
+        "repository": str(repo),
+        "relative_path": relative_text,
+        "head_commit": head_commit,
+        "git_blob": head_blob,
+        "sha256": sha256_file(runner_path),
+    }
+    require_equal(
+        subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip(),
+        head_commit,
+        "corrected runner HEAD stability",
+    )
+    return identity
 
 
 def atomic_write_new(path: Path, value: dict[str, Any]) -> None:
@@ -1577,6 +2096,10 @@ def main() -> int:
     runner_path = (generator_path.parent / "expanded_search_runner.py").resolve()
     if not runner_path.is_file():
         raise ContractError(f"expanded-search runner is missing: {runner_path}")
+    corrected_runner_commit_identity = require_corrected_runner_committed(
+        policy,
+        runner_path,
+    )
     manifest = build_manifest(
         policy,
         decisions,
@@ -1590,7 +2113,14 @@ def main() -> int:
         generator_sha256=sha256_file(generator_path),
         runner_path=runner_path,
         runner_sha256=sha256_file(runner_path),
+        corrected_runner_commit_identity=corrected_runner_commit_identity,
         sensitivity_report_sha256=result["report_sha256"],
+    )
+    validate_v2_behavioral_identity(manifest, policy)
+    require_equal(
+        require_corrected_runner_committed(policy, runner_path),
+        corrected_runner_commit_identity,
+        "corrected runner identity before immutable manifest write",
     )
     atomic_write_new(output_path, manifest)
     print(
