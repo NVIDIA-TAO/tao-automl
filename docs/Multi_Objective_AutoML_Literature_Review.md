@@ -222,6 +222,15 @@ max(w_A * r_accuracy, w_L * r_latency)
   + rho * (w_A * r_accuracy + w_L * r_latency)
 ```
 
+Finite dominated outliers cannot affect these bounds because they are removed
+before front normalization. A finite nondominated endpoint is treated as a
+real measured trade-off and therefore does define an ideal or nadir bound; it
+is not silently clipped. Measurement-level latency outliers are controlled
+separately by the median/MAD protocol and quality gates. Product deployments
+that require externally stable normalization across changing archives may
+configure fixed domain bounds in a future extension, but must record those
+bounds rather than deriving them after seeing a desired winner.
+
 The selector first removes dominated points. Score ties use normalized ideal
 distance, balance gap, accuracy-safe regret, canonical SHA-256 configuration
 fingerprint, and candidate ID. Exact duplicate objective points are represented
@@ -257,4 +266,6 @@ and all three mode-winner flags.
 
 For two-objective benchmarking, `eval_fn` is required by default. An exception
 or missing required metric invalidates the trial instead of falling back to a
-training progress-bar rate.
+training progress-bar rate. Boolean, NaN, infinite, non-positive latency, and
+malformed or incomplete confidence-interval values are also rejected before
+Pareto ranking.
