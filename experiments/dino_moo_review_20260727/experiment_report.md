@@ -7,11 +7,13 @@ Scope: DINO ResNet50 only, using
 No other model family, PTM compatibility repair, or dataset is included.
 
 The implementation defect is fixed and the core safety invariant now holds: the
-multi-objective selector can return only an accuracy-feasible, Pareto-rank-zero
-candidate. The new 30-candidate validation did not contain a distinct feasible
-trade-off point, however. All three modes therefore selected the same candidate
-through the AutoML selector, and the overall hypothesis is **inconclusive
-because the search space contains no intermediate Pareto candidate**.
+multi-objective selector can return only an eligible, Pareto-rank-zero
+candidate. The global 30-candidate archive contains six intermediate
+accuracy/latency Pareto points, but the originally configured 98% accuracy
+floor excluded five of them from multi-objective scoring. All three modes
+therefore selected the same candidate through the AutoML selector, and the
+overall hypothesis is **inconclusive because no distinct Pareto compromise
+exists under the configured 98% accuracy-feasibility constraint**.
 
 Terminal evidence comprises 30/30 successful candidates, three zero-exit seed
 processes, a reverified 374-pass test suite, and three independent eight-GPU
@@ -258,10 +260,11 @@ is invalid, accuracy-infeasible, a duplicate alias, or dominated on the
 feasible front. Thus a dominated multi-objective winner is structurally
 impossible.
 
-If no nondominated candidate exists apart from the accuracy and latency
-extremes, the audit reports exactly:
+If no eligible nondominated candidate exists apart from the accuracy and
+latency extremes, the audit reports:
 
-> No distinct Pareto compromise exists in the evaluated search space.
+> No distinct Pareto compromise exists under the configured multi-objective
+> eligibility policy.
 
 The same deterministic Chebyshev ordering supplies an extreme-point fallback,
 and `distinct_compromise=false` plus `fallback_used=true` prevents that fallback
@@ -574,11 +577,13 @@ variance, so this experiment does not support fine-grained claims among
 candidate medians separated by less than `0.73553775 ms`. The selected result
 is unchanged because no second candidate satisfies the accuracy floor.
 
-**Overall classification: inconclusive because the search space contains no
-intermediate Pareto candidate.** The accuracy and constrained-latency endpoint
-rules are supported, and Pareto safety is supported. The proposed distinct
-multi-objective middle-ground behavior cannot be confirmed or rejected from a
-one-point feasible front.
+**Overall classification: inconclusive because no distinct Pareto compromise
+exists under the configured 98% accuracy-feasibility constraint.** The global
+archive does contain six nondominated points. The accuracy and
+constrained-latency endpoint rules are supported, and Pareto safety is
+supported. The proposed distinct multi-objective middle-ground behavior cannot
+be confirmed or rejected from the one-point front that remained after applying
+the shared 98% floor.
 
 ## 7. Reproducibility
 
