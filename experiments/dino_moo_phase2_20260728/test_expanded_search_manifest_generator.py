@@ -206,13 +206,33 @@ class ExpandedSearchDerivationTests(unittest.TestCase):
         frozen = policy()
         selection = frozen["selection_contract"]
         self.assertEqual(
-            frozen["sensitivity_evidence_contract"]["source_manifest"][
-                "sha256"
-            ],
+            frozen["sensitivity_evidence_contract"]["manifest_id"],
+            "dino_sensitivity_latency_20260728_v2",
+        )
+        source_manifest = frozen["sensitivity_evidence_contract"][
+            "source_manifest"
+        ]
+        self.assertEqual(
+            source_manifest["path"],
+            "sensitivity_latency_manifest.v2.json",
+        )
+        self.assertEqual(
+            source_manifest["sha256"],
             (
-                "c569f858f4513139292d7189ab5e57f8"
-                "97b8794fdbe5b2dcafc45b0efcd663aa"
+                "aedc117414b2691c1a70b73fa4e9e0ac"
+                "123cb4d20dfd9d25dfe2d4aa490d7655"
             ),
+        )
+        self.assertEqual(
+            source_manifest["supersedes"],
+            {
+                "manifest_id": "dino_sensitivity_latency_20260728_v1",
+                "manifest_sha256": (
+                    "c569f858f4513139292d7189ab5e57f8"
+                    "97b8794fdbe5b2dcafc45b0efcd663aa"
+                ),
+                "disposition": "preflight_failed_no_latency_measurements",
+            },
         )
         self.assertEqual(
             selection["latency_mode"]["latency_accuracy_retention"],
@@ -227,6 +247,25 @@ class ExpandedSearchDerivationTests(unittest.TestCase):
                 "multi_objective_min_accuracy"
             ]
         )
+
+    def test_superseded_v1_sensitivity_manifest_cannot_be_reintroduced(self):
+        frozen = policy()
+        frozen["sensitivity_evidence_contract"]["manifest_id"] = (
+            "dino_sensitivity_latency_20260728_v1"
+        )
+        source_manifest = frozen["sensitivity_evidence_contract"][
+            "source_manifest"
+        ]
+        source_manifest["path"] = "sensitivity_latency_manifest.v1.json"
+        source_manifest["sha256"] = (
+            "c569f858f4513139292d7189ab5e57f8"
+            "97b8794fdbe5b2dcafc45b0efcd663aa"
+        )
+        with self.assertRaisesRegex(
+            GENERATOR.ContractError,
+            "pinned sensitivity manifest ID mismatch",
+        ):
+            GENERATOR.validate_policy(frozen)
 
     def test_manual_true_flag_is_rejected(self):
         with self.assertRaisesRegex(

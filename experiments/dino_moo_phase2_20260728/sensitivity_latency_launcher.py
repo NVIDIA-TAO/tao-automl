@@ -326,6 +326,7 @@ def build_block_plan(
             "compute_capability": runtime["required_compute_capability"],
             "total_memory_bytes": runtime["required_total_memory_bytes"],
             "torch": runtime["required_torch"],
+            "torch_version_match": runtime["torch_version_match"],
             "cuda": runtime["required_cuda"],
             "cudnn": runtime["required_cudnn"],
         },
@@ -658,6 +659,12 @@ def submit_blocks(
     runtime_dir.mkdir(parents=True, exist_ok=True)
     runtime = contract["runtime_contract"]
     os.environ["SLURM_USE_SQSH"] = "false"
+    os.environ["SLURM_USE_TIMEOUT"] = (
+        "true" if runtime["slurm_use_timeout"] else "false"
+    )
+    os.environ["SLURM_USE_REQUEUE"] = (
+        "true" if runtime["slurm_use_requeue"] else "false"
+    )
     os.environ["SLURM_PARTITION"] = runtime["partition"]
     os.environ["SLURM_ACCOUNT"] = runtime["account"]
     sdk = SlurmSDK(
@@ -847,6 +854,12 @@ def retry_complete_block(
 
     runtime = contract["runtime_contract"]
     os.environ["SLURM_USE_SQSH"] = "false"
+    os.environ["SLURM_USE_TIMEOUT"] = (
+        "true" if runtime["slurm_use_timeout"] else "false"
+    )
+    os.environ["SLURM_USE_REQUEUE"] = (
+        "true" if runtime["slurm_use_requeue"] else "false"
+    )
     os.environ["SLURM_PARTITION"] = runtime["partition"]
     os.environ["SLURM_ACCOUNT"] = runtime["account"]
     sdk = SlurmSDK(

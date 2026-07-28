@@ -22,7 +22,7 @@
   },
   "sensitivity_evidence_contract": {
     "result_schema_version": 1,
-    "manifest_id": "dino_sensitivity_latency_20260728_v1",
+    "manifest_id": "dino_sensitivity_latency_20260728_v2",
     "required_status": "complete",
     "required_blockers": [],
     "required_flags": {
@@ -38,10 +38,15 @@
     "noise_floor_path": "noise_floor.effective_noise_floor_ms",
     "noise_floor_role": "Imported exactly as latency_tolerance for all three selections in the expanded archive.",
     "source_manifest": {
-      "path": "sensitivity_latency_manifest.v1.json",
-      "sha256": "c569f858f4513139292d7189ab5e57f897b8794fdbe5b2dcafc45b0efcd663aa",
+      "path": "sensitivity_latency_manifest.v2.json",
+      "sha256": "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655",
       "required_schema_version": 1,
       "required_status": "preregistered_not_launched",
+      "supersedes": {
+        "manifest_id": "dino_sensitivity_latency_20260728_v1",
+        "manifest_sha256": "c569f858f4513139292d7189ab5e57f897b8794fdbe5b2dcafc45b0efcd663aa",
+        "disposition": "preflight_failed_no_latency_measurements"
+      },
       "one_factor_manifest_path": "one_factor_sensitivity_manifest.v1.json",
       "one_factor_manifest_sha256": "ee65fd9a09d7cacc40f88a0b95b07af3fd0560d8496407447344b310bb5eaa44",
       "checkpoint_artifact_path": "sensitivity_training_checkpoints.v1.json",

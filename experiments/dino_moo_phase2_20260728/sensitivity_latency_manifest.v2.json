@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "manifest_id": "dino_sensitivity_latency_20260728_v2",
+  "status": "preregistered_not_launched",
+  "feeds_final_selection": false,
+  "manual_promotion_permitted": false,
+  "supersedes": {
+    "manifest_id": "dino_sensitivity_latency_20260728_v1",
+    "manifest_sha256": "c569f858f4513139292d7189ab5e57f897b8794fdbe5b2dcafc45b0efcd663aa",
+    "source_commit": "e728a46192d8de53407eb1c663c35d590bfe2f73",
+    "submission_ledger_sha256": "f227b6123f762091a81b341bd9b824599e399e801dd2d2fb85ce26a948ba2214",
+    "disposition": "preflight_failed_no_latency_measurements",
+    "reason": "The exact SQSH reports torch 2.11.0a0 plus an NVIDIA local build suffix. V1 compared that full string to the frozen public base version 2.11.0 and all nine blocks stopped before the first benchmark invocation. V2 compares the exact major.minor.patch prefix while retaining and reporting the complete runtime string."
+  },
+  "frozen_inputs": {
+    "one_factor_manifest_path": "one_factor_sensitivity_manifest.v1.json",
+    "one_factor_manifest_sha256": "ee65fd9a09d7cacc40f88a0b95b07af3fd0560d8496407447344b310bb5eaa44",
+    "benchmark_path": "../dino_moo_review_20260727/dino_latency_benchmark.py",
+    "benchmark_sha256": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+    "evaluate_template_path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/references/spec_template_evaluate.yaml",
+    "evaluate_template_sha256": "561227c8fc7380db2fe4ae4922e44a83f7ade16281df589b9d63993488f1130a",
+    "checkpoint_artifact_path": "sensitivity_training_checkpoints.v1.json",
+    "checkpoint_artifact_id": "dino_sensitivity_training_checkpoints_20260728_v1",
+    "checkpoint_artifact_sha256": "20188a8858a9329ce4b861730ad3b0b2f6185389c8af1b02ad29284e5ed1b012",
+    "one_factor_plan_sha256": "5bb4fd35611e9354004f4adbbc6851e7f59e25d909a6e19b9e5038fb85a26aea",
+    "accuracy_artifact_id": "dino_sensitivity_training_accuracy_20260728_v1",
+    "accuracy_artifact": "Required by aggregation after all 42 evaluations complete, with its independently recorded whole-file SHA256."
+  },
+  "design": {
+    "type": "matched_seed_nine_block_partial_williams_design",
+    "profile_count": 14,
+    "training_seeds": [
+      1234,
+      271828,
+      314159
+    ],
+    "allocations_per_seed": 3,
+    "allocation_count": 9,
+    "measurements_per_profile_seed": 3,
+    "measurements_total": 126,
+    "williams_row_indices_by_seed": {
+      "1234": [
+        0,
+        3,
+        6
+      ],
+      "271828": [
+        1,
+        4,
+        7
+      ],
+      "314159": [
+        2,
+        5,
+        8
+      ]
+    },
+    "order_rule": "For n=14, use base index order [0,1,13,2,12,3,11,4,10,5,9,6,8,7], then add the declared row index modulo 14. Profile enumeration is frozen by the one-factor manifest and never depends on results.",
+    "schedule_sha256": "85e92d63c59e2eea548f85feb5a1426eb73fb900807f6103f87dd2a5044dfc4d",
+    "incomplete_block_policy": "Exclude the entire allocation from paired analysis and rerun all 14 profiles under a new TAO job ID; never retain a partial block."
+  },
+  "runtime_contract": {
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+    "sqsh_sha256": "88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e",
+    "slurm_use_timeout": true,
+    "slurm_use_requeue": false,
+    "partition": "polar3",
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "num_nodes": 1,
+    "gpu_count": 8,
+    "required_gpu_name": "NVIDIA A100-SXM4-80GB",
+    "required_compute_capability": "8.0",
+    "required_total_memory_bytes": 85174583296,
+    "required_torch": "2.11.0",
+    "torch_version_match": "major_minor_patch",
+    "required_cuda": "13.2",
+    "required_cudnn": 92000,
+    "secrets_env_path": "/localhome/local-rarunachalam/.tao/config.env",
+    "sdk_path": "/localhome/local-rarunachalam/tao-sdk",
+    "sdk_commit": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+    "sdk_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+    "submission_api": "tao_sdk.platforms.slurm.SlurmSDK.create_job",
+    "automl_path": "/localhome/local-rarunachalam/tao-automl",
+    "automl_required_ancestor_commit": "e728a46192d8de53407eb1c663c35d590bfe2f73",
+    "automl_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+    "source_code_sha256": {
+      "launcher": "42d92d39d7ea2e957e46b2399760f26331633b2e8f2463984933f0eab99b7afd",
+      "block_runner": "1130028f541f0f43960a16080df2b289c98b433f492758aae5350137be6b7ae5",
+      "common": "3deb544e28208e44629cd2fa2ab319391e2c06721a40fee0ff22c155d3621e5c",
+      "aggregator": "5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967",
+      "latency_stats": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d"
+    },
+    "output_contract": {
+      "root_expression": "$TAO_RESULTS_ROOT/$TAO_JOB_ID",
+      "sdk_job_scoped": true,
+      "relative_layout": "dino_moo_phase2_20260728/sensitivity_latency/<manifest_id>/seed_<seed>/<allocation_id>"
+    }
+  },
+  "latency_protocol": {
+    "warmup_iterations": 50,
+    "timed_iterations": 100,
+    "repeated_rounds": 5,
+    "preloaded_batches": 16,
+    "batch_size_per_gpu": 1,
+    "fixed_preprocessed_shapes": {
+      "model_input": [
+        1,
+        4,
+        800,
+        1333
+      ],
+      "image_tensor": [
+        1,
+        3,
+        800,
+        1333
+      ],
+      "padding_mask": [
+        1,
+        1,
+        800,
+        1333
+      ]
+    },
+    "precision": "fp32",
+    "tf32": false,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
+    "benchmark_seed": 20260727,
+    "tail_percentile": 95.0,
+    "bootstrap_resamples": 5000,
+    "bootstrap_confidence_level": 0.95,
+    "bootstrap_seed": 424242,
+    "synchronization": "cuda_sync_each_sample_and_nccl_barrier",
+    "timed_scope": "model_forward_plus_dino_gpu_postprocess",
+    "validity_thresholds": {
+      "max_robust_cv": 0.1,
+      "max_round_median_range_fraction": 0.05,
+      "max_absolute_round_drift_fraction": 0.05,
+      "max_device_median_range_fraction": 0.05,
+      "max_bootstrap_ci_width_fraction": 0.03
+    }
+  },
+  "evaluation_config_contract": {
+    "activation_checkpoint": false,
+    "model_mapping": "Exact full resolved model mapping whose digest is frozen in the one-factor manifest.",
+    "dataset_num_classes": 5,
+    "eval_class_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "test_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+    "test_annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+    "test_annotation_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+    "test_random_resize": 800,
+    "random_resize_max_size": 1333,
+    "fixed_padding": true
+  },
+  "checkpoint_reuse_contract": {
+    "postprocess_only_axis": "model.num_select",
+    "reuse_source_profile": "reference",
+    "rule": "For each seed, every num_select profile must have the exact same checkpoint path and SHA256 as that seed's reference; all other non-reference profiles use their own same-seed trained checkpoint."
+  },
+  "aggregation": {
+    "allocation_endpoints": [
+      "median_ms",
+      "p95_ms",
+      "bootstrap_median_ci95_ms",
+      "robust_cv",
+      "round_median_range_ms",
+      "device_median_range_ms"
+    ],
+    "paired_effect": "candidate allocation median_ms minus the same allocation and same seed reference median_ms",
+    "paired_ci": "Deterministic seed-stratified hierarchical percentile bootstrap 95 percent CI: independently resample the three training seeds, resample the three matched allocation effects within each sampled seed, take a median within each sampled seed, then take the median across sampled seeds.",
+    "historical_noise_floor_ms": 0.73553775,
+    "new_reference_range": "For each seed, max minus min of the three reference allocation medians; take the maximum across seeds.",
+    "effective_noise_floor": "max(0.73553775, new_reference_range_ms)",
+    "support_validity_repeatability_gate": "All nine latency measurements for the level are present and valid: three matched independent allocations for each of three training seeds.",
+    "latency_effect_qualification": "Direction-agnostic. A level is qualified only when the hierarchical paired 95 percent CI is wholly below -effective_noise_floor_ms or wholly above +effective_noise_floor_ms. The former is a reliably faster effect and the latter is a reliably slower effect.",
+    "latency_reduction_qualification": "A separate annotation that is true only for a latency-effect-qualified level whose entire hierarchical paired CI is below -effective_noise_floor_ms.",
+    "accuracy_retention_annotation": "latency_mode_98pct_suitable is an independent constrained-latency annotation: every seed candidate_mAP50 >= 0.98 * same-seed reference_mAP50. It is never a gate for latency_effect_qualified or future shared multi-objective search.",
+    "future_shared_multi_objective_gate": "Use latency_effect_qualified only. Future axes and levels must never be filtered by the 98 percent retained-accuracy annotation.",
+    "audit_annotations": "Report seed-level directions, point estimates, within-allocation latency dispersion, between-allocation summaries, hierarchical CI, effect direction, and all accuracy-retention values.",
+    "fallback": "No qualification when support is incomplete, measurements are invalid, or the hierarchical CI overlaps the practical-equivalence band. No winner is selected and manual promotion is forbidden."
+  },
+  "submission_policy": {
+    "default": "dry_run",
+    "remote_verification_required_for_submission": true,
+    "checkpoint_artifact_sha256_required": true,
+    "submit_all_blocks_together": true,
+    "required_acknowledgement": "USER_AUTHORIZED_CONCURRENT_9X8GPU_SLURM_DINO_SENSITIVITY_LATENCY_V2_20260728",
+    "required_retry_acknowledgement_prefix": "USER_AUTHORIZED_FULL_14_PROFILE_BLOCK_RETRY_V2_20260728:",
+    "retry_policy": "A retry requires immutable evidence identifying the prior TAO/SLURM job and one of the frozen terminal failure/invalid-artifact reason codes. It replaces exactly one allocation in a new immutable nine-entry ledger, submits all 14 profiles in the original frozen order under one fresh TAO/SLURM job, and records the prior ledger SHA256, evidence SHA256, and replaced job identities. Partial-profile reuse is forbidden.",
+    "automatic_submission": false,
+    "submission_performed_at_preregistration": false
+  }
+}
