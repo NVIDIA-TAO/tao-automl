@@ -391,6 +391,120 @@ def test_mode_tie_breaking_is_deterministic_and_noise_aware():
     assert forward.latency.winner_id == reverse.latency.winner_id
 
 
+def test_latency_practical_tolerance_forms_tie_without_confidence_intervals():
+    analysis = analyze_archive(
+        [
+            Candidate("raw_minimum", 0.88, 10.00),
+            Candidate("higher_accuracy", 0.91, 10.50),
+        ],
+        config(latency_tolerance=0.60),
+    )
+
+    assert analysis.latency.latency_tied_candidate_ids == (
+        "higher_accuracy",
+        "raw_minimum",
+    )
+    assert analysis.latency.winner_id == "higher_accuracy"
+
+
+def test_latency_confidence_interval_overlap_forms_tie_outside_tolerance():
+    analysis = analyze_archive(
+        [
+            Candidate(
+                "raw_minimum",
+                0.88,
+                10.00,
+                extra={
+                    "latency_ci95_low": 9.90,
+                    "latency_ci95_high": 10.20,
+                },
+            ),
+            Candidate(
+                "higher_accuracy",
+                0.91,
+                10.50,
+                extra={
+                    "latency_ci95_low": 10.10,
+                    "latency_ci95_high": 10.60,
+                },
+            ),
+        ],
+        config(latency_tolerance=0.0),
+    )
+
+    assert analysis.latency.latency_tied_candidate_ids == (
+        "higher_accuracy",
+        "raw_minimum",
+    )
+    assert analysis.latency.winner_id == "higher_accuracy"
+
+
+def test_latency_tie_cohort_is_anchored_at_raw_minimum_not_chained():
+    analysis = analyze_archive(
+        [
+            Candidate("raw_minimum", 0.88, 10.00),
+            Candidate("within_anchor_tolerance", 0.90, 10.55),
+            Candidate("only_within_chained_tolerance", 0.99, 11.10),
+        ],
+        config(latency_tolerance=0.60),
+    )
+
+    assert analysis.latency.latency_tied_candidate_ids == (
+        "raw_minimum",
+        "within_anchor_tolerance",
+    )
+    assert analysis.latency.winner_id == "within_anchor_tolerance"
+
+
+def test_latency_exact_tie_uses_candidate_id_after_equal_fingerprint():
+    shared_specs = {"model": {"depth": 6}}
+    candidates = [
+        Candidate("candidate_b", 0.90, 10.0, specs=shared_specs),
+        Candidate("candidate_a", 0.90, 10.0, specs=shared_specs),
+    ]
+
+    forward = analyze_archive(candidates, config())
+    reverse = analyze_archive(reversed(candidates), config())
+
+    assert forward.latency.latency_tied_candidate_ids == (
+        "candidate_a",
+        "candidate_b",
+    )
+    assert forward.latency.winner_id == "candidate_a"
+    assert reverse.latency.winner_id == "candidate_a"
+
+
+def test_multi_objective_weights_do_not_influence_latency_selection():
+    candidates = [
+        Candidate("accuracy", 0.95, 20.0),
+        Candidate("latency", 0.90, 10.0),
+        Candidate("middle", 0.93, 14.0),
+    ]
+    selection_config = config(
+        constraint=AccuracyConstraint(kind="relative", value=0.90),
+    )
+
+    accuracy_heavy = analyze_archive(
+        candidates,
+        selection_config,
+        accuracy_weight=100.0,
+        latency_weight=1.0,
+    )
+    latency_heavy = analyze_archive(
+        reversed(candidates),
+        selection_config,
+        accuracy_weight=1.0,
+        latency_weight=100.0,
+    )
+
+    assert accuracy_heavy.latency.winner_id == "latency"
+    assert latency_heavy.latency.winner_id == "latency"
+    assert (
+        accuracy_heavy.latency.latency_tied_candidate_ids
+        == latency_heavy.latency.latency_tied_candidate_ids
+    )
+
+
 def test_overlapping_latency_intervals_do_not_make_slower_median_no_worse():
     analysis = analyze_archive(
         [
