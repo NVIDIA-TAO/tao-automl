@@ -1,8 +1,63 @@
 # DINO multi-objective phase-2 latency validation
 
-This directory preregisters a validation-only matched latency experiment for
-the six candidates on the historical global Pareto front. It does not change
-the frozen AutoML archive or feed any phase-2 value back into selection.
+This directory contains the completed DINO-only phase-2 investigation: the
+frozen historical six-candidate-front replay and latency comparison, the
+expanded 60-candidate shared archive, and the matched validation of its
+four-candidate global Pareto front. No matched-validation measurement changes
+an archive objective or feeds AutoML reselection.
+
+## Final status
+
+The expanded search completed all 60 candidates (20 recommendations for each
+of seeds `314159`, `271828`, and `161803`) with no failed or manually injected
+record. The production selectors independently chose
+`seed_271828_rec_18` for both accuracy and 98%-retained latency mode and
+`seed_271828_rec_19` for unconstrained multi-objective mode. Its global
+rank-zero front contains exactly four candidates:
+`seed_271828_rec_15`, `seed_271828_rec_18`,
+`seed_271828_rec_19`, and `seed_271828_rec_3`. This expanded front is distinct
+from the historical six-candidate front discussed below.
+
+All six post-front jobs finished as `Complete / COMPLETED / 0:0` on six
+distinct A100 nodes. Every job measured every front candidate, yielding 24/24
+valid candidate-allocation cells. The stable aggregates across the six
+matched allocations are:
+
+| Expanded-front candidate | Median latency (ms) | p95 latency (ms) |
+| --- | ---: | ---: |
+| `seed_271828_rec_3` | 52.286493 | 52.519055 |
+| `seed_271828_rec_15` | 52.298003 | 52.570566 |
+| `seed_271828_rec_19` | 57.089795 | 57.318384 |
+| `seed_271828_rec_18` | 66.496668 | 66.765354 |
+
+Under the effective preregistered pairwise rule and `0.73553775 ms` practical
+tolerance, both `rec_3` and `rec_15` are stably faster than `rec_19` and
+`rec_18`, and `rec_19` is stably faster than `rec_18`, for both median and
+p95. `rec_3` versus `rec_15` has no effective directional claim; its preserved
+bootstrap interval lies within the tolerance band. These are pairwise claims,
+not a simultaneous total order.
+
+The matched results were used only for stability analysis and the hypothesis
+verdict: the selector was not invoked on them, the selection-time objectives
+were not replaced, and no winner was overridden. The overall verdict is
+**partially supported**. `rec_19` is the algorithm-selected, stable
+global-front geometric compromise, but the actual accuracy and
+98%-constrained-latency winners coincide at `rec_18`; therefore a strict
+three-distinct-mode ordering relative to the two actual extreme winners cannot
+be demonstrated.
+
+Committed authority artifacts and whole-file SHA256 values:
+
+- `runtime/expanded_search_v2/expanded_combined_selection.json`:
+  `78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1`
+- `runtime/expanded_search_v2/expanded_candidate_table.json`:
+  `5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03`
+- `runtime/expanded_search_v2/expanded_integrity_audit.json`:
+  `a11eeeaf77bd2f289c6363133882bb78c6889205d4cb9be5f0dacf79a1bea159`
+- `post_front_matched_manifest.v1.json`:
+  `d468d5d26f607b115c7c1732966f0ac98664fd232ce83abfa6becc0ce062b7b6`
+- `runtime/post_front_matched/post_front_matched_analysis.json`:
+  `150d66fd1648c458807bdce9871313b5b17a7a33c63564f34b86156e392094b9`
 
 ## Frozen archive replay
 
@@ -199,11 +254,16 @@ runtime-only mutable ledgers below `runtime/expanded_search_v2/`, then seals one
 `expanded_combined_selection.json`, complete JSON/CSV candidate tables, and
 `expanded_integrity_audit.json`.
 
-## Design
+## Completed historical six-front matched design
 
-- Six independent SLURM jobs request one node and eight GPUs each.
-- Every job benchmarks every algorithmic final-front candidate sequentially
-  on its allocated node.
+This design and its `0.75 ms` tolerance apply only to the completed historical
+six-candidate-front comparison. The expanded four-candidate-front validation
+described in **Final status** uses the exact `0.73553775 ms` protocol-erratum
+tolerance recorded in `post_front_matched_manifest.v1.json`.
+
+- Six independent SLURM jobs requested one node and eight GPUs each.
+- Every job benchmarked every historical-front candidate sequentially on its
+  allocated node.
 - For `n` canonical candidates, the complete deterministic Williams design has
   `R` rows. Allocation `k` in `[0, 5]` uses design row
   `floor(k * R / 6)`. The manifest records the actual selected row indices,
@@ -221,10 +281,10 @@ runtime-only mutable ledgers below `runtime/expanded_search_v2/`, then seals one
   batch size one, FP32, TF32 disabled, synchronized model-forward plus DINO
   postprocessing, median-of-device-round-medians, pooled p95, and the original
   quality gates.
-- The preregistered practical-equivalence tolerance is `0.75 ms`, rounded up
-  from the historical `0.73553775 ms` independent-allocation range.
+- The historical six-front practical-equivalence tolerance was `0.75 ms`,
+  rounded up from the prior `0.73553775 ms` independent-allocation range.
 
-## Fail-closed checkpoint recovery
+## Completed historical six-front checkpoint recovery
 
 The read-only artifact audit found that phase-1 retention removed four
 historical checkpoint paths:
@@ -238,14 +298,17 @@ The exact checkpoints for `seed_271828_rec_5` and `seed_314159_rec_7` remain
 available and are SHA256-pinned. `manifest.v1.json` therefore cannot submit a
 partial matched experiment.
 
-The launcher renders four exact-config recovery jobs using the original DINO
+The launcher rendered four exact-config recovery jobs using the original DINO
 training template, candidate hyperparameters, seed `1234`, ten-epoch budget,
 eight-GPU DDP topology, dataset, PTM, SQSH, and terminal-checkpoint policy.
-These retrains are validation-only. After they complete, their checkpoints
-must be hashed and recorded in a new immutable `manifest.v2.json`; v1 is never
-edited to point at runtime outputs.
+These retrains were validation-only. Their completed checkpoints were hashed
+and recorded in the immutable `manifest.v2.json`; v1 was never edited to point
+at runtime outputs.
 
-## Commands
+## Historical six-front workflow commands
+
+These commands are retained to reproduce the completed historical
+six-candidate-front workflow; they are not the expanded four-front protocol.
 
 Structural dry-run (no credentials and no job submission):
 
@@ -270,7 +333,8 @@ set +a
   --report experiments/dino_moo_phase2_20260728/runtime/remote_preflight.json
 ```
 
-Future recovery submission, only after reviewing the dry-run report:
+Historical recovery submission command, used after reviewing the dry-run
+report:
 
 ```bash
 /localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
@@ -278,9 +342,9 @@ Future recovery submission, only after reviewing the dry-run report:
   --submit-recovery --verify-remote --acknowledge-validation-only
 ```
 
-After submission, monitor all four TAO and SLURM identities from the durable
-SDK state. This is read-only with respect to SLURM and writes only the ignored
-runtime status report:
+For a historical-workflow reproduction, monitor all four TAO and SLURM
+identities from the durable SDK state after submission. This is read-only with
+respect to SLURM and writes only the ignored runtime status report:
 
 ```bash
 cd /localhome/local-rarunachalam/tao-automl
@@ -292,7 +356,8 @@ set +a
   --status
 ```
 
-When the status report says `ready_for_manifest_v2`, create v2:
+For that reproduction, create v2 when the status report says
+`ready_for_manifest_v2`:
 
 ```bash
 /localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
@@ -308,8 +373,8 @@ evaluation-config digests, and creates `manifest.v2.json` with recovery
 provenance. It never edits v1. Repeating `--finalize` accepts byte-equivalent v2
 content and refuses to overwrite different content.
 
-Future matched-block submission requires a new manifest with all six recovered
-checkpoint digests and will fail against v1:
+Historical matched-block submission command; it requires the immutable v2
+manifest with all six recovered checkpoint digests and fails against v1:
 
 ```bash
 /localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \

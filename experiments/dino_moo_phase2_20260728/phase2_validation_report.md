@@ -1,10 +1,18 @@
 # DINO multi-objective AutoML phase-2 validation
 
-Pre-post-front protocol committed-evidence cutoff: AutoML commit
-`6850d71c2f3dea5f37505dd6831d41cb07a4d255` at
-`2026-07-28T07:13:06Z`. The corrected runtime implementation is commit
+Current sealed-evidence cutoff: AutoML commit
+`2307d86a9a2cf6c0883a977a6dfcd8e1f885ea77`. The matched analysis records
+`created_at_utc=2026-07-28T10:44:10Z`; that is the artifact creation time,
+not the commit timestamp. The corrected runtime implementation is commit
 `e4b6a412545614668affd371a82231e090998ec0`; the corrected v2 manifest was
-frozen at commit `b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d`.
+frozen at commit `b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d`; the
+60-candidate archive and algorithmic selections were sealed at
+`a6fc0bbd7947cf58b95f1c037b0513092b31a2f9`; the immutable post-front
+manifest was frozen at
+`a3099803f4a4fa7494c9564c0b6806576a203d7b`; all six post-front
+allocations were durably submitted at
+`8289d5988f55149857c8e04340c0580d470de11e`; and their complete matched
+analysis was sealed at the current evidence cutoff.
 
 The phase-two protocol erratum was issued at `2026-07-28T06:36:41Z` and
 committed at
@@ -19,25 +27,26 @@ froze the two-branch post-front inference policy before a final winner or
 post-front result could be known; it did not change an objective value,
 selection setting, search range, budget, Pareto rank, or winner.
 
-A separate committed partial-evidence snapshot through
-`2026-07-28T05:56:16Z` records rec0 and rec1 measurements. Those six records
-remain partial search evidence, not a sealed archive or selection result.
-Later partial runtime progress is deliberately outside this report's
-committed-evidence cutoff. The post-front protocol-binding implementation is
-committed at `6850d71c2f3dea5f37505dd6831d41cb07a4d255`; a future launch must
-still pass its manifest-bound clean-source and immutable-archive gates.
+The earlier six-record rec0/rec1 snapshot remains valid provenance but has
+been superseded as the report's current result by three exact 20-record seed
+archives. All 60 candidates completed successfully, no candidate was injected
+manually, and the combined selection was reproduced under archive, reverse,
+and candidate-ID order before sealing. The post-front protocol-binding
+implementation remains commit
+`6850d71c2f3dea5f37505dd6831d41cb07a4d255`; the generated manifest and
+submitted jobs passed its exact-source, immutable-archive, dataset, PTM,
+SQSH, checkpoint, and runtime gates.
 
 Scope: DINO ResNet50 only, using
 `s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/`.
 No other model family, PTM compatibility repair, or dataset is included.
 
-This is an in-progress report for MR !22. It records immutable sensitivity
-evidence, the failed-and-excluded v1 expanded execution, the corrected
-preregistered v2 contract, a fixed partial snapshot through recommendation
-one for all three search seeds, and the pre-post-front protocol erratum and
-bindings. The complete expanded archive, post-front measurements, and final
-selection remain `PENDING LIVE EVIDENCE`; no partial archive or manually
-selected value is used to fill those final sections.
+This report for MR !22 records immutable sensitivity
+evidence, the failed-and-excluded v1 execution, the complete corrected v2
+archive, the algorithm-only mode selections, the frozen four-candidate
+post-front manifest, six completed matched allocations, and the immutable
+post-front analysis. Matched results are validation-only: no matched value
+replaced a selection-time objective or altered a winner.
 
 ## Current status
 
@@ -51,21 +60,29 @@ selected value is used to fill those final sections.
 | Sensitivity-latency v2 | Complete | All 126 matched profile/allocation measurements passed validation. Encoder and decoder depth qualified; query and selection count did not. The effective tolerance is `0.73553775 ms`. |
 | Expanded-search v1 execution | Complete, invalid and excluded | Rec0 training/evaluation completed for all seeds, but the v1 reader rejected finite mAP50 JSON strings. No accepted accuracy, latency measurement, usable Bayesian response, seed archive, or combined selection exists; rec1 work was canceled during controller shutdown. |
 | Corrected expanded v2 manifest and remote preflight | Complete | Manifest whole/internal hashes are `9ac29e1a…` / `910744ae…`; its new runtime contract excludes all v1 state. Every SQSH, PTM, dataset, source, and directory check passed. |
-| Corrected expanded shared 60-candidate archive | Live; complete archive and selection **PENDING LIVE EVIDENCE** | The report retains a six-record rec0/rec1 snapshot. The protocol erratum independently records 15 successful candidates at issuance, exactly five per seed, but no seed archive was sealed and no production selector result existed. Later partial progress is not promoted into this committed protocol report. |
+| Corrected expanded shared 60-candidate archive | Complete and sealed | 60/60 successful, 20 per deterministic search seed, zero failures, zero manual injections. Accuracy and constrained-latency select `seed_271828_rec_18`; no-floor multi-objective selects `seed_271828_rec_19`. |
 | Pre-post-front protocol erratum | Complete and immutable before final selection or post-front data | Issued at `2026-07-28T06:36:41Z`, committed at `ba2cf95…`, whole-file SHA-256 `95bba650…`. It preserves the original bootstrap classification and separately makes the stricter exact-sign-flip/all-six rule authoritative for effective directional claims. |
-| Post-front hardening and protocol binding | Committed at `6850d71…`, independently re-audited, and tested; not launched | Exact deterministic manifest reconstruction closes self-rehash drift. The generator additionally binds the three exact 20-record seed archives, canonical 60-record union, candidate-table JSON semantic projection, byte-exact CSV projection, combined selection, and integrity audit. The launcher and aggregator require the exact erratum and archive snapshot. No post-front manifest can be generated before all bound inputs exist. |
-| Matched remeasurement of final Pareto front | **PENDING LIVE EVIDENCE** | No post-front manifest, SLURM allocation, or measurement exists yet. Future measurements must not replace selection-time objectives or alter the selected winner. |
-| Final combined selection and hypothesis verdict | **PENDING LIVE EVIDENCE** | No final classification is made in this draft. |
+| Post-front hardening and protocol binding | Complete and frozen | Exact reconstruction binds the three seed archives, canonical 60-record union, semantic JSON and byte-exact CSV projections, combined selection, integrity audit, four retained checkpoints, and the protocol erratum. Manifest whole/internal hashes are `d468d5d2…` / `c49eb5eb…`. |
+| Matched remeasurement of final Pareto front | Complete | Six one-node/eight-A100 jobs completed `COMPLETED/0:0`; all 24 candidate/allocation cells are valid with 4,000 samples each. Five of six median pairs have an effective stable direction; `rec_15` versus `rec_3` has no stable direction. |
+| Final combined selection | Complete and sealed | Algorithm-only winners are `seed_271828_rec_18` (accuracy), `seed_271828_rec_18` (98%-retained latency), and `seed_271828_rec_19` (multi-objective). |
+| Final hypothesis verdict | **Partially supported** | The selector found a nondominated, stable geometric compromise, but accuracy and 98%-constrained latency both select `rec_18`; therefore the multi-objective point cannot lie strictly between two distinct actual mode extremes. |
 
-The required correction to the previous conclusion is:
+The required historical correction is:
 
-> The global archive contains six rank-zero Pareto candidates. No distinct
-> Pareto compromise exists under the configured 98% multi-objective
-> accuracy-feasibility constraint.
+> The frozen historical 30-candidate archive contains six rank-zero Pareto
+> candidates. No distinct Pareto compromise exists under the configured 98%
+> multi-objective accuracy-feasibility constraint.
 
 The first sentence must not be shortened to “the archive has no intermediate
-candidate.” The global archive does contain intermediate trade-off points; the
-old shared 98% floor excluded them from multi-objective scoring.
+candidate.” The historical global archive does contain intermediate trade-off
+points; the old shared 98% floor excluded them from multi-objective scoring.
+
+That statement refers only to the historical 30-candidate archive used in
+Phase 1. The corrected expanded archive is a different, 60-candidate shared
+archive. Its global rank-zero front contains exactly four candidates:
+`seed_271828_rec_15`, `seed_271828_rec_18`,
+`seed_271828_rec_19`, and `seed_271828_rec_3`. The historical six-point
+front and expanded four-point front must not be conflated.
 
 ## 1. Root cause
 
@@ -378,6 +395,20 @@ PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PAT
 ```text
 387 passed, 1 skipped
 ```
+
+The final pre-analysis source validation at HEAD
+`8289d5988f55149857c8e04340c0580d470de11e` repeated both suites:
+
+```text
+phase-two suite: 259 passed in 2.25s
+production core: 387 passed, 1 skipped in 4.82s
+post-front tools: 4/4 compiled in memory
+git diff --check: clean
+```
+
+The core run emitted one non-failing scikit-learn warning; there were no test
+failures. Commit `2307d86a9a2cf6c0883a977a6dfcd8e1f885ea77` adds only the
+immutable analysis artifact and does not change selector or experiment code.
 
 The combined phase-two run covers the provenance-safe analysis erratum,
 immutable runtime contract, strict native-number/JSON-number-string metric
@@ -850,7 +881,7 @@ levels both establish that an axis changes inference cost. A separate
 `latency_mode_98pct_suitable` remains independent and never gates expanded
 multi-objective eligibility.
 
-If any level qualifies, the future shared search admits the axis's complete
+If any level qualifies, the expanded shared search admits the axis's complete
 preregistered domain, not only the qualified level or a result-fitted hull. If
 no axis qualifies, generation fails closed.
 
@@ -1165,87 +1196,197 @@ eight GPUs on `polar3` and runs the pinned TAO 7.0.1 PyTorch SQSH:
 
 The rec0 parameter mappings intentionally repeat under the same deterministic
 seeds; the TAO jobs, SLURM allocations, SDK databases, workspaces, and every
-future measurement are new. Parameter reproducibility is not v1 state reuse.
+subsequent measurement are new. Parameter reproducibility is not v1 state
+reuse.
 
 At the launch evidence snapshot, `sacct` reported all three as `RUNNING` with
 one node, eight allocated GPUs, partition `polar3`, and exit field `0:0`.
 That statement is retained as launch-time provenance; the same three jobs later
 completed as the rec0 training jobs reported below.
 
-#### 7.1.3 Committed partial-evidence snapshot through rec1
+#### 7.1.3 Complete corrected v2 archive and algorithm-only selection
 
-As of `2026-07-28T05:56:16Z`, rec0 and rec1 have completed successfully for
-all three deterministic search seeds. Every one of the 18 associated training,
-evaluation, and selection-time latency SLURM allocations is
-`COMPLETED/0:0`; every accepted latency record passes the frozen validity
-checks, has retry count zero, and has `launch_uncertain=false`.
+The corrected execution completed all 20 sequential Bayesian recommendations
+for each of search seeds `314159`, `271828`, and `161803`. The three seed
+archives contain exactly 60 terminal records: 60 successful, zero failed, and
+zero manually injected. Every successful row has finite mAP50 and a valid
+selection-time latency record produced by the same frozen 50-warm-up,
+five-round-by-100-iteration, eight-rank protocol. Training seed `1234`,
+dataset, PTM, SQSH, batch size, precision, input digest, and timed scope are
+identical across the archive.
 
-| Candidate | Encoder / decoder | Learning rate | Weight decay | mAP50 | Median ms | p95 ms | Bootstrap median CI95 ms |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| `seed_314159_rec_0` | 5 / 6 | 0.0002156899238307862 | 0.00010770493619675102 | 0.5719041815412683 | 74.61342325 | 74.8451050 | [74.56798700, 74.66867200] |
-| `seed_314159_rec_1` | 3 / 3 | 0.00043836528814622386 | 0.0006459840646532157 | 0.5518847844262931 | 52.39449225 | 52.6443065 | [52.32853825, 52.46170325] |
-| `seed_271828_rec_0` | 6 / 6 | 0.0000459777499171801 | 0.0006077207436969115 | 0.5140622451913158 | 79.26377375 | 79.5854720 | [79.15900350, 79.36380150] |
-| `seed_271828_rec_1` | 5 / 3 | 0.0004417551531468059 | 0.0004796687699134978 | 0.6044653164228678 | 61.82193000 | 62.0668055 | [61.79774925, 61.88626850] |
-| `seed_161803_rec_0` | 3 / 5 | 0.0002098775727573059 | 0.0006123641159628601 | 0.5305309558679956 | 60.73003050 | 61.1440695 | [60.71404825, 60.75802350] |
-| `seed_161803_rec_1` | 5 / 5 | 0.00030565624727243724 | 0.0005057619353603205 | 0.5527822169224204 | 70.18545575 | 71.2943900 | [70.12402475, 70.38869425] |
+The archive identities are:
 
-The exact job lineage is:
+| Search seed | Records | Successful | Whole-file SHA-256 | Internal archive SHA-256 |
+| ---: | ---: | ---: | --- | --- |
+| 314159 | 20 | 20 | `c8a1f937a6208ba2e9bd305a272b7a94b2269a46ef5e683d67d01596d6d5c044` | `45418f66fa435d35427725c64f7e2c58b48dbdd56397c43e3e07575185a5c424` |
+| 271828 | 20 | 20 | `a42a989ea27940ea9ae481212a75216c7f23f01602b0c260b6750c9fdb709c9e` | `eedaa0a37e49cfa86e54be15a56352e4891044856ad5db782f6a4eed464dfb36` |
+| 161803 | 20 | 20 | `0057080db477db3acd544ec360ce08b1c1c902a3d6ae820f52180f8d492109c9` | `7fe334b80f03cee36a6c5d283574cc36d8ad7ab5d098c9d2f5f1389a94240f34` |
 
-| Candidate | Training TAO / SLURM | Evaluation TAO / SLURM | Latency TAO / SLURM | Latency node |
-| --- | --- | --- | --- | --- |
-| `seed_314159_rec_0` | `fea7a910-fe49-48ef-98cd-2cfb86edcf7e` / 30955312 | `ddd196dc-a5d3-4f4e-b2d5-6c94efc62813` / 30955720 | `0e40b43d-4c9c-4fa8-ad07-550c181d60f2` / 30955882 | `batch-block7-03471` |
-| `seed_314159_rec_1` | `18b851c1-9360-46aa-a46b-53874368a999` / 30956226 | `559ac3bd-3408-4b6d-91cb-45b8efa78a2a` / 30956537 | `332346df-f363-4c07-ab76-ec809a36e05a` / 30957504 | `batch-block7-03289` |
-| `seed_271828_rec_0` | `cefd45b8-cb08-4ba3-a4f0-ca39b2d4f85d` / 30955313 | `6289c304-1a6b-40d7-a14c-28db0e9a5e08` / 30955721 | `dc0442a1-6c24-447a-adcd-e425b8f07bed` / 30955883 | `batch-block7-01955` |
-| `seed_271828_rec_1` | `ebfc2a5f-5e1a-42f9-889c-c399b7075b1f` / 30956154 | `46fbda9b-19ba-4a19-bd19-be60d1125608` / 30956572 | `0d893507-c3d8-4b69-b6f0-47bc1004c359` / 30957506 | `batch-block7-01817` |
-| `seed_161803_rec_0` | `82bd8395-4d66-40e5-836b-f6a7ec75bc61` / 30955314 | `b24a02b4-6312-457b-a83f-ef8a0f2a9af8` / 30955702 | `390fabdd-520f-4013-8094-3bfb4c71dbd5` / 30955846 | `batch-block7-00124` |
-| `seed_161803_rec_1` | `8633a6d8-4e2d-453c-be09-9c51fa31be4b` / 30956062 | `0b21e426-e94d-4f52-bcd3-8be69cfb3236` / 30956528 | `b1d21f55-5b60-4e20-adbc-3d884174079c` / 30957416 | `batch-block7-01817` |
+The production selector consumed the canonical union of those archives.
+Archive order, reverse order, and candidate-ID order produced the same
+selection signature
+`75fa7afe25d0fda3dd50b96c405434ebf52a57727cd3f04ac3bba5b006a5f11a`.
+The authority records `manual_override_used=false` and
+`candidate_reordering_used=false`.
 
-These are selection-time observations on independent, unmatched allocations.
-Their latency values must not be interpreted as allocation-stable pairwise
-advantages. Each objective pair is legitimately returned to its seed's
-sequential Bayesian brain to generate later recommendations, and every record
-states `winner_selected_during_measurement=false`. The production
-`tao_automl.selection.analyze_archive` result is unavailable until all three
-20-record archives seal and reconcile.
+The accuracy reference is
+\(A^*=0.6554138278683255\), so the frozen 98% latency threshold is
+`0.6423055513109589`. Four candidates satisfy it:
+`seed_161803_rec_14`, `seed_271828_rec_16`,
+`seed_271828_rec_18`, and `seed_314159_rec_12`. Their selection-time
+latencies all fall in the configured `0.73553775 ms` tied cohort anchored at
+the raw minimum. The deterministic higher-accuracy tie-break selects
+`seed_271828_rec_18`, which is also the accuracy winner.
 
-Recommendations 2–19 are outside this fixed detailed snapshot. The later
-protocol-erratum issuance record proves only that five candidates per seed
-were then successful; it intentionally contains no partial front, interim
-accuracy winner, interim latency winner, interim multi-objective winner,
-Pareto rank, or hypothesis conclusion. The complete 60-candidate evidence
-remains **PENDING LIVE EVIDENCE** in this report.
+Multi-objective mode has no accuracy floor, so all 60 valid candidates are
+eligible. Its front-relative bounds are:
+
+| Objective | Direction | Ideal | Nadir | Range |
+| --- | --- | ---: | ---: | ---: |
+| mAP50 | maximize | 0.6554138278683255 | 0.5398520557657904 | 0.11556177210253504 |
+| Latency ms | minimize | 52.04909275 | 66.23099475000001 | 14.181902000000008 |
+
+The expanded global rank-zero front contains exactly four points:
+
+| Candidate | Enc/dec | mAP50 | Selection-time median ms | p95 ms | Accuracy regret | Latency regret | Chebyshev score | Ideal distance | Balance gap | Winner |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `seed_271828_rec_18` | 6/3 | 0.6554138278683255 | 66.23099475000001 | 66.59742 | 0 | 1 | 0.5000005 | 0.5 | 0.5 | Accuracy and latency |
+| `seed_271828_rec_3` | 3/3 | 0.5398520557657904 | 52.04909275 | 52.27028595 | 1 | 0 | 0.5000005 | 0.5 | 0.5 | — |
+| `seed_271828_rec_15` | 3/3 | 0.5606606395568864 | 52.0782885 | 52.351142 | 0.8199354041349156 | 0.002058662512263835 | 0.40996811306449116 | 0.4099689942682333 | 0.4089383708113259 | — |
+| `seed_271828_rec_19` | 4/3 | 0.6175134981289873 | 57.146624 | 57.362506 | 0.32796597914499104 | 0.3594391817120158 | 0.1797199345585883 | 0.24328903018135456 | 0.01573660128351237 | Multi-objective |
+
+The normalized augmented-Chebyshev rule therefore selects
+`seed_271828_rec_19` without an override. Its selector-geometric
+`distinct_compromise` flag is `true`, and the audit confirms the selected
+point is nondominated. It retains `94.21734358846141%` of the accuracy
+winner and is `9.084370750000005 ms` faster by the original, unmatched
+selection-time medians. Those latency differences are not yet
+allocation-stability claims.
 
 ### 7.2 Complete expanded candidate table
 
-**PENDING LIVE EVIDENCE**
+All 60 records are successful and valid; there is no failed-candidate table.
+Training seed is `1234` for every row. `E/D` is encoder/decoder depth.
+`MAD/IQR` and all latency values are milliseconds from the original
+selection-time allocation. `L/M eligible` means latency-mode 98% feasibility
+and multi-objective feasibility. `Dby` is the exact global `dominated_by`
+list using compact `search-seed/recommendation` notation; `—` denotes global
+rank zero. Because multi-objective has no floor, its eligible Pareto rank and
+eligible `dominated_by` relationship equal the global values for every row.
+`rA`, `rL`, and `C` are normalized accuracy regret, normalized
+latency regret, and augmented-Chebyshev score. Winner flags are `A`, `L`, and
+`M`. Exact full-precision records, confidence intervals, job lineage,
+fingerprints, ideal distances, balance gaps, and mode-specific tie tuples are
+retained in `expanded_candidate_table.json` and
+`expanded_combined_selection.json`.
 
-The final table must include every successfully evaluated candidate:
-
-- candidate ID and full relevant parameter mapping;
-- search seed and training seed;
-- mAP50;
-- original selection-time median and p95 latency;
-- within-allocation and between-allocation variability fields;
-- latency-mode feasibility;
-- multi-objective eligibility;
-- global and eligible Pareto ranks;
-- exact `dominated_by` relationships;
-- normalized accuracy and latency regrets;
-- augmented-Chebyshev score;
-- ideal distance and balance gap;
-- all tie-breaking values;
-- accuracy, latency, and multi-objective winner flags.
-
-Failed, missing, NaN, or infinite candidates must be listed separately and
-must not enter ranking.
+| Candidate | E/D | Learning rate | Weight decay | mAP50 | Median | p95 | MAD / IQR | L/M eligible | Rank | Dby | rA | rL | C | Winner |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: | --- | ---: | ---: | ---: | --- |
+| `seed_161803_rec_0` | 3/5 | 0.0002098775727573059 | 0.0006123641159628601 | 0.5305309558679956 | 60.7300305 | 61.1440695 | 0.0832215000000005 / 0.24712874999999457 | N/Y | 5 | 161803/12, 161803/15, 161803/18, 161803/3, 161803/5, 271828/10, 271828/15, 271828/19, 271828/3, 271828/5, 271828/6, 271828/9, 314159/1, 314159/10, 314159/9 | 1.0806590252832438 | 0.6121137876992799 | 0.5403303590280284 | — |
+| `seed_161803_rec_1` | 5/5 | 0.00030565624727243724 | 0.0005057619353603205 | 0.5527822169224204 | 70.18545575 | 71.29438999999999 | 0.13810249999999513 / 0.34892924999999764 | N/Y | 7 | 161803/11, 161803/12, 161803/14, 161803/15, 161803/3, 161803/6, 161803/8, 161803/9, 271828/1, 271828/10, 271828/12, 271828/13, 271828/15, 271828/16, 271828/17, 271828/18, 271828/19, 271828/6, 271828/8, 314159/12, 314159/17, 314159/18, 314159/19, 314159/4, 314159/7, 314159/9 | 0.8881103939358309 | 1.2788385507106164 | 0.6394203588297805 | — |
+| `seed_161803_rec_10` | 6/3 | 1.1000000000000001e-05 | 1.1000000000000001e-05 | 0.3857981269205332 | 66.59312150000001 | 66.73719344999999 | 0.07733699999999999 / 0.1569314999999989 | N/Y | 10 | 161803/0, 161803/11, 161803/12, 161803/14, 161803/15, 161803/17, 161803/18, 161803/2, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 161803/9, 271828/1, 271828/10, 271828/11, 271828/12, 271828/15, 271828/17, 271828/18, 271828/19, 271828/3, 271828/5, 271828/6, 271828/7, 271828/8, 271828/9, 314159/1, 314159/10, 314159/13, 314159/15, 314159/16, 314159/17, 314159/18, 314159/19, 314159/2, 314159/6, 314159/7, 314159/8, 314159/9 | 2.333087283470948 | 1.0255344276106266 | 1.1665453210463295 | — |
+| `seed_161803_rec_11` | 5/3 | 0.0002684985944234011 | 0.0009485964192103246 | 0.5984845568353709 | 61.89238125 | 62.149561049999996 | 0.09910775000000172 / 0.207902500000003 | N/Y | 2 | 271828/1, 271828/19, 271828/6 | 0.4926306510983808 | 0.6940739331014976 | 0.34703755990304086 | — |
+| `seed_161803_rec_12` | 3/5 | 0.00024962684684468685 | 0.0006066305410362497 | 0.5607754726645933 | 60.51118675 | 60.7231585 | 0.0989015000000002 / 0.20061400000000162 | N/Y | 4 | 161803/3, 271828/19, 271828/6, 314159/9 | 0.818941709545281 | 0.5966825888375196 | 0.4094715625847897 | — |
+| `seed_161803_rec_13` | 3/6 | 1.1000000000000001e-05 | 0.00012679359566591052 | 0.3050856249448289 | 65.24652825 | 65.519609 | 0.11789475000000493 / 0.23935849999999448 | N/Y | 9 | 161803/0, 161803/11, 161803/12, 161803/15, 161803/17, 161803/18, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 161803/9, 271828/1, 271828/10, 271828/12, 271828/15, 271828/17, 271828/19, 271828/3, 271828/5, 271828/6, 271828/7, 271828/9, 314159/1, 314159/10, 314159/13, 314159/15, 314159/16, 314159/6, 314159/8, 314159/9 | 3.0315232844703974 | 0.9305829006574711 | 1.5157636232882912 | — |
+| `seed_161803_rec_14` | 6/3 | 0.00045 | 0.0007784663668118407 | 0.6503731411565659 | 66.58940949999999 | 66.9217075 | 0.09126249999999914 / 0.18958050000000526 | Y/Y | 1 | 271828/18 | 0.043618980741201664 | 1.0252726855678442 | 0.5126368772297553 | — |
+| `seed_161803_rec_15` | 3/3 | 0.0004662258975438763 | 0.0004027148908248362 | 0.5585657123145856 | 52.325866250000004 | 52.529766550000005 | 0.08674200000000098 / 0.16722749999999564 | N/Y | 1 | 271828/15 | 0.8380636069496145 | 0.019515964783849465 | 0.4190322322645931 | — |
+| `seed_161803_rec_16` | 3/4 | 1.1000000000000001e-05 | 0.0005887444947583944 | 0.24516113032364692 | 56.46002675 | 56.80340455 | 0.09855674999999664 / 0.19451249999999476 | N/Y | 6 | 161803/15, 161803/17, 161803/18, 161803/5, 161803/7, 271828/10, 271828/15, 271828/3, 271828/5, 271828/9, 314159/1, 314159/10, 314159/16 | 3.550072745342393 | 0.3110255591950921 | 1.7750383032203487 | — |
+| `seed_161803_rec_17` | 3/3 | 0.0004137239694774212 | 0.0004155351609850492 | 0.5189410586254114 | 52.06582875 | 52.34656345 | 0.06829600000000013 / 0.1454854999999995 | N/Y | 1 | 271828/3 | 1.1809508175577754 | 0.0011800955894351569 | 0.5904759998443443 | — |
+| `seed_161803_rec_18` | 3/3 | 0.0003230696641703003 | 0.0009401130670142016 | 0.5481507932869331 | 52.13929525 | 52.3762605 | 0.1054797500000042 / 0.2195315000000022 | N/Y | 1 | 271828/15 | 0.9281878655012371 | 0.006360395100742037 | 0.46409440002474883 | — |
+| `seed_161803_rec_19` | 6/6 | 0.00017589779877069415 | 0.0006023857870527973 | 0.5880638351234523 | 79.37313775 | 79.663423 | 0.07717225000000383 / 0.15934024999999963 | N/Y | 4 | 161803/11, 161803/14, 271828/1, 271828/12, 271828/13, 271828/16, 271828/18, 271828/19, 271828/6, 271828/8, 314159/11, 314159/12, 314159/17, 314159/18, 314159/4, 314159/5, 314159/7 | 0.5828051224856196 | 1.926684093572215 | 0.9633433015307155 | — |
+| `seed_161803_rec_2` | 4/5 | 0.00011443965835046119 | 0.0008389293930662631 | 0.5146082114188394 | 65.5497615 | 65.96043750000001 | 0.1298180000000002 / 0.35155474999999115 | N/Y | 7 | 161803/0, 161803/11, 161803/12, 161803/15, 161803/17, 161803/18, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 161803/9, 271828/1, 271828/10, 271828/12, 271828/15, 271828/17, 271828/19, 271828/3, 271828/5, 271828/6, 271828/9, 314159/1, 314159/10, 314159/13, 314159/16, 314159/9 | 1.2184445936373562 | 0.9519646060168795 | 0.609223382023278 | — |
+| `seed_161803_rec_3` | 4/3 | 0.00024240840108533996 | 1.1000000000000001e-05 | 0.585087593426202 | 57.24132175 | 57.445274950000005 | 0.09651700000000218 / 0.19750125000000196 | N/Y | 2 | 271828/19, 271828/6 | 0.6085596747315782 | 0.3661165476957882 | 0.3042803247039003 | — |
+| `seed_161803_rec_4` | 3/5 | 0.0003556288785750765 | 1.1000000000000001e-05 | 0.530571016563574 | 61.2095875 | 61.69216195 | 0.11362349999999921 / 0.23820849999999893 | N/Y | 5 | 161803/12, 161803/15, 161803/18, 161803/3, 161803/5, 271828/10, 271828/15, 271828/19, 271828/3, 271828/5, 271828/6, 271828/9, 314159/1, 314159/10, 314159/9 | 1.0803123648361987 | 0.6459285045122998 | 0.540157045538534 | — |
+| `seed_161803_rec_5` | 3/3 | 0.00045 | 0.0007152414221498921 | 0.5335163241008113 | 52.287032499999995 | 53.0490875 | 0.14563950000000503 / 0.28957600000000383 | N/Y | 4 | 161803/18, 271828/10, 271828/15, 271828/3, 271828/5, 271828/9 | 1.0548254976512268 | 0.01677770372408406 | 0.527413284627214 | — |
+| `seed_161803_rec_6` | 6/3 | 0.00012479149198942115 | 0.00018314874110030832 | 0.5712836532478843 | 66.61979275 | 67.00445495000001 | 0.09688649999999654 / 0.1914665000000042 | N/Y | 6 | 161803/11, 161803/14, 161803/3, 161803/8, 271828/1, 271828/12, 271828/17, 271828/18, 271828/19, 271828/6, 271828/8, 314159/17, 314159/18, 314159/19, 314159/7, 314159/9 | 0.7280104232547989 | 1.0274150815595817 | 0.5137084184925432 | — |
+| `seed_161803_rec_7` | 3/3 | 0.00041193916379915263 | 0.0002822306155890354 | 0.5298053616731744 | 52.33808325 | 52.501121049999995 | 0.09205275000000412 / 0.24800000000000466 | N/Y | 5 | 161803/15, 161803/18, 161803/5, 271828/10, 271828/15, 271828/3, 271828/5, 271828/9, 314159/10 | 1.0869378680321886 | 0.020377414820663468 | 0.5434694876737357 | — |
+| `seed_161803_rec_8` | 4/4 | 0.00045 | 0.0007280636459500239 | 0.580870432307355 | 61.2660045 | 61.54148905 | 0.16006399999999843 / 0.3210045000000008 | N/Y | 3 | 161803/3, 271828/19, 271828/6 | 0.6450523750607595 | 0.6499066027955909 | 0.32495394887728435 | — |
+| `seed_161803_rec_9` | 3/6 | 0.00045 | 6.930370367983633e-05 | 0.5542465901400749 | 64.86551850000001 | 65.102609 | 0.07949649999999764 / 0.1579940000000022 | N/Y | 5 | 161803/11, 161803/12, 161803/15, 161803/3, 161803/8, 271828/1, 271828/10, 271828/12, 271828/15, 271828/17, 271828/19, 271828/6, 314159/9 | 0.8754386151026431 | 0.9037169873265236 | 0.451859383241063 | — |
+| `seed_271828_rec_0` | 6/6 | 4.59777499171801e-05 | 0.0006077207436969115 | 0.5140622451913158 | 79.26377375000001 | 79.58547200000001 | 0.15291124999998118 / 0.3221730000000065 | N/Y | 10 | 161803/0, 161803/1, 161803/11, 161803/12, 161803/14, 161803/15, 161803/17, 161803/18, 161803/2, 161803/3, 161803/4, 161803/5, 161803/6, 161803/7, 161803/8, 161803/9, 271828/1, 271828/10, 271828/12, 271828/13, 271828/15, 271828/16, 271828/17, 271828/18, 271828/19, 271828/2, 271828/3, 271828/4, 271828/5, 271828/6, 271828/8, 271828/9, 314159/0, 314159/1, 314159/10, 314159/11, 314159/12, 314159/13, 314159/14, 314159/16, 314159/17, 314159/18, 314159/19, 314159/4, 314159/5, 314159/7, 314159/9 | 1.2231690472139174 | 1.9189725750467037 | 0.959487858594163 | — |
+| `seed_271828_rec_1` | 5/3 | 0.0004417551531468059 | 0.0004796687699134978 | 0.6044653164228678 | 61.82193 | 62.0668055 | 0.08563599999999738 / 0.16950549999999964 | N/Y | 1 | 271828/19 | 0.440876861945768 | 0.6891062461156477 | 0.3445536880493779 | — |
+| `seed_271828_rec_10` | 3/3 | 0.00045 | 1.1000000000000001e-05 | 0.5557698152865863 | 52.26119725 | 52.491550049999994 | 0.12237349999999836 / 0.24458775000000088 | N/Y | 1 | 271828/15 | 0.8622575681283906 | 0.01495599814467779 | 0.4311292226709784 | — |
+| `seed_271828_rec_11` | 3/6 | 0.00045 | 1.1000000000000001e-05 | 0.5131015716735464 | 65.43014475000001 | 65.700018 | 0.1268024999999966 / 0.25446175000000437 | N/Y | 7 | 161803/0, 161803/11, 161803/12, 161803/15, 161803/17, 161803/18, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 161803/9, 271828/1, 271828/10, 271828/12, 271828/15, 271828/17, 271828/19, 271828/3, 271828/5, 271828/6, 271828/9, 314159/1, 314159/10, 314159/13, 314159/16, 314159/9 | 1.2314821208220048 | 0.9435301414436514 | 0.6157421479171336 | — |
+| `seed_271828_rec_12` | 5/3 | 0.00045 | 0.0009 | 0.5924694360231197 | 61.770416749999995 | 61.930805 | 0.06519600000000025 / 0.13096399999999875 | N/Y | 2 | 271828/19, 271828/6 | 0.5446817810076221 | 0.685473923032326 | 0.34273757659401505 | — |
+| `seed_271828_rec_13` | 6/3 | 0.0003409813457951682 | 0.00037590573325465534 | 0.6388208734864198 | 66.6654645 | 66.9667695 | 0.10486700000000582 / 0.20982474999999567 | N/Y | 2 | 161803/14, 271828/18 | 0.14358515000257316 | 1.030635506436301 | 0.5153183403284788 | — |
+| `seed_271828_rec_14` | 6/6 | 0.00045 | 0.0009 | 0.5790024762594287 | 79.4215175 | 79.70750505 | 0.08426100000000503 / 0.17125799999999458 | N/Y | 5 | 161803/11, 161803/14, 161803/19, 161803/3, 161803/8, 271828/1, 271828/12, 271828/13, 271828/16, 271828/17, 271828/18, 271828/19, 271828/6, 271828/8, 314159/11, 314159/12, 314159/14, 314159/17, 314159/18, 314159/4, 314159/5, 314159/7, 314159/9 | 0.6612165097390418 | 1.9300954660383338 | 0.9650490286751549 | — |
+| `seed_271828_rec_15` | 3/3 | 0.0004560144015085677 | 0.0008350193861096457 | 0.5606606395568864 | 52.0782885 | 52.351142 | 0.07303750000000164 / 0.15044174999999882 | N/Y | 0 | — | 0.8199354041349156 | 0.002058662512263835 | 0.40996811306449116 | — |
+| `seed_271828_rec_16` | 6/3 | 0.0003007572504594793 | 1.1000000000000001e-05 | 0.6544218576499151 | 66.82186425 | 67.0504435 | 0.10689974999999663 / 0.20638999999999896 | Y/Y | 1 | 271828/18 | 0.008583895871120805 | 1.0416636287572707 | 0.5208323395023977 | — |
+| `seed_271828_rec_17` | 5/3 | 0.00045 | 1.1000000000000001e-05 | 0.5803046876147155 | 61.61185975 | 61.8523905 | 0.10302649999999858 / 0.20704899999999782 | N/Y | 4 | 161803/3, 161803/8, 271828/19, 271828/6, 314159/9 | 0.6499479792241978 | 0.6742936878283319 | 0.3371475060349995 | — |
+| `seed_271828_rec_18` | 6/3 | 0.00045 | 0.0001962863874708991 | 0.6554138278683255 | 66.23099475000001 | 66.59742 | 0.11910974999999269 / 0.24108624999999506 | Y/Y | 0 | — | 0 | 1 | 0.5000005 | AL |
+| `seed_271828_rec_19` | 4/3 | 0.00045 | 0.0006630648780334237 | 0.6175134981289873 | 57.146624 | 57.362505999999996 | 0.08395600000000059 / 0.16272475000000242 | N/Y | 0 | — | 0.32796597914499104 | 0.3594391817120158 | 0.1797199345585883 | M |
+| `seed_271828_rec_2` | 6/4 | 4.507647103898838e-05 | 0.0005017054111366341 | 0.5173866525337586 | 70.62054175 | 71.07720145 | 0.08689425000000028 / 0.2565385000000049 | N/Y | 9 | 161803/0, 161803/1, 161803/11, 161803/12, 161803/14, 161803/15, 161803/17, 161803/18, 161803/3, 161803/4, 161803/5, 161803/6, 161803/7, 161803/8, 161803/9, 271828/1, 271828/10, 271828/12, 271828/13, 271828/15, 271828/16, 271828/17, 271828/18, 271828/19, 271828/3, 271828/4, 271828/5, 271828/6, 271828/8, 271828/9, 314159/1, 314159/10, 314159/12, 314159/13, 314159/14, 314159/16, 314159/17, 314159/18, 314159/19, 314159/4, 314159/7, 314159/9 | 1.194401685118664 | 1.309517510415739 | 0.6547600071674673 | — |
+| `seed_271828_rec_3` | 3/3 | 0.00026554662395385974 | 1.0000000000000028e-05 | 0.5398520557657904 | 52.04909275 | 52.27028595 | 0.09033925000000309 / 0.17970150000000018 | N/Y | 0 | — | 1 | 0 | 0.5000005 | — |
+| `seed_271828_rec_4` | 4/6 | 0.00034936912534309716 | 0.0009371413334568777 | 0.5404276745153964 | 70.20810449999999 | 70.7079505 | 0.19523500000000382 / 0.37427824999998904 | N/Y | 8 | 161803/1, 161803/11, 161803/12, 161803/14, 161803/15, 161803/18, 161803/3, 161803/6, 161803/8, 161803/9, 271828/1, 271828/10, 271828/12, 271828/13, 271828/15, 271828/16, 271828/17, 271828/18, 271828/19, 271828/5, 271828/6, 271828/8, 314159/1, 314159/12, 314159/17, 314159/18, 314159/19, 314159/4, 314159/7, 314159/9 | 0.9950189518632921 | 1.2804355685154205 | 0.6402189219849704 | — |
+| `seed_271828_rec_5` | 3/3 | 0.00045 | 0.0007030726224609912 | 0.5468671109871244 | 52.2364525 | 52.41068155 | 0.06547649999999905 / 0.1277900000000045 | N/Y | 2 | 161803/18, 271828/15 | 0.9392960570463591 | 0.013211186341578071 | 0.46964850477680126 | — |
+| `seed_271828_rec_6` | 4/3 | 0.000487310659095131 | 0.0009 | 0.6000121414379619 | 57.17349525 | 57.37278405 | 0.0828967500000033 / 0.1657094999999984 | N/Y | 1 | 271828/19 | 0.47941188009134256 | 0.36133393814172454 | 0.2397063604185804 | — |
+| `seed_271828_rec_7` | 3/5 | 0.0002185219497797617 | 0.0009 | 0.5079375458862916 | 60.769151750000006 | 60.9531745 | 0.07911599999999908 / 0.15768299999999869 | N/Y | 6 | 161803/0, 161803/12, 161803/15, 161803/17, 161803/18, 161803/3, 161803/5, 161803/7, 271828/10, 271828/15, 271828/19, 271828/3, 271828/5, 271828/6, 271828/9, 314159/1, 314159/10, 314159/16, 314159/9 | 1.2761684015297197 | 0.6148723210751281 | 0.6380851462852212 | — |
+| `seed_271828_rec_8` | 6/3 | 0.00045 | 0.0006547724796069428 | 0.6278092014414639 | 66.41633275000001 | 66.71847199999999 | 0.11313299999999771 / 0.23333000000000936 | N/Y | 1 | 271828/18 | 0.23887333955357382 | 1.0130686278892636 | 0.5065349399156155 | — |
+| `seed_271828_rec_9` | 3/3 | 0.0003547109372725832 | 0.0009 | 0.5369294997159904 | 52.24879825 | 52.5572445 | 0.07337174999999974 / 0.1550745000000049 | N/Y | 3 | 161803/18, 271828/15, 271828/3, 271828/5 | 1.0252899899043342 | 0.01408171485037763 | 0.5126455146380194 | — |
+| `seed_314159_rec_0` | 5/6 | 0.0002156899238307862 | 0.00010770493619675102 | 0.5719041815412683 | 74.61342325 | 74.845105 | 0.10082200000000086 / 0.20654225000001247 | N/Y | 6 | 161803/11, 161803/14, 161803/3, 161803/8, 271828/1, 271828/12, 271828/13, 271828/16, 271828/17, 271828/18, 271828/19, 271828/6, 271828/8, 314159/12, 314159/14, 314159/17, 314159/18, 314159/19, 314159/4, 314159/5, 314159/7, 314159/9 | 0.7226407557419693 | 1.5910651829352638 | 0.7955337483206012 | — |
+| `seed_314159_rec_1` | 3/3 | 0.00043836528814622386 | 0.0006459840646532157 | 0.5518847844262931 | 52.39449225 | 52.644306500000006 | 0.10309200000000018 / 0.21644750000000101 | N/Y | 2 | 161803/15, 271828/10, 271828/15 | 0.8958762189123726 | 0.024354949004724402 | 0.44793856957177025 | — |
+| `seed_314159_rec_10` | 3/3 | 0.0003730086950927352 | 0.0009 | 0.5401583561434012 | 52.33108725 | 52.54840105 | 0.07142250000000061 / 0.1573940000000036 | N/Y | 3 | 161803/15, 161803/18, 271828/10, 271828/15, 271828/5 | 0.9973494662461645 | 0.01988411004391393 | 0.4986752417398704 | — |
+| `seed_314159_rec_11` | 6/6 | 0.00045 | 0.0001417474630742632 | 0.6107135016797408 | 79.24220374999999 | 79.7769715 | 0.10983024999998747 / 0.29966800000001115 | N/Y | 3 | 161803/14, 271828/13, 271828/16, 271828/18, 271828/19, 271828/8, 314159/12, 314159/17, 314159/7 | 0.38680893668646055 | 1.91745162249746 | 0.9587269633790096 | — |
+| `seed_314159_rec_12` | 6/3 | 0.00043650890201375357 | 0.0007144522744519978 | 0.6517250365478822 | 66.68512100000001 | 66.85309749999999 | 0.09715300000000582 / 0.20530825000000164 | Y/Y | 1 | 271828/18 | 0.0319205153514809 | 1.0320215335009366 | 0.5160112987214928 | — |
+| `seed_314159_rec_13` | 5/3 | 9.951633448884923e-05 | 0.00021720818950386837 | 0.5279527217020306 | 61.709461000000005 | 62.01156745 | 0.08581099999999964 / 0.18800625000000082 | N/Y | 6 | 161803/0, 161803/12, 161803/15, 161803/18, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 271828/10, 271828/15, 271828/17, 271828/19, 271828/3, 271828/5, 271828/6, 271828/9, 314159/1, 314159/10, 314159/9 | 1.1029694668683507 | 0.6811757865764408 | 0.5514856255068021 | — |
+| `seed_314159_rec_14` | 5/5 | 0.0002541354639251281 | 9.510630067968789e-05 | 0.5814514222600689 | 70.5209285 | 70.87765645 | 0.14011400000000407 / 0.3224689999999839 | N/Y | 4 | 161803/11, 161803/14, 161803/3, 271828/1, 271828/12, 271828/13, 271828/16, 271828/18, 271828/19, 271828/6, 271828/8, 314159/12, 314159/17, 314159/18, 314159/4, 314159/7 | 0.6400248478591315 | 1.3024935407112521 | 0.6512477416148204 | — |
+| `seed_314159_rec_15` | 3/6 | 0.00010198882389846422 | 0.0003555956199915227 | 0.45750983920686134 | 65.063861 | 65.5891855 | 0.10266200000000225 / 0.2381835000000052 | N/Y | 8 | 161803/0, 161803/11, 161803/12, 161803/15, 161803/17, 161803/18, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 161803/9, 271828/1, 271828/10, 271828/12, 271828/15, 271828/17, 271828/19, 271828/3, 271828/5, 271828/6, 271828/7, 271828/9, 314159/1, 314159/10, 314159/13, 314159/16, 314159/6, 314159/9 | 1.7125385416023988 | 0.9177025937705673 | 0.8562705859217671 | — |
+| `seed_314159_rec_16` | 3/3 | 0.00016848785957376196 | 0.0009 | 0.5241677080073948 | 52.203284 | 52.4420115 | 0.0841214999999984 / 0.16747474999999667 | N/Y | 2 | 161803/18, 271828/15, 271828/3 | 1.135722631048608 | 0.010872395677250948 | 0.5678618888218173 | — |
+| `seed_314159_rec_17` | 6/3 | 0.0003213304064567958 | 0.0007597966799758081 | 0.6316439030814589 | 66.5648545 | 66.84640005 | 0.11709400000000159 / 0.23245674999999721 | N/Y | 1 | 271828/18 | 0.20569020666952142 | 1.02354125349336 | 0.51177124136241 | — |
+| `seed_314159_rec_18` | 6/3 | 0.00045 | 1.1000000000000001e-05 | 0.600109443334249 | 66.53805125 | 66.71788005 | 0.08662749999999875 / 0.18285975000000576 | N/Y | 2 | 271828/1, 271828/18, 271828/19, 271828/8 | 0.4785698897469858 | 1.0216512919071072 | 0.5108263960641445 | — |
+| `seed_314159_rec_19` | 5/4 | 0.00045 | 0.0009 | 0.5775982731731624 | 65.83171675 | 66.11465899999999 | 0.09055099999999783 / 0.20336799999998334 | N/Y | 5 | 161803/11, 161803/3, 161803/8, 271828/1, 271828/12, 271828/17, 271828/19, 271828/6, 314159/9 | 0.673367613522916 | 0.971845948448945 | 0.4859237968312535 | — |
+| `seed_314159_rec_2` | 5/4 | 2.444984531245279e-05 | 0.0001416271774474263 | 0.4556483434840066 | 65.91049724999999 | 66.1223085 | 0.09315699999999794 / 0.18581974999999318 | N/Y | 9 | 161803/0, 161803/11, 161803/12, 161803/15, 161803/17, 161803/18, 161803/2, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 161803/9, 271828/1, 271828/10, 271828/11, 271828/12, 271828/15, 271828/17, 271828/19, 271828/3, 271828/5, 271828/6, 271828/7, 271828/9, 314159/1, 314159/10, 314159/13, 314159/15, 314159/16, 314159/19, 314159/6, 314159/8, 314159/9 | 1.7286467726288584 | 0.9774009508738661 | 0.8643247393382909 | — |
+| `seed_314159_rec_3` | 6/6 | 0.00042331502060985004 | 0.0005537484468632733 | 0.5970032852425997 | 79.80455425 | 80.1799975 | 0.16350200000000115 / 0.3344942500000059 | N/Y | 4 | 161803/11, 161803/14, 271828/1, 271828/13, 271828/16, 271828/18, 271828/19, 271828/6, 271828/8, 314159/11, 314159/12, 314159/17, 314159/18, 314159/5, 314159/7 | 0.5054486580034404 | 1.9571043080117165 | 0.9785533852823413 | — |
+| `seed_314159_rec_4` | 4/6 | 0.00028470234945640816 | 0.00015117546987152063 | 0.5884661300517811 | 70.0168475 | 70.2715625 | 0.090722999999997 / 0.18618574999999282 | N/Y | 3 | 161803/11, 161803/14, 271828/1, 271828/12, 271828/13, 271828/16, 271828/18, 271828/19, 271828/6, 271828/8, 314159/12, 314159/17, 314159/18, 314159/7 | 0.5793239113462487 | 1.2669495777082642 | 0.6334757119908766 | — |
+| `seed_314159_rec_5` | 6/4 | 0.0003255265920347484 | 0.000175988605139262 | 0.5987692227100141 | 70.88016575 | 71.137551 | 0.14601900000000256 / 0.2804220000000015 | N/Y | 3 | 161803/14, 271828/1, 271828/13, 271828/16, 271828/18, 271828/19, 271828/6, 271828/8, 314159/12, 314159/17, 314159/18, 314159/7 | 0.49016732893341275 | 1.3278242227311958 | 0.6639130203613738 | — |
+| `seed_314159_rec_6` | 4/4 | 6.964454566985233e-05 | 0.0009 | 0.4967856675409136 | 61.562906749999996 | 61.762082 | 0.07900049999999936 / 0.15562924999999694 | N/Y | 7 | 161803/0, 161803/12, 161803/15, 161803/17, 161803/18, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 271828/10, 271828/15, 271828/19, 271828/3, 271828/5, 271828/6, 271828/7, 271828/9, 314159/1, 314159/10, 314159/16, 314159/9 | 1.3726698495646565 | 0.6708418941267533 | 0.6863359465382001 | — |
+| `seed_314159_rec_7` | 6/3 | 0.00045 | 0.00043930511913497345 | 0.6300270529757901 | 66.58953225 | 66.800954 | 0.1075025000000025 / 0.21441724999999678 | N/Y | 2 | 161803/14, 271828/18, 314159/17 | 0.21968142605160412 | 1.0252813409654076 | 0.5126412929640873 | — |
+| `seed_314159_rec_8` | 3/6 | 0.0001987779698535635 | 7.772603220386812e-05 | 0.4565118130625365 | 64.66067225 | 64.82202844999999 | 0.05224650000000253 / 0.10625149999999906 | N/Y | 8 | 161803/0, 161803/11, 161803/12, 161803/15, 161803/17, 161803/18, 161803/3, 161803/4, 161803/5, 161803/7, 161803/8, 271828/1, 271828/10, 271828/12, 271828/15, 271828/17, 271828/19, 271828/3, 271828/5, 271828/6, 271828/7, 271828/9, 314159/1, 314159/10, 314159/13, 314159/16, 314159/6, 314159/9 | 1.7211748417055097 | 0.8892727858364835 | 0.8605887260765687 | — |
+| `seed_314159_rec_9` | 4/3 | 0.00045 | 0.0009262898467818477 | 0.5805845050638105 | 57.31344675 | 57.4978615 | 0.07946699999999751 / 0.15983650000000438 | N/Y | 3 | 161803/3, 271828/19, 271828/6 | 0.6475266123309424 | 0.3712022548174423 | 0.3237638155299048 | — |
 
 ### 7.3 Final Pareto-front matched remeasurement
 
-**PENDING LIVE EVIDENCE**
+The immutable manifest contains every and only expanded global-rank-zero
+candidate: `seed_271828_rec_15`, `seed_271828_rec_18`,
+`seed_271828_rec_19`, and `seed_271828_rec_3`. Its whole-file SHA-256 is
+`d468d5d26f607b115c7c1732966f0ac98664fd232ce83abfa6becc0ce062b7b6`;
+its internal manifest hash is
+`c49eb5ebc694c991164ab74d9d90b9f700cf56e63efc852b6a6d9e6ff8b5701c`;
+candidate-set SHA-256 is
+`b19e3be3e99d3bee0c0180e567dfd608dcfdf94a50975df73fc89b7c55075a44`;
+and schedule SHA-256 is
+`ec53c4e5088201d10eb65270511180a274d1aa4c9746cf6c51097b15d17c2cb9`.
 
-No final-front manifest, launch ledger, allocation, or measurement exists yet.
-The following is the completed, tested implementation contract, not an
-experimental result.
+The six-allocation ledger was committed at
+`8289d5988f55149857c8e04340c0580d470de11e`. Its whole-file/internal
+SHA-256 values are
+`356b6dbcdd21fd036b8a8034a82b57e7aaa9a1521f963c13c807e67331e19dcc`
+and
+`b042435b7f236e8bed9a644e23cdee75d5b0682e5563fb64ab3a031ad988ba4a`.
+Every submission has retry count zero, `launch_uncertain=false`, and
+`feeds_reselection=false`.
+
+Two earlier launch attempts failed contract checks before SDK submission—one
+for a report-path mismatch and one for missing
+`SLURM_BASE_RESULTS_DIR`—and created no TAO or SLURM job. The successful
+submission used zero-delta resume against the exact zero-submission ledger
+SHA-256
+`a8fa28d9fe0b5dc6959f8e5e9984fa193c60d27caee29a725d5bd395d9c3acf0`;
+this reconciled absence before creating exactly the six jobs below.
+
+| Allocation | Williams row | TAO job | SLURM job | Node | Terminal state |
+| --- | ---: | --- | ---: | --- | --- |
+| `post_front_allocation_00` | 0 | `59e9a8f6-2c19-4b4e-aec5-0773994e6b09` | 30977076 | `batch-block7-03289` | `Complete / COMPLETED / 0:0` |
+| `post_front_allocation_01` | 0 | `364a88a4-40ae-47bb-8d27-6824f66c0359` | 30977080 | `batch-block7-02986` | `Complete / COMPLETED / 0:0` |
+| `post_front_allocation_02` | 1 | `1a30085b-3296-46b7-b978-955cf7ce5ceb` | 30977182 | `batch-block7-03411` | `Complete / COMPLETED / 0:0` |
+| `post_front_allocation_03` | 2 | `46a40c08-595e-4c71-a031-9f07120adf15` | 30977183 | `batch-block7-01850` | `Complete / COMPLETED / 0:0` |
+| `post_front_allocation_04` | 2 | `e78d2027-b184-4c4d-bc30-a362bdfc0f72` | 30977185 | `batch-block7-00255` | `Complete / COMPLETED / 0:0` |
+| `post_front_allocation_05` | 3 | `cfd65414-1705-436d-9ada-c3e4892b63ea` | 30977187 | `batch-block7-01833` | `Complete / COMPLETED / 0:0` |
+
+All 24 candidate/allocation cells passed validation. Each cell contains eight
+rank files and 4,000 timed samples; the complete analysis binds 198 raw input
+artifacts under inventory SHA-256
+`65c16462bb1f235150ee6be2c9ead6a145ad2eb95131d00d7c27293e9414aa67`.
 
 The implementation snapshot audited for this report is:
 
@@ -1263,18 +1404,16 @@ The implementation snapshot audited for this report is:
 | `test_post_front_matched_launcher_recovery.py` | `8f020f7a36222ac240830f9b3bb61984e80e4ea65c8c344de498062b4daecae4` |
 | `test_post_front_complete_invalid_recovery.py` | `6d1082d30d23db286953c310e7ba7dacdb135b3221be88c077f26cbb5e24aebe` |
 
-These are tracked, committed identities, but they do not by themselves
-authorize a launch. The manifest generator intentionally refuses to create
-the future immutable post-front manifest until the expanded archive and all
-source inputs are complete.
+These tracked identities were reconstructed exactly during generation,
+launch, and aggregation.
 
 The protocol erratum's issuance state is itself part of the authority. It
 records 15 successful candidates (five per seed), no completed union
 selection, no known or used final Pareto front, and zero post-front manifests,
-allocations, measurements, or pairwise comparisons. It was issued to correct
-documentation and inference policy before those outcomes, not to fit a rule
-to a winner. Both the launcher and aggregator fail closed if the exact erratum
-path or whole-file hash is absent or changed.
+allocations, measurements, or pairwise comparisons at issuance. That temporal
+record proves the rule preceded the later outcomes and was not fitted to a
+winner. Both launcher and aggregator required the exact erratum path and
+whole-file hash.
 
 #### 7.3.1 Manifest authority, candidate derivation, and selector isolation
 
@@ -1336,9 +1475,9 @@ remeasurement cannot select, reselect, replace a selection-time objective, or
 override a winner.
 
 An independent read-only re-audit after the exact-reconstruction change found
-no remaining prelaunch or aggregation blocker in the implemented contract.
-This is a code-path conclusion, not live experimental evidence: no post-front
-manifest was generated and no TAO or SLURM post-front job was launched.
+no remaining blocker. The later live execution exercised those gates:
+generation, dry-run, six submissions, scheduler reconciliation, result
+loading, semantic validation, and immutable aggregation all passed.
 
 #### 7.3.2 Frozen Williams-row projection
 
@@ -1490,10 +1629,10 @@ only. There is no multiplicity adjustment, so unadjusted pairwise evidence
 never establishes a simultaneous or stable total order. Descriptive sorting
 and bootstrap intervals are not promoted into effective directional claims.
 
-When the expanded archive is complete, remeasure every final rank-zero
-candidate under this frozen contract. Preserve original selection-time
-measurements and the algorithm-selected winner. Report remeasurement only as
-stability evidence for the hypothesis verdict.
+The preregistered requirement was to remeasure every final rank-zero candidate
+under this frozen contract, preserve the original selection-time measurements
+and algorithm-selected winner, and use remeasurement only as verdict
+stability evidence. The six completed allocations fulfilled that requirement.
 
 #### 7.3.6 Distinctness and measurement roles
 
@@ -1522,80 +1661,170 @@ The post-front aggregator records
 `selection_time_objectives_replaced=false`, and
 `feeds_reselection=false`.
 
+#### 7.3.7 Matched measurements and relative-latency result
+
+The interval below is the within-allocation device-round cluster-bootstrap
+95% interval for the median. Every row is valid and contains 4,000 samples.
+
+| Allocation | Candidate | Position | Median ms | p95 ms | Median 95% CI ms | MAD / IQR ms | Robust CV |
+| --- | --- | ---: | ---: | ---: | --- | --- | ---: |
+| 00 | `seed_271828_rec_15` | 0 | 52.398748 | 52.57318095 | [52.34688875, 52.44410375] | 0.07642150 / 0.15579575 | 0.00216231 |
+| 00 | `seed_271828_rec_18` | 1 | 66.53260975 | 66.80764350 | [66.49996125, 66.57365406] | 0.10847800 / 0.23815850 | 0.00241730 |
+| 00 | `seed_271828_rec_3` | 2 | 52.374702 | 52.63235250 | [52.27414325, 52.39863050] | 0.11397050 / 0.23439000 | 0.00322623 |
+| 00 | `seed_271828_rec_19` | 3 | 57.13886025 | 57.39506450 | [57.10449150, 57.19241900] | 0.07527750 / 0.15839400 | 0.00195325 |
+| 01 | `seed_271828_rec_15` | 0 | 52.46612850 | 52.73343695 | [52.43804075, 52.53951100] | 0.09551650 / 0.18515150 | 0.00269913 |
+| 01 | `seed_271828_rec_18` | 1 | 66.63606700 | 67.14680955 | [66.59261575, 66.65021725] | 0.09074950 / 0.18458050 | 0.00201910 |
+| 01 | `seed_271828_rec_3` | 2 | 52.44349400 | 52.63215605 | [52.40000600, 52.47539675] | 0.06406700 / 0.12683700 | 0.00181120 |
+| 01 | `seed_271828_rec_19` | 3 | 57.22198775 | 58.65574450 | [57.16477113, 57.28843350] | 0.10334175 / 0.20693875 | 0.00267755 |
+| 02 | `seed_271828_rec_18` | 0 | 66.46072575 | 66.71065150 | [66.40532725, 66.59162100] | 0.13723475 / 0.26056925 | 0.00306142 |
+| 02 | `seed_271828_rec_19` | 1 | 57.07905325 | 57.34709350 | [56.92982050, 57.10264100] | 0.16078575 / 0.31527025 | 0.00417633 |
+| 02 | `seed_271828_rec_15` | 2 | 52.34634800 | 52.56795050 | [52.22288100, 52.38583875] | 0.11597950 / 0.24038475 | 0.00328487 |
+| 02 | `seed_271828_rec_3` | 3 | 52.32037475 | 52.53347750 | [52.29842500, 52.35535850] | 0.07177600 / 0.14097725 | 0.00203391 |
+| 03 | `seed_271828_rec_19` | 0 | 57.10053750 | 57.28967400 | [57.06101675, 57.14033850] | 0.07437850 / 0.15045875 | 0.00193122 |
+| 03 | `seed_271828_rec_3` | 1 | 52.25068725 | 52.50351545 | [52.23566000, 52.30875825] | 0.07910375 / 0.18165575 | 0.00224455 |
+| 03 | `seed_271828_rec_18` | 2 | 66.42088725 | 66.73120705 | [66.39505450, 66.53277950] | 0.08893600 / 0.20882325 | 0.00198517 |
+| 03 | `seed_271828_rec_15` | 3 | 52.23401025 | 52.74906645 | [52.20014225, 52.26674050] | 0.07672650 / 0.16012200 | 0.00217779 |
+| 04 | `seed_271828_rec_19` | 0 | 56.95001200 | 57.22027455 | [56.92316175, 57.01612625] | 0.08618200 / 0.18131975 | 0.00224361 |
+| 04 | `seed_271828_rec_3` | 1 | 52.24231750 | 52.50463155 | [52.22493450, 52.25404000] | 0.07185200 / 0.14762400 | 0.00203911 |
+| 04 | `seed_271828_rec_18` | 2 | 66.59766475 | 66.78319650 | [66.49723475, 66.63769025] | 0.10998300 / 0.24491850 | 0.00244845 |
+| 04 | `seed_271828_rec_15` | 3 | 52.24965800 | 52.46097795 | [52.21901700, 52.32178400] | 0.07157200 / 0.14848150 | 0.00203088 |
+| 05 | `seed_271828_rec_3` | 0 | 52.25261175 | 52.38091905 | [52.14426925, 52.27824450] | 0.07334625 / 0.19079550 | 0.00208110 |
+| 05 | `seed_271828_rec_15` | 1 | 52.15146450 | 52.35178095 | [52.12938925, 52.18956325] | 0.07556150 / 0.15377875 | 0.00214812 |
+| 05 | `seed_271828_rec_19` | 2 | 56.94584425 | 57.16935250 | [56.91919125, 57.01321350] | 0.07713650 / 0.15592125 | 0.00200827 |
+| 05 | `seed_271828_rec_18` | 3 | 66.42781300 | 66.74751105 | [66.33758550, 66.53362050] | 0.14532350 / 0.29096150 | 0.00324347 |
+
+Between-allocation summaries use the median of six allocation statistics:
+
+| Candidate | Stable median ms | Median range ms | Median sample SD ms | Stable p95 ms | p95 range ms | p95 sample SD ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `seed_271828_rec_15` | 52.29800300 | 0.31466400 | 0.11669754 | 52.570565725 | 0.39728550 | 0.15378642 |
+| `seed_271828_rec_18` | 66.49666775 | 0.21517975 | 0.09074304 | 66.765353775 | 0.43615805 | 0.16333976 |
+| `seed_271828_rec_19` | 57.089795375 | 0.27614350 | 0.10828114 | 57.318383750 | 1.48639200 | 0.56585421 |
+| `seed_271828_rec_3` | 52.28649325 | 0.20117650 | 0.08174284 | 52.519054525 | 0.25143345 | 0.09432478 |
+
+For every pair, delta is first minus second; a negative delta means the first
+is faster. Bootstrap intervals are preserved descriptive evidence. Effective
+direction additionally requires the one-sided exact shifted sign-flip
+\(p\le0.05\) and all six allocation differences beyond the
+`0.73553775 ms` boundary.
+
+| First | Second | Median paired delta ms | Descriptive 95% CI ms | Effective median result | p95 paired delta ms | Descriptive 95% CI ms | Effective p95 result |
+| --- | --- | ---: | --- | --- | ---: | --- | --- |
+| `seed_271828_rec_15` | `seed_271828_rec_18` | -14.17840775 | [-14.312177625, -14.124119750] | First stably faster; p=0.015625; all 6 | -14.27834055 | [-14.404551350, -14.062420800] | First stably faster |
+| `seed_271828_rec_15` | `seed_271828_rec_19` | -4.74798575 | [-4.830453500, -4.716529625] | First stably faster; p=0.015625; all 6 | -4.798357275 | [-5.372095550, -4.649952075] | First stably faster |
+| `seed_271828_rec_15` | `seed_271828_rec_3` | +0.01498750 | [-0.058912125, +0.025009625] | No stable direction; descriptive practical equivalence | +0.00266745 | [-0.051412575, +0.173415950] | No stable direction; descriptive practical equivalence |
+| `seed_271828_rec_18` | `seed_271828_rec_19` | +9.403914375 | [+9.351011125, +9.564810750] | Second stably faster; p=0.015625; all 6 | +9.427056025 | [+8.927311525, +9.570540250] | Second stably faster |
+| `seed_271828_rec_18` | `seed_271828_rec_3` | +14.172700625 | [+14.149129375, +14.273960125] | Second stably faster; p=0.015625; all 6 | +14.253128275 | [+14.176232500, +14.440622750] | Second stably faster |
+| `seed_271828_rec_19` | `seed_271828_rec_3` | +4.761418375 | [+4.700463500, +4.814172000] | Second stably faster; p=0.015625; all 6 | +4.787296000 | [+4.739177500, +5.418602225] | Second stably faster |
+
+The effective evidence establishes the pairwise geometric ordering
+`rec_3/rec_15` (no direction between them) faster than `rec_19`, faster than
+`rec_18`. No simultaneous total order is claimed because the protocol has no
+multiplicity adjustment. This validates `rec_19` as a stable latency
+intermediate on the global front, but not as a point between the actual
+accuracy and 98%-constrained latency winners: those two actual winners are the
+same `rec_18` candidate.
+
 ### 7.4 Final combined selection and integrity audit
 
-**PENDING LIVE EVIDENCE**
+| Artifact or binding | SHA-256 |
+| --- | --- |
+| Expanded combined selection | `78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1` |
+| Expanded candidate table JSON | `5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03` |
+| Expanded candidate table CSV | `0b313942968805879ac0f3bfb386dd45156d4be160c070aedf83bac579df6e5a` |
+| Expanded integrity audit | `a11eeeaf77bd2f289c6363133882bb78c6889205d4cb9be5f0dacf79a1bea159` |
+| Expanded completion record | `74fcf1392d8bad4d9e0681544d2c06b4d9a792fd3b3cbb0dc1b55572b2adac7f` |
+| Canonical 60-record union | `a55964fa0c5762c1a8df45dd6b8a55047a68691cdefc5a8764c4426e68c1d365` |
+| Candidate-table semantic projection | `9e00262945d521468b973745a67d8f9c7e3c85c4c7b66712454d2b4f36922551` |
+| Post-front manifest whole/internal | `d468d5d26f607b115c7c1732966f0ac98664fd232ce83abfa6becc0ce062b7b6` / `c49eb5ebc694c991164ab74d9d90b9f700cf56e63efc852b6a6d9e6ff8b5701c` |
+| Post-front dry-run | `75bdc60d015e1359afaf74603d0235cd8b245ae6a380de09082bf24d198b4d8d` |
+| Post-front launch contract | `6cdf20d056ea361055df3d8a38047389f736aa9911fecdfe32361e0deb978465` |
+| Six-job ledger whole/internal | `356b6dbcdd21fd036b8a8034a82b57e7aaa9a1521f963c13c807e67331e19dcc` / `b042435b7f236e8bed9a644e23cdee75d5b0682e5563fb64ab3a031ad988ba4a` |
+| Post-front analysis whole/internal | `150d66fd1648c458807bdce9871313b5b17a7a33c63564f34b86156e392094b9` / `d82ea45e6622690e7208d54911c8b57213486069691039443c73f1951dec8299` |
+| Raw matched-input inventory | `65c16462bb1f235150ee6be2c9ead6a145ad2eb95131d00d7c27293e9414aa67` |
 
-Required artifacts:
+The selection source is `src/tao_automl/selection.py`, SHA-256
+`7e787a18bca05464e0043367aee4f2c8cff3d93aef7f9e92aaf88c47d255a532`.
+The order-invariance audit used archive, reverse, and candidate-ID order and
+produced signature
+`75fa7afe25d0fda3dd50b96c405434ebf52a57727cd3f04ac3bba5b006a5f11a`.
+The final evidence records:
 
-- final combined selection JSON;
-- exact shared-archive digest;
-- algorithm configuration and source hash;
-- candidate-order invariance proof;
-- immutable launch/submission ledgers;
-- complete TAO/SLURM identity mapping;
-- source, data, PTM, SQSH, checkpoint, and raw-rank hashes;
-- proof that no manual candidate injection, promotion, or winner override
-  occurred.
+```text
+manual_candidate_injection_used = false
+manual_override_used = false
+candidate_reordering_used = false
+algorithm_selected_candidate_overridden = false
+selector_invoked_on_postfront_measurements = false
+selection_time_objectives_replaced = false
+measurements_feed_selection = false
+measurements_feed_reselection = false
+```
+
+All source, dataset, PTM, SQSH, checkpoint, input-digest, runtime, hardware,
+scheduler-hostname, complete-block, and rank-file contracts passed. The
+zero-submission resume reconciled that no prior job existed; consequently the
+final ledger contains no adopted-job recovery event or supersession. There
+were no complete-invalid allocation replacements.
 
 ## 8. Final mode comparison
 
-**PENDING LIVE EVIDENCE — do not infer from Phase 1**
-
 | Mode | Candidate | Accuracy | Stable median latency | Eligibility rule | Pareto status | Selection reason |
 | --- | --- | ---: | ---: | --- | --- | --- |
-| Accuracy | PENDING | PENDING | PENDING | All valid candidates | PENDING | Highest valid mAP50, algorithm-selected |
-| Latency | PENDING | PENDING | PENDING | mAP50 ≥ 98% of accuracy winner | PENDING | Selection-time lowest-latency cohort under the frozen tolerance/CI rule, then deterministic accuracy/fingerprint/ID tie-breaking |
-| Multi-objective | PENDING | PENDING | PENDING | All valid candidates unless the frozen expanded manifest explicitly sets an independent floor | PENDING | Minimum normalized augmented-Chebyshev score on eligible rank zero |
+| Accuracy | `seed_271828_rec_18` | 0.6554138278683255 | 66.49666775 ms | All 60 valid candidates | Global rank zero, nondominated | Highest valid mAP50; no accuracy tie required |
+| Latency | `seed_271828_rec_18` | 0.6554138278683255 | 66.49666775 ms | mAP50 ≥ 0.6423055513109589 (98% of accuracy winner); 4 candidates | Global rank zero, nondominated | Raw minimum selection-time latency in the feasible cohort; all four are within the frozen latency tie rule, then highest accuracy chooses `rec_18` |
+| Multi-objective | `seed_271828_rec_19` | 0.6175134981289873 | 57.089795375 ms | All 60 valid candidates; independent minimum-accuracy floor unset | Global rank zero, nondominated | Minimum front-normalized augmented-Chebyshev score, 0.1797199345585883; selector-geometric distinct compromise |
 
-Candidate identity, accuracy, Pareto status, and selection reason in the final
-table must come from the immutable selection-time snapshot. “Stable median
-latency” must come from the matched validation and is evidence about the
-already-selected candidate, never an input to a second selection. The final
-artifact must retain both latency fields so that selection-time and
-validation-only values cannot be conflated.
+Candidate identity, accuracy, Pareto status, and selection reason come only
+from the immutable selection-time snapshot. Stable median and p95 come only
+from matched validation and were never input to a second selection.
 
-The completed table must additionally report:
+| Mode | Accuracy delta from A | Selection-time median ms | Selection-time delta from A / L | Matched p95 ms | Stable median delta from A / L | Exceeds uncertainty? |
+| --- | ---: | ---: | --- | ---: | --- | --- |
+| Accuracy | 0 | 66.23099475000001 | 0 / 0 ms | 66.765353775 | 0 / 0 ms | Reference |
+| Latency | 0 | 66.23099475000001 | 0 / 0 ms | 66.765353775 | 0 / 0 ms | Same candidate as accuracy |
+| Multi-objective | -0.03790032973933821 | 57.146624 | -9.084370750000005 / -9.084370750000005 ms | 57.318383750 | -9.406872374999999 / -9.406872374999999 ms | Yes versus `rec_18`: paired median CI for `rec_18 - rec_19` is [+9.351011125, +9.564810750] ms, exact p=0.015625, all six beyond tolerance |
 
-- accuracy delta from the accuracy winner;
-- latency delta from the accuracy winner;
-- latency delta from the constrained-latency winner;
-- whether each latency delta exceeds the matched uncertainty tolerance;
-- whether the multi-objective point is strictly between the extremes;
-- whether it remains distinct after applying accuracy and latency tolerances.
+The multi-objective stable aggregate p95 delta from either actual winner is
+`-9.446970024999999 ms`; the allocation-paired p95 delta for
+`rec_18 - rec_19` is `+9.427056025 ms`, with descriptive CI
+`[+8.927311525, +9.570540250]` and the same effective directional result.
+
+`rec_19` is distinct from `rec_18` by candidate identity, accuracy tolerance,
+and matched latency tolerance. It is strictly between the global front's
+unconstrained latency extreme (`rec_3`) and accuracy extreme (`rec_18`):
+`rec_3` is stably faster than `rec_19`, and `rec_19` is stably faster than
+`rec_18`. It is not strictly between the two actual mode extremes, because
+the actual accuracy and 98%-constrained latency modes both selected
+`rec_18`.
 
 ## 9. Hypothesis verdict
 
-### Evidence available now
-
-| Question | Interim result | Evidence |
+| Criterion | Result | Evidence |
 | --- | --- | --- |
-| Does accuracy mode select the highest-accuracy valid candidate? | Supported on the frozen archive | `seed_271828_rec_5`, mAP50 `0.6359897329231639`. |
-| Does latency mode select the fastest candidate satisfying 98% retention? | Supported on the frozen archive, but degenerate | Only `seed_271828_rec_5` satisfies the threshold. |
-| Can no-floor multi-objective mode select a nondominated archive compromise algorithmically? | Yes, for frozen objective values | The selector returns global-rank-zero `seed_271828_rec_1` with no manual override. |
-| Is that historical compromise latency-distinct and allocation-stable? | No evidence of distinction | All six historical global-front candidates are practically equivalent under matched six-allocation analysis. |
-| Did the sensitivity screen establish supported DINO axes with stable latency effects? | Yes | Encoder and decoder depth effects are well beyond the frozen `0.73553775 ms` tolerance across matched allocations. |
-| Does the expanded supported DINO space contain a stable intermediate point? | **PENDING LIVE EVIDENCE** | Requires the launched expanded search and final-front matched remeasurement. |
+| Accuracy mode selects the highest-accuracy valid candidate | Supported | `seed_271828_rec_18`, mAP50 `0.6554138278683255`, is the maximum across all 60 valid rows. |
+| Latency mode selects the fastest candidate satisfying 98% retention | Supported under the frozen tolerance rule | Threshold `0.6423055513109589` admits four candidates. `rec_18` has the raw minimum selection-time median (`66.23099475 ms`); the four-point latency-tied cohort is resolved by higher accuracy, which also selects `rec_18`. |
+| Multi-objective winner is Pareto-nondominated | Supported | `seed_271828_rec_19` has global and eligible Pareto rank zero and empty `dominated_by`. |
+| Winner is produced entirely by the documented algorithm | Supported | No manual injection, reorder, promotion, override, reselection, or matched-objective replacement occurred; three archive orderings reproduce the same result. |
+| A distinct intermediate point exists in the eligible global front | Supported geometrically | `rec_19` has regret pair `(0.3279659791, 0.3594391817)`, score `0.1797199346`, and differs from both global-front extremes. |
+| Multi-objective selection differs from both actual mode winners | Supported by identity, but actual extremes are degenerate | Accuracy and constrained latency both select `rec_18`; multi-objective selects `rec_19`. There are not two distinct actual extreme candidates. |
+| Multi-objective accuracy lies between the actual extreme winners | Not supported | Both actual winners have mAP50 `0.6554138278683255`; `rec_19` has `0.6175134981289873`. |
+| Multi-objective latency lies between the actual extreme winners | Not supported | Both actual winners have stable median `66.49666775 ms`; `rec_19` has `57.089795375 ms`. |
+| Relative latency position is stable across matched allocations | Supported for global Pareto geometry | `rec_3` is stably faster than `rec_19`, and `rec_19` is stably faster than `rec_18`; each effective test has p=`0.015625` and all six differences beyond tolerance. |
+| Stable across repeated runs or seeds | Partially established | Relative latency is stable across six independent matched allocations. Candidate generation used three deterministic search seeds. The final winner identity was not independently retrained under multiple training seeds, so full training-seed winner stability is not claimed. |
 
-The offline replay corrects mode semantics, but it does not satisfy the full
-hypothesis criteria because the relative latency ordering is not stable.
+### Final classification: partially supported
 
-### Final classification
-
-**PENDING LIVE EVIDENCE**
-
-Do not classify the overall hypothesis until the expanded search and matched
-post-front validation finish. The final classification must be one of:
-
-- fully supported;
-- partially supported;
-- not supported;
-- inconclusive because the supported DINO search space did not produce a
-  stable intermediate Pareto candidate.
-
-If the algorithm chooses an extreme despite stable intermediate points, report
-the frozen normalization bounds and scores. Do not change weights or floors
-after seeing the result.
+The phase-two implementation supports the algorithmic claims: accuracy is
+maximized, latency is constrained independently, multi-objective selection is
+normalized and Pareto-safe, `rec_19` is a genuine global-front geometric
+compromise, and its matched latency position is stable. The full three-mode
+hypothesis nevertheless fails its strict “between two actual extremes”
+criteria because accuracy and 98%-constrained latency collapse to the same
+`rec_18` candidate. The result is not inconclusive: the supported DINO search
+space did produce a statistically stable intermediate global-front point.
+The limitation is the degenerate actual mode endpoints, not absence of a
+stable Pareto intermediate.
 
 ## 10. Reproducibility
 
@@ -1611,6 +1840,10 @@ after seeing the result.
 | `~/tao-automl` v2 manifest freeze / evidence cutoff | same | `b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d` |
 | `~/tao-automl` phase-two protocol erratum | same | `ba2cf95211ecddc9cb38dfe51d189357b05dc8e2` |
 | `~/tao-automl` post-front protocol binding cutoff | same | `6850d71c2f3dea5f37505dd6831d41cb07a4d255` |
+| `~/tao-automl` complete expanded archive and selection | same | `a6fc0bbd7947cf58b95f1c037b0513092b31a2f9` |
+| `~/tao-automl` immutable post-front manifest | same | `a3099803f4a4fa7494c9564c0b6806576a203d7b` |
+| `~/tao-automl` six-allocation submission ledger | same | `8289d5988f55149857c8e04340c0580d470de11e` |
+| `~/tao-automl` matched post-front analysis | same | `2307d86a9a2cf6c0883a977a6dfcd8e1f885ea77` |
 | `~/tao-sdk` | same | `3d3e1adc1849493d29dc926cb99492417e3a9250` |
 | `~/tao-skills-external` | same | `18f831c7c83b424861a60353fb735dd80efcfded` |
 | TAO PyTorch source | tag `7.0.1` | `1ac00f8e9c511591e6e1cfb048c1bad9101b3d32` |
@@ -1848,12 +2081,38 @@ python experiments/dino_moo_phase2_20260728/expanded_search_runner.py \
   USER_AUTHORIZED_3X8GPU_SLURM_DINO_EXPANDED_SEARCH_20260728
 ```
 
-Do not repeat this fresh-launch form while those v2 controllers are live.
-Recovery, if required after a controller interruption, must use the same
-immutable v2 manifest and v2 runtime directory with `--launch --resume`; the
-runner must reconcile the manifest-bound marker and persisted job identity
-before submitting anything. The excluded v1 runtime must never be passed to
-the v2 runner.
+That launch is complete. Do not repeat the fresh-launch form: the exact
+60-record archive is already sealed. Verify it read-only with:
+
+```bash
+archive_root=experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2
+
+sha256sum \
+  "${archive_root}"/seed_*/seed_archive.v1.json \
+  "${archive_root}/expanded_candidate_table.json" \
+  "${archive_root}/expanded_candidate_table.csv" \
+  "${archive_root}/expanded_combined_selection.json" \
+  "${archive_root}/expanded_integrity_audit.json" \
+  "${archive_root}/expanded_completion.json"
+
+jq '{
+  candidate_count,
+  successful_count,
+  manual_candidate_injection_used,
+  failed_count: ([.rows[] | select(.status != "success")] | length)
+}' "${archive_root}/expanded_candidate_table.json"
+
+jq '{
+  selections,
+  selection_authority,
+  normalization_bounds: .algorithm.normalization_bounds,
+  accuracy_threshold: .algorithm.accuracy_threshold
+}' "${archive_root}/expanded_combined_selection.json"
+```
+
+Expected counts are 60/60/false/0; expected winners are `rec_18`,
+`rec_18`, and `rec_19`. The excluded v1 runtime must never be passed to any
+v2 reproduction or validation command.
 
 The v1 failure disposition can be checked without importing its metric strings:
 
@@ -1870,50 +2129,166 @@ for seed in 161803 271828 314159; do
 done
 ```
 
-### 10.8 Post-front implementation verification
+### 10.8 Post-front manifest, launch, and aggregation
 
-The committed pre-manifest snapshot is reproduced without launching or reading
-future measurements:
+The immutable manifest was originally generated from the sealed archive with
+the following inputs. The tracked output is create-once and the generator
+correctly refuses to overwrite it.
 
 ```bash
 cd ~/tao-automl
+py=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python
+d=experiments/dino_moo_phase2_20260728
+expanded_runtime="${d}/runtime/expanded_search_v2"
+post_runtime="${d}/runtime/post_front_matched"
 
-/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
-  -m pytest -q \
-  experiments/dino_moo_phase2_20260728/test_phase2_protocol_erratum.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_protocol_binding.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_protocol_analysis.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_matched_tools.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_matched_launcher_recovery.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_complete_invalid_recovery.py
-
-sha256sum \
-  experiments/dino_moo_phase2_20260728/phase2_protocol_erratum.v1.json \
-  experiments/dino_moo_phase2_20260728/post_front_matched_manifest_generator.py \
-  experiments/dino_moo_phase2_20260728/post_front_matched_launcher.py \
-  experiments/dino_moo_phase2_20260728/post_front_matched_block_runner.py \
-  experiments/dino_moo_phase2_20260728/post_front_matched_aggregator.py \
-  experiments/dino_moo_phase2_20260728/test_phase2_protocol_erratum.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_protocol_binding.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_protocol_analysis.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_matched_tools.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_matched_launcher_recovery.py \
-  experiments/dino_moo_phase2_20260728/test_post_front_complete_invalid_recovery.py
+"${py}" "${d}/post_front_matched_manifest_generator.py" \
+  --expanded-manifest "${d}/expanded_search_manifest.v2.json" \
+  --expanded-manifest-sha256 \
+  9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a \
+  --combined-selection \
+  "${expanded_runtime}/expanded_combined_selection.json" \
+  --combined-selection-sha256 \
+  78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1 \
+  --candidate-table \
+  "${expanded_runtime}/expanded_candidate_table.json" \
+  --candidate-table-sha256 \
+  5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03 \
+  --integrity-audit \
+  "${expanded_runtime}/expanded_integrity_audit.json" \
+  --integrity-audit-sha256 \
+  a11eeeaf77bd2f289c6363133882bb78c6889205d4cb9be5f0dacf79a1bea159 \
+  --protocol-erratum "${d}/phase2_protocol_erratum.v1.json" \
+  --protocol-erratum-sha256 \
+  95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13 \
+  --output "${d}/post_front_matched_manifest.v1.json"
 ```
 
-The expected focused result at commit
-`6850d71c2f3dea5f37505dd6831d41cb07a4d255` is `134 passed`. The exact
-erratum path and
-`95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13`
-whole-file hash are mandatory inputs to future manifest generation and every
-launcher mode. The generated manifest must additionally pin the three seed
-archives, the canonical full-record union, candidate-table JSON and CSV,
-combined selection, and integrity audit described in Section 7.3.1.
+For read-only regeneration, use the same command with
+`--output /tmp/post_front_matched_manifest.reproduced.json`, then compare the
+reconstructed object and internal hash to the tracked manifest. A new output
+path is mandatory.
 
-No post-front manifest, ledger, dry-run, invalidation evidence, analysis, TAO
-job, or SLURM job exists yet. Exact completed expanded-search,
-manifest-generation, final-front launch/aggregation, combined-selection, and
-integrity-audit result commands remain **PENDING LIVE EVIDENCE**. They must be
-copied from the tracked, committed final harness and immutable artifacts after
-the 60-record archive exists; no placeholder hash or job identity is supplied
-here.
+The exact dry-run form was:
+
+```bash
+manifest="${d}/post_front_matched_manifest.v1.json"
+manifest_sha=d468d5d26f607b115c7c1732966f0ac98664fd232ce83abfa6becc0ce062b7b6
+erratum="${d}/phase2_protocol_erratum.v1.json"
+erratum_sha=95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13
+
+PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PATH \
+"${py}" "${d}/post_front_matched_launcher.py" \
+  --dry-run \
+  --manifest "${manifest}" \
+  --manifest-file-sha256 "${manifest_sha}" \
+  --protocol-erratum "${erratum}" \
+  --protocol-erratum-sha256 "${erratum_sha}" \
+  --runtime-dir "${post_runtime}" \
+  --report "${post_runtime}/dry_run.json" \
+  --verify-remote
+```
+
+Two initial `--launch` attempts failed before submission: the first used a
+non-authoritative report path, and the second lacked the required
+`SLURM_BASE_RESULTS_DIR`. Neither attempt created a TAO or SLURM job. The
+second attempt left a durable zero-submission incomplete ledger whose
+whole-file SHA-256 was
+`a8fa28d9fe0b5dc6959f8e5e9984fa193c60d27caee29a725d5bd395d9c3acf0`.
+The actual successful six-job submission used the launcher's exact
+zero-delta reconciliation path:
+
+```bash
+export SLURM_BASE_RESULTS_DIR=/lustre/fsw/portfolios/edgeai/users/rarunachalam
+
+PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PATH \
+"${py}" "${d}/post_front_matched_launcher.py" \
+  --resume-incomplete-submission \
+  --manifest "${manifest}" \
+  --manifest-file-sha256 "${manifest_sha}" \
+  --protocol-erratum "${erratum}" \
+  --protocol-erratum-sha256 "${erratum_sha}" \
+  --runtime-dir "${post_runtime}" \
+  --report "${post_runtime}/dry_run.json" \
+  --submission-ledger-sha256 \
+  a8fa28d9fe0b5dc6959f8e5e9984fa193c60d27caee29a725d5bd395d9c3acf0 \
+  --verify-remote \
+  --acknowledgement \
+  USER_AUTHORIZED_DINO_POST_FRONT_6X8GPU_VALIDATION_20260728
+```
+
+Do not repeat the launch against the existing runtime. The committed
+six-allocation ledger is the durable submission authority.
+
+After all six jobs reached `Complete / COMPLETED / 0:0`, the read-only
+aggregation form was:
+
+```bash
+export SLURM_BASE_RESULTS_DIR=/lustre/fsw/portfolios/edgeai/users/rarunachalam
+
+"${py}" "${d}/post_front_matched_aggregator.py" \
+  --manifest "${manifest}" \
+  --manifest-file-sha256 "${manifest_sha}" \
+  --submission-ledger "${post_runtime}/block_submissions.json" \
+  --submission-ledger-sha256 \
+  356b6dbcdd21fd036b8a8034a82b57e7aaa9a1521f963c13c807e67331e19dcc \
+  --sdk-state "${post_runtime}/slurm_state.json" \
+  --output "${post_runtime}/post_front_matched_analysis.json" \
+  --secrets-env ~/.tao/config.env
+```
+
+Read-only reaggregation requires the same preserved local SDK database (the
+untracked `slurm_state.db` reached through the `.json` SDK-state argument)
+and the 198 remote Lustre result artifacts. It is not reproducible from a
+clean Git clone alone, and the private SDK database must not be added to Git.
+In that preserved environment, change `--output` to a new path such as
+`/tmp/post_front_matched_analysis.reproduced.json`; never overwrite the
+tracked analysis. A reproduced analysis has a fresh `created_at_utc`, so
+compare contract, source, candidate, measurement, and analysis fields after
+normalizing that timestamp rather than requiring whole-file equality.
+
+The tracked analysis is the portable evidence artifact: it embeds the six
+terminal TAO/SLURM identities and states plus the complete 198-artifact
+path/hash inventory. Its whole-file/internal hashes are
+`150d66fd1648c458807bdce9871313b5b17a7a33c63564f34b86156e392094b9`
+and
+`d82ea45e6622690e7208d54911c8b57213486069691039443c73f1951dec8299`.
+
+### 10.9 Final tests and integrity checks
+
+```bash
+cd ~/tao-automl
+py=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python
+
+"${py}" -m pytest -q experiments/dino_moo_phase2_20260728
+PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PATH \
+  "${py}" -m pytest -q tests
+
+"${py}" - <<'PY'
+import pathlib
+for name in (
+    "post_front_matched_manifest_generator.py",
+    "post_front_matched_launcher.py",
+    "post_front_matched_block_runner.py",
+    "post_front_matched_aggregator.py",
+):
+    path = pathlib.Path("experiments/dino_moo_phase2_20260728") / name
+    compile(path.read_text(), str(path), "exec")
+print("4/4 post-front tools compiled")
+PY
+
+git diff --check
+
+sha256sum \
+  experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_combined_selection.json \
+  experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_candidate_table.json \
+  experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_candidate_table.csv \
+  experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_integrity_audit.json \
+  experiments/dino_moo_phase2_20260728/post_front_matched_manifest.v1.json \
+  experiments/dino_moo_phase2_20260728/runtime/post_front_matched/block_submissions.json \
+  experiments/dino_moo_phase2_20260728/runtime/post_front_matched/post_front_matched_analysis.json
+```
+
+The sealed validation result is `259 passed` for the phase-two suite,
+`387 passed, 1 skipped` for the production core, four of four post-front tools
+compiled, and `git diff --check` clean.
