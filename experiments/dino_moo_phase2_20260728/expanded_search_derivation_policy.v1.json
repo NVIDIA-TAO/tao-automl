@@ -1,0 +1,380 @@
+{
+  "schema_version": 1,
+  "policy_id": "dino_expanded_search_derivation_20260728_v1",
+  "status": "preregistered_before_sensitivity_latency_results",
+  "created_at_utc": "2026-07-28T00:00:00Z",
+  "scope": {
+    "model_family": "DINO ResNet50",
+    "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "other_models_permitted": false,
+    "other_datasets_permitted": false
+  },
+  "manual_override_permitted": false,
+  "result_dependent_policy_changes_permitted": false,
+  "purpose": "Deterministically derive the expanded shared DINO AutoML search space from complete, immutable, direction-agnostic latency-sensitivity evidence without inspecting winner desirability.",
+  "output_contract": {
+    "filename": "expanded_search_manifest.v1.json",
+    "overwrite_permitted": false,
+    "status": "preregistered_ready_to_launch",
+    "canonicalization": "UTF-8 JSON with sort_keys=true, separators comma and colon, ensure_ascii=false, allow_nan=false",
+    "manifest_digest": "SHA256 of the canonical manifest before adding manifest_sha256",
+    "write_condition": "Write only after the complete sensitivity result and every frozen source artifact passes validation."
+  },
+  "sensitivity_evidence_contract": {
+    "result_schema_version": 1,
+    "manifest_id": "dino_sensitivity_latency_20260728_v1",
+    "required_status": "complete",
+    "required_blockers": [],
+    "required_flags": {
+      "feeds_final_selection": false,
+      "winner_selected": false,
+      "manual_promotion_permitted": false
+    },
+    "decision_collection": "latency_effect_decisions",
+    "qualification_field": "latency_effect_qualified",
+    "support_field": "support_validity_repeatability_gate",
+    "accuracy_annotation_field": "latency_mode_98pct_suitable",
+    "accuracy_annotation_role": "Audit annotation for constrained latency mode only; ignored for architecture-axis derivation and shared multi-objective eligibility.",
+    "noise_floor_path": "noise_floor.effective_noise_floor_ms",
+    "noise_floor_role": "Imported exactly as latency_tolerance for all three selections in the expanded archive.",
+    "source_manifest": {
+      "path": "sensitivity_latency_manifest.v1.json",
+      "sha256": "c569f858f4513139292d7189ab5e57f897b8794fdbe5b2dcafc45b0efcd663aa",
+      "required_schema_version": 1,
+      "required_status": "preregistered_not_launched",
+      "one_factor_manifest_path": "one_factor_sensitivity_manifest.v1.json",
+      "one_factor_manifest_sha256": "ee65fd9a09d7cacc40f88a0b95b07af3fd0560d8496407447344b310bb5eaa44",
+      "checkpoint_artifact_path": "sensitivity_training_checkpoints.v1.json",
+      "checkpoint_artifact_id": "dino_sensitivity_training_checkpoints_20260728_v1",
+      "checkpoint_artifact_sha256": "20188a8858a9329ce4b861730ad3b0b2f6185389c8af1b02ad29284e5ed1b012",
+      "accuracy_artifact_path": "sensitivity_training_accuracy.v1.json",
+      "accuracy_artifact_id": "dino_sensitivity_training_accuracy_20260728_v1"
+    }
+  },
+  "architecture_axis_policy": {
+    "inclusion_rule": "Include an axis if and only if at least one non-reference level has support_validity_repeatability_gate=true and latency_effect_qualified=true.",
+    "direction_rule": "Qualification is direction-agnostic: reliably faster and reliably slower non-reference levels both establish that the axis materially changes inference latency.",
+    "domain_rule": "When an axis qualifies, include its entire preregistered supported domain, never only the qualified levels and never a qualified-value hull.",
+    "no_axis_rule": "If no architecture axis qualifies, fail closed without writing an expanded-search manifest.",
+    "accuracy_independence_rule": "Do not use latency_mode_98pct_suitable, same-seed 98 percent accuracy retention, mAP50, or any accuracy gate to include or exclude an architecture axis.",
+    "axis_order": [
+      "model.num_queries",
+      "model.enc_layers",
+      "model.dec_layers",
+      "model.num_select"
+    ],
+    "axes": [
+      {
+        "path": "model.num_queries",
+        "reference": 594,
+        "preregistered_levels": [
+          300,
+          450,
+          594,
+          750,
+          900
+        ],
+        "non_reference_profile_ids": {
+          "300": "num_queries_300",
+          "450": "num_queries_450",
+          "750": "num_queries_750",
+          "900": "num_queries_900"
+        },
+        "search_domain": {
+          "representation": "integer_range",
+          "valid_min": 300,
+          "valid_max": 900
+        },
+        "compatibility_constraint": "model.num_queries >= model.num_select"
+      },
+      {
+        "path": "model.enc_layers",
+        "reference": 6,
+        "preregistered_levels": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "non_reference_profile_ids": {
+          "3": "enc_layers_3",
+          "4": "enc_layers_4",
+          "5": "enc_layers_5"
+        },
+        "search_domain": {
+          "representation": "ordered_integer_levels",
+          "valid_options": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "valid_min": 3,
+          "valid_max": 6
+        }
+      },
+      {
+        "path": "model.dec_layers",
+        "reference": 6,
+        "preregistered_levels": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "non_reference_profile_ids": {
+          "3": "dec_layers_3",
+          "4": "dec_layers_4",
+          "5": "dec_layers_5"
+        },
+        "search_domain": {
+          "representation": "ordered_integer_levels",
+          "valid_options": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "valid_min": 3,
+          "valid_max": 6
+        }
+      },
+      {
+        "path": "model.num_select",
+        "reference": 300,
+        "preregistered_levels": [
+          50,
+          100,
+          200,
+          300
+        ],
+        "non_reference_profile_ids": {
+          "50": "num_select_50",
+          "100": "num_select_100",
+          "200": "num_select_200"
+        },
+        "search_domain": {
+          "representation": "ordered_integer_levels",
+          "valid_options": [
+            50,
+            100,
+            200,
+            300
+          ]
+        },
+        "compatibility_constraint": "model.num_select <= model.num_queries"
+      }
+    ]
+  },
+  "always_included_training_parameters": [
+    {
+      "path": "train.optim.lr",
+      "search_domain": {
+        "representation": "continuous",
+        "valid_min": 1e-05,
+        "valid_max": 0.0005
+      },
+      "role": "training parameter that influences accuracy"
+    },
+    {
+      "path": "train.optim.weight_decay",
+      "search_domain": {
+        "representation": "continuous",
+        "valid_min": 1e-05,
+        "valid_max": 0.001
+      },
+      "role": "training parameter that influences accuracy"
+    }
+  ],
+  "search_design": {
+    "algorithm": "bayesian",
+    "search_seeds": [
+      314159,
+      271828,
+      161803
+    ],
+    "training_seed": 1234,
+    "recommendations_per_seed": 20,
+    "total_candidate_budget": 60,
+    "budget_rule": "Exactly 20 recommendations for each of the three frozen search seeds regardless of how many architecture axes qualify.",
+    "subarchive_execution": "sequential Bayesian recommendations within each seed",
+    "shared_archive": "The union of all valid measured candidates from all three seeded subarchives is supplied unchanged to accuracy, latency, and multi-objective selection.",
+    "candidate_generation_mode_independence": true,
+    "manual_candidate_injection_permitted": false,
+    "result_ordered_search_changes_permitted": false
+  },
+  "selection_contract": {
+    "accuracy_metric": "mAP50",
+    "latency_metric": "latency_ms",
+    "accuracy_mode": {
+      "objective": "maximize mAP50 over every valid candidate",
+      "accuracy_tolerance": 1e-12,
+      "tie_break": "lower stable latency, then deterministic candidate key"
+    },
+    "latency_mode": {
+      "objective": "minimize stable latency among candidates satisfying the accuracy-winner-relative retention constraint",
+      "latency_accuracy_retention": {
+        "type": "relative",
+        "retained_fraction": 0.98,
+        "reference": "accuracy_winner"
+      },
+      "no_feasible_candidate": "report explicitly; do not use an unrelated fallback"
+    },
+    "multi_objective_mode": {
+      "multi_objective_min_accuracy": null,
+      "eligibility": "all valid candidates",
+      "pareto_filter": "rank_zero_only",
+      "objective_normalization": "pareto_front_relative",
+      "selector": "normalized_augmented_chebyshev",
+      "weights": {
+        "accuracy_regret": 1.0,
+        "latency_regret": 1.0
+      },
+      "augmentation_rho": 1e-06,
+      "selection_score_tolerance": 1e-12,
+      "tie_break": "lower max normalized regret, then lower sum normalized regret, then higher accuracy, then lower latency, then deterministic candidate key",
+      "distinct_compromise_rule": "Report whether the algorithm-selected point is a tolerance-distinct intermediate or an extreme; never force a middle point."
+    },
+    "latency_tolerance": {
+      "source": "sensitivity_result.noise_floor.effective_noise_floor_ms",
+      "import": "exact",
+      "result_dependent_weight_or_threshold_changes_permitted": false
+    },
+    "failed_or_nonfinite_candidate_policy": "exclude before ranking",
+    "dominated_multi_objective_winner_permitted": false,
+    "manual_winner_override_permitted": false
+  },
+  "frozen_identity": {
+    "source_repositories": {
+      "tao_automl": {
+        "path": "/localhome/local-rarunachalam/tao-automl",
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "selection_core_commit": "83d9d7ecc783724f674cb954f9fbb6c91ea8b0eb",
+        "commit_policy": "required_ancestor"
+      },
+      "tao_sdk": {
+        "path": "/localhome/local-rarunachalam/tao-sdk",
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "commit": "3d3e1adc1849493d29dc926cb99492417e3a9250"
+      },
+      "tao_skills": {
+        "path": "/localhome/local-rarunachalam/tao-skills-external",
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "commit": "18f831c7c83b424861a60353fb735dd80efcfded"
+      }
+    },
+    "runtime": {
+      "container_image_uri": "nvcr.io/nvidia/tao/tao-toolkit:7.0.1-pyt",
+      "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+      "sqsh_sha256": "88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e",
+      "pretrained_model_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+      "pretrained_model_sha256": "7a391fb84a18714b60258becdb512594ec54faff5dccbf17ca53c5d902137512",
+      "secrets_env_path": "/localhome/local-rarunachalam/.tao/config.env",
+      "partition": "polar3",
+      "account": "edgeai_tao-ptm_image-foundation-model-clip",
+      "num_nodes": 1,
+      "gpu_count_per_node": 8,
+      "required_gpu_model": "NVIDIA A100-SXM4-80GB",
+      "required_gpu_memory_bytes": 85174583296,
+      "required_compute_capability": "8.0",
+      "precision": "fp32",
+      "distributed_strategy": "ddp",
+      "tf32": false,
+      "torch": "2.11.0",
+      "cuda": "13.2",
+      "cudnn": 92000
+    },
+    "dataset": {
+      "source_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+      "staged_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco",
+      "train_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+      "train_annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+      "train_annotation_sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+      "validation_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+      "validation_annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+      "validation_annotation_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+      "num_classes": 5,
+      "eval_class_ids": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "training_controls": {
+      "train_epochs": 10,
+      "checkpoint_interval_epochs": 10,
+      "validation_interval_epochs": 1,
+      "batch_size_per_gpu": 4,
+      "global_batch_size": 32,
+      "num_gpus": 8,
+      "num_nodes": 1,
+      "activation_checkpoint": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "wandb_enabled": false,
+      "optimizer": "AdamW",
+      "lr_backbone": 2e-05,
+      "lr_linear_proj_mult": 0.1,
+      "lr_scheduler": "MultiStep",
+      "augmentation_source": "unmodified pinned DINO train skill template"
+    },
+    "accuracy_evaluation": {
+      "metric": "mAP50",
+      "batch_size_per_gpu": 4,
+      "precision": "fp32",
+      "test_random_resize": 800,
+      "random_resize_max_size": 1333,
+      "fixed_padding": true,
+      "gpu_count": 8
+    },
+    "latency_protocol": {
+      "warmup_iterations": 50,
+      "timed_iterations": 100,
+      "repeated_rounds": 5,
+      "preloaded_batches": 16,
+      "batch_size_per_gpu": 1,
+      "fixed_preprocessed_shapes": {
+        "model_input": [
+          1,
+          4,
+          800,
+          1333
+        ],
+        "image_tensor": [
+          1,
+          3,
+          800,
+          1333
+        ],
+        "padding_mask": [
+          1,
+          1,
+          800,
+          1333
+        ]
+      },
+      "precision": "fp32",
+      "tf32": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "benchmark_seed": 20260727,
+      "warmup_and_timing_scope": "model_forward_plus_dino_gpu_postprocess",
+      "synchronization": "cuda_sync_each_sample_and_nccl_barrier",
+      "tail_percentile": 95,
+      "bootstrap_resamples": 5000,
+      "bootstrap_confidence_level": 0.95,
+      "bootstrap_seed": 424242,
+      "primary_estimator": "median of device-round medians",
+      "excluded_scope": [
+        "checkpoint_load",
+        "disk IO",
+        "decode resize normalize",
+        "host to device transfer",
+        "COCO accumulation",
+        "distributed gather"
+      ],
+      "raw_samples_per_candidate": 4000
+    }
+  }
+}
