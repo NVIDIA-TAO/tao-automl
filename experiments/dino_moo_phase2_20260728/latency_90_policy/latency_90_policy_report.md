@@ -1,7 +1,6 @@
 # DINO latency-mode 90% retained-accuracy validation
 
-Status: **matched-latency validation complete; follow-up-search outcome
-pending**
+Status: **complete**
 
 Evidence cutoff: 2026-07-29 UTC
 
@@ -16,6 +15,9 @@ Routing-explicit replay-v2 source commit:
 Complete matched-evidence commit:
 `c5e45c46c61ab459eb300b84abbdbbc678069239`
 
+Complete low-latency follow-up evidence commit:
+`f3203c3ab4699dc5f629a9f6cb8d100e7498ceff`
+
 Review target: existing MR !22
 
 ## 1. Scope and evidence boundary
@@ -26,10 +28,11 @@ This report covers only DINO ResNet50 and:
 
 It records the production policy implementation, a deterministic replay of
 the sealed 60-candidate archive, the complete 90%-feasible population, the
-equivalent-fastest-cohort audit, checkpoint-recovery provenance, and the
-frozen designs for the matched validation and lower-latency follow-up search.
+equivalent-fastest-cohort audit, checkpoint-recovery provenance, completed
+matched validation, and the completed preregistered lower-latency follow-up
+search.
 
-The following conclusions are complete:
+All requested conclusions are complete:
 
 - the 90% relative threshold and feasible population;
 - the production-selector replay and archive-order invariance;
@@ -41,13 +44,11 @@ The following conclusions are complete:
   classification;
 - identity-preserving recovery of the unavailable `rec_6` checkpoint
   configuration;
-- the follow-up search space, seeds, budget, and prohibitions.
-
-The following conclusions are deliberately **not** made yet:
-
-- whether the follow-up optimizer finds a candidate below approximately
-  57.09 ms while meeting the retained-accuracy policy;
-- a final experiment verdict or DINO reference-readiness verdict.
+- the follow-up search space, seeds, budget, prohibitions, all 60 terminal
+  recommendation records, and the 120-record union selection;
+- the negative result that no new accuracy-feasible candidate improves on
+  the existing approximately-57-ms latency result;
+- the final mode-specific hypothesis and DINO reference-readiness verdict.
 
 Matched measurements remain validation-only. This report does not use them
 to replace selection-time objectives or re-run selection.
@@ -283,7 +284,7 @@ directional claim and are descriptively practically equivalent within
 `±0.73553775 ms`. The production higher-accuracy tie-break is therefore
 consistent with the independent validation.
 
-## 5. Interim three-mode comparison
+## 5. Final three-mode comparison
 
 The accuracy-mode stable median comes from the completed global Pareto-front
 campaign. The shared `rec_19` value shown for latency and multi-objective mode
@@ -299,7 +300,10 @@ winner.
 
 Latency mode and multi-objective mode independently select the same archive
 candidate under different policies. That is permitted and is not evidence of
-threshold inheritance.
+threshold inheritance. The completed follow-up added 59 valid objective
+vectors to the selection population but did not change any mode winner. The
+final union contains 34 latency-feasible candidates: 17 sealed candidates and
+17 new candidates.
 
 ## 6. `rec_6` checkpoint recovery provenance
 
@@ -503,17 +507,16 @@ Therefore, approximately 52 ms has **not** been demonstrated at 90% retained
 accuracy. The current archive satisfies the new policy through `rec_19`
 (`57.146624 ms` selection-time median, `57.089795375 ms` in the earlier
 global-front campaign, and `56.921768375 ms` in the completed 90%-cohort
-campaign). The preregistered opportunity question remains anchored to the
-approximately-57.09-ms evidence available when the search was frozen.
-Additional algorithmic search is warranted to test whether the accuracy gap
-of a lower-latency architecture can be closed.
+campaign). The preregistered opportunity question remained anchored to the
+approximately-57.09-ms evidence available when the search was frozen. The
+completed follow-up below tested whether the accuracy gap of a lower-latency
+architecture could be closed without changing that floor.
 
 ### 8.2 Frozen search design
 
 Manifest: `dino_low_latency_followup_90pct_20260728_v1`
 
-Result status: **pending; no final union selection or opportunity answer is
-reported here**.
+Result status: **complete**.
 
 | Field | Frozen value |
 | --- | --- |
@@ -564,22 +567,172 @@ budget/threshold changes, winner override, matched-measurement feedback, and
 multi-objective inheritance of latency retention. Every produced checkpoint
 and trial artifact is retained.
 
-### 8.3 Pending follow-up result
+### 8.3 Completed follow-up result
 
-**PENDING — no approximately-52-ms claim is made.**
+The three controllers completed automatically. The running process loaded
+AutoML commit `e2b7b91a1cad2772f91f85f9b9e829aedda0d1a1` and production
+selector SHA-256
+`c06c690f5600ead366f27bb3d4688b9e0b0e9ab463514ee6ea245962b06c919a`.
+The later routing hardening at
+`330dbc61efbebf6158e7dcecc59aea704039737b` is behavior-equivalent for
+this manifest because external accuracy-reference overrides are null. It
+was not retroactively substituted into the live controller provenance.
 
-Completion requires the algorithm-generated 60-candidate archive, the full
-120-candidate union table, the production selector output, preserved
-selection-time latency values, and a result stating whether any generated
-candidate meets the fixed opportunity floor while materially improving on
-the current approximately-57.09-ms result.
+#### Budget and validity accounting
+
+| Population | Expected records | Observed records | Successful finite objectives | Terminal failures |
+| --- | ---: | ---: | ---: | ---: |
+| Sealed archive | 60 | 60 | 60 | 0 |
+| New follow-up | 60 | 60 | 59 | 1 |
+| Final union | 120 | 120 | 119 | 1 |
+
+The budget is 60 algorithm-generated recommendations—20 for each frozen
+seed—not 60 successful objective vectors.
+
+| Seed | Records | Successful | Failed | Seed-archive whole-file SHA-256 |
+| ---: | ---: | ---: | ---: | --- |
+| `409976740` | 20 | 20 | 0 | `1e6ecb1c306961c277b1ee0b5062fda5092423331fc6379511eb2c1986fdfe77` |
+| `1455024938` | 20 | 19 | 1 | `6a92dc3b5189a5edcc9a92e89e1596f2982a9d6f3efd282ca2ad5b316a069606` |
+| `1415367367` | 20 | 20 | 0 | `b7a4b6a3742b173346910e6474993267a1857eafecee83599056d83826ff7351` |
+
+`seed_1455024938_rec_15` was algorithm-generated with encoder/decoder
+depth `5/3`, learning rate `0.00037640328330991744`, and weight decay
+`0.00036075042297128654`. It failed before training-job creation because
+SLURM did not provide a stable recoverable cluster identity. It remains an
+immutable `training_or_measurement_failure` record with no train job ID,
+attempt, checkpoint, or objective vector. The optimizer skipped the unusable
+observation and advanced to recommendation 16. No retry, `rec_20`,
+replacement recommendation, manual candidate, or synthetic failure metric
+was introduced.
+
+#### Complete new 90%-feasible population
+
+The fixed opportunity floor and the final-union production floor are both
+`0.589872445081493` because the union accuracy winner remains
+`seed_271828_rec_18`. Exactly 17 of the 59 successful new candidates meet
+that floor:
+
+| Candidate | Encoder/decoder | mAP50 | Accuracy retained | Selection-time median ms |
+| --- | --- | ---: | ---: | ---: |
+| `seed_1455024938_rec_16` | 4/4 | 0.590593075575994 | 90.109950% | 61.272711500 |
+| `seed_409976740_rec_3` | 5/3 | 0.612625369511345 | 93.471536% | 61.555876750 |
+| `seed_1415367367_rec_2` | 4/4 | 0.592276754021086 | 90.366838% | 61.645349750 |
+| `seed_1455024938_rec_8` | 5/3 | 0.611601724153127 | 93.315353% | 61.736783000 |
+| `seed_1455024938_rec_7` | 5/3 | 0.621505697997251 | 94.826455% | 61.781110000 |
+| `seed_409976740_rec_12` | 5/3 | 0.604333286947928 | 92.206368% | 61.878712000 |
+| `seed_1455024938_rec_4` | 5/3 | 0.598599955437887 | 91.331603% | 61.952549750 |
+| `seed_1415367367_rec_19` | 4/5 | 0.593946672299549 | 90.621627% | 65.646623500 |
+| `seed_409976740_rec_6` | 5/4 | 0.617311049464411 | 94.186455% | 66.009539750 |
+| `seed_409976740_rec_4` | 6/3 | 0.632757635564474 | 96.543223% | 66.246603000 |
+| `seed_409976740_rec_7` | 6/3 | 0.622604921875076 | 94.994169% | 66.443895000 |
+| `seed_409976740_rec_11` | 6/3 | 0.629088710275341 | 95.983436% | 66.560352000 |
+| `seed_1415367367_rec_8` | 5/5 | 0.596650561606045 | 91.034174% | 70.264918250 |
+| `seed_1415367367_rec_14` | 6/4 | 0.643816403937537 | 98.230519% | 70.638092500 |
+| `seed_1455024938_rec_14` | 6/4 | 0.603433964804425 | 92.069154% | 70.941328250 |
+| `seed_409976740_rec_8` | 6/4 | 0.643879562555165 | 98.240155% | 70.953235500 |
+| `seed_409976740_rec_10` | 6/5 | 0.622543667050247 | 94.984823% | 75.038002250 |
+
+The complete 120-row audit—including all successful metrics, full
+hyperparameters, runtime provenance, Pareto ranks, dominance relations, and
+the immutable failed row—is retained in
+`runtime/low_latency_followup_v1/expanded_candidate_table.json` and its CSV
+projection.
+
+#### Lower-latency opportunity answer
+
+The fastest new accuracy-feasible candidate is
+`seed_1455024938_rec_16`:
+
+| Field | Value |
+| --- | --- |
+| Encoder/decoder | 4/4 |
+| Learning rate / weight decay | `0.0003166398901931195` / `0.00048458989731432127` |
+| mAP50 | `0.5905930755759942` |
+| Accuracy retained | `90.1099504563%` |
+| Margin above floor | `0.0007206304945012` |
+| Median / p95 | `61.2727115` / `61.47020945 ms` |
+| Median 95% CI | `[61.242067500000005, 61.288489068749996] ms` |
+| Delta from `rec_19` selection-time median | `+4.1260875 ms` slower |
+| Delta from preregistered `57.089795375 ms` reference | `+4.182916125 ms` slower |
+| Pareto rank / dominated by | 2 / `seed_271828_rec_19`, `seed_271828_rec_6` |
+
+It lies `3.39054975 ms` beyond the raw-minimum-plus-tolerance cohort
+boundary. Even its lower confidence bound is `3.35990575 ms` beyond that
+boundary, so its selection-time uncertainty cannot plausibly move it into
+the equivalent-fastest cohort.
+
+The strongest new 3/3 candidate near 52 ms is
+`seed_1455024938_rec_17`: mAP50 `0.5780320693410467`, retained accuracy
+`88.1934504222%`, and median `52.23281375 ms`. It improves mAP50 over the
+old best 3/3 point by `0.0173714297841603`, but misses the frozen floor by
+`0.0118403757404463`.
+
+Therefore:
+
+> No qualifying approximately-52-ms candidate was found among 59 successful
+> new evaluations; one of the 60 frozen algorithmic recommendations failed
+> before submission.
+
+The finite search does not prove that approximately 52 ms at 90% retained
+accuracy is impossible. It establishes only that this preregistered,
+algorithm-generated search did not demonstrate it.
+
+#### Final union selection and Pareto geometry
+
+| Mode | Candidate | mAP50 | Selection-time median | Eligibility / Pareto status | Exact selection basis |
+| --- | --- | ---: | ---: | --- | --- |
+| Accuracy | `seed_271828_rec_18` | 0.6554138278683255 | 66.23099475 ms | all valid; global rank zero | highest valid accuracy |
+| Latency | `seed_271828_rec_19` | 0.6175134981289873 | 57.146624 ms | 34 candidates meet 90%; equivalent-fastest cohort is `rec_19`, `rec_6` | highest-accuracy member of the equivalent-fastest feasible cohort |
+| Multi-objective | `seed_271828_rec_19` | 0.6175134981289873 | 57.146624 ms | independently eligible global rank zero | minimum normalized augmented-Chebyshev regret |
+
+The final global rank-zero front has six points:
+
+| Candidate | Encoder/decoder | mAP50 | Median ms | 90%-feasible | Normalized accuracy regret | Normalized latency regret | Compromise score |
+| --- | --- | ---: | ---: | :---: | ---: | ---: | ---: |
+| `seed_271828_rec_3` | 3/3 | 0.5398520557657904 | 52.04909275 | no | 1.0000000000 | 0.0000000000 | 0.5000005000 |
+| `seed_271828_rec_15` | 3/3 | 0.5606606395568864 | 52.07828850 | no | 0.8199354041 | 0.0020586625 | 0.4099681131 |
+| `seed_1455024938_rec_17` | 3/3 | 0.5780320693410467 | 52.23281375 | no | 0.6696138102 | 0.0129546093 | 0.3348072464 |
+| `seed_271828_rec_19` | 4/3 | 0.6175134981289873 | 57.14662400 | yes | 0.3279659791 | 0.3594391817 | **0.1797199346** |
+| `seed_1455024938_rec_7` | 5/3 | 0.6215056979972510 | 61.78111000 | yes | 0.2934199541 | 0.6862279298 | 0.3431144547 |
+| `seed_271828_rec_18` | 6/3 | 0.6554138278683255 | 66.23099475 | yes | 0.0000000000 | 1.0000000000 | 0.5000005000 |
+
+The two new global-front points are `seed_1455024938_rec_17` and
+`seed_1455024938_rec_7`. Front-relative bounds are:
+
+- accuracy ideal/nadir/range:
+  `0.6554138278683255` / `0.5398520557657904` /
+  `0.11556177210253504`;
+- latency ideal/nadir/range:
+  `52.04909275` / `66.23099475000001` /
+  `14.181902000000008 ms`.
+
+Archive, reverse, and candidate-ID order all select the same winners;
+the order-invariance signature is
+`88eb3d89b00d1c5668d766ed80e620f5f5a0f3ffc263fab7aa8885fa27574ef9`.
+Every manual-injection, reordering, reselection, matched-feedback, and winner-
+override flag remains false.
+
+No new matched campaign is required for the latency-policy or opportunity
+conclusion. The new fastest feasible candidate is more than 4 ms slower and
+dominated; the new 3/3 front point is accuracy-infeasible; and the other new
+front point is `4.634486 ms` slower than `rec_19`. If a separate blanket
+audit requires matched remeasurement of every point on the post-follow-up
+global front, only the two new front points need an additional
+selection-isolated completeness campaign; such measurements must not feed
+selection or change the frozen winners.
 
 ## 9. Test evidence
 
-The complete post-v2 repository suite passed:
+The complete production suite passed:
 
 ```text
-414 passed, 1 skipped, 1 warning in 4.72s
+414 passed, 1 skipped, 1 warning in 4.76s
+```
+
+The complete DINO phase-two experiment suite also passed:
+
+```text
+355 passed in 5.40s
 ```
 
 The suite covers:
@@ -599,7 +752,10 @@ The suite covers:
   selection-isolation contracts;
 - checkpoint-recovery fail-closed behavior;
 - follow-up manifest, source, union-selection, and no-manual-injection
-  contracts.
+  contracts;
+- immutable historical-selector pins tested from their recorded git commit
+  rather than incorrectly requiring the current hardened selector to remain
+  byte-identical.
 
 The focused selector, replay, and wheel suite also passed:
 
@@ -607,15 +763,29 @@ The focused selector, replay, and wheel suite also passed:
 121 passed, 1 warning
 ```
 
-The sole warning in both runs is an sklearn Gaussian-process convergence
-warning; it is not a test failure.
+The production and focused runs each emit the same sklearn Gaussian-process
+convergence warning; it is not a test failure. The experiment-only suite
+emits no warnings.
 
-Exact complete-suite command:
+Exact production-suite command:
 
 ```bash
 cd /localhome/local-rarunachalam/tao-automl
-/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
-  -m pytest -q
+PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PATH \
+  pytest -q
+```
+
+The venv path must lead `PATH` because `tests/test_wheel.py` intentionally
+spawns `pip` as a subprocess.
+
+Exact complete experiment-suite command:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PATH \
+  PYTHONDONTWRITEBYTECODE=1 \
+  pytest -p no:cacheprovider -q \
+  experiments/dino_moo_phase2_20260728
 ```
 
 Exact focused selector/replay/wheel command:
@@ -646,6 +816,35 @@ cd /localhome/local-rarunachalam/tao-automl
 | Production selector at v1 matched binding | `c06c690f5600ead366f27bb3d4688b9e0b0e9ab463514ee6ea245962b06c919a` | n/a |
 | Production selector at routing-explicit v2 | `5fbdfe0d754ed3a3c4662fb6640afaf0cead9d99664d2a3061ed3c426d85037c` | n/a |
 | TAO 7.0.1 PyTorch SQSH | `88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e` | n/a |
+
+Completed follow-up artifacts:
+
+| Artifact | Whole-file SHA-256 |
+| --- | --- |
+| Dry run | `c0226b8450fc54074b3ada1452486e9e9a7f6f24bfc564c4e739d071a8bc3f11` |
+| Runtime contract v2 | `668ec18026bd241038df7a088d8e8923bfc1caf0b0064cc8c2570da4909d685d` |
+| Hardware contract | `75888145e590203cdaec1197db1ee434c47fe88056260538ec015cefa543173b` |
+| Input contract | `a4816b84ec3b7d53b073c41986c5cdae067a1b7c4ff5bb58158d403c2a463e53` |
+| Seed-process status | `3917efe29d98c16bca8eebb54c5af56808c24901fa8ae368073e4ea0c1d8af44` |
+| Complete candidate table JSON | `fe423a61b3efa9222b4b25b6da0f303c3e84eb4e5cc1864aad09c5b6a311479c` |
+| Complete candidate table CSV | `a52003ce292c63f5904f1a632d986f40e22403dda7a667748b0f5a0a82167e03` |
+| Final combined selection | `d94a95a8a5cdf5116465caa7944912a5a2fb1de37983aa5032516411ae2c773c` |
+| Final integrity audit | `4cba337281f131a8859a7f5da7d7ca67a888fd7dda6b1ba94b208879f5a36b8e` |
+| Completion manifest | `2a6d3ac8f7b75eed8ef01b4efd3949e3f94c30254d7021706614dd731145661d` |
+| Controller log | `1d43897a4552bb55fecb05cfdcbf01b574f7572931f141d15aca66320d21a476` |
+| Zero-submission first-attempt log | `4a2bef1bcdbf436c2d2a7280be5959e2f6bfbd915d2ac61f62204db668cf97e5` |
+
+The runtime contract internal SHA-256 is
+`a354b888e19e03fa27d231130349f03725c89b770ae556ae2ab861157aa9f3b0`.
+The two human-readable logs are intentionally stored under
+`latency_90_policy/logs/`, outside the frozen runtime root, so future
+read-only resume validation sees only contracted entries.
+
+| Seed | Events whole-file SHA-256 | Result whole-file SHA-256 | Archive whole-file SHA-256 | Archive internal SHA-256 |
+| ---: | --- | --- | --- | --- |
+| `409976740` | `3c309d5683e51751270fbb0f2ad40c04270d766b0e1eea23796f536139a0d8fa` | `62bd2b7b819a2739e4f9038cb6e8bcb11b89e4e4bba74c173f9552ba5a054848` | `1e6ecb1c306961c277b1ee0b5062fda5092423331fc6379511eb2c1986fdfe77` | `3ff4b410e7987f659ef8abcd915792a9c0c60a2b4c85248f4069e5150519ac82` |
+| `1455024938` | `525a21338488fbac1f67004da5a968cd3fbf6b7daf264b4a3513583cdac2bafa` | `4dee932af8c300629437edc8414d14adf58e2e44c9cf4cef1c0a7be7957d3ea1` | `6a92dc3b5189a5edcc9a92e89e1596f2982a9d6f3efd282ca2ad5b316a069606` | `9c88e795bfc31dbffa97e89e89a91530a129b135d276d374c17fd29736abfcee` |
+| `1415367367` | `9f7e376d67af6fa950d5e59d4fa0b96bb93cc97bcbe6f651c5663dcf5f150b55` | `c87de5f6026b98a3d7d1e0c6cb9f38f192721aa7e08f01ea4dbace19e9d23b09` | `b7a4b6a3742b173346910e6474993267a1857eafecee83599056d83826ff7351` | `1f33c0c3a43162f21d24c05d6c5278c39cd7591556020077827e6dcb272d6174` |
 
 Runtime:
 
@@ -808,7 +1007,11 @@ Launch/resume command:
   --acknowledgement USER_AUTHORIZED_3X8GPU_SLURM_DINO_LOW_LATENCY_FOLLOWUP_20260728
 ```
 
-Final union-only recomputation after all three new archives are terminal:
+The successful launch automatically wrote all three seed archives and then
+performed the final union analysis. No `--combine-only` command was run after
+`expanded_completion.json` existed, because doing so would rewrite
+timestamped evidence. The following is a recovery command only when all
+three seed archives exist but the automatic completion artifact is absent:
 
 ```bash
 /localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
@@ -817,27 +1020,57 @@ Final union-only recomputation after all three new archives are terminal:
   --manifest-file-sha256 1f0e25f0230fa84f702f3ff60dac91bce0fa284e90b4faf950b27e9cb2cbed7a
 ```
 
-## 12. Interim conclusion
+Expected automatic completion identities:
 
-The sealed archive satisfies the requested **policy and matched
-interpretation**: production
-latency mode derives a 90%-relative floor from the accuracy winner and
-algorithmically selects `seed_271828_rec_19`, which retains 94.2173% mAP50
-and has a new cohort-matched stable median of 56.921768375 ms.
+```text
+candidate_table_json_sha256=fe423a61b3efa9222b4b25b6da0f303c3e84eb4e5cc1864aad09c5b6a311479c
+candidate_table_csv_sha256=a52003ce292c63f5904f1a632d986f40e22403dda7a667748b0f5a0a82167e03
+combined_selection_sha256=d94a95a8a5cdf5116465caa7944912a5a2fb1de37983aa5032516411ae2c773c
+integrity_audit_sha256=4cba337281f131a8859a7f5da7d7ca67a888fd7dda6b1ba94b208879f5a36b8e
+completion_sha256=2a6d3ac8f7b75eed8ef01b4efd3949e3f94c30254d7021706614dd731145661d
+union_records=120
+union_successful_candidates=119
+```
 
-The completed matched campaign shows that `rec_19` and `rec_6` have no stable
-median or p95 direction and are descriptively practically equivalent under
-the frozen tolerance. The higher-accuracy tie-break is therefore justified:
-`rec_19` has mAP50 `0.6175134981289873`, versus
-`0.6000121414379619` for `rec_6`. The policy did not sacrifice a meaningfully
-distinguishable latency advantage to gain accuracy.
+## 12. Final conclusion
 
-The expanded low-latency search is warranted because the existing archive
-shows a stable approximately-4.79-ms latency opportunity at 3/3 depth, but
-its approximately-52-ms candidates retain only 82.37–85.54% accuracy. No
-claim that approximately 52 ms is achievable at 90% retained accuracy is
-made until an algorithm-generated candidate demonstrates it.
+The revised mode-specific hypothesis is **fully supported**:
 
-The 90%-policy archive replay and matched validation are complete. The
-below-57-ms opportunity answer and the final DINO reference-readiness
-recommendation remain pending only the preregistered follow-up search.
+1. Accuracy mode selects the highest-valid-accuracy candidate,
+   `seed_271828_rec_18` at mAP50 `0.6554138278683255`.
+2. Latency mode derives `0.589872445081493` from 90% of that winner,
+   forms the raw-minimum-anchored equivalent-fastest cohort
+   `seed_271828_rec_19`/`seed_271828_rec_6`, and selects the cohort's
+   higher-accuracy member. Matched evidence establishes no stable median or
+   p95 direction and descriptive practical equivalence; `rec_19` is not
+   described as measurably fastest.
+3. Multi-objective mode independently evaluates all valid candidates,
+   selects global-rank-zero `seed_271828_rec_19`, and uses the minimum
+   front-normalized augmented-Chebyshev score. It does not inherit the
+   latency retention floor.
+4. Latency and multi-objective legitimately share a winner through different
+   policy paths. No threshold, tolerance, range, candidate, objective,
+   selection-time value, or winner was manually changed or overridden.
+
+The existing sealed archive already satisfies the desired 90%-retention
+product profile. The additional search did not find a better
+accuracy-feasible latency point: its fastest qualifying result is
+`61.2727115 ms`, more than 4 ms slower than `rec_19`. The strongest new
+approximately-52-ms point retains only 88.1935% accuracy. Thus,
+approximately 52 ms at 90% retained accuracy remains **not demonstrated**;
+the finite negative result must not be misreported as proof of
+impossibility.
+
+No further blind expansion of the same DINO depth/optimizer domain is needed
+to validate the latency policy. If sub-57-ms DINO remains a separate product
+goal, the next search should be independently preregistered around a
+materially new accuracy-recovery lever, training fidelity, or supported
+architecture dimension—not a post-result range or threshold adjustment.
+
+DINO is ready to serve as the completed reference validation for AutoML mode
+semantics and the selection/measurement isolation framework before extending
+that framework to another model and dataset. A separate matched campaign for
+the two newly added global-front points is necessary only if a blanket audit
+requires every point on the post-follow-up global front to be remeasured; it
+is not required for the completed latency-policy conclusion and must not feed
+selection.
