@@ -405,9 +405,36 @@ def test_latency_practical_tolerance_forms_tie_without_confidence_intervals():
         "raw_minimum",
     )
     assert analysis.latency.winner_id == "higher_accuracy"
+    assert analysis.latency.reason == (
+        "Highest-accuracy member of the equivalent-fastest cohort satisfying "
+        "the accuracy-winner-relative constraint; deterministic specification "
+        "fingerprint and candidate ID resolve remaining ties."
+    )
 
 
-def test_latency_confidence_interval_overlap_forms_tie_outside_tolerance():
+def test_latency_direct_raw_fastest_reason_is_explicit():
+    analysis = analyze_archive(
+        [
+            Candidate("accuracy_winner", 1.00, 20.0),
+            Candidate("raw_fastest", 0.91, 10.0),
+            Candidate("slower", 0.95, 12.0),
+        ],
+        config(
+            constraint=AccuracyConstraint(kind="relative", value=0.90),
+            latency_tolerance=0.50,
+        ),
+    )
+
+    assert analysis.latency.winner_id == "raw_fastest"
+    assert analysis.latency.latency_tied_candidate_ids == ("raw_fastest",)
+    assert analysis.latency.reason == (
+        "Lowest stabilized latency candidate satisfying the "
+        "accuracy-winner-relative constraint; no equivalent-fastest "
+        "tie-break was required."
+    )
+
+
+def test_latency_confidence_interval_overlap_cannot_expand_practical_cohort():
     analysis = analyze_archive(
         [
             Candidate(
@@ -429,14 +456,16 @@ def test_latency_confidence_interval_overlap_forms_tie_outside_tolerance():
                 },
             ),
         ],
-        config(latency_tolerance=0.0),
+        config(latency_tolerance=0.40),
     )
 
-    assert analysis.latency.latency_tied_candidate_ids == (
-        "higher_accuracy",
-        "raw_minimum",
+    assert analysis.latency.latency_tied_candidate_ids == ("raw_minimum",)
+    assert analysis.latency.winner_id == "raw_minimum"
+    assert analysis.latency.reason == (
+        "Lowest stabilized latency candidate satisfying the "
+        "accuracy-winner-relative constraint; no equivalent-fastest "
+        "tie-break was required."
     )
-    assert analysis.latency.winner_id == "higher_accuracy"
 
 
 def test_latency_tie_cohort_is_anchored_at_raw_minimum_not_chained():
@@ -503,6 +532,59 @@ def test_multi_objective_weights_do_not_influence_latency_selection():
         accuracy_heavy.latency.latency_tied_candidate_ids
         == latency_heavy.latency.latency_tied_candidate_ids
     )
+
+
+def test_latency_90_percent_retention_is_relative_to_accuracy_winner():
+    candidates = [
+        Candidate("accuracy_winner", 0.66, 20.0),
+        Candidate("on_relative_floor", 0.594, 12.0),
+        Candidate("below_relative_floor", 0.593999, 9.0),
+        Candidate("feasible_fastest", 0.60, 10.0),
+    ]
+    analysis = analyze_archive(
+        candidates,
+        config(
+            constraint=AccuracyConstraint(kind="relative", value=0.90),
+            accuracy_tolerance=1e-12,
+        ),
+    )
+    audits = audits_by_id(analysis)
+
+    assert analysis.accuracy.winner_id == "accuracy_winner"
+    assert analysis.accuracy_reference_candidate_id == "accuracy_winner"
+    assert analysis.accuracy_reference_value == pytest.approx(0.66)
+    assert analysis.accuracy_threshold == pytest.approx(0.594)
+    assert {
+        candidate_id
+        for candidate_id, audit in audits.items()
+        if audit.accuracy_feasible
+    } == {
+        "accuracy_winner",
+        "on_relative_floor",
+        "feasible_fastest",
+    }
+    assert audits["below_relative_floor"].accuracy_feasible is False
+    assert analysis.latency.winner_id == "feasible_fastest"
+
+
+def test_accuracy_tie_break_never_reaches_outside_fastest_latency_cohort():
+    analysis = analyze_archive(
+        [
+            Candidate("raw_fastest", 0.90, 10.0),
+            Candidate("equivalent_higher_accuracy", 0.92, 10.5),
+            Candidate("meaningfully_slower_best_accuracy", 1.00, 10.8),
+        ],
+        config(
+            constraint=AccuracyConstraint(kind="relative", value=0.90),
+            latency_tolerance=0.60,
+        ),
+    )
+
+    assert analysis.latency.latency_tied_candidate_ids == (
+        "equivalent_higher_accuracy",
+        "raw_fastest",
+    )
+    assert analysis.latency.winner_id == "equivalent_higher_accuracy"
 
 
 def test_overlapping_latency_intervals_do_not_make_slower_median_no_worse():
@@ -930,6 +1012,98 @@ def test_new_and_legacy_latency_constraints_cannot_conflict():
             "latency_accuracy_retention": 0.95,
             "accuracy_retention_fraction": 0.90,
         })
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        {
+            "accuracy_constraint": {"retained_fraction": 0.98},
+            "accuracy_retention_fraction": 0.90,
+        },
+        {
+            "accuracy_constraint": {"max_absolute_degradation": 0.02},
+            "max_accuracy_degradation": 0.03,
+        },
+        {
+            "latency_accuracy_retention": {
+                "type": "relative",
+                "value": 0.90,
+                "retained_fraction": 0.95,
+            },
+        },
+        {
+            "latency_accuracy_retention": {
+                "retained_fraction": 0.90,
+                "min_retained_fraction": 0.95,
+            },
+        },
+    ],
+)
+def test_conflicting_latency_constraint_representations_are_rejected(settings):
+    with pytest.raises(ValueError, match="only one"):
+        parse_objective_config({
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+            ],
+            **settings,
+        })
+
+
+@pytest.mark.parametrize(
+    ("value", "exception", "message"),
+    [
+        (0.0, ValueError, r"must be in \(0, 1\]"),
+        (-0.1, ValueError, r"must be in \(0, 1\]"),
+        (1.000001, ValueError, r"must be in \(0, 1\]"),
+        (float("nan"), ValueError, "finite"),
+        (float("inf"), ValueError, "finite"),
+        (True, TypeError, "number or dictionary"),
+    ],
+)
+def test_latency_retention_configuration_rejects_invalid_values(
+    value,
+    exception,
+    message,
+):
+    with pytest.raises(exception, match=message):
+        parse_objective_config({
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+            ],
+            "latency_accuracy_retention": value,
+        })
+
+
+def test_explicit_90_percent_profile_does_not_change_global_default():
+    objectives = [
+        {"metric": "accuracy", "direction": "maximize"},
+        {"metric": "latency", "direction": "minimize"},
+    ]
+    default_selection = parse_objective_config({
+        "objectives": objectives,
+    }).selection_config
+    profile_selection = parse_objective_config({
+        "objectives": objectives,
+        "latency_accuracy_retention": {
+            "type": "relative",
+            "retained_fraction": 0.90,
+            "reference": "accuracy_winner",
+        },
+        "multi_objective_min_accuracy": None,
+    }).selection_config
+
+    assert default_selection is not None
+    assert profile_selection is not None
+    assert default_selection.latency_accuracy_retention.value == pytest.approx(
+        0.98
+    )
+    assert profile_selection.latency_accuracy_retention.value == pytest.approx(
+        0.90
+    )
+    assert profile_selection.multi_objective_min_accuracy is None
 
 
 def test_absolute_accuracy_degradation_rule_and_inclusive_floor():

@@ -606,6 +606,29 @@ The `settings` dict passed to `AutoML(settings=...)`:
 | `session_id` | str | auto | All — override session ID |
 | `experiment_id` | str | auto | All — override experiment ID |
 
+The repository-wide latency retention default remains `0.98`. Product profiles
+that permit a larger accuracy reduction must opt in explicitly. The DINO
+latency validation profile uses:
+
+```python
+automl_settings = {
+    "selection_mode": "latency",
+    "latency_accuracy_retention": {
+        "type": "relative",
+        "retained_fraction": 0.90,
+        "reference": "accuracy_winner",
+    },
+    # Independent: latency retention never becomes a multi-objective floor.
+    "multi_objective_min_accuracy": None,
+}
+```
+
+This means `minimum_accuracy = 0.90 * accuracy_mode_winner_accuracy`; it does
+not subtract ten percentage points from the accuracy metric. Relative retention
+must be finite and satisfy `0 < retained_fraction <= 1`. The complete checked-in
+profile is
+[`dino_latency_90_policy_profile.v1.json`](../experiments/dino_moo_phase2_20260728/dino_latency_90_policy_profile.v1.json).
+
 ---
 
 ## 11. Algorithm Behaviors

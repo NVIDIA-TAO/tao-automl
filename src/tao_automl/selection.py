@@ -731,34 +731,30 @@ def _choose_accuracy(
     return min(latency_tied, key=lambda item: (item.fingerprint, item.candidate_id))
 
 
-def _latency_intervals_overlap(left: CandidateAudit, right: CandidateAudit) -> bool:
-    if (
-        left.latency_ci95_low is None
-        or left.latency_ci95_high is None
-        or right.latency_ci95_low is None
-        or right.latency_ci95_high is None
-    ):
-        return False
-    return (
-        left.latency_ci95_low <= right.latency_ci95_high
-        and right.latency_ci95_low <= left.latency_ci95_high
-    )
-
-
 def _choose_latency(
     feasible: Sequence[CandidateAudit],
     config: SelectionConfig,
 ) -> tuple[CandidateAudit | None, tuple[str, ...]]:
     if not feasible:
         return None, ()
-    fastest = min(feasible, key=lambda item: (float(item.latency), item.fingerprint))
+    fastest = min(
+        feasible,
+        key=lambda item: (
+            float(item.latency),
+            item.fingerprint,
+            item.candidate_id,
+        ),
+    )
+    # Practical tolerance is a hard cohort boundary. Confidence intervals are
+    # still used by Pareto dominance and reported uncertainty, but overlap
+    # cannot authorize a higher-accuracy candidate whose observed latency
+    # disadvantage exceeds the configured practical threshold.
     tied = [
         item
         for item in feasible
         if (
             float(item.latency) - float(fastest.latency)
             <= config.latency_tolerance
-            or _latency_intervals_overlap(item, fastest)
         )
     ]
     winner = min(
@@ -1014,15 +1010,24 @@ def analyze_archive(
         )
     else:
         latency_winner.latency_winner = True
+        if len(latency_ties) == 1:
+            latency_reason = (
+                "Lowest stabilized latency candidate satisfying the "
+                "accuracy-winner-relative constraint; no equivalent-fastest "
+                "tie-break was required."
+            )
+        else:
+            latency_reason = (
+                "Highest-accuracy member of the equivalent-fastest cohort "
+                "satisfying the accuracy-winner-relative constraint; "
+                "deterministic specification fingerprint and candidate ID "
+                "resolve remaining ties."
+            )
         latency_selection = ModeSelection(
             mode="latency",
             status="selected",
             winner_id=latency_winner.candidate_id,
-            reason=(
-                "Lowest stabilized latency among candidates satisfying the "
-                "accuracy-winner-relative constraint; statistically equivalent "
-                "latencies use higher accuracy then canonical configuration hash."
-            ),
+            reason=latency_reason,
             latency_tied_candidate_ids=latency_ties,
         )
 
