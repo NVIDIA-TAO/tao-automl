@@ -1,0 +1,10 @@
+{
+  "compute_capability": "8.0",
+  "cuda": "13.2",
+  "cudnn": 92000,
+  "gpu_name": "NVIDIA A100-SXM4-80GB",
+  "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+  "torch": "2.11.0",
+  "total_memory_bytes": 85174583296,
+  "world_size": 8
+}
