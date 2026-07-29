@@ -96,6 +96,10 @@ It then:
 5. uses canonical specification fingerprint and candidate ID for any
    remaining deterministic tie.
 
+> Latency mode selects the highest-accuracy member of the raw-minimum-anchored
+> equivalent-fastest cohort satisfying the configured retained-accuracy
+> constraint.
+
 Accuracy cannot promote a candidate whose observed latency disadvantage
 exceeds the practical tolerance. Candidate latency confidence intervals are
 required to be finite, ordered, and to contain the median. They remain part
@@ -482,8 +486,10 @@ Both descriptive intervals lie completely inside
 `[-0.73553775, +0.73553775] ms`. The exact directional gate fails, and no
 individual allocation difference crosses the practical boundary. Thus:
 
-> Latency mode selected the highest-accuracy member of the
-> equivalent-fastest cohort satisfying 90% retained accuracy.
+> Matched validation found no stable median or p95 direction between
+> `seed_271828_rec_19` and `seed_271828_rec_6`. Both are descriptively
+> practically equivalent within the configured `0.73553775 ms` tolerance, so
+> the production higher-accuracy tie-break is justified.
 
 `rec_19` must not be described as measurably fastest. It is the
 higher-accuracy member of a validated practically equivalent fastest cohort.
@@ -640,7 +646,7 @@ projection.
 
 #### Lower-latency opportunity answer
 
-The fastest new accuracy-feasible candidate is
+The new accuracy-feasible candidate with the lowest selection-time median is
 `seed_1455024938_rec_16`:
 
 | Field | Value |
@@ -673,9 +679,9 @@ Therefore:
 > new evaluations; one of the 60 frozen algorithmic recommendations failed
 > before submission.
 
-The finite search does not prove that approximately 52 ms at 90% retained
-accuracy is impossible. It establishes only that this preregistered,
-algorithm-generated search did not demonstrate it.
+> The preregistered finite search did not demonstrate an approximately-52-ms
+> candidate satisfying 90% retained accuracy. This result does not prove that
+> such a candidate is impossible.
 
 #### Final union selection and Pareto geometry
 
@@ -713,26 +719,26 @@ Every manual-injection, reordering, reselection, matched-feedback, and winner-
 override flag remains false.
 
 No new matched campaign is required for the latency-policy or opportunity
-conclusion. The new fastest feasible candidate is more than 4 ms slower and
-dominated; the new 3/3 front point is accuracy-infeasible; and the other new
-front point is `4.634486 ms` slower than `rec_19`. If a separate blanket
-audit requires matched remeasurement of every point on the post-follow-up
-global front, only the two new front points need an additional
-selection-isolated completeness campaign; such measurements must not feed
-selection or change the frozen winners.
+conclusion. The new feasible candidate with the lowest selection-time median
+is more than 4 ms slower and dominated; the new 3/3 front point is
+accuracy-infeasible; and the other new front point is `4.634486 ms` slower
+than `rec_19`. If a separate blanket audit requires matched remeasurement of
+every point on the post-follow-up global front, only the two new front points
+need an additional selection-isolated completeness campaign; such
+measurements must not feed selection or change the frozen winners.
 
 ## 9. Test evidence
 
 The complete production suite passed:
 
 ```text
-414 passed, 1 skipped, 1 warning in 4.76s
+426 passed, 1 skipped, 1 warning in 4.75s
 ```
 
 The complete DINO phase-two experiment suite also passed:
 
 ```text
-355 passed in 5.40s
+355 passed in 5.37s
 ```
 
 The suite covers:
@@ -746,7 +752,12 @@ The suite covers:
 - archive-order invariance;
 - empty feasible populations;
 - finite `(0, 1]` configuration validation and legacy-conflict rejection;
+- fail-closed unsupported selector objective shapes, unknown retention keys,
+  and explicitly named missing latency metrics;
 - independence from multi-objective weights and constraints;
+- non-negative multi-objective weights with at least one positive preference;
+- raw Pareto latency-extreme classification independent of the latency-mode
+  equivalent-fastest cohort;
 - replay integrity;
 - matched projection, recovery binding, schedule, launch, aggregation, and
   selection-isolation contracts;
@@ -760,7 +771,7 @@ The suite covers:
 The focused selector, replay, and wheel suite also passed:
 
 ```text
-121 passed, 1 warning
+133 passed, 1 warning in 2.18s
 ```
 
 The production and focused runs each emit the same sklearn Gaussian-process
@@ -775,8 +786,9 @@ PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PAT
   pytest -q
 ```
 
-The venv path must lead `PATH` because `tests/test_wheel.py` intentionally
-spawns `pip` as a subprocess.
+The venv path leads `PATH` for reproducibility. `tests/test_wheel.py` invokes
+`sys.executable -m pip`, so the package check cannot accidentally resolve an
+ambient `pip` from another interpreter.
 
 Exact complete experiment-suite command:
 
@@ -865,7 +877,8 @@ Reproduce the v1 replay from its exact implementation commit in a detached
 temporary worktree:
 
 ```bash
-REPLAY_V1_TREE=$(mktemp -d)
+REPLAY_V1_ROOT="$(mktemp -d /tmp/tao-automl-replay-v1.XXXXXX)"
+REPLAY_V1_TREE="$REPLAY_V1_ROOT/tree"
 git -C /localhome/local-rarunachalam/tao-automl worktree add \
   --detach "$REPLAY_V1_TREE" \
   b1b25700ca478fa847cdaa402520be376d55a00b
@@ -894,11 +907,18 @@ git -C /localhome/local-rarunachalam/tao-automl worktree remove \
 
 ### 11.2 Replay v2: active latency winner routing
 
-Verify the finalized routing-explicit v2 artifact with:
+The finalized routing-explicit artifact binds the production selector source
+at commit `330dbc61efbebf6158e7dcecc59aea704039737b`. Verify its exact
+whole-file and canonical hashes at that source commit, without rewriting it:
 
 ```bash
-cd /localhome/local-rarunachalam/tao-automl
-PYTHONPATH=src \
+REPLAY_V2_ROOT="$(mktemp -d /tmp/tao-automl-replay-v2.XXXXXX)"
+REPLAY_V2_TREE="$REPLAY_V2_ROOT/tree"
+git -C /localhome/local-rarunachalam/tao-automl worktree add \
+  --detach "$REPLAY_V2_TREE" \
+  330dbc61efbebf6158e7dcecc59aea704039737b
+cd "$REPLAY_V2_TREE"
+PYTHONPATH="$REPLAY_V2_TREE/src" \
   /localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
   experiments/dino_moo_phase2_20260728/replay_latency_90_policy.py \
   --check
@@ -912,6 +932,24 @@ canonical_payload_sha256=01ac3f09dafa37cae35e96c125b43c44453cf2d2203f24b14b2cf83
 selection_mode=latency
 winner_route_matches_latency_selection=true
 selected_latency_candidate_id=seed_271828_rec_19
+```
+
+On the current branch, the focused replay tests independently rebuild the
+complete selector output and require semantic equality with v2 while excluding
+only the pinned selector-source hash and its covering canonical hash:
+
+```bash
+cd /localhome/local-rarunachalam/tao-automl
+/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python \
+  -m pytest -q \
+  experiments/dino_moo_phase2_20260728/test_replay_latency_90_policy.py
+```
+
+Remove the detached verification worktree afterward:
+
+```bash
+git -C /localhome/local-rarunachalam/tao-automl worktree remove \
+  "$REPLAY_V2_TREE"
 ```
 
 ### 11.3 Completed `rec_6` recovery workflow
@@ -1052,10 +1090,14 @@ The revised mode-specific hypothesis is **fully supported**:
    policy paths. No threshold, tolerance, range, candidate, objective,
    selection-time value, or winner was manually changed or overridden.
 
+> Each mode satisfies its independently defined selection policy. Modes may
+> legitimately share a winner when constraints, equivalence tolerances, or
+> Pareto geometry lead to the same candidate.
+
 The existing sealed archive already satisfies the desired 90%-retention
 product profile. The additional search did not find a better
-accuracy-feasible latency point: its fastest qualifying result is
-`61.2727115 ms`, more than 4 ms slower than `rec_19`. The strongest new
+accuracy-feasible latency point: its lowest qualifying selection-time median
+is `61.2727115 ms`, more than 4 ms slower than `rec_19`. The strongest new
 approximately-52-ms point retains only 88.1935% accuracy. Thus,
 approximately 52 ms at 90% retained accuracy remains **not demonstrated**;
 the finite negative result must not be misreported as proof of

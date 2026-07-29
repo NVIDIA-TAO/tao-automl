@@ -1,6 +1,11 @@
 # DINO latency-mode tied-cohort review
 
-Review baseline: `b7160e0a9ef38a48ee95d44eb6510b818fdb00c4`.
+Original review baseline: `b7160e0a9ef38a48ee95d44eb6510b818fdb00c4`.
+
+Merge-readiness re-audit: current MR branch, with production latency-routing
+hardening originating at `330dbc61efbebf6158e7dcecc59aea704039737b`
+and completed evidence preserved through
+`d82167041e4086230efa161cadf9143752619246`.
 
 Scope: `src/tao_automl/selection.py` and the frozen expanded DINO
 selection evidence. This review did not invoke selection on matched-validation
@@ -18,9 +23,8 @@ The production path has the required order:
    reference and threshold.
 3. Only candidates satisfying that threshold enter `latency_feasible`.
 4. `_choose_latency` anchors the cohort at the raw minimum stabilized latency.
-5. A feasible candidate enters the tied cohort when either
-   \(L_i-L_{\min}\leq\epsilon_L\) or its reported latency interval overlaps the
-   raw-minimum anchor's interval.
+5. A feasible candidate enters the tied cohort only when
+   \(L_i-L_{\min}\leq\epsilon_L\), the configured hard practical tolerance.
 6. The winner is the highest-accuracy member of that cohort.
 7. Equal-accuracy ties use the canonical configuration fingerprint and then
    candidate ID.
@@ -29,6 +33,8 @@ The production path has the required order:
 mode selection. The final keys are complete, so candidate enumeration order
 does not affect the winner. `_choose_latency` does not consume normalized
 multi-objective regrets, compromise scores, or multi-objective weights.
+Reported latency confidence intervals remain part of validation and Pareto
+evidence, but do not widen the raw-minimum-anchored latency cohort.
 
 ## Frozen DINO evidence
 
@@ -45,9 +51,8 @@ The relative-retention reference is `seed_271828_rec_18` at
 
 All four deltas are within the frozen `0.73553775 ms` practical tolerance.
 The three non-anchor selection-time confidence intervals do not overlap the
-anchor interval, so the historical cohort was formed by the absolute tolerance
-branch, not by confidence-interval overlap. The higher-accuracy tie-break then
-selected `seed_271828_rec_18`.
+anchor interval. The cohort was formed by the hard practical tolerance, and
+the higher-accuracy tie-break then selected `seed_271828_rec_18`.
 
 ## Semantics clarification
 
@@ -56,10 +61,9 @@ That phrase is too narrow because the configured practical-tolerance branch can
 form the cohort without statistical interval overlap. The accurate product
 semantics are:
 
-> Select the fastest accuracy-feasible candidate when latency differences are
-> meaningful. When candidates are equivalent under the configured latency
-> tie policy, select the highest-accuracy member of the equivalent fastest
-> cohort, followed by fingerprint and candidate-ID tie-breaking.
+> Latency mode selects the highest-accuracy member of the raw-minimum-anchored
+> equivalent-fastest cohort satisfying the configured retained-accuracy
+> constraint.
 
 This is a reporting clarification, not a change to the frozen algorithm or
 winner.

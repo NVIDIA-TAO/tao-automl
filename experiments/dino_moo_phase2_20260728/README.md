@@ -1,14 +1,34 @@
 # DINO multi-objective phase-2 latency validation
 
-This directory contains the completed DINO-only phase-2 investigation: the
-frozen historical six-candidate-front replay and latency comparison, the
-expanded 60-candidate shared archive, and the matched validation of its
-four-candidate global Pareto front. It also contains a separate matched
-validation of the exact four-candidate cohort admitted by latency mode's
-frozen 98% accuracy-retention rule. No matched-validation measurement changes
-an archive objective or feeds AutoML reselection.
+This directory contains the completed DINO-only phase-2 investigation and its
+historical phases. The current merge authority is
+[`latency_90_policy/latency_90_policy_report.md`](latency_90_policy/latency_90_policy_report.md).
+It records the explicit 90%-retention replay, matched `rec_19`/`rec_6`
+validation, preregistered follow-up search, and final 120-row union. The
+98%-retention material below remains historical evidence for the earlier
+phase. No matched-validation measurement changes an archive objective or
+feeds AutoML reselection.
 
-## Final status
+## Current merge result
+
+| Mode | Candidate | Policy basis |
+| --- | --- | --- |
+| Accuracy | `seed_271828_rec_18` | highest valid accuracy |
+| Latency, explicit 90% profile | `seed_271828_rec_19` | highest-accuracy member of the raw-minimum-anchored equivalent-fastest feasible cohort |
+| Multi-objective | `seed_271828_rec_19` | independently eligible Pareto-rank-zero augmented-Chebyshev compromise |
+
+Latency and multi-objective independently select `rec_19` for different
+algorithmic reasons. The repository-wide implicit latency-retention default
+remains 98%; only the DINO validation profile explicitly selects 90%.
+
+Final committed artifacts:
+
+- [`runtime/low_latency_followup_v1/expanded_candidate_table.json`](runtime/low_latency_followup_v1/expanded_candidate_table.json)
+- [`runtime/low_latency_followup_v1/expanded_combined_selection.json`](runtime/low_latency_followup_v1/expanded_combined_selection.json)
+- [`runtime/low_latency_followup_v1/expanded_integrity_audit.json`](runtime/low_latency_followup_v1/expanded_integrity_audit.json)
+- [`runtime/low_latency_followup_v1/expanded_completion.json`](runtime/low_latency_followup_v1/expanded_completion.json)
+
+## Historical 98% phase status
 
 The expanded search completed all 60 candidates (20 recommendations for each
 of seeds `314159`, `271828`, and `161803`) with no failed or manually injected
@@ -99,11 +119,10 @@ The product semantics validated by the two distinct matched studies are:
 
 - **Accuracy mode:** select the highest-accuracy valid candidate; use latency
   only as a deterministic tie-break within the configured accuracy tolerance.
-- **Latency mode:** first apply the configured accuracy-retention rule. Select
-  the fastest feasible candidate when latency differences are meaningful; if
-  candidates are tied under the latency tolerance or configured statistical
-  rule, select the highest-accuracy member of the equivalent fastest cohort,
-  followed by deterministic fingerprint and candidate-ID tie-breaks.
+- **Latency mode:** select the highest-accuracy member of the
+  raw-minimum-anchored equivalent-fastest cohort satisfying the configured
+  retained-accuracy constraint. The configured hard practical tolerance
+  defines that cohort; confidence-interval overlap does not widen it.
 - **Multi-objective mode:** select a deterministic, normalized,
   Pareto-nondominated balance over its independently eligible front. It does
   not silently inherit latency mode's retained-accuracy constraint.
@@ -285,11 +304,11 @@ cd /localhome/local-rarunachalam/tao-automl
   experiments/dino_moo_phase2_20260728/test_latency_feasible_overlay_campaign_integrity.py
 ```
 
-The authoritative final reruns reported `91 passed` for the focused
+The historical 98%-phase reruns reported `91 passed` for the focused
 selector/feasible-cohort/recovery/overlay/integrity suite, `299 passed` for
-the complete experiment package, and `392 passed, 1 skipped` for the
-repository suite. Exact timings and compile checks are recorded in
-`phase2_validation_report.md`.
+that experiment package, and `392 passed, 1 skipped` for the repository suite.
+Those are sealed phase-specific counts, not the current MR merge gate. Exact
+timings and compile checks remain recorded in `phase2_validation_report.md`.
 
 ## Frozen archive replay
 

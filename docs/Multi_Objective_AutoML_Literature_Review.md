@@ -263,8 +263,8 @@ r_latency(x)  = (L(x) - L_min) / (L_max - L_min)
 
 The bounds are persisted from the rank-zero front under the configured
 multi-objective eligibility policy. A zero-range objective is inactive and
-contributes zero regret. With normalized positive weights \(w_A,w_L\), the
-selected candidate minimizes:
+contributes zero regret. With normalized non-negative weights \(w_A,w_L\),
+at least one of which must be positive, the selected candidate minimizes:
 
 ```text
 max(w_A * r_accuracy, w_L * r_latency)

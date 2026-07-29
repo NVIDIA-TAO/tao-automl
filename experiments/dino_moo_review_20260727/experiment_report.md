@@ -1,5 +1,9 @@
 # DINO multi-objective AutoML technical review and validation
 
+> Historical 30-candidate/98%-floor report. Its conclusions and provenance are
+> preserved as executed. The completed phase-2 explicit-90% authority is
+> [`../dino_moo_phase2_20260728/latency_90_policy/latency_90_policy_report.md`](../dino_moo_phase2_20260728/latency_90_policy/latency_90_policy_report.md).
+
 Date: 2026-07-28 UTC
 
 Scope: DINO ResNet50 only, using
