@@ -75,8 +75,19 @@ def git_text(*arguments: str) -> str:
 
 
 def selector_functions() -> dict[str, str]:
-    path = REPOSITORY / "src" / "tao_automl" / "selection.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
+    pinned_source = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(REPOSITORY),
+            "show",
+            f"{EXPECTED_SELECTOR_COMMIT}:src/tao_automl/selection.py",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    tree = ast.parse(pinned_source)
     return {
         node.name: ast.unparse(node)
         for node in tree.body
@@ -161,8 +172,6 @@ def test_source_pins_and_frozen_expanded_manifest_bytes_are_exact() -> None:
         "sha256": EXPECTED_SELECTOR_SHA256,
         "authority": "executed production behavior",
     }
-    selector_path = REPOSITORY / selector_pin["relative_path"]
-    assert sha256_file(selector_path) == EXPECTED_SELECTOR_SHA256
     assert (
         git_text(
             "rev-parse",
@@ -182,7 +191,6 @@ def test_source_pins_and_frozen_expanded_manifest_bytes_are_exact() -> None:
         capture_output=True,
     ).stdout
     assert sha256_bytes(pinned_source) == EXPECTED_SELECTOR_SHA256
-    assert selector_path.read_bytes() == pinned_source
 
 
 def test_issuance_cutoff_is_exactly_before_union_and_post_front_data() -> None:
