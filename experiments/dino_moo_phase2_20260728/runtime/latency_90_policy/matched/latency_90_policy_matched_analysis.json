@@ -1,0 +1,2339 @@
+{
+  "aggregation_runtime_provenance": {
+    "checked_at_utc": "2026-07-29T00:45:11Z",
+    "latency_stats": {
+      "expected_file": "/localhome/local-rarunachalam/tao-automl/src/tao_automl/latency_stats.py",
+      "imported_file": "/localhome/local-rarunachalam/tao-automl/src/tao_automl/latency_stats.py",
+      "imported_file_matches_manifest": true,
+      "imported_sha256_matches_manifest": true,
+      "module": "tao_automl.latency_stats",
+      "sha256": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d"
+    },
+    "tao_sdk": {
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+      "path": "/localhome/local-rarunachalam/tao-sdk",
+      "worktree_clean": true
+    }
+  },
+  "allowed_use": "validation of latency ordering and equivalence only; matched measurements cannot enter selection or reselection",
+  "analysis": {
+    "between_allocation_statistics": [
+      {
+        "candidate_id": "seed_271828_rec_19",
+        "median_latency": {
+          "allocation_count": 6,
+          "iqr_ms": 0.07050106249999999,
+          "mad_ms": 0.037094749999997845,
+          "max_ms": 57.32534325,
+          "mean_ms": 56.98709625,
+          "median_ms": 56.921768375,
+          "min_ms": 56.866871,
+          "range_ms": 0.4584722499999998,
+          "sample_stdev_ms": 0.1704291789712822,
+          "values_ms": [
+            56.9399595,
+            56.866871,
+            57.32534325,
+            56.90247625,
+            56.90357725,
+            56.98435025
+          ]
+        },
+        "p95_latency": {
+          "allocation_count": 6,
+          "iqr_ms": 0.07597511249999656,
+          "mad_ms": 0.04544075000000092,
+          "max_ms": 57.52484895,
+          "mean_ms": 57.20990805833333,
+          "median_ms": 57.160102975,
+          "min_ms": 57.10177795,
+          "range_ms": 0.4230710000000002,
+          "sample_stdev_ms": 0.15887426163909452,
+          "values_ms": [
+            57.175730949999995,
+            57.10177795,
+            57.52484895,
+            57.144475,
+            57.110867,
+            57.2017485
+          ]
+        }
+      },
+      {
+        "candidate_id": "seed_271828_rec_6",
+        "median_latency": {
+          "allocation_count": 6,
+          "iqr_ms": 0.07543643750000228,
+          "mad_ms": 0.04305962500000149,
+          "max_ms": 57.32423075,
+          "mean_ms": 56.99252979166666,
+          "median_ms": 56.9539065,
+          "min_ms": 56.81540775,
+          "range_ms": 0.5088229999999996,
+          "sample_stdev_ms": 0.17436796006917435,
+          "values_ms": [
+            56.99692325,
+            56.81540775,
+            57.32423075,
+            56.910804,
+            56.932212500000006,
+            56.9756005
+          ]
+        },
+        "p95_latency": {
+          "allocation_count": 6,
+          "iqr_ms": 0.07951166250000341,
+          "mad_ms": 0.05005352500000271,
+          "max_ms": 57.513829449999996,
+          "mean_ms": 57.19508625833333,
+          "median_ms": 57.1524543,
+          "min_ms": 57.05208255,
+          "range_ms": 0.4617468999999943,
+          "sample_stdev_ms": 0.16428205748675662,
+          "values_ms": [
+            57.16131705,
+            57.05208255,
+            57.513829449999996,
+            57.14359155,
+            57.099794949999996,
+            57.199902
+          ]
+        }
+      }
+    ],
+    "directional_rule": {
+      "absence_of_direction_implies_equivalence": false,
+      "all_six_differences_beyond_tolerance_required": true,
+      "alpha": 0.050000000000000044,
+      "exact_one_sided_tolerance_shifted_sign_flip_required": true,
+      "simultaneous_total_order_claimed": false
+    },
+    "first_candidate_id": "seed_271828_rec_19",
+    "paired_bootstrap": {
+      "confidence_level": 0.95,
+      "effective_role": "descriptive_only",
+      "resamples": 10000,
+      "seed": 20260728,
+      "statistic": "median of six allocation-paired differences",
+      "unit": "allocation"
+    },
+    "pairwise_endpoints": {
+      "median_ms": {
+        "all_six_beyond_negative_tolerance": false,
+        "all_six_beyond_positive_tolerance": false,
+        "allocation_ids": [
+          "post_front_allocation_00",
+          "post_front_allocation_01",
+          "post_front_allocation_02",
+          "post_front_allocation_03",
+          "post_front_allocation_04",
+          "post_front_allocation_05"
+        ],
+        "bootstrap_role": "descriptive only for the effective directional rule",
+        "delta_convention": "first minus second; negative means first is faster",
+        "descriptive_paired_bootstrap_ci95_ms": [
+          -0.04279950000000454,
+          0.030106500000002256
+        ],
+        "descriptive_practical_equivalence": true,
+        "effective_classification": "no_stable_direction_descriptive_practical_equivalence",
+        "exact_tolerance_shifted_sign_flip": {
+          "all_six_beyond_negative_tolerance": false,
+          "all_six_beyond_positive_tolerance": false,
+          "alpha": 0.050000000000000044,
+          "claim_rule": "A direction requires its one-sided exact shifted sign-flip p-value <= alpha and every one of the six allocation-paired differences strictly beyond the corresponding practical tolerance boundary.",
+          "directional_claim": "no_stable_directional_claim",
+          "first_faster_exact_test_passes": false,
+          "first_faster_test": {
+            "allocation_count": 6,
+            "alternative": "less",
+            "boundary_ms": -0.73553775,
+            "extreme_permutation_count": 64,
+            "method": "exact paired sign-flip permutation test on differences shifted by the practical-tolerance boundary",
+            "observed_statistic_ms": 4.380625250000001,
+            "p_value_one_sided": 1.0,
+            "permutation_count": 64,
+            "shifted_differences_ms": [
+              0.6785739999999987,
+              0.7870010000000047,
+              0.736650250000005,
+              0.7272100000000006,
+              0.7069024999999922,
+              0.7442874999999998
+            ],
+            "test_statistic": "sum of boundary-shifted paired differences"
+          },
+          "practical_tolerance_ms": 0.73553775,
+          "scope": "pairwise_only",
+          "second_faster_exact_test_passes": false,
+          "second_faster_test": {
+            "allocation_count": 6,
+            "alternative": "greater",
+            "boundary_ms": 0.73553775,
+            "extreme_permutation_count": 64,
+            "method": "exact paired sign-flip permutation test on differences shifted by the practical-tolerance boundary",
+            "observed_statistic_ms": -4.445827749999999,
+            "p_value_one_sided": 1.0,
+            "permutation_count": 64,
+            "shifted_differences_ms": [
+              -0.7925015000000013,
+              -0.6840744999999953,
+              -0.734425249999995,
+              -0.7438654999999994,
+              -0.7641730000000078,
+              -0.7267880000000002
+            ],
+            "test_statistic": "sum of boundary-shifted paired differences"
+          },
+          "simultaneous_order_inference_permitted": false
+        },
+        "failure_to_prove_direction_implies_equivalence": false,
+        "median_paired_difference_ms": -0.0036076249999972276,
+        "metric": "median_ms",
+        "paired_differences_ms": [
+          -0.05696375000000131,
+          0.051463250000004734,
+          0.0011125000000049567,
+          -0.008327749999999412,
+          -0.028635250000007773,
+          0.008749749999999779
+        ],
+        "point_and_interval_classification": {
+          "descriptive_bootstrap_interval_classification": "entirely_within_practical_tolerance",
+          "point_classification": "practically_equivalent"
+        }
+      },
+      "p95_ms": {
+        "all_six_beyond_negative_tolerance": false,
+        "all_six_beyond_positive_tolerance": false,
+        "allocation_ids": [
+          "post_front_allocation_00",
+          "post_front_allocation_01",
+          "post_front_allocation_02",
+          "post_front_allocation_03",
+          "post_front_allocation_04",
+          "post_front_allocation_05"
+        ],
+        "bootstrap_role": "descriptive only for the effective directional rule",
+        "delta_convention": "first minus second; negative means first is faster",
+        "descriptive_paired_bootstrap_ci95_ms": [
+          0.0013649750000013228,
+          0.03205464999999563
+        ],
+        "descriptive_practical_equivalence": true,
+        "effective_classification": "no_stable_direction_descriptive_practical_equivalence",
+        "exact_tolerance_shifted_sign_flip": {
+          "all_six_beyond_negative_tolerance": false,
+          "all_six_beyond_positive_tolerance": false,
+          "alpha": 0.050000000000000044,
+          "claim_rule": "A direction requires its one-sided exact shifted sign-flip p-value <= alpha and every one of the six allocation-paired differences strictly beyond the corresponding practical tolerance boundary.",
+          "directional_claim": "no_stable_directional_claim",
+          "first_faster_exact_test_passes": false,
+          "first_faster_test": {
+            "allocation_count": 6,
+            "alternative": "less",
+            "boundary_ms": -0.73553775,
+            "extreme_permutation_count": 64,
+            "method": "exact paired sign-flip permutation test on differences shifted by the practical-tolerance boundary",
+            "observed_statistic_ms": 4.5021573,
+            "p_value_one_sided": 1.0,
+            "permutation_count": 64,
+            "shifted_differences_ms": [
+              0.7499516499999939,
+              0.7852331499999974,
+              0.7465572500000033,
+              0.7364212000000034,
+              0.7466098000000028,
+              0.7373842499999992
+            ],
+            "test_statistic": "sum of boundary-shifted paired differences"
+          },
+          "practical_tolerance_ms": 0.73553775,
+          "scope": "pairwise_only",
+          "second_faster_exact_test_passes": false,
+          "second_faster_test": {
+            "allocation_count": 6,
+            "alternative": "greater",
+            "boundary_ms": 0.73553775,
+            "extreme_permutation_count": 64,
+            "method": "exact paired sign-flip permutation test on differences shifted by the practical-tolerance boundary",
+            "observed_statistic_ms": -4.3242957,
+            "p_value_one_sided": 1.0,
+            "permutation_count": 64,
+            "shifted_differences_ms": [
+              -0.7211238500000061,
+              -0.6858423500000026,
+              -0.7245182499999967,
+              -0.7346542999999965,
+              -0.7244656999999972,
+              -0.7336912500000008
+            ],
+            "test_statistic": "sum of boundary-shifted paired differences"
+          },
+          "simultaneous_order_inference_permitted": false
+        },
+        "failure_to_prove_direction_implies_equivalence": false,
+        "median_paired_difference_ms": 0.011045775000003033,
+        "metric": "p95_ms",
+        "paired_differences_ms": [
+          0.014413899999993873,
+          0.04969539999999739,
+          0.01101950000000329,
+          0.0008834500000034495,
+          0.011072050000002776,
+          0.001846499999999196
+        ],
+        "point_and_interval_classification": {
+          "descriptive_bootstrap_interval_classification": "entirely_within_practical_tolerance",
+          "point_classification": "practically_equivalent"
+        }
+      }
+    },
+    "practical_tolerance_ms": 0.73553775,
+    "scope": "one allocation-matched candidate pair",
+    "second_candidate_id": "seed_271828_rec_6"
+  },
+  "artifact_consistency": {
+    "benchmark_input_identity": "pass",
+    "complete_block_contract": "pass",
+    "gpu_uuid_count_by_allocation": {
+      "post_front_allocation_00": 8,
+      "post_front_allocation_01": 8,
+      "post_front_allocation_02": 8,
+      "post_front_allocation_03": 8,
+      "post_front_allocation_04": 8,
+      "post_front_allocation_05": 8
+    },
+    "hardware_contract": "pass",
+    "protocol_contract": "pass",
+    "rank_files_per_candidate": 8,
+    "raw_input_artifact_count": 102,
+    "raw_input_artifacts": [
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "",
+        "kind": "allocation_result",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/allocation_result.json",
+        "rank": "",
+        "sha256": "fd840aa4d33c233ea15b0a3b3447a4e9da64a3f386b0699125c87dbc95bdc469"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p000_seed_271828_rec_19/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "706992cddd6af107fc6dcbdd706c872792583887b7c3e00de53117c445d58a2d"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p000_seed_271828_rec_19/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "84d0e68d5a76423c81786f17a96a594d49876145c443b2f6894a26aab497930e"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p000_seed_271828_rec_19/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "6aaf28bb4804a0fd1840fdef28f97bdca377ef1eee9e64fb751f23fd1666ed3d"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p000_seed_271828_rec_19/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "949926f9b8e9699abe0d599b3a941e07a75e4dfc876f789431cd20cbba24041b"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p000_seed_271828_rec_19/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "ac620e0563363e593c96970eadc278b35420fd6ecdeba48c2ede32a3bea4514e"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p000_seed_271828_rec_19/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "b776abfce78a31cffbde3c5c21b52b14b90f1ebd8dc24ee92026b5d38fc899db"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p000_seed_271828_rec_19/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "566a60511b0315a13504704a1d86702f20efee72d9c29be7570195d197a265a9"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p000_seed_271828_rec_19/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "c1a3db9815df3aaaecf9245c48ae33504b958ced4c1245fefc899c28dcc21282"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p001_seed_271828_rec_6/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "a3b0983a3ce9edab59e922f0dd432f562db99bd59648f4951e26595d1ad16085"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p001_seed_271828_rec_6/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "e65ee741642bc46082add4fa629b66871bfea6913542791db55d6fd1f1efd825"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p001_seed_271828_rec_6/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "6aeba049a4e145e94356fd47b7eb85a4e95766d9e550b216a52e84b382997741"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p001_seed_271828_rec_6/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "4d64ab832cab89846d8fa020dd8b1e9a38156ec8a23a0ac6a308feb6d5fca706"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p001_seed_271828_rec_6/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "89835f0e065b6ec2fc3cfaeaacf5b34316bbb59b9be06330d411df7e05c890d3"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p001_seed_271828_rec_6/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "bd776d951ad11a7937cd6bf21c4544d50d6c5e61af46ad120c6415ff93b5c904"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p001_seed_271828_rec_6/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "67387179e6d82e53436417f205bf50f63cfb8bc4a5817ee59cb9fd5e066fc8a4"
+      },
+      {
+        "allocation_id": "post_front_allocation_00",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_00/candidates/post_front_allocation_00_p001_seed_271828_rec_6/88825e1c-5ca0-462f-ad79-7cf14251650f/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "8ff9413d7f166b01976cb5dcb22bd3f713f3c39619a2c2b9480582af59458431"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "",
+        "kind": "allocation_result",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/allocation_result.json",
+        "rank": "",
+        "sha256": "86f0356520669232b9d43ecf375c3bee16b2a0ce8357209a436b1bc878970bb7"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p000_seed_271828_rec_19/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "2924dd73794cac5fa7bab4302d0a073052e092520aa15a5db4feee6e399e1738"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p000_seed_271828_rec_19/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "599b590e816b5bb3f0319058d2f2afc4357a541a1872282d80401d6a496d2ddc"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p000_seed_271828_rec_19/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "7b8645b6a895c5f20aff435bfe0a0c787d3ec37ee68fc3108effb8f5dc8463c3"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p000_seed_271828_rec_19/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "ab47b5af162be9aafd282d6a9831e10f677c45902cd3f26392d599e30c26202a"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p000_seed_271828_rec_19/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "2103c09962773512fa7dcefa7be2d1358590848e5635fad006baf854b0a6f9ca"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p000_seed_271828_rec_19/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "17b60bf5b8facba269134b0888dc2506603304badbaa94bc6cabe7b00ac0c45e"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p000_seed_271828_rec_19/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "f4e53ebea67a98aae0e3b5f38b0332626f331ce43d310cba198c41c675b535ae"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p000_seed_271828_rec_19/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "96dd885e3d5303bafc1e8958e8ce2e511a47e22c93413eb38bb03001376e739b"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p001_seed_271828_rec_6/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "6fb1e90e4aa180cbc0f025430177e7672e6872d663c7e44434873294bfc55453"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p001_seed_271828_rec_6/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "472eca1478943f54f82c3fb793ba66138c7b01f6f3a39b6ed688fa6f959fe9e8"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p001_seed_271828_rec_6/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "45db18364aa391985b5f119433be747799fc9117e8887ea15a4a6587fe1397cd"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p001_seed_271828_rec_6/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "4873aca118576ff83f9d09cc178e3a6ccc9b735945a70e2d8346e2056f5c9ffe"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p001_seed_271828_rec_6/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "798d35c3db1484e9f774b8bef11b8f3d37981e4844f722b96c94ee643173c57d"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p001_seed_271828_rec_6/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "8687b36e7106c7fd93079c624e5a7a0c3319acd7bcaa2e8c93f3d99b1be49cdd"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p001_seed_271828_rec_6/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "45355bc59882bb72f79fe4c1c5e378f4e8702ba40a889e351400b3ad4cf66215"
+      },
+      {
+        "allocation_id": "post_front_allocation_01",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_01/candidates/post_front_allocation_01_p001_seed_271828_rec_6/98688222-6e20-4910-a9fc-5b29e38b461d/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "854050cf0ed2b6f370b31371fb2e7b10817bf69b5efa955263a47e9c52fd7f1a"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "",
+        "kind": "allocation_result",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/allocation_result.json",
+        "rank": "",
+        "sha256": "75ca97e2de6db74edbace8b536d45a5b2e5c6bb8d5c7b881508e01a2d1aa09ef"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p000_seed_271828_rec_19/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "a1c5c21e3083eee6789437cbc4a205d55b27535d583a94128efd2381a692673a"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p000_seed_271828_rec_19/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "7299335565152c43c4598982d32c2fd1ea093733c763a057df589fb58e43f5f0"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p000_seed_271828_rec_19/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "4fec96f56a1b01ef6d886deb9893af20c450250f1f598bedd16140897219353a"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p000_seed_271828_rec_19/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "7891480cc8762808bc86f11620b6bf2a1ead1d6c41606e9f92cf580ffac4004d"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p000_seed_271828_rec_19/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "3cf9e986cdd3917523aa5c7c9816355cc21dfa26d2ec84115465ac25d3bf5d92"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p000_seed_271828_rec_19/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "89deefe8714174b27ee3b5ef72840633a89bb1082c352d49dcde4b639eeb00c5"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p000_seed_271828_rec_19/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "60b33dde2049fca56ad03e0c2f0ee12358f4d2e63d531bba569801e2720ef170"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p000_seed_271828_rec_19/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "8f025eefaf34e628feb7088cba5416a034e3787fb221a4371d1e5d13830b7684"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p001_seed_271828_rec_6/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "f0fd974bbbd77d4dc579e24e302e08fdfcf2dd074dca31befd7e9d7453996c4a"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p001_seed_271828_rec_6/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "9d619c40edc49f44238baaaaf1e5b8923d18134ccf198b52f5c3bc055817acfa"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p001_seed_271828_rec_6/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "b81acabb4d913e6328c43a688887fb68a2f7c045f7bc578af9283f20033e74c2"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p001_seed_271828_rec_6/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "a192eb6b7c688744c75bed5392b75dfde62a8f1d06761dd3de4dc80c1d39b930"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p001_seed_271828_rec_6/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "89f3f847530044c80d10d6c8e5646d2bb3555c5d748865c8aa2390bbc83a0d76"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p001_seed_271828_rec_6/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "882a68419a09867542551bf0e207755bb9919e2e83a1a27cdf26cf4f4293fc94"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p001_seed_271828_rec_6/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "15ba4e5314a9ec3d9d34e6eba0b8d6f359b13bd6830e833d5a758c8c2ff952fd"
+      },
+      {
+        "allocation_id": "post_front_allocation_02",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_02/candidates/post_front_allocation_02_p001_seed_271828_rec_6/6915e2cf-b9dc-4486-b736-ab1e7eb5a303/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "bae88319e7fca195df55ad725abb26ed200cf9cc4db402973f25fed938eea339"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "",
+        "kind": "allocation_result",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/allocation_result.json",
+        "rank": "",
+        "sha256": "2bc948d4bbf28bbcd27b16a7684d62b5c3eebd33dc1c92c24eb01000656c0f72"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p000_seed_271828_rec_6/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "b5386fc6216207f3af60729fec481da5606f53cbf3f6794c7d867626f9dbfa58"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p000_seed_271828_rec_6/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "497c22dd68e3352c76458fe710b544c763858f0e3aa5b3277b3cac78e96b70b2"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p000_seed_271828_rec_6/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "c9bdbee454b8b23fef7e8f8fb16aa17023ec3acfd3b98b54fe11624fb61d6e32"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p000_seed_271828_rec_6/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "75a67f2ff2efcd74e8052503f6ddbfab1010fdf5a3f0dfecc1ba75e36783aa77"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p000_seed_271828_rec_6/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "a052f13edee7ad722e53d21911b65c54af94a6172c1922880caba4f168a30e86"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p000_seed_271828_rec_6/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "5d4f02975306f69f4bd38627cac09020f347daac2446fc5bc2dcdc9d8fa010c1"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p000_seed_271828_rec_6/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "65b40a9feefe7ae659d37956b734daff1703b5e71a43cd15298b102ed550fd2e"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p000_seed_271828_rec_6/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "85805f100ec837149c609db47afaa62155745f3d225dd237db01df6bd2cfc29f"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p001_seed_271828_rec_19/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "e27c38b80d919176d595c17e41d4a16fb85c9c8f9520abda8615479e003c9583"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p001_seed_271828_rec_19/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "a1c6cd5080315070d96b868e095051aeec16a99c10df25b891106b8cd690af8c"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p001_seed_271828_rec_19/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "f4369766ea22f3ef4d148afe6a94ffec1a322aacdd4bb15ef883f5069a784f73"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p001_seed_271828_rec_19/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "77f161639970dbc8f25fa3e35dfae02281bfece60e06d4df5ec8eb9350c780a7"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p001_seed_271828_rec_19/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "a1ce145cb6d5b642b1ae4ce94cfaa6bfb5e06251a525907170fd49e2ac1b502d"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p001_seed_271828_rec_19/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "beaa09ea55f59c579916a9483a750bdf35185e2ffe5cab42898c4f8a0585b737"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p001_seed_271828_rec_19/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "0cb417b04409ed8cf802f062fb2d2b67096fca4765b9d6b68bd9eb521a16c9a4"
+      },
+      {
+        "allocation_id": "post_front_allocation_03",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_03/candidates/post_front_allocation_03_p001_seed_271828_rec_19/67a941eb-bee8-4310-9e70-62ffef7740c5/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "39ee59ae052a9afaa4460f60870ef18fdb9c3973f74667c81e233904dd6643b0"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "",
+        "kind": "allocation_result",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/allocation_result.json",
+        "rank": "",
+        "sha256": "04174f98ad705b71a330bb1d49d7adb0eeec56170716e6479023bbb3e6e17124"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p000_seed_271828_rec_6/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "3a9850bc162a822e9e2c6ad90ddc36b273fe55e55e55c06af7fdc057c7789e70"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p000_seed_271828_rec_6/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "0ec3338fc8c2bf60305fd904194d6a09ee20a9f4b11049ace0d9cb60f04eaef3"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p000_seed_271828_rec_6/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "86d48ff5b533622ff11ae0d8ab3e0bb93d996d3faaa9b3f90b0d2c3955e00078"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p000_seed_271828_rec_6/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "ffeeddfadf34e0484c905ef8e576a7fa7d347291b330ab99bb28055ad2386352"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p000_seed_271828_rec_6/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "cc54750d66d8e3f26dd751bf03259378a34fee4a390313e29c9c89435c435a18"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p000_seed_271828_rec_6/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "0f11b16eac561962006a08c0d655d3f3a2b7ccb5b300ceb81975b8500b3995de"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p000_seed_271828_rec_6/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "c2ca62f865d38a1c933cc780bd2007a70d41bcc061bb04addc3c5ba7db869c81"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p000_seed_271828_rec_6/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "d8978bc53b34073fadeb21bde7bf113df7cb91c3ce081950391479051a47d60c"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p001_seed_271828_rec_19/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "1f008b86db0afc30c421591f743d659f5d684c35b50fa670a81920c0828ed777"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p001_seed_271828_rec_19/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "5379c6565793db704bcae4a024f4aa50c93f110180ea9f29811a7f687662938b"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p001_seed_271828_rec_19/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "e25573ed55b6720dfee3d6a0c98e4ee61c9830561bf3c948bbc5f8b4fede9d33"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p001_seed_271828_rec_19/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "a7dea2ce1e0cbe170dfbde9d99c3f105f2d3a1b292094e0fd85b1c03af0b394c"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p001_seed_271828_rec_19/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "4f7c4312dbf19f578ada05fd105e8becd949531fde26a8dcd6cb52ad3a74e05e"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p001_seed_271828_rec_19/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "ab9cf9fb3269704c50360c15ad7612f1f4439440a38948418b8cc419856812d7"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p001_seed_271828_rec_19/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "d8db629edd84ae5d540d3ae81495db4e34c321825ae3374d19ef6b3688102296"
+      },
+      {
+        "allocation_id": "post_front_allocation_04",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_04/candidates/post_front_allocation_04_p001_seed_271828_rec_19/f7351cd3-365d-4f9d-824e-af49124cf234/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "13fe3f10bb06c7af64c7dd228fcaba90bc04fe796c64f9385420a18eb3be6fcc"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "",
+        "kind": "allocation_result",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/allocation_result.json",
+        "rank": "",
+        "sha256": "6bd850f585e88b7864ad114cd422583a1ff1a6c2e4240928e0c2487c09be818c"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p000_seed_271828_rec_6/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "aa1fd29e646fc8366d7152004dcd060533a079993f471ec940ead88613bbfacd"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p000_seed_271828_rec_6/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "9866932a63a72ba843891eb0e35da9ed7bbd7fd9ed239c77a7b3da65ec11fa18"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p000_seed_271828_rec_6/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "4fd95a12d6ebb689700a370e4b4772f34e8b96f1381538bbe2f9aeaacede58a1"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p000_seed_271828_rec_6/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "89d235b77b0563bb7de23915d02e83bd1163bc11ff3f30ca56fb14f1ade0a1b8"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p000_seed_271828_rec_6/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "bc2c68e6ff3cdebd1cd0b00eaa930a7d7d902479a7d69f1c1f23303eaee33ae9"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p000_seed_271828_rec_6/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "275fcebbc3948c351dbfc8bb91a03ecda1e584d7dc43f28eb819b6b0e5866033"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p000_seed_271828_rec_6/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "15a2095a8fbdb064f1215c9dbd974be30cdf0d7663a0f84e3a8d8637989cf069"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_6",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p000_seed_271828_rec_6/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "abbc61521c6519cdadaf5a4a923de3451e2507af46b5ddd4d16e2458745207df"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p001_seed_271828_rec_19/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_0.json",
+        "rank": "0",
+        "sha256": "8b06ac292d3c98cb49dad6084bc25767fca24d3c3e10ed26f3a5517c97671ea5"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p001_seed_271828_rec_19/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_1.json",
+        "rank": "1",
+        "sha256": "1143bd0cfe0a4e951553d9ac2ae5f1dd135120b4e8c416a8671e5243328fa30e"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p001_seed_271828_rec_19/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_2.json",
+        "rank": "2",
+        "sha256": "749b74e4e51dec6f376254a7524315a5b9cdb8aa19ca2475124aba8cfb46243d"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p001_seed_271828_rec_19/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_3.json",
+        "rank": "3",
+        "sha256": "f0cc76fa351197dc9648461a255430ddd0cc73b28bd0543f3027338493c622f5"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p001_seed_271828_rec_19/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_4.json",
+        "rank": "4",
+        "sha256": "0375b17df6bce3afa2044535466620af8ac7867635cdff55c660e036fd900838"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p001_seed_271828_rec_19/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_5.json",
+        "rank": "5",
+        "sha256": "7662d1f494f88807ecc2eae5ab3b07d12b0429d09bc2a233c199bf412591c99c"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p001_seed_271828_rec_19/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_6.json",
+        "rank": "6",
+        "sha256": "9f1d753ec16529879b9737869504904fa765e931a3ea3cfb1872da504b74136b"
+      },
+      {
+        "allocation_id": "post_front_allocation_05",
+        "candidate_id": "seed_271828_rec_19",
+        "kind": "rank_record",
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/dino_moo_phase2_20260728/post_front_matched/dino_expanded_post_front_matched_20260728_v1/post_front_allocation_05/candidates/post_front_allocation_05_p001_seed_271828_rec_19/19b45940-5e88-4e5c-ae48-8ed3e1e9424f/latency/rank_7.json",
+        "rank": "7",
+        "sha256": "ec373e2c8342ed9da40bac4b4032d5e8be1bf2f0673225d774c366ca7c8457ea"
+      }
+    ],
+    "raw_input_inventory_sha256": "c992f856d898eddd2fffd32bd9a20e559d72046b330ae8b384afa7a95eb63729",
+    "runtime_contract": "pass",
+    "runtime_signature": [
+      "3.12.3",
+      "2.11.0",
+      "13.2",
+      92000
+    ],
+    "scheduler_hostname_binding": "pass",
+    "scheduler_hostname_bindings": {
+      "post_front_allocation_00": {
+        "allocation_hostname": "batch-block7-01852",
+        "allocation_normalized_hostname": "batch-block7-01852",
+        "expanded_node_hostname": "batch-block7-01852",
+        "node_list": "batch-block7-01852",
+        "normalized_node_hostname": "batch-block7-01852",
+        "rank_hostname_binding": "rank records are required to equal allocation_hostname",
+        "status": "pass"
+      },
+      "post_front_allocation_01": {
+        "allocation_hostname": "batch-block7-00044",
+        "allocation_normalized_hostname": "batch-block7-00044",
+        "expanded_node_hostname": "batch-block7-00044",
+        "node_list": "batch-block7-00044",
+        "normalized_node_hostname": "batch-block7-00044",
+        "rank_hostname_binding": "rank records are required to equal allocation_hostname",
+        "status": "pass"
+      },
+      "post_front_allocation_02": {
+        "allocation_hostname": "batch-block7-03471",
+        "allocation_normalized_hostname": "batch-block7-03471",
+        "expanded_node_hostname": "batch-block7-03471",
+        "node_list": "batch-block7-03471",
+        "normalized_node_hostname": "batch-block7-03471",
+        "rank_hostname_binding": "rank records are required to equal allocation_hostname",
+        "status": "pass"
+      },
+      "post_front_allocation_03": {
+        "allocation_hostname": "batch-block7-01395",
+        "allocation_normalized_hostname": "batch-block7-01395",
+        "expanded_node_hostname": "batch-block7-01395",
+        "node_list": "batch-block7-01395",
+        "normalized_node_hostname": "batch-block7-01395",
+        "rank_hostname_binding": "rank records are required to equal allocation_hostname",
+        "status": "pass"
+      },
+      "post_front_allocation_04": {
+        "allocation_hostname": "batch-block7-01937",
+        "allocation_normalized_hostname": "batch-block7-01937",
+        "expanded_node_hostname": "batch-block7-01937",
+        "node_list": "batch-block7-01937",
+        "normalized_node_hostname": "batch-block7-01937",
+        "rank_hostname_binding": "rank records are required to equal allocation_hostname",
+        "status": "pass"
+      },
+      "post_front_allocation_05": {
+        "allocation_hostname": "batch-block7-00044",
+        "allocation_normalized_hostname": "batch-block7-00044",
+        "expanded_node_hostname": "batch-block7-00044",
+        "node_list": "batch-block7-00044",
+        "normalized_node_hostname": "batch-block7-00044",
+        "rank_hostname_binding": "rank records are required to equal allocation_hostname",
+        "status": "pass"
+      }
+    }
+  },
+  "artifact_integrity": {
+    "canonical_payload_sha256": "aef1e6f3b506c5c9a05f3dde643f9406df5f4574c23588221760c476374b337d",
+    "hash_algorithm": "sha256",
+    "hash_excludes": [
+      "artifact_integrity"
+    ]
+  },
+  "campaign_id": "dino_latency_90pct_matched_20260728_v1",
+  "candidate_ids": [
+    "seed_271828_rec_19",
+    "seed_271828_rec_6"
+  ],
+  "checkpoint_recovery_evidence": {
+    "internal_sha256": "de528df5b0d93df7fdd22575f244bb3dd767762ea71303951f0a403d14b0400b",
+    "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_90_policy/matched/rec6_checkpoint_recovery_evidence.v1.json",
+    "whole_file_sha256": "acc0c46f9a58121a7e77e266ab0fe6611082809fe62ef641eed6299a287c39d0"
+  },
+  "compatibility_manifest_id": "dino_expanded_post_front_matched_20260728_v1",
+  "complete_12_cell_latency_evidence": [
+    {
+      "allocation_id": "post_front_allocation_00",
+      "allocation_index": 0,
+      "bootstrap_median_ci95_ms": [
+        56.90437375,
+        56.975143
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.12698305,
+        57.21211195
+      ],
+      "candidate_id": "seed_271828_rec_19",
+      "checkpoint_sha256": "f553478b110ce22d472de46d6ff098528c44a3d33a162e3d6f8ad24e45907a5c",
+      "device_median_range_ms": 0.3369070000000036,
+      "expanded_node_hostnames": [
+        "batch-block7-01852"
+      ],
+      "hostname": "batch-block7-01852",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.15156975000000728,
+      "is_valid": true,
+      "mad_ms": 0.07224599999999981,
+      "median_ms": 56.9399595,
+      "node_list": "batch-block7-01852",
+      "normalized_node_hostname": "batch-block7-01852",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.175730949999995,
+      "position": 0,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0011574692110555085,
+          "device_median_range_fraction": 0.005916881623352816,
+          "median_bootstrap_ci_width_fraction": 0.001242874962002827,
+          "p95_bootstrap_ci_width_ms": 0.08512890000000084,
+          "robust_cv": 0.001881137966035956,
+          "round_median_range_fraction": 0.0011574692110555085
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.001881137966035956,
+      "round_drift_ms": 0.06590624999999761,
+      "round_median_range_ms": 0.06590624999999761,
+      "samples_per_device": 500,
+      "slurm_job_id": "31021945",
+      "tao_job_id": "88825e1c-5ca0-462f-ad79-7cf14251650f"
+    },
+    {
+      "allocation_id": "post_front_allocation_00",
+      "allocation_index": 0,
+      "bootstrap_median_ci95_ms": [
+        56.91848225,
+        57.012594
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.12790611249999,
+        57.18827395
+      ],
+      "candidate_id": "seed_271828_rec_6",
+      "checkpoint_sha256": "5f259679d61db1a85bbbec0625cb71367f2be2660ab4d09fe416e97d2717f6f0",
+      "device_median_range_ms": 0.25736600000000465,
+      "expanded_node_hostnames": [
+        "batch-block7-01852"
+      ],
+      "hostname": "batch-block7-01852",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.16037550000000067,
+      "is_valid": true,
+      "mad_ms": 0.07964125000000166,
+      "median_ms": 56.99692325,
+      "node_list": "batch-block7-01852",
+      "normalized_node_hostname": "batch-block7-01852",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.16131705,
+      "position": 1,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.00032656587300966913,
+          "device_median_range_fraction": 0.004515436717016205,
+          "median_bootstrap_ci_width_fraction": 0.0016511724604363319,
+          "p95_bootstrap_ci_width_ms": 0.06036783750001007,
+          "robust_cv": 0.002071622651140252,
+          "round_median_range_fraction": 0.0005937688926042952
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.002071622651140252,
+      "round_drift_ms": 0.018613250000001358,
+      "round_median_range_ms": 0.03384300000000451,
+      "samples_per_device": 500,
+      "slurm_job_id": "31021945",
+      "tao_job_id": "88825e1c-5ca0-462f-ad79-7cf14251650f"
+    },
+    {
+      "allocation_id": "post_front_allocation_01",
+      "allocation_index": 1,
+      "bootstrap_median_ci95_ms": [
+        56.834380499999995,
+        56.926504
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.065082499999995,
+        57.127394
+      ],
+      "candidate_id": "seed_271828_rec_19",
+      "checkpoint_sha256": "f553478b110ce22d472de46d6ff098528c44a3d33a162e3d6f8ad24e45907a5c",
+      "device_median_range_ms": 0.2241225000000071,
+      "expanded_node_hostnames": [
+        "batch-block7-00044"
+      ],
+      "hostname": "batch-block7-00044",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.15317200000000497,
+      "is_valid": true,
+      "mad_ms": 0.07261099999999843,
+      "median_ms": 56.866871,
+      "node_list": "batch-block7-00044",
+      "normalized_node_hostname": "batch-block7-00044",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.10177795,
+      "position": 0,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0007765989094071685,
+          "device_median_range_fraction": 0.0039411786873240675,
+          "median_bootstrap_ci_width_fraction": 0.0016199853865707977,
+          "p95_bootstrap_ci_width_ms": 0.06231150000000696,
+          "robust_cv": 0.0018930717781183645,
+          "round_median_range_fraction": 0.0007765989094071685
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.0018930717781183645,
+      "round_drift_ms": 0.04416274999999814,
+      "round_median_range_ms": 0.04416274999999814,
+      "samples_per_device": 500,
+      "slurm_job_id": "31021984",
+      "tao_job_id": "98688222-6e20-4910-a9fc-5b29e38b461d"
+    },
+    {
+      "allocation_id": "post_front_allocation_01",
+      "allocation_index": 1,
+      "bootstrap_median_ci95_ms": [
+        56.773134999999996,
+        56.8385405
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.001441,
+        57.088514
+      ],
+      "candidate_id": "seed_271828_rec_6",
+      "checkpoint_sha256": "5f259679d61db1a85bbbec0625cb71367f2be2660ab4d09fe416e97d2717f6f0",
+      "device_median_range_ms": 0.2617284999999967,
+      "expanded_node_hostnames": [
+        "batch-block7-00044"
+      ],
+      "hostname": "batch-block7-00044",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.15969925000000273,
+      "is_valid": true,
+      "mad_ms": 0.07167774999999921,
+      "median_ms": 56.81540775,
+      "node_list": "batch-block7-00044",
+      "normalized_node_hostname": "batch-block7-00044",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.05208255,
+      "position": 1,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.00034973347524724506,
+          "device_median_range_fraction": 0.004606646513066638,
+          "median_bootstrap_ci_width_fraction": 0.0011511930053868921,
+          "p95_bootstrap_ci_width_ms": 0.08707300000000373,
+          "robust_cv": 0.0018704333271285696,
+          "round_median_range_fraction": 0.0005292666407026476
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.0018704333271285696,
+      "round_drift_ms": 0.01987024999999676,
+      "round_median_range_ms": 0.030070499999993672,
+      "samples_per_device": 500,
+      "slurm_job_id": "31021984",
+      "tao_job_id": "98688222-6e20-4910-a9fc-5b29e38b461d"
+    },
+    {
+      "allocation_id": "post_front_allocation_02",
+      "allocation_index": 2,
+      "bootstrap_median_ci95_ms": [
+        57.293922249999994,
+        57.358616000000005
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.489462,
+        57.557103
+      ],
+      "candidate_id": "seed_271828_rec_19",
+      "checkpoint_sha256": "f553478b110ce22d472de46d6ff098528c44a3d33a162e3d6f8ad24e45907a5c",
+      "device_median_range_ms": 0.3868699999999947,
+      "expanded_node_hostnames": [
+        "batch-block7-03471"
+      ],
+      "hostname": "batch-block7-03471",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.1761997500000021,
+      "is_valid": true,
+      "mad_ms": 0.09033724999999748,
+      "median_ms": 57.32534325,
+      "node_list": "batch-block7-03471",
+      "normalized_node_hostname": "batch-block7-03471",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.52484895,
+      "position": 0,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0009460388185289924,
+          "device_median_range_fraction": 0.006748673066165979,
+          "median_bootstrap_ci_width_fraction": 0.0011285366354960404,
+          "p95_bootstrap_ci_width_ms": 0.06764099999999473,
+          "robust_cv": 0.002336383861949161,
+          "round_median_range_fraction": 0.0009460388185289924
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.002336383861949161,
+      "round_drift_ms": 0.05423199999999895,
+      "round_median_range_ms": 0.05423199999999895,
+      "samples_per_device": 500,
+      "slurm_job_id": "31021991",
+      "tao_job_id": "6915e2cf-b9dc-4486-b736-ab1e7eb5a303"
+    },
+    {
+      "allocation_id": "post_front_allocation_02",
+      "allocation_index": 2,
+      "bootstrap_median_ci95_ms": [
+        57.25523425,
+        57.3783295
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.484232,
+        57.5341007875
+      ],
+      "candidate_id": "seed_271828_rec_6",
+      "checkpoint_sha256": "5f259679d61db1a85bbbec0625cb71367f2be2660ab4d09fe416e97d2717f6f0",
+      "device_median_range_ms": 0.3194380000000052,
+      "expanded_node_hostnames": [
+        "batch-block7-03471"
+      ],
+      "hostname": "batch-block7-03471",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.19055499999999626,
+      "is_valid": true,
+      "mad_ms": 0.0935069999999989,
+      "median_ms": 57.32423075,
+      "node_list": "batch-block7-03471",
+      "normalized_node_hostname": "batch-block7-03471",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.513829449999996,
+      "position": 1,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0002195493918599185,
+          "device_median_range_fraction": 0.005572477743192484,
+          "median_bootstrap_ci_width_fraction": 0.002147351100738472,
+          "p95_bootstrap_ci_width_ms": 0.04986878750000301,
+          "robust_cv": 0.0024184097437713694,
+          "round_median_range_fraction": 0.0003342085842120754
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.0024184097437713694,
+      "round_drift_ms": 0.012585500000000138,
+      "round_median_range_ms": 0.019158250000003818,
+      "samples_per_device": 500,
+      "slurm_job_id": "31021991",
+      "tao_job_id": "6915e2cf-b9dc-4486-b736-ab1e7eb5a303"
+    },
+    {
+      "allocation_id": "post_front_allocation_03",
+      "allocation_index": 3,
+      "bootstrap_median_ci95_ms": [
+        56.8785285,
+        56.923182
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.104157451249996,
+        57.171454
+      ],
+      "candidate_id": "seed_271828_rec_19",
+      "checkpoint_sha256": "f553478b110ce22d472de46d6ff098528c44a3d33a162e3d6f8ad24e45907a5c",
+      "device_median_range_ms": 0.2731950000000012,
+      "expanded_node_hostnames": [
+        "batch-block7-01395"
+      ],
+      "hostname": "batch-block7-01395",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.1717862500000038,
+      "is_valid": true,
+      "mad_ms": 0.06881100000000018,
+      "median_ms": 56.90247625,
+      "node_list": "batch-block7-01395",
+      "normalized_node_hostname": "batch-block7-01395",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.144475,
+      "position": 1,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0004260051863736623,
+          "device_median_range_fraction": 0.004801109160868921,
+          "median_bootstrap_ci_width_fraction": 0.0007847373777515607,
+          "p95_bootstrap_ci_width_ms": 0.0672965487500008,
+          "robust_cv": 0.001792877838071243,
+          "round_median_range_fraction": 0.00045863996999600073
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.001792877838071243,
+      "round_drift_ms": 0.02424075000000414,
+      "round_median_range_ms": 0.026097749999998143,
+      "samples_per_device": 500,
+      "slurm_job_id": "31022014",
+      "tao_job_id": "67a941eb-bee8-4310-9e70-62ffef7740c5"
+    },
+    {
+      "allocation_id": "post_front_allocation_03",
+      "allocation_index": 3,
+      "bootstrap_median_ci95_ms": [
+        56.89520575,
+        56.959942
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.107435326250005,
+        57.173714
+      ],
+      "candidate_id": "seed_271828_rec_6",
+      "checkpoint_sha256": "5f259679d61db1a85bbbec0625cb71367f2be2660ab4d09fe416e97d2717f6f0",
+      "device_median_range_ms": 0.41959249999999315,
+      "expanded_node_hostnames": [
+        "batch-block7-01395"
+      ],
+      "hostname": "batch-block7-01395",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.17546275000000122,
+      "is_valid": true,
+      "mad_ms": 0.09475600000000028,
+      "median_ms": 56.910804,
+      "node_list": "batch-block7-01395",
+      "normalized_node_hostname": "batch-block7-01395",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.14359155,
+      "position": 0,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0005312875214344565,
+          "device_median_range_fraction": 0.007372809212113629,
+          "median_bootstrap_ci_width_fraction": 0.0011375036978918049,
+          "p95_bootstrap_ci_width_ms": 0.06627867374999141,
+          "robust_cv": 0.0024685162697754264,
+          "round_median_range_fraction": 0.0005312875214344565
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.0024685162697754264,
+      "round_drift_ms": 0.03023600000000215,
+      "round_median_range_ms": 0.03023600000000215,
+      "samples_per_device": 500,
+      "slurm_job_id": "31022014",
+      "tao_job_id": "67a941eb-bee8-4310-9e70-62ffef7740c5"
+    },
+    {
+      "allocation_id": "post_front_allocation_04",
+      "allocation_index": 4,
+      "bootstrap_median_ci95_ms": [
+        56.88355675,
+        56.92163525
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.068379,
+        57.144692
+      ],
+      "candidate_id": "seed_271828_rec_19",
+      "checkpoint_sha256": "f553478b110ce22d472de46d6ff098528c44a3d33a162e3d6f8ad24e45907a5c",
+      "device_median_range_ms": 0.32959499999999764,
+      "expanded_node_hostnames": [
+        "batch-block7-01937"
+      ],
+      "hostname": "batch-block7-01937",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.16016324999999654,
+      "is_valid": true,
+      "mad_ms": 0.08191725000000005,
+      "median_ms": 56.90357725,
+      "node_list": "batch-block7-01937",
+      "normalized_node_hostname": "batch-block7-01937",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.110867,
+      "position": 1,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0004931236550686673,
+          "device_median_range_fraction": 0.005792166607592278,
+          "median_bootstrap_ci_width_fraction": 0.0006691758557236324,
+          "p95_bootstrap_ci_width_ms": 0.07631299999999896,
+          "robust_cv": 0.002134321262728699,
+          "round_median_range_fraction": 0.0007729039565786221
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.002134321262728699,
+      "round_drift_ms": 0.028060500000002264,
+      "round_median_range_ms": 0.04398100000000227,
+      "samples_per_device": 500,
+      "slurm_job_id": "31022016",
+      "tao_job_id": "f7351cd3-365d-4f9d-824e-af49124cf234"
+    },
+    {
+      "allocation_id": "post_front_allocation_04",
+      "allocation_index": 4,
+      "bootstrap_median_ci95_ms": [
+        56.904577249999996,
+        56.964288249999996
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.06884,
+        57.130271
+      ],
+      "candidate_id": "seed_271828_rec_6",
+      "checkpoint_sha256": "5f259679d61db1a85bbbec0625cb71367f2be2660ab4d09fe416e97d2717f6f0",
+      "device_median_range_ms": 0.20734849999999483,
+      "expanded_node_hostnames": [
+        "batch-block7-01937"
+      ],
+      "hostname": "batch-block7-01937",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.11640125000000268,
+      "is_valid": true,
+      "mad_ms": 0.059035999999995425,
+      "median_ms": 56.932212500000006,
+      "node_list": "batch-block7-01937",
+      "normalized_node_hostname": "batch-block7-01937",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.099794949999996,
+      "position": 0,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0009862825900187736,
+          "device_median_range_fraction": 0.003642024275799835,
+          "median_bootstrap_ci_width_fraction": 0.0010488087038598767,
+          "p95_bootstrap_ci_width_ms": 0.0614309999999989,
+          "robust_cv": 0.0015373857743538985,
+          "round_median_range_fraction": 0.0009862825900187736
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.0015373857743538985,
+      "round_drift_ms": 0.05615124999999921,
+      "round_median_range_ms": 0.05615124999999921,
+      "samples_per_device": 500,
+      "slurm_job_id": "31022016",
+      "tao_job_id": "f7351cd3-365d-4f9d-824e-af49124cf234"
+    },
+    {
+      "allocation_id": "post_front_allocation_05",
+      "allocation_index": 5,
+      "bootstrap_median_ci95_ms": [
+        56.94514775,
+        57.01424575
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.157642,
+        57.2317975
+      ],
+      "candidate_id": "seed_271828_rec_19",
+      "checkpoint_sha256": "f553478b110ce22d472de46d6ff098528c44a3d33a162e3d6f8ad24e45907a5c",
+      "device_median_range_ms": 0.2746129999999951,
+      "expanded_node_hostnames": [
+        "batch-block7-00044"
+      ],
+      "hostname": "batch-block7-00044",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.15859524999999763,
+      "is_valid": true,
+      "mad_ms": 0.07338075000000188,
+      "median_ms": 56.98435025,
+      "node_list": "batch-block7-00044",
+      "normalized_node_hostname": "batch-block7-00044",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.2017485,
+      "position": 1,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 2.596326874842222e-05,
+          "device_median_range_fraction": 0.004819095046187618,
+          "median_bootstrap_ci_width_fraction": 0.0012125785359815326,
+          "p95_bootstrap_ci_width_ms": 0.07415549999999627,
+          "robust_cv": 0.0019091961121378723,
+          "round_median_range_fraction": 0.0004955351754667991
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.0019091961121378723,
+      "round_drift_ms": -0.001479499999994971,
+      "round_median_range_ms": 0.028237749999995287,
+      "samples_per_device": 500,
+      "slurm_job_id": "31022018",
+      "tao_job_id": "19b45940-5e88-4e5c-ae48-8ed3e1e9424f"
+    },
+    {
+      "allocation_id": "post_front_allocation_05",
+      "allocation_index": 5,
+      "bootstrap_median_ci95_ms": [
+        56.8996525,
+        57.058294000000004
+      ],
+      "bootstrap_p95_ci95_ms": [
+        57.16650288625,
+        57.2257625
+      ],
+      "candidate_id": "seed_271828_rec_6",
+      "checkpoint_sha256": "5f259679d61db1a85bbbec0625cb71367f2be2660ab4d09fe416e97d2717f6f0",
+      "device_median_range_ms": 0.297508999999998,
+      "expanded_node_hostnames": [
+        "batch-block7-00044"
+      ],
+      "hostname": "batch-block7-00044",
+      "input_identity_sha256_by_rank": {
+        "0": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "1": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "2": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "3": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "4": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "5": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "6": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+        "7": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+      },
+      "invalid_reasons": [],
+      "iqr_ms": 0.1936679999999953,
+      "is_valid": true,
+      "mad_ms": 0.09534599999999926,
+      "median_ms": 56.9756005,
+      "node_list": "batch-block7-00044",
+      "normalized_node_hostname": "batch-block7-00044",
+      "p95_bootstrap_cluster_unit": "device_round",
+      "p95_ms": 57.199902,
+      "position": 0,
+      "quality_gate_audit": {
+        "all_quality_gates_pass": true,
+        "gates": {
+          "absolute_round_drift": true,
+          "device_median_range": true,
+          "median_bootstrap_ci_width": true,
+          "proven_aggregator_validity": true,
+          "raw_sample_count": true,
+          "robust_cv": true,
+          "round_median_range": true
+        },
+        "invalid_reasons": [],
+        "thresholds": {
+          "max_absolute_round_drift_fraction": 0.05,
+          "max_bootstrap_ci_width_fraction": 0.03,
+          "max_device_median_range_fraction": 0.05,
+          "max_robust_cv": 0.1,
+          "max_round_median_range_fraction": 0.05
+        },
+        "values": {
+          "absolute_round_drift_fraction": 0.0004543655489861039,
+          "device_median_range_fraction": 0.00522169134487662,
+          "median_bootstrap_ci_width_fraction": 0.002784376094465238,
+          "p95_bootstrap_ci_width_ms": 0.059259613750000995,
+          "robust_cv": 0.0024810616888539666,
+          "round_median_range_fraction": 0.0004543655489861039
+        }
+      },
+      "raw_sample_count_total": 4000,
+      "robust_cv": 0.0024810616888539666,
+      "round_drift_ms": 0.025887749999995435,
+      "round_median_range_ms": 0.025887749999995435,
+      "samples_per_device": 500,
+      "slurm_job_id": "31022018",
+      "tao_job_id": "19b45940-5e88-4e5c-ae48-8ed3e1e9424f"
+    }
+  ],
+  "execution_projection": {
+    "internal_sha256": "402ad679b8e4705a56a2918b23f5ef102d40f1eeff2114e40cab129db4d9deea",
+    "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_90_policy/matched/execution_projection.v1.json",
+    "whole_file_sha256": "c2ab8e650da99dc243b943f0ba2a89089aaa1e72331a254d6f4ee11793cd8090"
+  },
+  "jobs": [
+    {
+      "allocation_id": "post_front_allocation_00",
+      "allocation_index": 0,
+      "block_plan_sha256": "d49f020145d7b4539404cd8d6f80b78811274b38f7e4e60365c365cab7addbc1",
+      "candidate_order": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "complete": true,
+      "design_row_index": 0,
+      "expanded_node_hostnames": [
+        "batch-block7-01852"
+      ],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "node_list": "batch-block7-01852",
+      "normalized_node_hostname": "batch-block7-01852",
+      "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f",
+      "sdk_message": "SLURM job 31021945: COMPLETED",
+      "sdk_status": "Complete",
+      "sdk_status_allow_retry": false,
+      "slurm_exit_code": "0:0",
+      "slurm_job_id": "31021945",
+      "slurm_state": "COMPLETED",
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_00.json": "0e469553c15b8d915512fff9ec751c1c04bdef01b9795f6d1ed9f3548ecee070",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "status_inspection_scheduler_identity_unchanged": true,
+      "tao_job_id": "88825e1c-5ca0-462f-ad79-7cf14251650f"
+    },
+    {
+      "allocation_id": "post_front_allocation_01",
+      "allocation_index": 1,
+      "block_plan_sha256": "78def7a71d9bb80bfb36c7158402b4a40e1fcbc878b73736ceeadd526321265e",
+      "candidate_order": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "complete": true,
+      "design_row_index": 0,
+      "expanded_node_hostnames": [
+        "batch-block7-00044"
+      ],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "node_list": "batch-block7-00044",
+      "normalized_node_hostname": "batch-block7-00044",
+      "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d",
+      "sdk_message": "SLURM job 31021984: COMPLETED",
+      "sdk_status": "Complete",
+      "sdk_status_allow_retry": false,
+      "slurm_exit_code": "0:0",
+      "slurm_job_id": "31021984",
+      "slurm_state": "COMPLETED",
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_01.json": "9e0f94f599e9c88dbd0d680c296616dbe93910a368fb67f18397e33df696001b",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "status_inspection_scheduler_identity_unchanged": true,
+      "tao_job_id": "98688222-6e20-4910-a9fc-5b29e38b461d"
+    },
+    {
+      "allocation_id": "post_front_allocation_02",
+      "allocation_index": 2,
+      "block_plan_sha256": "e5e5ee4799f4c3d322d52d424d73c28d05b00493b0dc688e0c5c1fd01280d5a7",
+      "candidate_order": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "complete": true,
+      "design_row_index": 0,
+      "expanded_node_hostnames": [
+        "batch-block7-03471"
+      ],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "node_list": "batch-block7-03471",
+      "normalized_node_hostname": "batch-block7-03471",
+      "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303",
+      "sdk_message": "SLURM job 31021991: COMPLETED",
+      "sdk_status": "Complete",
+      "sdk_status_allow_retry": false,
+      "slurm_exit_code": "0:0",
+      "slurm_job_id": "31021991",
+      "slurm_state": "COMPLETED",
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_02.json": "2cb6bd5feac1d7dde497997b9cb6601e673e62c51191874ebc8ea335fc33e019",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "status_inspection_scheduler_identity_unchanged": true,
+      "tao_job_id": "6915e2cf-b9dc-4486-b736-ab1e7eb5a303"
+    },
+    {
+      "allocation_id": "post_front_allocation_03",
+      "allocation_index": 3,
+      "block_plan_sha256": "a058382fa3fa1215ba57409ca21cdcf92dda3b21cb0cad165af0402fd57b0283",
+      "candidate_order": [
+        "seed_271828_rec_6",
+        "seed_271828_rec_19"
+      ],
+      "complete": true,
+      "design_row_index": 1,
+      "expanded_node_hostnames": [
+        "batch-block7-01395"
+      ],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "node_list": "batch-block7-01395",
+      "normalized_node_hostname": "batch-block7-01395",
+      "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5",
+      "sdk_message": "SLURM job 31022014: COMPLETED",
+      "sdk_status": "Complete",
+      "sdk_status_allow_retry": false,
+      "slurm_exit_code": "0:0",
+      "slurm_job_id": "31022014",
+      "slurm_state": "COMPLETED",
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_03.json": "7f825353534b30af5e5453f6f672835645d351e45ebf3c7f2288646f2634fafc",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "status_inspection_scheduler_identity_unchanged": true,
+      "tao_job_id": "67a941eb-bee8-4310-9e70-62ffef7740c5"
+    },
+    {
+      "allocation_id": "post_front_allocation_04",
+      "allocation_index": 4,
+      "block_plan_sha256": "181840f61600f3c775224a68b575c79c53e493f2c4c0bca79949ee431664fcb0",
+      "candidate_order": [
+        "seed_271828_rec_6",
+        "seed_271828_rec_19"
+      ],
+      "complete": true,
+      "design_row_index": 1,
+      "expanded_node_hostnames": [
+        "batch-block7-01937"
+      ],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "node_list": "batch-block7-01937",
+      "normalized_node_hostname": "batch-block7-01937",
+      "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234",
+      "sdk_message": "SLURM job 31022016: COMPLETED",
+      "sdk_status": "Complete",
+      "sdk_status_allow_retry": false,
+      "slurm_exit_code": "0:0",
+      "slurm_job_id": "31022016",
+      "slurm_state": "COMPLETED",
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_04.json": "0a9acd72015e821009b0e2bfeaacb78ff6fa4e300249a0876753b3e65f7aa307",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "status_inspection_scheduler_identity_unchanged": true,
+      "tao_job_id": "f7351cd3-365d-4f9d-824e-af49124cf234"
+    },
+    {
+      "allocation_id": "post_front_allocation_05",
+      "allocation_index": 5,
+      "block_plan_sha256": "57bfbaab7a939c0dfc54ee71a36fecb3fca94e2fa6abbcb3be8d488b4c16427f",
+      "candidate_order": [
+        "seed_271828_rec_6",
+        "seed_271828_rec_19"
+      ],
+      "complete": true,
+      "design_row_index": 1,
+      "expanded_node_hostnames": [
+        "batch-block7-00044"
+      ],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "node_list": "batch-block7-00044",
+      "normalized_node_hostname": "batch-block7-00044",
+      "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f",
+      "sdk_message": "SLURM job 31022018: COMPLETED",
+      "sdk_status": "Complete",
+      "sdk_status_allow_retry": false,
+      "slurm_exit_code": "0:0",
+      "slurm_job_id": "31022018",
+      "slurm_state": "COMPLETED",
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_05.json": "f089e7318f534ca2349e3fe0c60f2939c5f9c4169e383696501ef7777c6abe1c",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "status_inspection_scheduler_identity_unchanged": true,
+      "tao_job_id": "19b45940-5e88-4e5c-ae48-8ed3e1e9424f"
+    }
+  ],
+  "schedule_sha256": "bef77aaafa7d6ad7693ed2d4b554bb799e08286392db33dd1054e67668e810e5",
+  "schema_version": 1,
+  "selection_isolation": {
+    "algorithm_selected_candidate_overridden": false,
+    "measurements_feed_reselection": false,
+    "measurements_feed_selection": false,
+    "selection_time_objectives_replaced": false,
+    "selector_invoked_on_matched_measurements": false
+  },
+  "selection_time_archive_preserved": true,
+  "selector_invocation_count_on_matched_measurements": 0,
+  "status": "complete",
+  "submission_ledger": {
+    "internal_sha256": "e8882169ed0e5e2afffb2aa7361fb991231dd76425fb3c2c68a03ce15f4cd254",
+    "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/latency_90_policy/matched/block_submissions.json",
+    "revision": 1,
+    "whole_file_sha256": "2c50632ae9eb5099cb6068a94d101180c998f21ab8d74fdba549956d0d103172"
+  }
+}
