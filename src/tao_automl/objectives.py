@@ -339,6 +339,20 @@ def _parse_latency_accuracy_retention(
             "Configure latency_accuracy_retention or legacy accuracy constraint "
             "settings, not both"
         )
+    legacy_representations = [
+        name
+        for name, value in (
+            ("accuracy_constraint", legacy_raw),
+            ("accuracy_retention_fraction", flattened_relative),
+            ("max_accuracy_degradation", flattened_absolute),
+        )
+        if value is not None
+    ]
+    if preferred is None and len(legacy_representations) > 1:
+        raise ValueError(
+            "Configure only one legacy latency accuracy-constraint setting; "
+            f"received {', '.join(legacy_representations)}"
+        )
 
     if preferred is None:
         raw = legacy_raw or {}
@@ -361,6 +375,24 @@ def _parse_latency_accuracy_retention(
         raise TypeError(
             "automl_settings['latency_accuracy_retention'] must be a number "
             "or dictionary"
+        )
+
+    nested_representations = [
+        name
+        for name in (
+            "value",
+            "retained_fraction",
+            "min_retained_fraction",
+            "max_absolute_degradation",
+            "max_accuracy_degradation",
+        )
+        if raw.get(name) is not None
+    ]
+    if len(nested_representations) > 1:
+        raise ValueError(
+            "Configure only one latency accuracy-retention value "
+            "representation; received "
+            f"{', '.join(nested_representations)}"
         )
 
     nested_relative = raw.get(

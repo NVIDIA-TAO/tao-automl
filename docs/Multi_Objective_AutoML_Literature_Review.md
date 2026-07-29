@@ -208,6 +208,25 @@ latency subject to this constraint. It returns an explicit
 `no_accuracy_feasible_candidates` status instead of applying a penalty or
 silently falling back.
 
+The DINO reference validation deliberately overrides that default with an
+explicit relative-retention product profile:
+
+```python
+latency_accuracy_retention = {
+    "type": "relative",
+    "retained_fraction": 0.90,
+    "reference": "accuracy_winner",
+}
+multi_objective_min_accuracy = None
+```
+
+For this profile, latency feasibility is \(A(x) \ge 0.90A^*\). The `0.90`
+factor is relative retention, not a ten-percentage-point subtraction. It affects
+only latency mode; accuracy mode remains an unconstrained accuracy maximum, and
+multi-objective mode continues to use its independently eligible Pareto front.
+The repository default remains `0.98`. See the checked-in
+[`DINO latency policy profile`](../experiments/dino_moo_phase2_20260728/dino_latency_90_policy_profile.v1.json).
+
 Multi-objective eligibility is separate. By default,
 `multi_objective_min_accuracy` is unset and every candidate with finite valid
 measurements is eligible for Pareto analysis. An optional absolute metric floor

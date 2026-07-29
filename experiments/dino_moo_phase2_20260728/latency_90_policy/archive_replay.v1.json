@@ -1,0 +1,582 @@
+{
+  "archive_order_invariance": {
+    "common_selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00",
+    "complete_selector_output_identical": true,
+    "ordering_count": 9,
+    "orders": {
+      "archive": {
+        "candidate_id_order_sha256": "7b4de18434ce46fa7f9238a7be2fda4185fbbe68d1046ca9dbb923957bfb6549",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      },
+      "candidate_id": {
+        "candidate_id_order_sha256": "7b4de18434ce46fa7f9238a7be2fda4185fbbe68d1046ca9dbb923957bfb6549",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      },
+      "permutation_seed_161803": {
+        "candidate_id_order_sha256": "c52427e6edc35390b479eaf34c68fa46c83676043a518153f14937ac518f8a10",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      },
+      "permutation_seed_20260728": {
+        "candidate_id_order_sha256": "5c0f4d95930ab8f7f8bf1f44e7819cc4acd9c4a370fc200b00f798568ad8fe6b",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      },
+      "permutation_seed_271828": {
+        "candidate_id_order_sha256": "e7f32681993d5c208074cc1889c96c977f1377b7805f3a9c57e1ba67e120f75d",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      },
+      "permutation_seed_314159": {
+        "candidate_id_order_sha256": "e5a95e7505e9c68143754f8e143e9b32429dc78c577b12a3335a4de5238b9c20",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      },
+      "permutation_seed_90": {
+        "candidate_id_order_sha256": "83470c609862ce423b7bdc818cba30bbab8cd27662eb180d60ba79b1792d979e",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      },
+      "permutation_seed_9001": {
+        "candidate_id_order_sha256": "6d12866901636f55fae39fdeb0d37dc5b8469694213421e40292c18e54389179",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      },
+      "reverse": {
+        "candidate_id_order_sha256": "0e2341318158ec7745396b9ea422d3f71a1b38b25da38e43f23a7d5f68fd4513",
+        "selector_output_sha256": "53adbab0620865dd9f386a73e6aa985fd50f5f5f16776c3311ceda37ccfc0f00"
+      }
+    },
+    "passed": true
+  },
+  "artifact_integrity": {
+    "canonical_payload_sha256": "3d37f17d30d1bbcaac013d49ee80b4c8afdd85964fa08ae91ba23e69720bf869",
+    "hash_algorithm": "sha256",
+    "hash_excludes": [
+      "artifact_integrity"
+    ]
+  },
+  "complete_90_percent_feasible_candidate_table": [
+    {
+      "accuracy_retained_fraction": 0.9421734358846141,
+      "candidate_id": "seed_271828_rec_19",
+      "confidence_interval_overlaps_raw_minimum": true,
+      "equivalent_fastest_cohort": true,
+      "fingerprint": "dd121be2d339a48abeb85f5b178ec4370827a6f4cdee24772b94722c760af15c",
+      "latency_delta_from_raw_minimum_ms": 0.0,
+      "mAP50": 0.6175134981289873,
+      "selected": true,
+      "selection_time_latency_ci95_high_ms": 57.19984475,
+      "selection_time_latency_ci95_low_ms": 57.117206249999995,
+      "selection_time_latency_rank": 1,
+      "selection_time_median_latency_ms": 57.146624,
+      "selection_time_p95_latency_ms": 57.362505999999996,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 4,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 0.0006630648780334237
+      },
+      "within_practical_tolerance_of_raw_minimum": true
+    },
+    {
+      "accuracy_retained_fraction": 0.9154706781049271,
+      "candidate_id": "seed_271828_rec_6",
+      "confidence_interval_overlaps_raw_minimum": true,
+      "equivalent_fastest_cohort": true,
+      "fingerprint": "1366f23682c5c495b65ee6132cd883f2891a5c8b0e278605ec372301b11319df",
+      "latency_delta_from_raw_minimum_ms": 0.026871249999999236,
+      "mAP50": 0.6000121414379619,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 57.219922,
+      "selection_time_latency_ci95_low_ms": 57.10523675,
+      "selection_time_latency_rank": 2,
+      "selection_time_median_latency_ms": 57.17349525,
+      "selection_time_p95_latency_ms": 57.37278405,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 4,
+        "train.optim.lr": 0.000487310659095131,
+        "train.optim.weight_decay": 0.0009
+      },
+      "within_practical_tolerance_of_raw_minimum": true
+    },
+    {
+      "accuracy_retained_fraction": 0.903962368249192,
+      "candidate_id": "seed_271828_rec_12",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "b6b61eca824a6c2496294e4764c1b73b265fbde571d822ff0a47c0e6df0616d3",
+      "latency_delta_from_raw_minimum_ms": 4.623792749999993,
+      "mAP50": 0.5924694360231197,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 61.799415249999996,
+      "selection_time_latency_ci95_low_ms": 61.74224375,
+      "selection_time_latency_rank": 3,
+      "selection_time_median_latency_ms": 61.770416749999995,
+      "selection_time_p95_latency_ms": 61.930805,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 5,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 0.0009
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.922265125819571,
+      "candidate_id": "seed_271828_rec_1",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "1bed4812b21495164d7d1242bb63800404a935a8529fd1ed1c59b6ba6547b6c5",
+      "latency_delta_from_raw_minimum_ms": 4.675305999999999,
+      "mAP50": 0.6044653164228678,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 61.8862685,
+      "selection_time_latency_ci95_low_ms": 61.79774925,
+      "selection_time_latency_rank": 4,
+      "selection_time_median_latency_ms": 61.82193,
+      "selection_time_p95_latency_ms": 62.0668055,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 5,
+        "train.optim.lr": 0.0004417551531468059,
+        "train.optim.weight_decay": 0.0004796687699134978
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9131399604153732,
+      "candidate_id": "seed_161803_rec_11",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "172f1540ea6bf1cd8ccab07411bcb4d8c9f1b2ff3985f843ed60c3f104fa4acd",
+      "latency_delta_from_raw_minimum_ms": 4.745757249999997,
+      "mAP50": 0.5984845568353709,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 61.988498750000005,
+      "selection_time_latency_ci95_low_ms": 61.8307895,
+      "selection_time_latency_rank": 5,
+      "selection_time_median_latency_ms": 61.89238125,
+      "selection_time_p95_latency_ms": 62.149561049999996,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 5,
+        "train.optim.lr": 0.0002684985944234011,
+        "train.optim.weight_decay": 0.0009485964192103246
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 1.0,
+      "candidate_id": "seed_271828_rec_18",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "1af2e6149ad6be7db6dbba9babaf33d18419f74c886f7cb7c678da805ddc597b",
+      "latency_delta_from_raw_minimum_ms": 9.084370750000005,
+      "mAP50": 0.6554138278683255,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.26569825000001,
+      "selection_time_latency_ci95_low_ms": 66.19958449999999,
+      "selection_time_latency_rank": 6,
+      "selection_time_median_latency_ms": 66.23099475000001,
+      "selection_time_p95_latency_ms": 66.59742,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 0.0001962863874708991
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9578821421625431,
+      "candidate_id": "seed_271828_rec_8",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "d0517f83bf8a9b3dd37e564a551f065aa3e41616bdb0b9c6a5f474f6a82c53ea",
+      "latency_delta_from_raw_minimum_ms": 9.269708750000007,
+      "mAP50": 0.6278092014414639,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.52686299999999,
+      "selection_time_latency_ci95_low_ms": 66.38007425,
+      "selection_time_latency_rank": 7,
+      "selection_time_median_latency_ms": 66.41633275000001,
+      "selection_time_p95_latency_ms": 66.71847199999999,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 0.0006547724796069428
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9156191368223813,
+      "candidate_id": "seed_314159_rec_18",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "0c0ead1c2f712f4465d2f116dace442ffde93b51d25cfe374471a3a37fa1717c",
+      "latency_delta_from_raw_minimum_ms": 9.391427249999992,
+      "mAP50": 0.600109443334249,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.5806925,
+      "selection_time_latency_ci95_low_ms": 66.50235025,
+      "selection_time_latency_rank": 8,
+      "selection_time_median_latency_ms": 66.53805125,
+      "selection_time_p95_latency_ms": 66.71788005,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 1.1000000000000001e-05
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9637329519516301,
+      "candidate_id": "seed_314159_rec_17",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "40b779d95eecfbd42eb2ac4e79be9880af3522b646e55e87b911155f09d4a544",
+      "latency_delta_from_raw_minimum_ms": 9.418230499999993,
+      "mAP50": 0.6316439030814589,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.63726025,
+      "selection_time_latency_ci95_low_ms": 66.4994655,
+      "selection_time_latency_rank": 9,
+      "selection_time_median_latency_ms": 66.5648545,
+      "selection_time_p95_latency_ms": 66.84640005,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.0003213304064567958,
+        "train.optim.weight_decay": 0.0007597966799758081
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9923091541596643,
+      "candidate_id": "seed_161803_rec_14",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "73ec7857077a36df2ce4a8f2e0f588bd26dd67e5791a2eaeb7b979aac061f937",
+      "latency_delta_from_raw_minimum_ms": 9.442785499999985,
+      "mAP50": 0.6503731411565659,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.62343725,
+      "selection_time_latency_ci95_low_ms": 66.539746,
+      "selection_time_latency_rank": 10,
+      "selection_time_median_latency_ms": 66.58940949999999,
+      "selection_time_p95_latency_ms": 66.9217075,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 0.0007784663668118407
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9612660371004018,
+      "candidate_id": "seed_314159_rec_7",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "0038c5fcfb3f7184cd05a30624421ec85603b225a491d423903da5d67fd7f714",
+      "latency_delta_from_raw_minimum_ms": 9.442908250000002,
+      "mAP50": 0.6300270529757901,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.662066,
+      "selection_time_latency_ci95_low_ms": 66.5359365,
+      "selection_time_latency_rank": 11,
+      "selection_time_median_latency_ms": 66.58953225,
+      "selection_time_p95_latency_ms": 66.800954,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 0.00043930511913497345
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9746832403035,
+      "candidate_id": "seed_271828_rec_13",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "af15175b1e382cda9dc539bba7c492beaab09460e6a069b0915e079d01c00d66",
+      "latency_delta_from_raw_minimum_ms": 9.518840499999996,
+      "mAP50": 0.6388208734864198,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.71631525000001,
+      "selection_time_latency_ci95_low_ms": 66.595203,
+      "selection_time_latency_rank": 12,
+      "selection_time_median_latency_ms": 66.6654645,
+      "selection_time_p95_latency_ms": 66.9667695,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.0003409813457951682,
+        "train.optim.weight_decay": 0.00037590573325465534
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9943718134046077,
+      "candidate_id": "seed_314159_rec_12",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "9eb66282aa2ac6fecd01ba4ff3a634812612fa73111c680791ae48d61052f074",
+      "latency_delta_from_raw_minimum_ms": 9.538497000000007,
+      "mAP50": 0.6517250365478822,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.73869475000001,
+      "selection_time_latency_ci95_low_ms": 66.5915665,
+      "selection_time_latency_rank": 13,
+      "selection_time_median_latency_ms": 66.68512100000001,
+      "selection_time_p95_latency_ms": 66.85309749999999,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.00043650890201375357,
+        "train.optim.weight_decay": 0.0007144522744519978
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9984864978793068,
+      "candidate_id": "seed_271828_rec_16",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "24e1edf24d9f5f3573502f1d32b0efa8162394ed90c2fade808c9e2bc0f35803",
+      "latency_delta_from_raw_minimum_ms": 9.675240250000002,
+      "mAP50": 0.6544218576499151,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 66.87998275,
+      "selection_time_latency_ci95_low_ms": 66.785156,
+      "selection_time_latency_rank": 14,
+      "selection_time_median_latency_ms": 66.82186425,
+      "selection_time_p95_latency_ms": 67.0504435,
+      "specs": {
+        "model.dec_layers": 3,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.0003007572504594793,
+        "train.optim.weight_decay": 1.1000000000000001e-05
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9135742903952105,
+      "candidate_id": "seed_314159_rec_5",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "86d9b6af5ccea7b874072af32f12fc881e615305b8b382b2c866197261ef7954",
+      "latency_delta_from_raw_minimum_ms": 13.73354175,
+      "mAP50": 0.5987692227100141,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 70.89530125,
+      "selection_time_latency_ci95_low_ms": 70.707171,
+      "selection_time_latency_rank": 15,
+      "selection_time_median_latency_ms": 70.88016575,
+      "selection_time_p95_latency_ms": 71.137551,
+      "specs": {
+        "model.dec_layers": 4,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.0003255265920347484,
+        "train.optim.weight_decay": 0.000175988605139262
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9317983168985488,
+      "candidate_id": "seed_314159_rec_11",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "49d4f965a21d0ea030c81e2db0855b46d18f62e05664f6a4972822dc550eb9fd",
+      "latency_delta_from_raw_minimum_ms": 22.095579749999985,
+      "mAP50": 0.6107135016797408,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 79.28856475,
+      "selection_time_latency_ci95_low_ms": 79.19843499999999,
+      "selection_time_latency_rank": 16,
+      "selection_time_median_latency_ms": 79.24220374999999,
+      "selection_time_p95_latency_ms": 79.7769715,
+      "specs": {
+        "model.dec_layers": 6,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 0.0001417474630742632
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    },
+    {
+      "accuracy_retained_fraction": 0.9108799049667585,
+      "candidate_id": "seed_314159_rec_3",
+      "confidence_interval_overlaps_raw_minimum": false,
+      "equivalent_fastest_cohort": false,
+      "fingerprint": "a8ba820da4917302a119b350309c7a3b2b6671f4ed73ca61aee8981dcf057218",
+      "latency_delta_from_raw_minimum_ms": 22.657930249999993,
+      "mAP50": 0.5970032852425997,
+      "selected": false,
+      "selection_time_latency_ci95_high_ms": 79.9265,
+      "selection_time_latency_ci95_low_ms": 79.6680815,
+      "selection_time_latency_rank": 17,
+      "selection_time_median_latency_ms": 79.80455425,
+      "selection_time_p95_latency_ms": 80.1799975,
+      "specs": {
+        "model.dec_layers": 6,
+        "model.enc_layers": 6,
+        "train.optim.lr": 0.00042331502060985004,
+        "train.optim.weight_decay": 0.0005537484468632733
+      },
+      "within_practical_tolerance_of_raw_minimum": false
+    }
+  ],
+  "dataset": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+  "frozen_inputs": {
+    "candidate_count": 60,
+    "candidate_id_set_sha256": "7b4de18434ce46fa7f9238a7be2fda4185fbbe68d1046ca9dbb923957bfb6549",
+    "candidate_objectives_match_sealed_selection": true,
+    "candidate_table": {
+      "expected_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03",
+      "match": true,
+      "observed_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03",
+      "path": "experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_candidate_table.json"
+    },
+    "manual_candidate_injection_used": false,
+    "sealed_selection": {
+      "expected_sha256": "78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1",
+      "match": true,
+      "observed_sha256": "78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1",
+      "path": "experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_combined_selection.json"
+    },
+    "successful_candidate_count": 60,
+    "unique_candidate_id_count": 60
+  },
+  "generated_by": {
+    "production_selector": {
+      "function": "analyze_archive",
+      "module": "tao_automl.selection",
+      "source_path": "src/tao_automl/selection.py",
+      "source_sha256": "c06c690f5600ead366f27bb3d4688b9e0b0e9ab463514ee6ea245962b06c919a"
+    },
+    "script": "experiments/dino_moo_phase2_20260728/replay_latency_90_policy.py",
+    "script_sha256": "39778d511a0d32819d16ab032c6e4e058b325723853ae8a056f3edbe09d13ee1"
+  },
+  "latency_tied_cohort_audit": {
+    "accuracy_tie_break_invoked": true,
+    "equivalent_fastest_candidate_ids": [
+      "seed_271828_rec_19",
+      "seed_271828_rec_6"
+    ],
+    "fingerprint_or_candidate_id_tie_break_required": false,
+    "higher_accuracy_resolved_equivalent_fastest_cohort": true,
+    "matched_validation_scope": {
+      "additional_uncertainty_plausible_candidate_ids": [],
+      "candidate_ids": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "equivalent_fastest_candidate_ids": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "nearest_excluded_candidate": {
+        "candidate_id": "seed_271828_rec_12",
+        "ci_gap_from_raw_anchor_ms": 4.542399000000003,
+        "median_delta_from_raw_minimum_ms": 4.623792749999993
+      },
+      "plausibility_rule": "For an excluded feasible candidate, its selection-time latency CI lower bound is no greater than the raw anchor CI upper bound plus the frozen practical tolerance."
+    },
+    "policy_interpretation": "Latency mode selected the highest-accuracy member of the equivalent-fastest cohort satisfying 90% retained accuracy.",
+    "production_selection_reason": "Highest-accuracy member of the equivalent-fastest cohort satisfying the accuracy-winner-relative constraint; deterministic specification fingerprint and candidate ID resolve remaining ties.",
+    "raw_minimum_latency_candidate_id": "seed_271828_rec_19",
+    "raw_minimum_selection_time_latency_ms": 57.146624,
+    "selected_latency_candidate_id": "seed_271828_rec_19"
+  },
+  "mode_independence": {
+    "accuracy_selection_unchanged_from_sealed_archive": true,
+    "multi_objective_inherited_latency_threshold": false,
+    "multi_objective_min_accuracy": null,
+    "multi_objective_selection_unchanged_from_sealed_archive": true,
+    "replayed_accuracy_selection_sha256": "f2e471894857753bd369422645134240febbfc688b3b7f2c9cc48b24ae81fa92",
+    "replayed_multi_objective_selection_sha256": "7cd6a729e43250a8fc182d0b61958f0b5e274fa42b546bb331fda645b7e46f43",
+    "sealed_accuracy_selection_sha256": "f2e471894857753bd369422645134240febbfc688b3b7f2c9cc48b24ae81fa92",
+    "sealed_multi_objective_selection_sha256": "7cd6a729e43250a8fc182d0b61958f0b5e274fa42b546bb331fda645b7e46f43"
+  },
+  "model_family": "DINO",
+  "policy": {
+    "constraint_type": "relative_to_accuracy_winner",
+    "latency_accuracy_retention": 0.9,
+    "latency_tolerance_ms": 0.73553775,
+    "multi_objective_min_accuracy": null,
+    "objective": "minimize latency subject to accuracy >= 0.90 * accuracy_mode_winner_accuracy"
+  },
+  "purpose": "Offline production-selector replay of the sealed 60-candidate DINO archive with latency mode retaining 90% of the accuracy winner; no training, benchmarking, or reselection from matched measurements is performed.",
+  "resolved_policy": {
+    "accuracy_winner_candidate_id": "seed_271828_rec_18",
+    "accuracy_winner_mAP50": 0.6554138278683255,
+    "decimal_policy_expression": "0.90 * accuracy_mode_winner_accuracy",
+    "feasible_candidate_count": 17,
+    "feasible_candidate_ids": [
+      "seed_271828_rec_19",
+      "seed_271828_rec_6",
+      "seed_271828_rec_12",
+      "seed_271828_rec_1",
+      "seed_161803_rec_11",
+      "seed_271828_rec_18",
+      "seed_271828_rec_8",
+      "seed_314159_rec_18",
+      "seed_314159_rec_17",
+      "seed_161803_rec_14",
+      "seed_314159_rec_7",
+      "seed_271828_rec_13",
+      "seed_314159_rec_12",
+      "seed_271828_rec_16",
+      "seed_314159_rec_5",
+      "seed_314159_rec_11",
+      "seed_314159_rec_3"
+    ],
+    "minimum_accuracy_mAP50": 0.589872445081493
+  },
+  "schema_version": 1,
+  "selection_authority": {
+    "expected_candidate_id_encoded_in_replay_logic": false,
+    "manual_candidate_injection_used": false,
+    "manual_winner_override_used": false,
+    "winner_ids_are_production_selector_outputs": true
+  },
+  "selection_isolation": {
+    "algorithm_selected_candidate_overridden": false,
+    "measurements_feed_reselection": false,
+    "measurements_feed_selection": false,
+    "selection_time_objectives_replaced": false,
+    "selector_invoked_on_matched_measurements": false
+  },
+  "selections": {
+    "accuracy": {
+      "distinct_compromise": null,
+      "fallback_used": false,
+      "latency_tied_candidate_ids": [],
+      "mode": "accuracy",
+      "reason": "Highest valid accuracy; accuracy-equivalent ties use lower stabilized latency then canonical configuration hash.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_18"
+    },
+    "latency": {
+      "distinct_compromise": null,
+      "fallback_used": false,
+      "latency_tied_candidate_ids": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "mode": "latency",
+      "reason": "Highest-accuracy member of the equivalent-fastest cohort satisfying the accuracy-winner-relative constraint; deterministic specification fingerprint and candidate ID resolve remaining ties.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_19"
+    },
+    "multi_objective": {
+      "distinct_compromise": true,
+      "fallback_used": false,
+      "latency_tied_candidate_ids": [],
+      "mode": "multi_objective",
+      "reason": "Minimum front-normalized augmented-Chebyshev regret on the multi-objective-eligible Pareto front selected a distinct compromise.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_19"
+    }
+  }
+}
