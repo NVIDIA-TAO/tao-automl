@@ -193,9 +193,9 @@ def complete_status() -> dict:
             "state": "COMPLETED",
             "exit_code": "0:0",
             "node": "batch-block7-00001",
-            "submit_time_utc": "2026-07-28T20:00:00Z",
-            "start_time_utc": "2026-07-28T20:00:10Z",
-            "end_time_utc": "2026-07-28T20:07:00Z",
+            "submit_time_utc": "2026-07-29T03:00:00Z",
+            "start_time_utc": "2026-07-29T03:00:10Z",
+            "end_time_utc": "2026-07-29T03:07:00Z",
             "complete": True,
         },
         "result_root": (
@@ -321,16 +321,33 @@ def test_existing_evidence_must_match_live_checkpoint() -> None:
 def test_scheduler_accounting_requires_exact_successful_top_level_row() -> None:
     runner = FakeRemoteRunner(
         "31010000|COMPLETED|0:0|batch-block7-00001|"
-        "2026-07-28T20:00:00|2026-07-28T20:00:10|"
-        "2026-07-28T20:07:00\n"
+        "2026-07-28T20:00:00-0700|2026-07-28T20:00:10-0700|"
+        "2026-07-28T20:07:00-0700\n"
     )
 
     record = recovery.scheduler_accounting(runner, "31010000")
 
     assert record["complete"] is True
     assert record["node"] == "batch-block7-00001"
-    assert record["submit_time_utc"] == "2026-07-28T20:00:00Z"
-    assert record["end_time_utc"] == "2026-07-28T20:07:00Z"
+    assert record["submit_time_utc"] == "2026-07-29T03:00:00Z"
+    assert record["end_time_utc"] == "2026-07-29T03:07:00Z"
+    assert "SLURM_TIME_FORMAT=%Y-%m-%dT%H:%M:%S%z" in (
+        runner.commands[0][0]
+    )
+
+
+def test_scheduler_accounting_rejects_timezone_naive_timestamps() -> None:
+    runner = FakeRemoteRunner(
+        "31010000|COMPLETED|0:0|batch-block7-00001|"
+        "2026-07-28T20:00:00|2026-07-28T20:00:10|"
+        "2026-07-28T20:07:00\n"
+    )
+
+    with pytest.raises(
+        recovery.RecoveryError,
+        match="explicit numeric UTC offset",
+    ):
+        recovery.scheduler_accounting(runner, "31010000")
 
 
 def test_remote_file_identity_is_fail_closed() -> None:
