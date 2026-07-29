@@ -90,14 +90,14 @@ class AccuracyConstraint:
         object.__setattr__(self, "value", value)
         if self.reference != "accuracy_winner":
             raise ValueError("accuracy constraint reference must be 'accuracy_winner'")
-        if self.reference_value is not None:
-            object.__setattr__(
-                self,
-                "reference_value",
-                normalize_finite_number(
-                    self.reference_value,
-                    path="selection.latency_accuracy_retention.reference_value",
-                ),
+        if (
+            self.reference_value is not None
+            or self.reference_candidate_id is not None
+        ):
+            raise ValueError(
+                "latency accuracy retention is always anchored to the "
+                "observed accuracy-mode winner; external reference overrides "
+                "are not supported"
             )
 
     def threshold(self, reference_accuracy: float) -> float:
@@ -977,16 +977,8 @@ def analyze_archive(
     accuracy_winner.accuracy_winner = True
     retention = config.latency_accuracy_retention
     assert retention is not None
-    reference_value = (
-        retention.reference_value
-        if retention.reference_value is not None
-        else float(accuracy_winner.accuracy)
-    )
-    reference_candidate_id = (
-        retention.reference_candidate_id
-        if retention.reference_value is not None
-        else accuracy_winner.candidate_id
-    )
+    reference_value = float(accuracy_winner.accuracy)
+    reference_candidate_id = accuracy_winner.candidate_id
     threshold = retention.threshold(reference_value)
     latency_feasible = []
     for item in valid:

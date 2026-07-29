@@ -284,6 +284,61 @@ def test_controller_multi_objective_score_and_pareto_front():
         }
 
 
+def test_controller_get_best_routes_active_latency_mode_selection():
+    from tao_automl.controller.controller import Controller
+    from tao_automl.objectives import parse_objective_config
+    from tao_automl.state.state_store import StateStore
+    from tao_automl.types import AutoMLContext
+
+    with tempfile.TemporaryDirectory() as d:
+        objective_config = parse_objective_config({
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+            ],
+            "selection_mode": "latency",
+            "latency_accuracy_retention": 0.90,
+            "multi_objective_min_accuracy": None,
+            "latency_tolerance": 0.0,
+        })
+        ctrl = Controller(
+            brain=MockBrain(3),
+            context=AutoMLContext(
+                id="latency-mode-routing",
+                network="dino",
+                metric="accuracy",
+            ),
+            state_store=StateStore(d),
+            settings=type(
+                "P",
+                (),
+                {"automl_max_recommendations": 3},
+            )(),
+            metric="accuracy",
+            algorithm="bayesian",
+            objective_config=objective_config,
+        )
+
+        # The three Pareto points deliberately have distinct accuracy,
+        # latency, and normalized-compromise winners.
+        for values in (
+            {"accuracy": 0.90, "latency": 30.0},
+            {"accuracy": 0.82, "latency": 10.0},
+            {"accuracy": 0.87, "latency": 20.0},
+        ):
+            rec = ctrl.next_recommendation()[0]
+            ctrl.report_result(rec.id, values)
+
+        best = ctrl.get_best()
+        analysis = ctrl._last_selection_analysis
+        assert best.id == 1
+        assert analysis.config.mode == "latency"
+        assert analysis.accuracy.winner_id == "0"
+        assert analysis.latency.winner_id == "1"
+        assert analysis.multi_objective.winner_id == "2"
+        assert analysis.winner().id == 1
+
+
 def test_controller_accepts_resume_recommendations():
     from tao_automl.controller.controller import Controller
     from tao_automl.state.state_store import StateStore

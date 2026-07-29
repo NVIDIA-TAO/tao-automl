@@ -355,7 +355,7 @@ def _parse_latency_accuracy_retention(
         )
 
     if preferred is None:
-        raw = legacy_raw or {}
+        raw = legacy_raw if legacy_raw is not None else {}
         if not isinstance(raw, dict):
             raise TypeError(
                 "automl_settings['accuracy_constraint'] must be a dictionary"
