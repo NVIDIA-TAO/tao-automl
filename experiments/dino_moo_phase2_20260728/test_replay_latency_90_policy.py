@@ -187,10 +187,23 @@ def test_selection_isolation_flags_are_all_false():
     assert not any(isolation.values())
 
 
-def test_checked_in_artifact_matches_fresh_replay_and_hash():
+def test_checked_in_artifact_integrity_and_current_selector_semantics():
     existing = json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
     REPLAY.verify_payload(existing)
-    assert existing == REPLAY.build_payload()
+    fresh = REPLAY.build_payload()
+    REPLAY.verify_payload(fresh)
+
+    # The frozen artifact binds the selector source at routing-hardening commit
+    # 330dbc6. Later correctness-only selector changes must not rewrite it.
+    # Compare every replayed field except the source identity and the canonical
+    # hash that necessarily covers that identity.
+    existing_semantics = copy.deepcopy(existing)
+    fresh_semantics = copy.deepcopy(fresh)
+    for payload in (existing_semantics, fresh_semantics):
+        payload["artifact_integrity"].pop("canonical_payload_sha256")
+        payload["generated_by"]["production_selector"].pop("source_sha256")
+    assert existing_semantics == fresh_semantics
+
     damaged = copy.deepcopy(existing)
     damaged["policy"]["latency_accuracy_retention"] = 0.91
     with pytest.raises(

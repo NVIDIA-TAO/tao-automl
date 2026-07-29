@@ -329,6 +329,25 @@ def test_extreme_winner_is_not_mislabeled_as_distinct_when_middle_exists():
     )
 
 
+def test_raw_latency_extreme_is_not_mislabeled_when_latency_cohort_prefers_accuracy():
+    analysis = analyze_archive(
+        [
+            Candidate("raw_latency_extreme", 0.50, 1.0),
+            Candidate("latency_cohort_accuracy_winner", 0.51, 1.9),
+            Candidate("accuracy_extreme", 1.00, 10.0),
+        ],
+        config(latency_tolerance=1.0),
+        accuracy_weight=0.05,
+        latency_weight=0.95,
+    )
+
+    assert analysis.latency.winner_id == "latency_cohort_accuracy_winner"
+    assert analysis.multi_objective.winner_id == "raw_latency_extreme"
+    assert analysis.multi_objective.distinct_compromise is False
+    assert analysis.multi_objective.fallback_used is False
+    assert "selected an extreme point" in analysis.multi_objective.reason
+
+
 def test_compromise_selector_never_returns_a_dominated_point():
     analysis = analyze_archive(
         [
@@ -533,6 +552,52 @@ def test_multi_objective_weights_do_not_influence_latency_selection():
         accuracy_heavy.latency.latency_tied_candidate_ids
         == latency_heavy.latency.latency_tied_candidate_ids
     )
+
+
+@pytest.mark.parametrize(
+    ("accuracy_weight", "latency_weight"),
+    [(0.0, 1.0), (1.0, 0.0)],
+)
+def test_one_zero_weight_does_not_change_latency_winner_or_cohort(
+    accuracy_weight,
+    latency_weight,
+):
+    candidates = [
+        Candidate("accuracy", 1.00, 20.0),
+        Candidate("raw_fastest", 0.90, 10.0),
+        Candidate("cohort_accuracy", 0.92, 10.5),
+    ]
+    selection_config = config(
+        mode="latency",
+        constraint=AccuracyConstraint(kind="relative", value=0.90),
+        latency_tolerance=0.60,
+    )
+    baseline = analyze_archive(candidates, selection_config)
+    zero_weight = analyze_archive(
+        reversed(candidates),
+        selection_config,
+        accuracy_weight=accuracy_weight,
+        latency_weight=latency_weight,
+    )
+
+    assert zero_weight.latency.winner_id == baseline.latency.winner_id
+    assert zero_weight.latency.latency_tied_candidate_ids == (
+        baseline.latency.latency_tied_candidate_ids
+    )
+    assert zero_weight.latency.winner_id == "cohort_accuracy"
+
+
+def test_all_zero_multi_objective_weights_are_rejected():
+    with pytest.raises(
+        ValueError,
+        match="at least one multi-objective preference weight must be > 0",
+    ):
+        analyze_archive(
+            [Candidate("candidate", 0.90, 10.0)],
+            config(mode="latency"),
+            accuracy_weight=0.0,
+            latency_weight=0.0,
+        )
 
 
 def test_latency_90_percent_retention_is_relative_to_accuracy_winner():
@@ -1014,6 +1079,99 @@ def test_objective_config_parses_separate_constraint_settings():
         "reference": "accuracy_winner",
     }
     assert "accuracy_constraint" not in serialized
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        {
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+            ],
+            "selection_mode": "latency",
+            "latency_accuracy_retention": 0.90,
+        },
+        {
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+                {"metric": "memory", "direction": "minimize"},
+            ],
+            "selection_mode": "latency",
+        },
+        {
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "cost", "direction": "minimize"},
+            ],
+            "selection_mode": "latency",
+        },
+    ],
+)
+def test_explicit_archive_selection_rejects_unsupported_objective_shape(settings):
+    with pytest.raises(ValueError, match="Explicit archive-selection setting"):
+        parse_objective_config(settings)
+
+
+def test_legacy_generic_three_objective_scalarization_remains_supported():
+    objective_config = parse_objective_config({
+        "objectives": [
+            {"metric": "accuracy", "direction": "maximize"},
+            {"metric": "memory", "direction": "minimize"},
+        ],
+        "multi_objective": True,
+        "latency_metric": "latency",
+    })
+
+    assert objective_config.metric_names == ["accuracy", "memory", "latency"]
+    assert objective_config.selection_config is None
+
+
+def test_null_optional_selector_policy_does_not_break_single_objective_config():
+    objective_config = parse_objective_config({
+        "objectives": [
+            {"metric": "accuracy", "direction": "maximize"},
+        ],
+        "multi_objective_min_accuracy": None,
+    })
+
+    assert objective_config.metric_names == ["accuracy"]
+    assert objective_config.selection_config is None
+
+
+def test_explicit_unknown_latency_metric_is_rejected_instead_of_inferred():
+    with pytest.raises(
+        ValueError,
+        match="latency_metric must name a configured objective",
+    ):
+        parse_objective_config({
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+            ],
+            "latency_metric": "latency_typo",
+        })
+
+
+@pytest.mark.parametrize(
+    "retention",
+    [
+        {"retained_faction": 0.90},
+        {"type": "relative", "value": 0.90, "unexpected": True},
+    ],
+)
+def test_latency_retention_mapping_rejects_unknown_keys(retention):
+    with pytest.raises(
+        ValueError,
+        match="Unknown latency accuracy-retention setting",
+    ):
+        parse_objective_config({
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+            ],
+            "latency_accuracy_retention": retention,
+        })
 
 
 def test_legacy_accuracy_constraint_maps_to_latency_only():
