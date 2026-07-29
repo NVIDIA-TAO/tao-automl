@@ -2,10 +2,12 @@
 
 """Repeat the frozen algorithm-selected winner's latency measurement.
 
-This is a validation-only driver. It reads the completed shared-archive
-selection, requires all three modes to identify one unique winner, and launches
-three new independent eight-GPU SQSH benchmark jobs. It never invokes archive
-selection and never writes ``combined_selection.json``.
+This historical validation-only driver reads a completed shared archive in
+which all three modes happened to identify one common winner, and launches
+three new independent eight-GPU SQSH benchmark jobs. The common-winner check is
+a precondition of this archived experiment, not a product requirement that
+mode winners be distinct or shared. The driver never invokes archive selection
+and never writes ``combined_selection.json``.
 """
 
 from __future__ import annotations
@@ -139,7 +141,7 @@ def initial_payload(
         "started_at": utc_timestamp(),
         "purpose": (
             "Independent-allocation latency repeatability validation for the "
-            "already algorithm-selected unique winner."
+            "historical archive's common algorithm-selected winner."
         ),
         "validation_only": True,
         "feeds_selection": False,

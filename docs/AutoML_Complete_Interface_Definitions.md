@@ -583,7 +583,7 @@ The `settings` dict passed to `AutoML(settings=...)`:
 | `objective_normalization` | str | `"pareto_front"` | Two-objective archives — front-relative regret normalization. |
 | `augmentation_rho` | float | `1e-6` | Multi-objective final selection — strictly positive augmented-Chebyshev tie term. |
 | `accuracy_tolerance` | float | `1e-12` | Accuracy-mode equivalence and the strict-improvement threshold in Pareto comparisons; it never makes lower accuracy "no worse." |
-| `latency_tolerance` | float | `0.0` | Latency-mode equivalence and the strict-improvement margin in Pareto comparisons; reported confidence-interval overlap also prevents a latency-only strict claim, but never makes a slower median "no worse." |
+| `latency_tolerance` | float | `0.0` | Hard inclusive boundary around latency mode's raw-minimum anchor. In Pareto comparisons, confidence-interval overlap can withhold a latency-only strict claim, but it never widens the latency cohort or makes a slower median "no worse." |
 | `selection_score_tolerance` | float | `1e-12` | Multi-objective compromise-score equivalence. |
 | `random_seed` | int | stable session-derived | Candidate-generation RNG; explicit values are recorded and reproducible across processes. |
 | `require_eval_fn_success` | bool | true for two-objective archives | Fail the candidate when required benchmark evaluation raises or omits a metric; disables fallback to progress-log metrics. |
@@ -628,6 +628,10 @@ not subtract ten percentage points from the accuracy metric. Relative retention
 must be finite and satisfy `0 < retained_fraction <= 1`. The complete checked-in
 profile is
 [`dino_latency_90_policy_profile.v1.json`](../experiments/dino_moo_phase2_20260728/dino_latency_90_policy_profile.v1.json).
+Unknown retention-map keys, selector settings without a resolvable
+maximize-accuracy/minimize-latency objective pair, and explicitly named
+metrics absent from `objectives` are rejected rather than silently defaulted
+or routed through legacy scalarization.
 
 ---
 

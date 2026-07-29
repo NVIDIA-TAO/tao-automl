@@ -1,6 +1,10 @@
 # DINO multi-objective AutoML phase-2 validation
 
-Current sealed-evidence cutoff: AutoML commit
+> Historical 98%-retention phase report. Its pinned selector behavior and
+> evidence remain immutable. The current explicit-90% merge authority is
+> [`latency_90_policy/latency_90_policy_report.md`](latency_90_policy/latency_90_policy_report.md).
+
+Historical sealed-evidence cutoff: AutoML commit
 `bb9bfad86ca18091532d196ad9a96ccb3ad116d0`. The feasible-cohort matched
 analysis records `created_at_utc=2026-07-28T20:07:12Z`; that is the artifact
 creation time, not the commit timestamp. The corrected runtime implementation
