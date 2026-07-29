@@ -45,7 +45,7 @@ SEALED_SELECTION_PATH = (
 )
 SELECTOR_SOURCE_PATH = REPO_ROOT / "src" / "tao_automl" / "selection.py"
 DEFAULT_OUTPUT_PATH = (
-    EXPERIMENT_DIR / "latency_90_policy" / "archive_replay.v1.json"
+    EXPERIMENT_DIR / "latency_90_policy" / "archive_replay.v2.json"
 )
 
 EXPECTED_INPUT_SHA256 = {
@@ -220,7 +220,12 @@ def _selection_config(
             "Sealed latency tolerance differs from the 90% replay contract"
         )
     return SelectionConfig(
-        mode=str(frozen["mode"]),
+        # Replay the active latency-mode winner route, rather than merely
+        # inspecting the latency selection embedded in a multi-objective
+        # analysis. Accuracy and multi-objective selections are still produced
+        # by the same analysis and compared byte-for-byte with the sealed
+        # archive below.
+        mode="latency",
         accuracy_metric=str(frozen["accuracy_metric"]),
         latency_metric=str(frozen["latency_metric"]),
         latency_accuracy_retention=AccuracyConstraint(
@@ -484,6 +489,23 @@ def build_payload() -> dict[str, Any]:
     config = _selection_config(sealed)
     analysis, order_invariance = _run_order_invariant_selector(rows, config)
     serialized = analysis.to_dict()
+    if analysis.config.mode != "latency":
+        raise ReplayContractError(
+            "The 90% policy replay did not use active latency mode"
+        )
+    selected_for_active_mode = analysis.winner()
+    latency_winner_audit = analysis.audit_for(
+        analysis.latency.winner_id
+    )
+    if (
+        selected_for_active_mode is None
+        or latency_winner_audit is None
+        or selected_for_active_mode is not latency_winner_audit.candidate
+    ):
+        raise ReplayContractError(
+            "Active latency-mode routing did not return the constrained "
+            "latency selection"
+        )
     source_by_id = {row["candidate_id"]: row for row in rows}
     feasible_table, cohort = _feasible_table(analysis, source_by_id)
 
@@ -509,7 +531,7 @@ def build_payload() -> dict[str, Any]:
         )
 
     core = {
-        "schema_version": 1,
+        "schema_version": 2,
         "purpose": (
             "Offline production-selector replay of the sealed 60-candidate "
             "DINO archive with latency mode retaining 90% of the accuracy "
@@ -550,6 +572,12 @@ def build_payload() -> dict[str, Any]:
             ],
         },
         "selections": serialized["selections"],
+        "active_mode_routing": {
+            "selection_mode": analysis.config.mode,
+            "analysis_winner_candidate_id": analysis.latency.winner_id,
+            "latency_selection_candidate_id": analysis.latency.winner_id,
+            "winner_route_matches_latency_selection": True,
+        },
         "latency_tied_cohort_audit": cohort,
         "complete_90_percent_feasible_candidate_table": feasible_table,
         "mode_independence": {

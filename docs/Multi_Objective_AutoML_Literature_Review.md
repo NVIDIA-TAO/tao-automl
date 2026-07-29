@@ -287,9 +287,12 @@ by the candidate with the smallest canonical fingerprint, with all aliases
 retained in the audit record.
 
 Accuracy mode selects maximum valid accuracy. Only candidates equivalent within
-`accuracy_tolerance` may use latency as a tie-break. Latency medians whose
-configured tolerance or confidence intervals overlap are treated as
-statistically tied; higher accuracy and then the canonical fingerprint decide.
+`accuracy_tolerance` may use latency as a tie-break. Latency mode anchors its
+equivalent-fastest cohort at the raw minimum median and applies
+`latency_tolerance` as a hard, inclusive practical boundary; higher accuracy
+and then the canonical fingerprint decide only inside that cohort. Confidence
+intervals inform Pareto dominance and validation reporting, but overlap cannot
+expand the practical cohort beyond the configured tolerance.
 For Pareto dominance, "no worse" always follows the observed directions
 exactly: accuracy cannot decrease and median latency cannot increase.
 Tolerance controls whether an accuracy gain is strict, while non-overlapping

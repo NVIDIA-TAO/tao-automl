@@ -16,7 +16,7 @@ import pytest
 
 HERE = Path(__file__).resolve().parent
 SCRIPT_PATH = HERE / "replay_latency_90_policy.py"
-ARTIFACT_PATH = HERE / "latency_90_policy" / "archive_replay.v1.json"
+ARTIFACT_PATH = HERE / "latency_90_policy" / "archive_replay.v2.json"
 SPEC = importlib.util.spec_from_file_location(
     "replay_latency_90_policy",
     SCRIPT_PATH,
@@ -101,6 +101,16 @@ def test_latency_winner_and_cohort_are_entirely_selector_derived():
         "Latency mode selected the highest-accuracy member of the "
         "equivalent-fastest cohort satisfying 90% retained accuracy."
     )
+    assert payload["active_mode_routing"] == {
+        "selection_mode": "latency",
+        "analysis_winner_candidate_id": audit[
+            "selected_latency_candidate_id"
+        ],
+        "latency_selection_candidate_id": audit[
+            "selected_latency_candidate_id"
+        ],
+        "winner_route_matches_latency_selection": True,
+    }
 
 
 def test_matched_scope_is_cohort_only_when_no_outsider_is_plausible():

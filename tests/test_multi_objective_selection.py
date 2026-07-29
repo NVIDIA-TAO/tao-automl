@@ -17,6 +17,7 @@ from tao_automl.selection import (
     AccuracyConstraint,
     SelectionConfig,
     analyze_archive,
+    canonical_spec_fingerprint,
 )
 
 
@@ -587,6 +588,34 @@ def test_accuracy_tie_break_never_reaches_outside_fastest_latency_cohort():
     assert analysis.latency.winner_id == "equivalent_higher_accuracy"
 
 
+def test_latency_tie_break_uses_fingerprint_before_candidate_id():
+    specifications = [{"value": 0}, {"value": 1}]
+    specifications.sort(key=canonical_spec_fingerprint)
+    analysis = analyze_archive(
+        [
+            Candidate(
+                "z_fingerprint_winner",
+                0.90,
+                10.0,
+                specs=specifications[0],
+            ),
+            Candidate(
+                "a_id_would_win_first",
+                0.90,
+                10.0,
+                specs=specifications[1],
+            ),
+        ],
+        config(latency_tolerance=0.0),
+    )
+
+    assert analysis.latency.latency_tied_candidate_ids == (
+        "a_id_would_win_first",
+        "z_fingerprint_winner",
+    )
+    assert analysis.latency.winner_id == "z_fingerprint_winner"
+
+
 def test_overlapping_latency_intervals_do_not_make_slower_median_no_worse():
     analysis = analyze_archive(
         [
@@ -1124,23 +1153,36 @@ def test_absolute_accuracy_degradation_rule_and_inclusive_floor():
     assert analysis.latency.winner_id == "on_floor"
 
 
-def test_external_latency_reference_does_not_block_multi_objective_selection():
-    analysis = analyze_archive(
-        [Candidate("best_observed", 0.90, 10.0)],
-        config(
-            constraint=AccuracyConstraint(
-                kind="relative",
-                value=1.0,
-                reference_value=0.95,
-                reference_candidate_id="external_accuracy_anchor",
-            ),
-        ),
-    )
-    assert analysis.accuracy.winner_id == "best_observed"
-    assert analysis.latency.status == "no_accuracy_feasible_candidates"
-    assert analysis.latency.winner_id is None
-    assert analysis.multi_objective.status == "selected"
-    assert analysis.multi_objective.winner_id == "best_observed"
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"reference_value": 0.95},
+        {"reference_candidate_id": "external_accuracy_anchor"},
+        {
+            "reference_value": 0.95,
+            "reference_candidate_id": "external_accuracy_anchor",
+        },
+    ],
+)
+def test_external_latency_accuracy_reference_is_rejected(override):
+    with pytest.raises(ValueError, match="accuracy-mode winner"):
+        AccuracyConstraint(
+            kind="relative",
+            value=1.0,
+            **override,
+        )
+
+
+@pytest.mark.parametrize("legacy_value", [False, 0, "", []])
+def test_falsey_invalid_legacy_accuracy_constraint_is_rejected(legacy_value):
+    with pytest.raises(TypeError, match="must be a dictionary"):
+        parse_objective_config({
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+            ],
+            "accuracy_constraint": legacy_value,
+        })
 
 
 @settings(max_examples=100, deadline=None, derandomize=True, database=None)
