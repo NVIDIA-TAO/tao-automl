@@ -585,6 +585,8 @@ def scheduler_accounting(
     output = runner.remote_output(
         " ".join(
             [
+                "env",
+                "SLURM_TIME_FORMAT=%Y-%m-%dT%H:%M:%S%z",
                 "sacct",
                 "-X",
                 "-j",
@@ -629,14 +631,16 @@ def normalize_slurm_time(value: str) -> str | None:
     value = value.strip()
     if not value or value in {"Unknown", "N/A", "None"}:
         return None
-    if re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", value):
-        return value + "Z"
-    if re.fullmatch(
-        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z",
+    if not re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{4}",
         value,
     ):
-        return value
-    raise RecoveryError(f"unexpected SLURM timestamp format: {value!r}")
+        raise RecoveryError(
+            "SLURM timestamp must include an explicit numeric UTC offset: "
+            f"{value!r}"
+        )
+    parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S%z")
+    return parsed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def remote_file_identity(
