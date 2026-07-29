@@ -35,6 +35,35 @@ _MINIMIZE_TOKENS = (
     "error",
 )
 
+_ARCHIVE_SELECTOR_SETTING_KEYS = frozenset({
+    "selection_mode",
+    "accuracy_metric",
+    "latency_accuracy_retention",
+    "multi_objective_min_accuracy",
+    "accuracy_constraint",
+    "accuracy_retention_fraction",
+    "max_accuracy_degradation",
+    "accuracy_tolerance",
+    "latency_tolerance",
+    "selection_score_tolerance",
+    "augmentation_rho",
+    "objective_normalization",
+    "latency_ci_low_metric",
+    "latency_ci_high_metric",
+})
+
+_LATENCY_RETENTION_MAPPING_KEYS = frozenset({
+    "type",
+    "value",
+    "retained_fraction",
+    "min_retained_fraction",
+    "max_absolute_degradation",
+    "max_accuracy_degradation",
+    "reference",
+    "reference_value",
+    "reference_candidate_id",
+})
+
 
 def implicit_direction(metric_name: str) -> str:
     """Infer a default direction from a metric name."""
@@ -377,6 +406,16 @@ def _parse_latency_accuracy_retention(
             "or dictionary"
         )
 
+    unknown_keys = sorted(
+        set(raw) - _LATENCY_RETENTION_MAPPING_KEYS,
+        key=str,
+    )
+    if unknown_keys:
+        raise ValueError(
+            "Unknown latency accuracy-retention setting(s): "
+            + ", ".join(repr(key) for key in unknown_keys)
+        )
+
     nested_representations = [
         name
         for name in (
@@ -452,7 +491,32 @@ def _build_selection_config(
     settings: dict[str, Any],
     objectives: list[ObjectiveSpec],
 ) -> SelectionConfig | None:
+    explicit_selector_settings = sorted(
+        key
+        for key in _ARCHIVE_SELECTOR_SETTING_KEYS
+        if (
+            key in settings
+            and (
+                key == "selection_mode"
+                or settings.get(key) is not None
+            )
+        )
+    )
+
+    def unsupported_selector(detail: str) -> None:
+        if not explicit_selector_settings:
+            return
+        raise ValueError(
+            "Explicit archive-selection setting(s) "
+            f"{', '.join(explicit_selector_settings)} require exactly one "
+            "maximize accuracy objective and one minimize latency objective; "
+            f"{detail}"
+        )
+
     if len(objectives) != 2:
+        unsupported_selector(
+            f"received {len(objectives)} configured objective(s)"
+        )
         return None
 
     by_metric = {spec.metric: spec for spec in objectives}
@@ -463,7 +527,7 @@ def _build_selection_config(
             None,
         )
     latency_metric = settings.get("latency_metric")
-    if latency_metric is None or latency_metric not in by_metric:
+    if latency_metric is None:
         latency_metric = next(
             (
                 spec.metric
@@ -472,7 +536,16 @@ def _build_selection_config(
             ),
             None,
         )
+    elif latency_metric not in by_metric:
+        raise ValueError(
+            "latency_metric must name a configured objective; "
+            f"received {latency_metric!r}"
+        )
     if accuracy_metric is None or latency_metric is None:
+        unsupported_selector(
+            "the configured objectives do not resolve to the required "
+            "accuracy/latency directions"
+        )
         return None
     if accuracy_metric not in by_metric or latency_metric not in by_metric:
         raise ValueError(

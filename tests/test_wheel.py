@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Comprehensive test for the nvidia-tao-automl wheel."""
 
+import subprocess
+import sys
 import tempfile
 import threading
-import subprocess
 
 import pytest
 
@@ -795,6 +796,10 @@ def test_version():
 
 
 def test_pip_show():
-    r = subprocess.run(["pip", "show", "nvidia-tao-automl"], capture_output=True, text=True)
+    r = subprocess.run(
+        [sys.executable, "-m", "pip", "show", "nvidia-tao-automl"],
+        capture_output=True,
+        text=True,
+    )
     assert r.returncode == 0
     assert "0.1.0" in r.stdout

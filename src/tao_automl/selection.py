@@ -924,9 +924,13 @@ def analyze_archive(
         latency_weight,
         path="selection.latency_weight",
     )
-    if raw_accuracy_weight <= 0.0 or raw_latency_weight <= 0.0:
-        raise ValueError("multi-objective preference weights must be > 0")
+    if raw_accuracy_weight < 0.0 or raw_latency_weight < 0.0:
+        raise ValueError("multi-objective preference weights must be non-negative")
     total_weight = raw_accuracy_weight + raw_latency_weight
+    if total_weight <= 0.0:
+        raise ValueError(
+            "at least one multi-objective preference weight must be > 0"
+        )
     weights = {
         config.accuracy_metric: raw_accuracy_weight / total_weight,
         config.latency_metric: raw_latency_weight / total_weight,
@@ -1072,9 +1076,18 @@ def analyze_archive(
     bounds = _normalization_bounds(feasible_front, config)
     _set_normalized_scores(audits, bounds, config, weights)
     compromise_winner = _choose_compromise(feasible_front, config)
-    multi_objective_latency_extreme, _ = _choose_latency(
-        multi_objective_feasible,
-        config,
+    multi_objective_latency_extreme = (
+        min(
+            feasible_front,
+            key=lambda item: (
+                float(item.latency),
+                -float(item.accuracy),
+                item.fingerprint,
+                item.candidate_id,
+            ),
+        )
+        if feasible_front
+        else None
     )
 
     distinct_candidates: list[CandidateAudit] = []
