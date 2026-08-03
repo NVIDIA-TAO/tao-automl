@@ -11,7 +11,9 @@ Optionally integrates with Weights & Biases (wandb) for experiment tracking.
 import logging
 import os
 
+from tao_automl.objectives import parse_objective_config
 from tao_automl.types import Recommendation, ResumeRecommendation, JobStates
+from tao_automl.utils.value_utils import normalize_json_value
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,7 @@ class Controller:
         algorithm,
         parameter_names=None,
         wandb_config=None,
+        objective_config=None,
     ):
         """
         Args:
@@ -79,8 +82,10 @@ class Controller:
         self.metric = metric
         self.algorithm = algorithm.lower()
         self.parameter_names = parameter_names or []
+        self.objective_config = objective_config or parse_objective_config({"metric": metric})
         self.history = []  # list of Recommendation objects
         self._next_id = 0
+        self._checkpoint_window = 0
 
         # WandB integration (optional)
         self._wandb_config = wandb_config or {}
@@ -116,17 +121,21 @@ class Controller:
                 continue
 
             if isinstance(raw_rec, ResumeRecommendation):
+                normalized_specs = normalize_json_value(
+                    raw_rec.specs,
+                    path=f"recommendation[{raw_rec.id}].specs",
+                )
                 rec = self._find_rec(raw_rec.id)
                 if rec is None:
                     rec = Recommendation(
                         identifier=int(raw_rec.id),
-                        specs=raw_rec.specs,
+                        specs=normalized_specs,
                         metric=self.metric,
                     )
                     self.history.append(rec)
                     self._next_id = max(self._next_id, rec.id + 1)
                 else:
-                    rec.specs = raw_rec.specs
+                    rec.specs = normalized_specs
                 rec.status = JobStates.pending
                 rec.resume_from_job_id = raw_rec.resume_from_job_id or raw_rec.job_id
                 rec.resume_from_epoch = getattr(raw_rec, "resume_from_epoch", None)
@@ -134,7 +143,10 @@ class Controller:
                 recommendations.append(rec)
                 continue
 
-            spec_dict = raw_rec
+            spec_dict = normalize_json_value(
+                raw_rec,
+                path=f"recommendation[{self._next_id}].specs",
+            )
             rec = Recommendation(
                 identifier=self._next_id,
                 specs=spec_dict,
@@ -143,6 +155,16 @@ class Controller:
             self.history.append(rec)
             recommendations.append(rec)
             self._next_id += 1
+
+        # Keep the entire most recently issued decision window until the
+        # brain is called again.  Looking only at the globally largest budget
+        # is unsafe when Hyperband starts a later bracket at a smaller budget:
+        # that later bracket still needs its just-finished checkpoints for its
+        # next successive-halving decision.
+        if recommendations:
+            self._checkpoint_window += 1
+            for rec in recommendations:
+                rec.checkpoint_window = self._checkpoint_window
 
         # Persist after generating new recommendations
         self.save_state()
@@ -156,7 +178,8 @@ class Controller:
 
         Args:
             rec_id: Recommendation ID (int).
-            metric_value: The metric value achieved (float).
+            metric_value: The metric value achieved. For multi-objective
+                sessions, pass a dict keyed by objective metric name.
             best_epoch: Best epoch number (optional).
             status: ``"success"`` or ``"failure"``.
         """
@@ -166,8 +189,30 @@ class Controller:
                 logger.warning("report_result: recommendation %s not found", rec_id)
                 return
 
-            rec.update_result(metric_value)
-            rec.update_status(status if status else JobStates.success)
+            rec_status = status if status else JobStates.success
+            objective_values = self.objective_config.coerce_values(metric_value)
+            try:
+                objective_score = self.objective_config.scalarize(objective_values)
+            except ValueError:
+                if rec_status in (JobStates.success, JobStates.done):
+                    raise
+                objective_score = 0.0
+
+            if self.objective_config.is_multi_objective and objective_values:
+                if all(
+                    name in objective_values
+                    for name in self.objective_config.metric_names
+                ):
+                    rec.update_objectives(objective_values, objective_score)
+                else:
+                    rec.update_result(objective_score)
+                    rec.objective_values = objective_values
+                    rec.objective_score = objective_score
+            else:
+                rec.update_result(objective_score)
+                rec.objective_values = objective_values
+                rec.objective_score = objective_score
+            rec.update_status(rec_status)
             if best_epoch is not None:
                 rec.best_epoch_number = best_epoch
 
@@ -176,8 +221,8 @@ class Controller:
             self.save_state()
 
         logger.info(
-            "Reported result for rec %d: metric=%.6f status=%s",
-            rec_id, metric_value, status,
+            "Reported result for rec %d: score=%.6f values=%s status=%s",
+            rec_id, rec.result, rec.objective_values, status,
         )
 
         self._update_wandb_table()
@@ -185,8 +230,8 @@ class Controller:
     def get_best(self):
         """Return the best Recommendation so far, or None.
 
-        Uses the convention that if the metric name contains ``"loss"`` then
-        lower is better; otherwise higher is better.
+        Uses explicit objective configuration when present; otherwise preserves
+        the legacy metric-name direction rule.
         """
         completed = [
             r for r in self.history
@@ -198,8 +243,7 @@ class Controller:
         if self.algorithm in _MULTI_FIDELITY_ALGORITHMS:
             completed = self._largest_budget_candidates(completed)
 
-        lower_is_better = "loss" in self.metric.lower()
-        if lower_is_better:
+        if self.objective_config.score_direction == "minimize":
             return min(completed, key=lambda r: r.result)
         return max(completed, key=lambda r: r.result)
 
@@ -214,20 +258,123 @@ class Controller:
             if r.status in (JobStates.success, JobStates.done, JobStates.failure, JobStates.error)
         ]
         best = self.get_best()
+        pareto_front = self.get_pareto_front()
 
         total = self._estimate_total()
 
         return {
             "completed": len(completed_recs),
             "total": total,
-            "best_metric": best.result if best else None,
+            "best_metric": best.primary_metric_value() if best else None,
+            "best_objective_score": best.objective_score if best else None,
             "best_rec_id": best.id if best else None,
             "algorithm": self.algorithm,
+            "objectives": self.objective_config.to_dict(),
+            "pareto_front_size": len(pareto_front),
         }
 
     def get_history(self):
         """Return the full list of Recommendation objects."""
         return list(self.history)
+
+    def get_required_checkpoint_job_ids(self):
+        """Return checkpoint jobs still required by an unfinished search.
+
+        Multi-fidelity brains make promotion decisions in batches. This set is
+        conservative for the current decision window, but releases eliminated
+        trials as soon as the brain advances to the next rung or generation.
+        """
+        required = set()
+        rec_by_id = {rec.id: rec for rec in self.history}
+        active_states = {JobStates.pending, JobStates.started, JobStates.running}
+
+        for rec in self.history:
+            if rec.status in active_states and rec.job_id:
+                required.add(rec.job_id)
+            if rec.status in active_states and rec.resume_from_job_id:
+                required.add(rec.resume_from_job_id)
+
+        def add_rec_id(rec_id):
+            try:
+                rec = rec_by_id.get(int(rec_id))
+            except (TypeError, ValueError):
+                rec = None
+            if rec is not None and rec.job_id:
+                required.add(rec.job_id)
+
+        def collect_brain(brain):
+            if brain is None:
+                return
+            for rec_id in getattr(brain, "active_configs", set()) or set():
+                add_rec_id(rec_id)
+            for promotion in getattr(brain, "pending_promotions", []) or []:
+                if isinstance(promotion, (list, tuple)) and promotion:
+                    add_rec_id(promotion[0])
+            population = getattr(brain, "population", None)
+            if isinstance(population, dict):
+                for rec_id in population:
+                    add_rec_id(rec_id)
+            considered = getattr(brain, "experiments_considered", []) or []
+            for rec in considered:
+                job_id = getattr(rec, "job_id", None)
+                if job_id:
+                    required.add(job_id)
+            collect_brain(getattr(brain, "current_sub_brain", None))
+
+        collect_brain(self.brain)
+
+        checkpoint_windows = [
+            getattr(rec, "checkpoint_window", 0) for rec in self.history
+            if getattr(rec, "checkpoint_window", 0)
+        ]
+        if checkpoint_windows:
+            latest_window = max(checkpoint_windows)
+            required.update(
+                rec.job_id for rec in self.history
+                if getattr(rec, "checkpoint_window", 0) == latest_window
+                and rec.job_id
+            )
+
+        # Fail-closed fallback for workspaces created before decision windows
+        # were persisted.  Their current bracket cannot be reconstructed
+        # reliably: the newest bracket may have a smaller budget than an older
+        # one, so choosing the globally largest budget could delete a required
+        # promotion parent.  New runs use the exact, bounded latest window.
+        if (
+            not checkpoint_windows
+            and getattr(self.brain, "last_launched_count", 0)
+        ):
+            successful = [
+                rec for rec in self.history
+                if rec.status in (JobStates.success, JobStates.done) and rec.job_id
+            ]
+            required.update(rec.job_id for rec in successful)
+
+        return required
+
+    def get_verified_full_fidelity_best(self):
+        """Return the best largest-budget result when it is provable."""
+        completed = [
+            rec for rec in self.history
+            if rec.status in (JobStates.success, JobStates.done) and rec.job_id
+        ]
+        if not completed:
+            return None
+        known = [
+            (self._recommendation_budget(rec), rec) for rec in completed
+            if self._recommendation_budget(rec) is not None
+        ]
+        candidates = completed
+        if known:
+            largest = max(budget for budget, _rec in known)
+            candidates = [rec for budget, rec in known if budget == largest]
+        elif self.algorithm != "hybrid":
+            return self.get_best()
+
+        selector = (
+            min if self.objective_config.score_direction == "minimize" else max
+        )
+        return selector(candidates, key=lambda rec: rec.result)
 
     def get_status(self):
         """Return a structured status snapshot of the entire experiment.
@@ -246,7 +393,9 @@ class Controller:
                 "specs": r.specs,
                 "job_id": r.job_id,
                 "status": r.status,
-                "metric_value": r.result,
+                "metric_value": r.primary_metric_value(),
+                "objective_score": r.objective_score,
+                "objective_values": dict(r.objective_values),
                 "failure_reason": getattr(r, "failure_reason", None),
                 "adjustments": getattr(r, "adjustments", []),
                 "created_on": r.created_on,
@@ -260,9 +409,12 @@ class Controller:
             "best": {
                 "rec_id": best.id if best else None,
                 "specs": best.specs if best else {},
-                "metric_value": best.result if best else None,
+                "metric_value": best.primary_metric_value() if best else None,
+                "objective_score": best.objective_score if best else None,
+                "objective_values": dict(best.objective_values) if best else {},
             },
             "recommendations": recs,
+            "pareto_front": self._serialize_pareto_front(),
             "active_rec_ids": active,
         }
 
@@ -339,6 +491,11 @@ class Controller:
             logger.info("WandB initialized with group: %s", group)
 
             columns = ["experiment_id", "job_id", "status", self.metric, "best_epoch_number"]
+            if self.objective_config.is_multi_objective:
+                columns = [
+                    "experiment_id", "job_id", "status", "objective_score",
+                    *self.objective_config.metric_names, "best_epoch_number",
+                ]
             columns.extend(self.parameter_names)
             self._wandb_table = wandb.Table(columns=columns)
 
@@ -357,11 +514,16 @@ class Controller:
             import wandb
 
             columns = ["experiment_id", "job_id", "status", self.metric, "best_epoch_number"]
+            if self.objective_config.is_multi_objective:
+                columns = [
+                    "experiment_id", "job_id", "status", "objective_score",
+                    *self.objective_config.metric_names, "best_epoch_number",
+                ]
             columns.extend(self.parameter_names)
             self._wandb_table = wandb.Table(columns=columns)
 
             for rec in self.history:
-                result_value = rec.result
+                result_value = rec.objective_score
                 if isinstance(result_value, float):
                     formatted = f"{result_value:.10f}".rstrip('0')
                     if formatted.endswith('.'):
@@ -372,9 +534,14 @@ class Controller:
                     rec.id,
                     rec.job_id or "",
                     rec.status,
-                    result_value,
-                    rec.best_epoch_number,
                 ]
+                if self.objective_config.is_multi_objective:
+                    row_data.append(result_value)
+                    for name in self.objective_config.metric_names:
+                        row_data.append(rec.objective_values.get(name, "N/A"))
+                    row_data.append(rec.best_epoch_number)
+                else:
+                    row_data.extend([rec.primary_metric_value(), rec.best_epoch_number])
                 for param_name in self.parameter_names:
                     value = rec.specs.get(param_name, "N/A")
                     row_data.append(value)
@@ -433,6 +600,7 @@ class Controller:
         algorithm,
         parameter_names=None,
         wandb_config=None,
+        objective_config=None,
     ):
         """Load controller from persisted state.
 
@@ -447,6 +615,7 @@ class Controller:
             algorithm=algorithm,
             parameter_names=parameter_names,
             wandb_config=wandb_config,
+            objective_config=objective_config,
         )
 
         saved = state_store.get_controller_info(context.id)
@@ -454,16 +623,26 @@ class Controller:
             for rec_dict in saved:
                 rec = Recommendation(
                     identifier=int(rec_dict["id"]),
-                    specs=rec_dict.get("specs", {}),
+                    specs=normalize_json_value(
+                        rec_dict.get("specs", {}),
+                        path=f"recommendation[{rec_dict['id']}].specs",
+                    ),
                     metric=metric,
                 )
                 rec.job_id = rec_dict.get("job_id")
                 rec.status = rec_dict.get("status", JobStates.pending)
-                rec.result = float(rec_dict.get("result", 0.0))
+                rec.update_result(rec_dict.get("result", 0.0))
+                objective_values = rec_dict.get("objective_values", {})
+                if objective_values:
+                    rec.update_objectives(
+                        objective_values,
+                        rec_dict.get("objective_score", rec.result),
+                    )
                 rec.best_epoch_number = rec_dict.get("best_epoch_number", "")
                 rec.resume_from_job_id = rec_dict.get("resume_from_job_id")
                 rec.resume_from_epoch = rec_dict.get("resume_from_epoch")
                 rec.resume_from_step = rec_dict.get("resume_from_step")
+                rec.checkpoint_window = int(rec_dict.get("checkpoint_window", 0) or 0)
                 rec.early_stop_epoch = rec_dict.get("early_stop_epoch")
                 rec.created_on = rec_dict.get("created_on", "")
                 rec.last_modified = rec_dict.get("last_modified", "")
@@ -471,6 +650,10 @@ class Controller:
 
             if controller.history:
                 controller._next_id = max(r.id for r in controller.history) + 1
+                controller._checkpoint_window = max(
+                    getattr(r, "checkpoint_window", 0)
+                    for r in controller.history
+                )
 
         logger.info(
             "Loaded controller state: %d recommendations, next_id=%d",
@@ -523,6 +706,29 @@ class Controller:
         ]
         return largest_budget_recs or completed
 
+    def get_pareto_front(self):
+        """Return non-dominated successful recommendations for configured objectives."""
+        completed = [
+            r for r in self.history
+            if r.status in (JobStates.success, JobStates.done)
+        ]
+        if not self.objective_config.is_multi_objective:
+            return completed
+        return self.objective_config.pareto_front(completed)
+
+    def _serialize_pareto_front(self):
+        """Return JSON-safe Pareto-front records."""
+        return [
+            {
+                "rec_id": rec.id,
+                "specs": rec.specs,
+                "metric_value": rec.primary_metric_value(),
+                "objective_score": rec.objective_score,
+                "objective_values": dict(rec.objective_values),
+            }
+            for rec in self.get_pareto_front()
+        ]
+
     def _estimate_total(self):
         """Estimate total number of recommendations for progress reporting."""
         if self.algorithm in _MAX_REC_ALGORITHMS:
@@ -541,11 +747,14 @@ class Controller:
             "job_id": rec.job_id,
             "status": rec.status,
             "result": rec.result,
+            "objective_score": rec.objective_score,
+            "objective_values": dict(rec.objective_values),
             "best_epoch_number": rec.best_epoch_number,
             "metric": rec.metric,
             "resume_from_job_id": rec.resume_from_job_id,
             "resume_from_epoch": rec.resume_from_epoch,
             "resume_from_step": rec.resume_from_step,
+            "checkpoint_window": rec.checkpoint_window,
             "early_stop_epoch": rec.early_stop_epoch,
             "failure_reason": getattr(rec, "failure_reason", None),
             "adjustments": getattr(rec, "adjustments", []),

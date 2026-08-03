@@ -22,6 +22,8 @@ import logging
 import os
 import threading
 
+from tao_automl.utils.value_utils import normalize_json_value
+
 logger = logging.getLogger(__name__)
 
 
@@ -128,8 +130,12 @@ class StateStore:
             with open(lock_path, "w") as lf:
                 fcntl.flock(lf, fcntl.LOCK_EX)
                 try:
+                    normalized = normalize_json_value(
+                        data,
+                        path="persisted_state",
+                    )
                     with open(tmp_path, "w", encoding="utf-8") as fh:
-                        json.dump(data, fh, indent=2, default=str)
+                        json.dump(normalized, fh, indent=2, allow_nan=False)
                     os.replace(tmp_path, path)
                 except Exception:
                     try:

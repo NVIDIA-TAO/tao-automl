@@ -20,6 +20,7 @@ class PruneConfig:
         value="amount",
         value_type="ordered",
         default_value="amount",
+        automl_enabled="TRUE",
         valid_options="amount,threshold,experimental_hybrid",
         description="Pruning mode.",
         display="Pruning mode"
@@ -27,6 +28,7 @@ class PruneConfig:
     amount: float = FLOAT_FIELD(
         value=0.4,
         default_value=0.4,
+        automl_enabled="TRUE",
         valid_min=0.0,
         valid_max=1.0,
         description="Pruning amount",
@@ -43,6 +45,10 @@ class PruneConfig:
     granularity: int = INT_FIELD(
         value=8,
         default_value=8,
+        automl_enabled="TRUE",
+        valid_min=1,
+        valid_max=64,
+        math_cond="/ 4",
         description="Pruning granularity",
         display="Pruning granularity"
     )
@@ -50,6 +56,7 @@ class PruneConfig:
         value="L1",
         value_type="ordered",
         default_value="L1",
+        automl_enabled="TRUE",
         valid_options="L1,L2",
         description="Learning rate monitor for AutoReduce learning rate scheduler.",
         display="lr monitor"

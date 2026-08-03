@@ -1,0 +1,5 @@
+model:
+  n_estimators: 8
+  max_depth: 3
+  random_state: 7
+results_dir: ""

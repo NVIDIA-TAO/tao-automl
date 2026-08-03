@@ -51,7 +51,7 @@ class OCRNetModelConfig:
     )
     num_fiducial: int = INT_FIELD(
         value=20,
-        default_value=3,
+        default_value=20,
         valid_min=1,
         valid_max="inf",
         description="The number of fiducial/keypoints points for TPS.",

@@ -361,6 +361,7 @@ class AlgorithmParams:
     automl_min_points_in_model: int = 10      # BOHB
     automl_max_trials: int | None = None      # ASHA: max total configs
     automl_min_top_configs: int = 5           # ASHA: min at final rung
+    automl_delete_intermediate_ckpt: bool = True   # Prune terminal non-best artifacts
 
     @classmethod
     def from_dict(cls, params_dict: dict) -> AlgorithmParams
@@ -588,6 +589,8 @@ The `settings` dict passed to `AutoML(settings=...)`:
 | `automl_early_stop_threshold` | float | 0.1 | HyperBandES |
 | `automl_kde_samples` | int | 64 | BOHB |
 | `automl_top_n_percent` | float | 15.0 | BOHB |
+| `automl_delete_intermediate_ckpt` | bool | True | All — delete confirmed-terminal failed/non-best job artifacts. During Hyperband-family/PBT searches, retain only the latest promotion-decision window, active resume parents, and current best; completed searches collapse to the winner. Hybrid successes remain retained unless a full-fidelity winner is verified; multi-objective searches retain the Pareto frontier. Cleanup-aware SDKs reject unreclaimable output routes before launch. Set false to retain all artifacts for debugging. |
+| `automl_checkpoint_retention_strategy` | string | `"auto"` | Training jobs when `automl_delete_intermediate_ckpt=true` — bounds checkpoint files inside each retained job. `auto` uses `best` when the merged spec exposes `train.checkpointer`, otherwise `terminal`. `best` enables top-1 checkpointing with the trainer-declared monitor/mode (falling back to the AutoML objective) and requests replacement of periodic saves; it requires a trainer whose `train.checkpointer` contract honors `replace_periodic`, so use `terminal` with older additive-only checkpointers. `terminal` sets the epoch checkpoint interval to the recommendation's effective `train.num_epochs`, preserving ASHA/Hyperband rung budgets. Allowed values: `auto`, `best`, `terminal`. Ignored when intermediate-checkpoint deletion is disabled. |
 | `session_id` | str | auto | All — override session ID |
 | `experiment_id` | str | auto | All — override experiment ID |
 

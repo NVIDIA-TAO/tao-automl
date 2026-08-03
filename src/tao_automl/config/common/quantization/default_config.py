@@ -384,6 +384,7 @@ class ModelQuantizationConfig:
     mode: Optional[str] = STR_FIELD(
         "weight_only_ptq",
         default_value="weight_only_ptq",
+        automl_enabled="TRUE",
         valid_options="static_ptq,weight_only_ptq",
         description="The quantization mode to use",
         display_name="Quantization mode",
@@ -391,6 +392,7 @@ class ModelQuantizationConfig:
     algorithm: Optional[str] = STR_FIELD(  # type: ignore
         "minmax",
         default_value="minmax",
+        automl_enabled="TRUE",
         valid_options="minmax,max,entropy,awq_clip,awq_lite,awq_full,rtn_dq",
         description=(
             "Calibration/optimization algorithm. Used by ModelOpt backends "

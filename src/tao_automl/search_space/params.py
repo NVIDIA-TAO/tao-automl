@@ -23,11 +23,20 @@ AUTOML_DISABLED_NETWORKS = []
 _VALID_TYPES = [
     "int", "integer",
     "float",
-    "ordered_int", "bool",
+    "ordered_int", "bool", "string",
     "ordered", "categorical",
     "list_1_backbone", "list_1_normal", "list_2", "list_3",
     "subset_list", "optional_list",
     "collection", "dict",
+]
+
+_TORCHAO_SUPPORTED_QUANTIZE_MODES = ["weight_only_ptq"]
+_TORCHAO_SUPPORTED_QUANTIZE_ALGORITHMS = ["minmax"]
+_MODELOPT_PYTORCH_SUPPORTED_QUANTIZE_MODES = ["static_ptq"]
+_MODELOPT_PYTORCH_STATIC_PTQ_ALGORITHMS = ["max", "awq_lite", "awq_full"]
+_MODELOPT_ONNX_SUPPORTED_QUANTIZE_MODES = ["static_ptq"]
+_MODELOPT_ONNX_STATIC_PTQ_ALGORITHMS = [
+    "max", "entropy", "awq_clip", "awq_lite", "awq_full", "rtn_dq",
 ]
 
 
@@ -48,6 +57,7 @@ def generate_hyperparams_to_search(
     train_specs,
     automl_hyperparameters,
     override_automl_disabled_params=False,
+    schema=None,
 ):
     """Determine which hyperparameters to include in the AutoML search space.
 
@@ -58,11 +68,15 @@ def generate_hyperparams_to_search(
 
     Args:
         network: Network architecture name (e.g. ``"dino"``, ``"deformable_detr"``).
-        action: Action string (typically ``"train"``).
-        train_specs: The current/updated training spec dict (already loaded).
+        action: Action string (for example ``"train"``, ``"distill"``,
+            ``"prune"``, or ``"quantize"``).
+        train_specs: The current/updated action spec dict (already loaded).
         automl_hyperparameters: List of parameter names to enable for search.
         override_automl_disabled_params: If True, include parameters even when
             their schema ``automl_enabled`` flag is False.
+        schema: Optional pre-built JSON schema. When supplied, it is used as
+            the search-space source instead of importing the built-in TAO
+            configuration module for ``network``.
 
     Returns:
         Tuple of ``(param_records, param_names)`` where *param_records* is a
@@ -79,12 +93,15 @@ def generate_hyperparams_to_search(
     if network_arch in AUTOML_DISABLED_NETWORKS:
         return [{}], []
 
-    try:
-        json_schema = generate_schema(network_arch, "train")
-    except Exception as e:
-        logger.info("Error generating schema for network: %s", network_arch)
-        logger.info("Network: %s, Action: %s", network, action)
-        raise Exception(e) from e
+    if schema is not None:
+        json_schema = schema
+    else:
+        try:
+            json_schema = generate_schema(network_arch, action)
+        except Exception as e:
+            logger.info("Error generating schema for network: %s", network_arch)
+            logger.info("Network: %s, Action: %s", network, action)
+            raise Exception(e) from e
 
     # Flatten original (default) spec from the schema
     original_train_spec = json_schema.get("default", {})
@@ -154,6 +171,22 @@ def generate_hyperparams_to_search(
     automl_params = data_frame.loc[data_frame["automl_enabled"] == True]  # noqa: E712
     automl_params = automl_params.loc[~automl_params["parameter"].isin(deleted_params)]
     automl_params = automl_params.loc[~automl_params["parameter"].isin(params_to_exclude)]
+    automl_params = _filter_quantize_options_for_fixed_backend(
+        automl_params,
+        updated_spec_with_keys_flattened,
+    )
+
+    if schema is not None and automl_hyperparameters:
+        requested = set(automl_hyperparameters)
+        selected = set(automl_params["parameter"])
+        missing = sorted(requested - selected)
+        if missing:
+            raise ValueError(
+                "External AutoML schema cannot search the requested parameter(s): "
+                f"{missing}. Each requested parameter must exist in the merged "
+                "training spec, use a supported scalar type, and not set "
+                "automl_enabled=false."
+            )
 
     # Sort: parameters that depend on other parameters go last
     automl_params = automl_params.sort_values(by=["depends_on"], na_position="first")
@@ -174,3 +207,99 @@ def generate_hyperparams_to_search(
 
     logger.info("Automl params enabled: %s", automl_params["parameter"].values)
     return automl_params.to_dict("records"), list(automl_params["parameter"].values)
+
+
+def _filter_options(data_frame, parameter, supported_options):
+    """Restrict a categorical parameter to supported options."""
+    rows = data_frame["parameter"] == parameter
+    if not rows.any():
+        return data_frame
+
+    filtered = data_frame.copy()
+    for idx in filtered.index[rows]:
+        current_options = filtered.at[idx, "valid_options"]
+        if not current_options:
+            continue
+        supported = [
+            option for option in current_options
+            if option in supported_options
+        ]
+        if supported:
+            filtered.at[idx, "valid_options"] = supported
+    return filtered
+
+
+def _effective_options(data_frame, parameter, fixed_value):
+    """Return possible values for a parameter after previous filters."""
+    rows = data_frame["parameter"] == parameter
+    if not rows.any():
+        return [fixed_value] if fixed_value is not None else []
+
+    current_options = data_frame.loc[rows, "valid_options"].iloc[0]
+    if current_options:
+        return list(current_options)
+    if fixed_value is not None:
+        return [fixed_value]
+    return []
+
+
+def _filter_quantize_options_for_fixed_backend(data_frame, flattened_specs):
+    """Drop quantize options known to be incompatible with a fixed backend."""
+    searched_params = set(data_frame["parameter"].values)
+    backend = flattened_specs.get("quantize.backend")
+    mode = flattened_specs.get("quantize.mode")
+
+    if backend == "torchao" and "quantize.backend" not in searched_params:
+        data_frame = _filter_options(
+            data_frame,
+            "quantize.mode",
+            _TORCHAO_SUPPORTED_QUANTIZE_MODES,
+        )
+        effective_modes = _effective_options(data_frame, "quantize.mode", mode)
+        if set(effective_modes).issubset(set(_TORCHAO_SUPPORTED_QUANTIZE_MODES)):
+            data_frame = _filter_options(
+                data_frame,
+                "quantize.algorithm",
+                _TORCHAO_SUPPORTED_QUANTIZE_ALGORITHMS,
+            )
+
+    if backend == "modelopt.pytorch" and "quantize.backend" not in searched_params:
+        data_frame = _filter_options(
+            data_frame,
+            "quantize.mode",
+            _MODELOPT_PYTORCH_SUPPORTED_QUANTIZE_MODES,
+        )
+        effective_modes = _effective_options(data_frame, "quantize.mode", mode)
+        if set(effective_modes).issubset(set(_MODELOPT_PYTORCH_SUPPORTED_QUANTIZE_MODES)):
+            data_frame = _filter_options(
+                data_frame,
+                "quantize.algorithm",
+                _MODELOPT_PYTORCH_STATIC_PTQ_ALGORITHMS,
+            )
+
+    if backend == "modelopt.onnx" and "quantize.backend" not in searched_params:
+        data_frame = _filter_options(
+            data_frame,
+            "quantize.mode",
+            _MODELOPT_ONNX_SUPPORTED_QUANTIZE_MODES,
+        )
+        effective_modes = _effective_options(data_frame, "quantize.mode", mode)
+        if set(effective_modes).issubset(set(_MODELOPT_ONNX_SUPPORTED_QUANTIZE_MODES)):
+            data_frame = _filter_options(
+                data_frame,
+                "quantize.algorithm",
+                _MODELOPT_ONNX_STATIC_PTQ_ALGORITHMS,
+            )
+
+    if (
+        backend is not None and
+        "quantize.backend" not in searched_params and
+        not _effective_options(data_frame, "quantize.mode", mode)
+    ):
+        data_frame = _filter_options(
+            data_frame,
+            "quantize.algorithm",
+            [],
+        )
+
+    return data_frame

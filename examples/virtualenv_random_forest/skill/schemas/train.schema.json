@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "default": {
+    "model": {
+      "n_estimators": 8,
+      "max_depth": 3,
+      "random_state": 7
+    },
+    "results_dir": ""
+  },
+  "properties": {
+    "model": {
+      "type": "object",
+      "properties": {
+        "n_estimators": {
+          "type": "integer",
+          "default": 8,
+          "minimum": 4,
+          "maximum": 12,
+          "automl_enabled": true
+        },
+        "max_depth": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 5,
+          "automl_enabled": true
+        },
+        "random_state": {
+          "type": "integer",
+          "default": 7,
+          "automl_enabled": false
+        }
+      }
+    },
+    "results_dir": {
+      "type": "string",
+      "default": ""
+    }
+  }
+}

@@ -78,6 +78,7 @@ class AlgorithmParams:
     automl_max_experiments: int = 50  # autoresearch budget
     research_program: Optional[str] = None
     hybrid_enable_llm_range_narrowing: bool = False
+    automl_delete_intermediate_ckpt: bool = True
 
     @classmethod
     def from_dict(cls, params_dict: Dict[str, Any]) -> 'AlgorithmParams':
@@ -101,6 +102,9 @@ class AlgorithmParams:
             automl_min_points_in_model=params_dict.get("automl_min_points_in_model", 10),
             automl_max_trials=params_dict.get("automl_max_trials", None),
             automl_min_top_configs=params_dict.get("automl_min_top_configs", 5),
+            automl_delete_intermediate_ckpt=_as_bool(
+                params_dict.get("automl_delete_intermediate_ckpt", True)
+            ),
             llm_endpoint=params_dict.get("llm_endpoint", params_dict.get("base_url", "")),
             llm_model=params_dict.get("llm_model", params_dict.get("model", "")),
             llm_api_key=params_dict.get("llm_api_key", params_dict.get("api_key", "")),
