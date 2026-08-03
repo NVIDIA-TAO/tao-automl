@@ -51,3 +51,4 @@
         maintained indefinitely and may be redistributed consistent with
         this project or the open source license(s) involved.
   ```
+<!-- blossom CI smoke test: verify 7.1.0 OSS migration tests pass — DO NOT MERGE -->
