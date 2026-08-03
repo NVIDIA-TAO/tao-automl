@@ -11,6 +11,7 @@ Usage::
         network="dino",
         train_specs=specs,
         settings={"algorithm": "bayesian", "metric": "loss"},
+        action="train",
     )
 
     while not automl.is_complete():
@@ -26,11 +27,14 @@ Usage::
 
 __version__ = "0.1.0"
 
+import copy
 import json
 import logging
 import os
 import uuid
 
+from tao_automl.formatting import format_result  # noqa: F401  (public API)
+from tao_automl.objectives import parse_objective_config
 from tao_automl.types import AutoMLContext, JobStates
 
 logger = logging.getLogger(__name__)
@@ -124,10 +128,14 @@ def query_status(workspace_path: str) -> dict:
     best = {}
     if best_info:
         bd = best_info.get("rec_data", {})
+        objective_values = bd.get("objective_values") or {}
+        metric_name = bd.get("metric")
         best = {
             "rec_id": bd.get("id"),
             "specs": bd.get("specs", {}),
-            "metric_value": bd.get("result"),
+            "metric_value": objective_values.get(metric_name, bd.get("result")),
+            "objective_score": bd.get("objective_score", bd.get("result")),
+            "objective_values": objective_values,
         }
 
     return {
@@ -149,7 +157,12 @@ def query_status(workspace_path: str) -> dict:
                 "specs": r.get("specs", {}),
                 "job_id": r.get("job_id"),
                 "status": r.get("status"),
-                "metric_value": r.get("result"),
+                "metric_value": (
+                    (r.get("objective_values") or {}).get(r.get("metric"))
+                    if r.get("objective_values") else r.get("result")
+                ),
+                "objective_score": r.get("objective_score", r.get("result")),
+                "objective_values": r.get("objective_values", {}),
                 "created_on": r.get("created_on"),
                 "last_modified": r.get("last_modified"),
             }
@@ -157,6 +170,44 @@ def query_status(workspace_path: str) -> dict:
         ],
         "active_jobs": active_jobs,
     }
+
+
+def _as_option_list(value):
+    """Normalize an option field to a list."""
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",")]
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return [value]
+
+
+def _sanitize_custom_param_ranges(custom_param_ranges, param_records):
+    """Constrain caller-provided categorical ranges to the generated schema."""
+    param_options = {
+        record.get("parameter"): record.get("valid_options")
+        for record in param_records
+        if isinstance(record, dict)
+    }
+    sanitized = copy.deepcopy(custom_param_ranges)
+    for parameter, range_cfg in sanitized.items():
+        if not isinstance(range_cfg, dict) or "valid_options" not in range_cfg:
+            continue
+        allowed_options = param_options.get(parameter)
+        if not allowed_options:
+            continue
+        requested = _as_option_list(range_cfg["valid_options"])
+        allowed = _as_option_list(allowed_options)
+        filtered = [option for option in requested if option in allowed]
+        dropped = [option for option in requested if option not in allowed]
+        if dropped:
+            logger.warning(
+                "Dropped invalid custom options for %s: %s. Allowed options: %s",
+                parameter,
+                dropped,
+                allowed,
+            )
+        range_cfg["valid_options"] = filtered or allowed
+    return sanitized
 
 
 class AutoML:
@@ -174,6 +225,7 @@ class AutoML:
             train_specs=my_train_spec_dict,
             settings={"algorithm": "bayesian", "metric": "loss",
                        "automl_max_recommendations": 20},
+            action="train",
         )
 
         while not automl.is_complete():
@@ -193,14 +245,20 @@ class AutoML:
         settings,
         automl_hyperparameters=None,
         custom_param_ranges=None,
+        action="train",
         resume=False,
         wandb_config=None,
+        search_schema=None,
     ):
         """
         Args:
             workspace: Path to workspace directory for state persistence.
             network: Network architecture name (e.g. ``"dino"``).
-            train_specs: Training spec dict (the base configuration).
+            train_specs: Action spec dict (the base configuration). The name
+                is retained for compatibility with existing training callers.
+            action: TAO action whose schema/search space should drive the
+                optimization loop (for example ``"train"``, ``"distill"``,
+                ``"prune"``, or ``"quantize"``).
             settings: Dict with keys ``algorithm``, ``metric``, and any
                 algorithm-specific parameters accepted by
                 :class:`~tao_automl.brain.factory.AlgorithmParams`.
@@ -216,6 +274,11 @@ class AutoML:
                 ``enabled`` (bool), ``project``, ``entity``, ``api_key``,
                 ``group``. Pass ``{"enabled": True}`` to activate; the
                 API key can also come from ``WANDB_API_KEY`` env var.
+            search_schema: Optional JSON schema describing the search space.
+                When omitted, the schema is generated from the built-in TAO
+                configuration module for ``network``. Supplying a schema lets
+                external model scripts define searchable parameters without a
+                corresponding ``tao_automl.config.<network>`` package.
         """
         # Lazy imports to avoid pulling in heavy deps (requests, omegaconf)
         # at package import time.
@@ -228,7 +291,9 @@ class AutoML:
             raise ValueError("settings must include at least an 'algorithm' key")
 
         algorithm = settings["algorithm"]
-        metric = settings.get("metric", "loss")
+        objective_config = parse_objective_config(settings)
+        metric = objective_config.primary_metric
+        brain_metric = objective_config.brain_metric
 
         # 1. State store
         self._state_store = StateStore(workspace)
@@ -238,7 +303,7 @@ class AutoML:
         self._context = AutoMLContext(
             id=session_id,
             network=network,
-            action="train",
+            action=action,
             workspace_path=workspace,
             metric=metric,
             handler_id=settings.get("experiment_id", session_id),
@@ -247,13 +312,7 @@ class AutoML:
         # 3. Persist the training spec so the brain can read it
         self._state_store.save_job_specs(self._context.id, train_specs)
 
-        # 4. Custom parameter ranges
-        if custom_param_ranges:
-            self._state_store.save_custom_param_ranges(
-                self._context.handler_id, custom_param_ranges
-            )
-
-        # 5. Generate search space
+        # 4. Generate search space
         if automl_hyperparameters is None:
             # Caller did not specify; we will pass an empty list so that
             # generate_hyperparams_to_search enables only schema-default params.
@@ -261,16 +320,36 @@ class AutoML:
 
         param_records, param_names = generate_hyperparams_to_search(
             network=network,
-            action="train",
+            action=action,
             train_specs=train_specs,
             automl_hyperparameters=automl_hyperparameters,
+            schema=search_schema,
         )
 
-        if not param_records or param_records == [{}]:
-            logger.warning(
-                "No searchable parameters found for network '%s'. "
-                "Check that automl_hyperparameters match the schema.", network
+        # 5. Custom parameter ranges
+        if custom_param_ranges:
+            custom_param_ranges = _sanitize_custom_param_ranges(
+                custom_param_ranges,
+                param_records,
             )
+            self._state_store.save_custom_param_ranges(
+                self._context.handler_id, custom_param_ranges
+            )
+
+        if not param_records or param_records == [{}]:
+            requested = sorted(set(automl_hyperparameters))
+            requested_detail = (
+                f" Requested parameters: {requested}." if requested else ""
+            )
+            message = (
+                f"No searchable parameters found for network {network!r}. Check "
+                "that the schema declares at least one supported parameter with "
+                "automl_enabled=true and that the parameter exists in train_specs."
+                f"{requested_detail}"
+            )
+            if search_schema is not None:
+                raise ValueError(message)
+            logger.warning(message)
 
         # 6. Algorithm params
         algo_params = AlgorithmParams.from_dict(settings)
@@ -283,7 +362,7 @@ class AutoML:
             network=network,
             parameters=param_records,
             params=algo_params,
-            metric=metric,
+            metric=brain_metric,
             resume=resume,
         )
 
@@ -298,6 +377,7 @@ class AutoML:
                 algorithm=algorithm,
                 parameter_names=param_names,
                 wandb_config=wandb_config,
+                objective_config=objective_config,
             )
         else:
             self._controller = Controller(
@@ -309,11 +389,12 @@ class AutoML:
                 algorithm=algorithm,
                 parameter_names=param_names,
                 wandb_config=wandb_config,
+                objective_config=objective_config,
             )
 
         logger.info(
-            "AutoML initialized: algorithm=%s, metric=%s, params=%d, resume=%s",
-            algorithm, metric, len(param_names), resume,
+            "AutoML initialized: algorithm=%s, metric=%s, objectives=%s, params=%d, resume=%s",
+            algorithm, metric, objective_config.metric_names, len(param_names), resume,
         )
 
     # ------------------------------------------------------------------
@@ -334,7 +415,8 @@ class AutoML:
 
         Args:
             rec_id: Recommendation ID (from ``rec.id``).
-            metric_value: The metric value achieved.
+            metric_value: The metric value achieved, or a dict of objective
+                metric values for multi-objective sessions.
             best_epoch: Best epoch number (optional).
             status: ``"success"`` or ``"failure"``.
         """
@@ -356,6 +438,18 @@ class AutoML:
     def get_history(self):
         """Get all Recommendation objects generated so far."""
         return self._controller.get_history()
+
+    def get_pareto_front(self):
+        """Get non-dominated successful recommendations for all objectives."""
+        return self._controller.get_pareto_front()
+
+    def get_required_checkpoint_job_ids(self):
+        """Get job IDs whose checkpoints are still needed by the search."""
+        return self._controller.get_required_checkpoint_job_ids()
+
+    def get_verified_full_fidelity_best(self):
+        """Get a verified largest-budget winner when one can be proven."""
+        return self._controller.get_verified_full_fidelity_best()
 
     def get_status(self):
         """Get a full status snapshot of the experiment.

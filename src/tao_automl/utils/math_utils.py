@@ -133,9 +133,24 @@ def get_valid_options(parameter_config, custom_ranges=None):
     if custom_ranges and parameter_name in custom_ranges:
         custom_options = custom_ranges[parameter_name].get("valid_options")
         if custom_options is not None:
+            if valid_options:
+                schema_options = _as_list(valid_options)
+                return [
+                    option for option in _as_list(custom_options)
+                    if option in schema_options
+                ]
             valid_options = custom_options
 
     return valid_options
+
+
+def _as_list(value):
+    """Normalize a categorical option set while preserving string values."""
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",")]
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return [value]
 
 
 def get_option_weights(parameter_config, custom_ranges=None):

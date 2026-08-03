@@ -30,6 +30,9 @@ slurm      = ["nvidia-tao-sdk[slurm] @ git+https://github.com/NVIDIA-TAO/tao-sdk
 kubernetes = ["nvidia-tao-sdk[kubernetes] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
 docker     = ["nvidia-tao-sdk[docker] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
 brev       = ["nvidia-tao-sdk[brev] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
+# Direct Python execution supports JSON, YAML, and TOML action specs. Pull the
+# SDK's declared TOML writer so format support never depends on ambient packages.
+virtualenv = ["nvidia-tao-sdk[toml] @ git+https://github.com/NVIDIA-TAO/tao-sdks.git"]
 
 llm = [
     "openai>=1.0",
@@ -38,7 +41,7 @@ wandb = [
     "wandb>=0.15",
 ]
 all = [
-    "nvidia-tao-automl[lepton,slurm,kubernetes,docker,brev,llm,wandb]",
+    "nvidia-tao-automl[lepton,slurm,kubernetes,docker,brev,virtualenv,llm,wandb]",
 ]
 dev = [
     "nvidia-tao-automl[all]",

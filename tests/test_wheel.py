@@ -202,6 +202,73 @@ def test_controller_failure_skipped_in_best():
         assert ctrl.get_best() is None
 
 
+def test_controller_multi_objective_score_and_pareto_front():
+    from tao_automl.controller.controller import Controller
+    from tao_automl.objectives import parse_objective_config
+    from tao_automl.state.state_store import StateStore
+    from tao_automl.types import AutoMLContext
+
+    with tempfile.TemporaryDirectory() as d:
+        store = StateStore(d)
+        ctx = AutoMLContext(id="multi-objective", network="dino", metric="accuracy")
+        settings = type("P", (), {"automl_max_recommendations": 4})()
+        objective_config = parse_objective_config({
+            "metric": "accuracy",
+            "multi_objective": True,
+            "latency_metric": "latency",
+            "latency_scale": 100,
+        })
+        ctrl = Controller(
+            brain=MockBrain(4),
+            context=ctx,
+            state_store=store,
+            settings=settings,
+            metric="accuracy",
+            algorithm="bayesian",
+            objective_config=objective_config,
+        )
+
+        reports = [
+            {"accuracy": 0.90, "latency": 20.0},
+            {"accuracy": 0.88, "latency": 10.0},
+            {"accuracy": 0.92, "latency": 30.0},
+            {"accuracy": 0.85, "latency": 25.0},
+        ]
+        for values in reports:
+            rec = ctrl.next_recommendation()[0]
+            ctrl.report_result(rec.id, values)
+
+        best = ctrl.get_best()
+        assert best.id == 1
+        assert best.primary_metric_value() == pytest.approx(0.88)
+        assert best.objective_score == pytest.approx(0.78)
+
+        status = ctrl.get_status()
+        assert status["progress"]["pareto_front_size"] == 3
+        assert {item["rec_id"] for item in status["pareto_front"]} == {0, 1, 2}
+        assert status["best"]["objective_values"] == {
+            "accuracy": 0.88,
+            "latency": 10.0,
+        }
+
+        loaded = Controller.load_state(
+            brain=MockBrain(4),
+            context=ctx,
+            state_store=store,
+            settings=settings,
+            metric="accuracy",
+            algorithm="bayesian",
+            objective_config=objective_config,
+        )
+        loaded_best = loaded.get_best()
+        assert loaded_best.id == 1
+        assert loaded_best.objective_score == pytest.approx(0.78)
+        assert loaded_best.objective_values == {
+            "accuracy": 0.88,
+            "latency": 10.0,
+        }
+
+
 def test_controller_accepts_resume_recommendations():
     from tao_automl.controller.controller import Controller
     from tao_automl.state.state_store import StateStore

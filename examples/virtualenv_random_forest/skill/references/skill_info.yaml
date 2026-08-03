@@ -1,0 +1,16 @@
+name: public-random-forest
+network_arch: public_random_forest
+automl_enabled: true
+actions:
+  train:
+    config_format: json
+    execution:
+      type: python_script
+      script: scripts/train.py
+      args:
+      - --config
+      - "{config_path}"
+      cwd: .
+    outputs:
+      results_dir:
+        type: folder

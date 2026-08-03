@@ -3,6 +3,42 @@
 """Spec flattening utilities for AutoML."""
 
 
+def resolve_schema_leaf(node):
+    """Return the concrete type and effective metadata for a schema leaf.
+
+    Optional JSON schemas commonly put bounds, enums, and defaults on the
+    concrete branch of ``anyOf``.  AutoML needs those fields just as if they
+    were declared directly on the property.  Property-level fields take
+    precedence when both locations define the same key.
+    """
+    if not isinstance(node, dict):
+        return "", {}, False
+
+    effective = {}
+    nullable = False
+    dtype = node.get("type", "")
+    any_of = node.get("anyOf")
+    if not dtype and isinstance(any_of, list):
+        concrete = [
+            option for option in any_of
+            if isinstance(option, dict) and option.get("type") != "null"
+        ]
+        nullable = any(
+            isinstance(option, dict) and option.get("type") == "null"
+            for option in any_of
+        )
+        if concrete:
+            # Built-in TAO schemas may offer multiple concrete branches (for
+            # example scalar-or-array learning rates). The search-space brain
+            # historically tunes the first concrete branch; external schemas
+            # apply their stricter ambiguity checks before reaching here.
+            effective.update(concrete[0])
+            dtype = concrete[0].get("type", "")
+
+    effective.update(node)
+    return dtype, effective, nullable
+
+
 def get_flatten_specs(dict_spec, flat_specs, parent=""):
     """Flatten nested dictionary"""
     for key, value in dict_spec.items():
@@ -25,40 +61,33 @@ def flatten_properties(data, parent_key='', sep='.'):
             flattened.update(flatten_properties(v['properties'], new_key, sep))
         elif isinstance(v, dict):
             # Otherwise, gather metadata
-            dtype = v.get('type', '')
-
-            # Handle union types (anyOf schemas)
-            if 'anyOf' in v and not dtype:
-                # For union types, determine the primary type from anyOf
-                any_of_types = v.get('anyOf', [])
-                if any_of_types:
-                    # Use the first type as the primary type for AutoML
-                    first_type = any_of_types[0].get('type', '')
-                    if first_type == 'integer':
-                        dtype = 'int'
-                    elif first_type == 'number':
-                        dtype = 'float'
-                    elif first_type == 'boolean':
-                        dtype = 'bool'
-                    else:
-                        dtype = first_type
-
-            if v.get('type', '') == "number":
+            dtype, metadata, _ = resolve_schema_leaf(v)
+            valid_options = metadata.get('enum', [])
+            if valid_options:
+                # Integer enums are discrete ordered choices. Other scalar
+                # enums are categorical; treating them as their base type
+                # would cause numeric brains to ignore the declared options.
+                integer_choices = dtype in ('int', 'integer') and all(
+                    isinstance(option, int) and not isinstance(option, bool)
+                    for option in valid_options
+                )
+                dtype = 'ordered_int' if integer_choices else 'categorical'
+            elif dtype == "number":
                 dtype = "float"
-            if v.get('type', '') == "boolean":
+            elif dtype == "boolean":
                 dtype = "bool"
             flattened[new_key] = {
                 'parameter': new_key,
                 'value_type': dtype,
-                'default_value': v.get('default', ''),
-                'valid_min': v.get('minimum', ''),
-                'valid_max': v.get('maximum', ''),
-                'valid_options': v.get('enum', []),
-                'option_weights': v.get('option_weights', None),
-                'automl_enabled': v.get('automl_enabled', ''),
-                'math_cond': v.get('math_cond', ''),
-                'parent_param': v.get('parent_param', ''),
-                'depends_on': v.get('depends_on', ''),
+                'default_value': metadata.get('default', ''),
+                'valid_min': metadata.get('minimum', ''),
+                'valid_max': metadata.get('maximum', ''),
+                'valid_options': valid_options,
+                'option_weights': metadata.get('option_weights', None),
+                'automl_enabled': metadata.get('automl_enabled', ''),
+                'math_cond': metadata.get('math_cond', ''),
+                'parent_param': metadata.get('parent_param', ''),
+                'depends_on': metadata.get('depends_on', ''),
             }
 
     return flattened

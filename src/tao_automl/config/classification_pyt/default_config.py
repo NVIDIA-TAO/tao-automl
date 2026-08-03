@@ -695,21 +695,18 @@ class ClassDistillationConfig(DistillationConfig):
     loss_type: str = STR_FIELD(
         value="KL",
         default_value="KL",
+        automl_enabled="TRUE",
         display_name="Distillation loss type",
-        valid_options="""
-        KL (KL divergence),
-        CE (cross entropy),
-        L1 (L1 loss),
-        L2 (L2 loss),
-        FD (smooth L1),
-        CS (cosine similarity),
-        BALANCED (balanced feature loss),
-        MSE (mean squared error)""",
-        description="Loss function for logits distillation."
+        valid_options="KL,CE,L1,L2,FD,CS,BALANCED,MSE",
+        description=(
+            "Loss function for distillation. KL and CE are logit losses; "
+            "L1, L2, FD, CS, BALANCED, and MSE are feature losses."
+        )
     )
     loss_lambda: Optional[float] = FLOAT_FIELD(
         value=0.5,
         default_value=0.5,
+        automl_enabled="TRUE",
         math_cond="> 0.0 <= 1.0",
         display_name="distill weight",
         description="The weight to be applied to the distillation loss as compared to task loss",
@@ -722,17 +719,20 @@ class ClassDistillationConfig(DistillationConfig):
     mode: str = STR_FIELD(
         value="auto",
         default_value="auto",
+        automl_enabled="TRUE",
         description="Distillation mode",
         valid_options="logits, summary, spatial, auto"
     )
     use_mlp: bool = BOOL_FIELD(
         value=True,
         default_value=True,
+        automl_enabled="TRUE",
         description="Flag to use MLP for projection"
     )
     mlp_hidden_size: int = INT_FIELD(
         value=1024,
         default_value=1024,
+        automl_enabled="TRUE",
         valid_min=0,
         valid_max="inf",
         description="MLP hidden size"
@@ -740,6 +740,7 @@ class ClassDistillationConfig(DistillationConfig):
     mlp_num_inner: int = INT_FIELD(
         value=0,
         default_value=0,
+        automl_enabled="TRUE",
         valid_min=0,
         valid_max=10,
         description="MLP number of inner layers"

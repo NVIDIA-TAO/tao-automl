@@ -410,14 +410,29 @@ class Bayesian(AutoMLAlgorithmBase):
         if history[-1].status not in [JobStates.success, JobStates.failure]:
             return []
 
-        # Update the GP based on results
-        self.ys.append(history[-1].result)
-        self.update_gp()
+        if history[-1].status == JobStates.failure:
+            # A failed trial carries no trustworthy metric — its 0.0 result is
+            # synthesized by the runner, not measured. Feeding it to the GP
+            # teaches the search that this design point is bad when the job may
+            # have died for reasons unrelated to the hyperparameters (image
+            # pull, PTM staging, node failure). Drop the pending design point
+            # and propose the next one from the uncontaminated observations.
+            if len(self.Xs) > len(self.ys):
+                self.Xs.pop()
+            if not self.ys:
+                suggestions = np.random.rand(len(self.parameters))
+            else:
+                suggestions = self.optimize_ei()
+            self.Xs.append(suggestions)
+        else:
+            # Update the GP based on results
+            self.ys.append(history[-1].result)
+            self.update_gp()
 
-        # Generate one recommendation
-        # Generate "suggestions" which are in [0.0, 1.0] by optimizing EI
-        suggestions = self.optimize_ei()  # length = len(self.parameters), np.array type
-        self.Xs.append(suggestions)
+            # Generate one recommendation
+            # Generate "suggestions" which are in [0.0, 1.0] by optimizing EI
+            suggestions = self.optimize_ei()  # length = len(self.parameters), np.array type
+            self.Xs.append(suggestions)
         # Convert the suggestions to recommendations based on parameter type
         # Assume one:one mapping between self.parameters and suggestions
         recommendations = []
