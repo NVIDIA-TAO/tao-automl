@@ -47,7 +47,7 @@ import signal
 import sys
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1149,6 +1149,25 @@ def _checkpoint_epoch(path: Path) -> int:
     return sdk_checkpoint_epoch(path) or 0
 
 
+def _build_resume_checkpoint_candidate(
+    path: Path,
+    *,
+    is_dir: bool,
+    mtime: float,
+):
+    """Parse position metadata, including zero-indexed ``model_best_N`` files."""
+    candidate = build_checkpoint_candidate(path, is_dir=is_dir, mtime=mtime)
+    if candidate.epoch is None and candidate.is_best and not candidate.is_dir:
+        match = re.search(
+            r"(?:^|[_.-])best[_-]?0*(\d+)(?:\D|$)",
+            path.name,
+            re.IGNORECASE,
+        )
+        if match:
+            candidate = replace(candidate, epoch=int(match.group(1)))
+    return candidate
+
+
 def _find_local_resume_artifact(
     job_id: str,
     platform_kwargs: dict | None,
@@ -1191,7 +1210,7 @@ def _find_local_resume_artifact(
             try:
                 if any(root_path.iterdir()):
                     candidates.append(
-                        build_checkpoint_candidate(
+                        _build_resume_checkpoint_candidate(
                             root_path,
                             is_dir=True,
                             mtime=root_path.stat().st_mtime,
@@ -1209,7 +1228,7 @@ def _find_local_resume_artifact(
                 continue
             try:
                 candidates.append(
-                    build_checkpoint_candidate(
+                    _build_resume_checkpoint_candidate(
                         file_path,
                         is_dir=False,
                         mtime=file_path.stat().st_mtime,
@@ -3175,7 +3194,7 @@ class AutoMLRunner:
             new keys may be added, but existing ones will not be renamed or
             removed.
 
-            - ``best``: ``rec_id``, ``specs``, ``metric_value``,
+            - ``best``: ``rec_id``, ``job_id``, ``specs``, ``metric_value``,
               ``objective_score``, ``objective_values``, ``adjustments``
             - ``progress``: ``completed``, ``total``, ``best_metric``,
               ``best_rec_id``, ``algorithm``
@@ -3190,8 +3209,10 @@ class AutoMLRunner:
               (final_eval_fn raised), ``unavailable``, ``skipped``,
               ``not_run``.
             - ``history``: list of per-recommendation dicts with ``rec_id``,
-              ``metric``, ``objective_score``, ``objective_values``,
+              ``job_id``, ``metric``, ``objective_score``, ``objective_values``,
               ``status``, ``failure_reason``, ``adjustments``
+            - ``algorithm_state``: algorithm-specific decision and reasoning
+              state, or ``None`` when the selected algorithm exposes none
             - ``pareto_front``: present for multi-objective sessions only
         """
         from tao_automl import AutoML

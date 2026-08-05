@@ -197,13 +197,14 @@ def test_run_docstring_schema_matches_result(tmp_path, monkeypatch):
 
     assert set(result.keys()) == {
         "best", "progress", "baseline", "final_evaluation", "history",
+        "algorithm_state",
     }
     assert set(result["best"].keys()) == {
-        "rec_id", "specs", "metric_value", "objective_score",
+        "rec_id", "job_id", "specs", "metric_value", "objective_score",
         "objective_values", "adjustments",
     }
     assert set(result["history"][0].keys()) == {
-        "rec_id", "metric", "objective_score", "objective_values",
+        "rec_id", "job_id", "metric", "objective_score", "objective_values",
         "status", "failure_reason", "adjustments",
     }
     for key in ("enabled", "metric_name", "metric_value", "status",
