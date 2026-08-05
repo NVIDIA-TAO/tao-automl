@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "dino_tao71_checkpoint_serializer_qualification",
+  "purpose": "Bind deterministic metadata-projection output identities before corrected CPU qualification",
+  "diagnostic_only": true,
+  "runtime_eligibility_mutated": false,
+  "selection_invoked": false,
+  "agent_selected_checkpoint": false,
+  "population_source": "all registry records declaring dino.tao71.metadata_wrapper.v1",
+  "container": {
+    "image": "nvcr.io/nvstaging/tao/tao-toolkit-pyt@sha256:949c0ea8ace09ac91951be4169353cf214daaa3ede7db9eed94070b020361667",
+    "identity": "sha256:949c0ea8ace09ac91951be4169353cf214daaa3ede7db9eed94070b020361667",
+    "network": "none",
+    "root_filesystem": "read_only",
+    "capabilities": "all_dropped",
+    "no_new_privileges": true,
+    "gpu_visible": false
+  },
+  "implementation": {
+    "worker_path": "experiments/cross_model_automl_20260729/dino_ptm_qualification/dino_checkpoint_adapter.py",
+    "worker_size_bytes": 36282,
+    "worker_sha256": "bf84e0a6b3e4291ccac5c4eeda0b8a9e5b4e4ea0f3c861b61d322ca76d35c4a2",
+    "registry_path": "src/tao_automl/data/ptm_registry.v1.json",
+    "registry_version": "1.2.1",
+    "registry_raw_sha256": "b0ac7ebe69ca69d8d975290b03bb889b76ac301bf02954f6add6b1e63fa4b6e9",
+    "recipe_sha256": "9fd9314cb9fe521cf2e62c57a3a63dd44374c64441546de5bf0e5dac374c7e78",
+    "safe_load": {
+      "map_location": "cpu",
+      "weights_only": true
+    },
+    "tensor_hash_algorithm": "sha256_sorted_key_dtype_shape_raw_bytes_v1"
+  },
+  "records": [
+    {
+      "checkpoint_id": "dino.coco.fan_large.trainable.v1.0",
+      "source": {
+        "member": "dino_fan_large_imagenet22k_36ep.pth",
+        "size_bytes": 1197490926,
+        "sha256": "8e9f8d865a315a40d4854cc2846317a03ca1f87a40a9ddde6fa7631828f73cb8"
+      },
+      "output": {
+        "member": "tao71_dino_fan_large_imagenet22k_36ep.pth",
+        "size_bytes": 399422743,
+        "sha256": "149b670a4ca0cb701bdd32c69244593f2d6c699fd0d8b1851a9ad385434c7303"
+      },
+      "runs": [
+        {
+          "run": 1,
+          "output_sha256": "149b670a4ca0cb701bdd32c69244593f2d6c699fd0d8b1851a9ad385434c7303",
+          "evidence_sha256": "4f46438a0a1446cdb864f4b5d3db28f823b047f670999885c95897705c4dcda6"
+        },
+        {
+          "run": 2,
+          "output_sha256": "149b670a4ca0cb701bdd32c69244593f2d6c699fd0d8b1851a9ad385434c7303",
+          "evidence_sha256": "4f46438a0a1446cdb864f4b5d3db28f823b047f670999885c95897705c4dcda6"
+        }
+      ],
+      "tensor_evidence": {
+        "exact": true,
+        "input_tensor_count": 1172,
+        "output_tensor_count": 1172,
+        "input_tensor_keys_sha256": "05a735ba15212e6a9273196921a7710e193091889f5555fcb2821c5d9ae22111",
+        "output_tensor_keys_sha256": "05a735ba15212e6a9273196921a7710e193091889f5555fcb2821c5d9ae22111",
+        "input_tensor_values_sha256": "022969d00cf43241a6dedad2b74c12aa771b03b1ddba1e181fd9ad0ee0fb0be4",
+        "output_tensor_values_sha256": "022969d00cf43241a6dedad2b74c12aa771b03b1ddba1e181fd9ad0ee0fb0be4"
+      },
+      "two_run_byte_identity": true
+    },
+    {
+      "checkpoint_id": "dino.coco.fan_small.trainable.v1.0",
+      "source": {
+        "member": "dino_fan_small_ep12.pth",
+        "size_bytes": 580862106,
+        "sha256": "df3e4e07d411f3d61c882ee9e61d5cb7cef613d1e4748d75b9b86e3dd1c83185"
+      },
+      "output": {
+        "member": "tao71_dino_fan_small_ep12.pth",
+        "size_bytes": 193716107,
+        "sha256": "0a9e5ebfba383bbba8084db72a595bac2be512742998a2b4c0168b4300f3b580"
+      },
+      "runs": [
+        {
+          "run": 1,
+          "output_sha256": "0a9e5ebfba383bbba8084db72a595bac2be512742998a2b4c0168b4300f3b580",
+          "evidence_sha256": "f6ed2b7cfec6f332f4d47fe30230f12aeb313931f01913fa42f40b277325fb92"
+        },
+        {
+          "run": 2,
+          "output_sha256": "0a9e5ebfba383bbba8084db72a595bac2be512742998a2b4c0168b4300f3b580",
+          "evidence_sha256": "f6ed2b7cfec6f332f4d47fe30230f12aeb313931f01913fa42f40b277325fb92"
+        }
+      ],
+      "tensor_evidence": {
+        "exact": true,
+        "input_tensor_count": 782,
+        "output_tensor_count": 782,
+        "input_tensor_keys_sha256": "44af92bed643d0634c61508dfb1b8f3302c530f62366ac135dc96558761d6f18",
+        "output_tensor_keys_sha256": "44af92bed643d0634c61508dfb1b8f3302c530f62366ac135dc96558761d6f18",
+        "input_tensor_values_sha256": "298d76f68f3df153c2ea4f128b30ec7c2a7cab21ec967697fb1e15efcd49a3cf",
+        "output_tensor_values_sha256": "298d76f68f3df153c2ea4f128b30ec7c2a7cab21ec967697fb1e15efcd49a3cf"
+      },
+      "two_run_byte_identity": true
+    },
+    {
+      "checkpoint_id": "dino.coco.nvdinov2_large.trainable.v1.0",
+      "source": {
+        "member": "dino_nvdinov2_518_1536_coco_e36.pth",
+        "size_bytes": 4232490433,
+        "sha256": "013e8e6e6a0a913ac56cf1a581f9d1dd7abe6cb47a57664a21290d0f44866c78"
+      },
+      "output": {
+        "member": "tao71_dino_nvdinov2_518_1536_coco_e36.pth",
+        "size_bytes": 1410846731,
+        "sha256": "d7bacddff9393d5f37ecca67686467bce2cd77d95b26c6a01908a90dbc6b6333"
+      },
+      "runs": [
+        {
+          "run": 1,
+          "output_sha256": "d7bacddff9393d5f37ecca67686467bce2cd77d95b26c6a01908a90dbc6b6333",
+          "evidence_sha256": "11ab730aa8657c3b3b9a13cc586041e173b252aa2b59eac5e4d3d0bd9c1f3a40"
+        },
+        {
+          "run": 2,
+          "output_sha256": "d7bacddff9393d5f37ecca67686467bce2cd77d95b26c6a01908a90dbc6b6333",
+          "evidence_sha256": "11ab730aa8657c3b3b9a13cc586041e173b252aa2b59eac5e4d3d0bd9c1f3a40"
+        }
+      ],
+      "tensor_evidence": {
+        "exact": true,
+        "input_tensor_count": 930,
+        "output_tensor_count": 930,
+        "input_tensor_keys_sha256": "9324aa6be042014f4d919ab948c73941402d5f33f9e21ad43ad7d2e497d31d1e",
+        "output_tensor_keys_sha256": "9324aa6be042014f4d919ab948c73941402d5f33f9e21ad43ad7d2e497d31d1e",
+        "input_tensor_values_sha256": "698b3100c67472d0ce37e667decce329afd9dec164f73b62def6c0090320393c",
+        "output_tensor_values_sha256": "698b3100c67472d0ce37e667decce329afd9dec164f73b62def6c0090320393c"
+      },
+      "two_run_byte_identity": true
+    },
+    {
+      "checkpoint_id": "dino.coco.resnet50.trainable.v1.0",
+      "source": {
+        "member": "dino_resnet50_ep12.pth",
+        "size_bytes": 568767395,
+        "sha256": "7a391fb84a18714b60258becdb512594ec54faff5dccbf17ca53c5d902137512"
+      },
+      "output": {
+        "member": "tao71_dino_resnet50_ep12.pth",
+        "size_bytes": 195109331,
+        "sha256": "678064a0706ec778edb17583be78e9a138afac1c48832ba419b8c774ac7d5756"
+      },
+      "runs": [
+        {
+          "run": 1,
+          "output_sha256": "678064a0706ec778edb17583be78e9a138afac1c48832ba419b8c774ac7d5756",
+          "evidence_sha256": "637699c4dbaeb6ebf4dd24dc9baf86f2c117e5047120192360375562296d3298"
+        },
+        {
+          "run": 2,
+          "output_sha256": "678064a0706ec778edb17583be78e9a138afac1c48832ba419b8c774ac7d5756",
+          "evidence_sha256": "637699c4dbaeb6ebf4dd24dc9baf86f2c117e5047120192360375562296d3298"
+        }
+      ],
+      "tensor_evidence": {
+        "exact": true,
+        "input_tensor_count": 626,
+        "output_tensor_count": 626,
+        "input_tensor_keys_sha256": "763f5554b996953e4f98e4486c723f6a155ff59391eec3e2a3a8298455e37081",
+        "output_tensor_keys_sha256": "763f5554b996953e4f98e4486c723f6a155ff59391eec3e2a3a8298455e37081",
+        "input_tensor_values_sha256": "7eceebaaf35dacdaf8a5107dc4f7a43ffbcec1df002dd24a1ab8847a5b968dac",
+        "output_tensor_values_sha256": "7eceebaaf35dacdaf8a5107dc4f7a43ffbcec1df002dd24a1ab8847a5b968dac"
+      },
+      "two_run_byte_identity": true
+    }
+  ]
+}

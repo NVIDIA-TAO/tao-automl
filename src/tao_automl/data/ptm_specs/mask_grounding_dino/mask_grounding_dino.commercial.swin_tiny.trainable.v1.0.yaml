@@ -1,0 +1,25 @@
+# Repository-owned transfer defaults for
+# mask_grounding_dino.commercial.swin_tiny.trainable.v1.0.
+model:
+  backbone: swin_tiny_224_1k
+  num_feature_levels: 4
+  return_interm_indices:
+    - 1
+    - 2
+    - 3
+    - 4
+  enc_layers: 6
+  dec_layers: 6
+  num_queries: 900
+  num_select: 300
+  hidden_dim: 256
+  dim_feedforward: 2048
+  has_mask: true
+  num_region_queries: 100
+  loss_types:
+    - labels
+    - boxes
+    - masks
+dataset:
+  has_mask: true
+  max_labels: 80

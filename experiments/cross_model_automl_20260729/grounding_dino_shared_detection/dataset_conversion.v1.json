@@ -1,0 +1,210 @@
+{
+  "canonical_outputs": {
+    "train_label_map": {
+      "lustre_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json",
+      "sha256": "50e203a52565c8c00f41454ad3656662c98cd2902bd6a02d35a2ab3059578d81",
+      "size_bytes": 69
+    },
+    "train_odvg": {
+      "lustre_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+      "sha256": "abf109f0fcbabcbc185942399857582ab1db0b8664c3f166c220b9def936d3df",
+      "size_bytes": 785366
+    },
+    "validation_coco": {
+      "lustre_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json",
+      "sha256": "621f89401b4ab219274486b6c392540772707bcc0e5983a40c5c359f7277737b",
+      "size_bytes": 352138
+    }
+  },
+  "conversion_scope": "category_prompted_object_detection",
+  "dataset_id": "tao_od_synthetic_full_dino_coco",
+  "determinism": {
+    "byte_identical": true,
+    "independent_runs": 2,
+    "run_output_identities": {
+      "run_a": {
+        "train_label_map": {
+          "path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_dataset_conversion_v1/run_a/train/train.annotations_odvg_labelmap.json",
+          "sha256": "50e203a52565c8c00f41454ad3656662c98cd2902bd6a02d35a2ab3059578d81",
+          "size_bytes": 69
+        },
+        "train_odvg": {
+          "path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_dataset_conversion_v1/run_a/train/train.annotations_odvg.jsonl",
+          "sha256": "abf109f0fcbabcbc185942399857582ab1db0b8664c3f166c220b9def936d3df",
+          "size_bytes": 785366
+        },
+        "validation_coco": {
+          "path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_dataset_conversion_v1/run_a/validation/validation.annotations_remapped.json",
+          "sha256": "621f89401b4ab219274486b6c392540772707bcc0e5983a40c5c359f7277737b",
+          "size_bytes": 352138
+        }
+      },
+      "run_b": {
+        "train_label_map": {
+          "path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_dataset_conversion_v1/run_b/train/train.annotations_odvg_labelmap.json",
+          "sha256": "50e203a52565c8c00f41454ad3656662c98cd2902bd6a02d35a2ab3059578d81",
+          "size_bytes": 69
+        },
+        "train_odvg": {
+          "path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_dataset_conversion_v1/run_b/train/train.annotations_odvg.jsonl",
+          "sha256": "abf109f0fcbabcbc185942399857582ab1db0b8664c3f166c220b9def936d3df",
+          "size_bytes": 785366
+        },
+        "validation_coco": {
+          "path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_dataset_conversion_v1/run_b/validation/validation.annotations_remapped.json",
+          "sha256": "621f89401b4ab219274486b6c392540772707bcc0e5983a40c5c359f7277737b",
+          "size_bytes": 352138
+        }
+      }
+    }
+  },
+  "execution": {
+    "cpu_model_runs": 0,
+    "gpu_model_runs": 0,
+    "scheduler_jobs_submitted": 0
+  },
+  "forbidden_claim": "referring_expression_box_grounding",
+  "implementation": {
+    "clean": true,
+    "converter_files": {
+      "coco_to_contiguous": {
+        "path": "/localhome/local-rarunachalam/tao-dataservices/nvidia_tao_ds/annotations/conversion/coco_to_contiguous.py",
+        "sha256": "3e06c65928945087b8c827a5c1ec3d7c5aa8a927e683d885702abc3a66722249",
+        "size_bytes": 2555
+      },
+      "coco_to_odvg": {
+        "path": "/localhome/local-rarunachalam/tao-dataservices/nvidia_tao_ds/annotations/conversion/coco_to_odvg.py",
+        "sha256": "beb9079f23c4e56947a56949c3716ca094ef2896c5ebcffddc72326932556cbe",
+        "size_bytes": 5667
+      }
+    },
+    "invocation": {
+      "train": "convert_coco_to_odvg",
+      "validation": "convert_coco_to_contiguous"
+    },
+    "repository": "/localhome/local-rarunachalam/tao-dataservices",
+    "revision": "dcea3a39bd3e4709e2325e4b61a4f179efebde4c",
+    "use_all_categories": false
+  },
+  "manifest_sha256": "3f78d2b38ea630d9843a5a5d9b82ecf49546c2948de2c829acf7f6ed0521f268",
+  "schema_version": 1,
+  "semantic_validation": {
+    "annotation_lossless": true,
+    "image_count_lossless": false,
+    "lossless_contract": "all annotations and annotated-image metadata preserved; official ODVG converter intentionally excludes only audited zero-annotation training images",
+    "train": {
+      "all_annotated_image_metadata_preserved": true,
+      "all_source_annotations_preserved": true,
+      "excluded_empty_image_count": 49,
+      "excluded_empty_image_ids": [
+        10,
+        35,
+        70,
+        138,
+        153,
+        181,
+        237,
+        287,
+        353,
+        436,
+        447,
+        521,
+        523,
+        562,
+        591,
+        620,
+        629,
+        637,
+        639,
+        649,
+        651,
+        739,
+        778,
+        797,
+        804,
+        807,
+        845,
+        860,
+        861,
+        917,
+        944,
+        963,
+        1020,
+        1035,
+        1042,
+        1051,
+        1062,
+        1117,
+        1147,
+        1170,
+        1176,
+        1190,
+        1235,
+        1307,
+        1320,
+        1356,
+        1366,
+        1372,
+        1381
+      ],
+      "label_map": {
+        "0": "cone",
+        "1": "forklift",
+        "2": "cart",
+        "3": "fire_extinguisher"
+      },
+      "label_map_sha256": "ef43605afb7ed2f97dc03bb8e9fc1122adf5b23fcbbb9e22440191a1e35dde5c",
+      "manual_prompt_or_synonym_injection": false,
+      "output_instance_count": 8395,
+      "output_record_count": 1365,
+      "source_annotation_count": 8395,
+      "source_image_count": 1414
+    },
+    "validation": {
+      "all_annotations_preserved": true,
+      "all_images_preserved": true,
+      "only_category_ids_remapped": true,
+      "output_annotation_count": 2186,
+      "output_category_ids": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "output_image_count": 353,
+      "source_annotation_count": 2186,
+      "source_category_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "source_image_count": 353
+    }
+  },
+  "source_annotations": {
+    "train": {
+      "lustre_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+      "path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_dataset_conversion_v1/source/train.annotations.json",
+      "sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+      "size_bytes": 3070605
+    },
+    "validation": {
+      "lustre_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+      "path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_dataset_conversion_v1/source/validation.annotations.json",
+      "sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+      "size_bytes": 307755
+    }
+  },
+  "source_manifest": {
+    "path": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino/experiments/cross_model_automl_20260729/datasets/tao_od_synthetic_full_dino_coco/manifest.v1.json",
+    "sha256": "020b6845c6429703169346d20d56c2801287acc11678385e3fcafe4f073e1d1c",
+    "size_bytes": 2385
+  },
+  "staging": {
+    "atomic_publish_required": true,
+    "inside_existing_source_dataset_tree": true,
+    "lustre_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1",
+    "published": false
+  }
+}

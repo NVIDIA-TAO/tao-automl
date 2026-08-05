@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Immutable DINO sensitivity training checkpoint artifact",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "status",
+    "study_id",
+    "feeds_final_selection",
+    "manual_selection_permitted",
+    "winner_selected",
+    "source",
+    "entries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "artifact_id": {
+      "const": "dino_sensitivity_training_checkpoints_20260728_v1"
+    },
+    "status": {
+      "const": "complete"
+    },
+    "study_id": {
+      "const": "dino_one_factor_latency_sensitivity_20260728_v1"
+    },
+    "feeds_final_selection": {
+      "const": false
+    },
+    "manual_selection_permitted": {
+      "const": false
+    },
+    "winner_selected": {
+      "const": false
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "manifest_sha256",
+        "frozen_plan_sha256",
+        "workflow_script_sha256"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 33,
+      "maxItems": 33,
+      "items": {
+        "type": "object",
+        "required": [
+          "entry_id",
+          "profile_id",
+          "seed",
+          "resolved_model_spec_sha256",
+          "resolved_train_spec_sha256",
+          "sdk_status",
+          "slurm_state",
+          "slurm_exit_code",
+          "checkpoint",
+          "feeds_final_selection"
+        ],
+        "properties": {
+          "sdk_status": {
+            "const": "Complete"
+          },
+          "slurm_state": {
+            "const": "COMPLETED"
+          },
+          "slurm_exit_code": {
+            "const": "0:0"
+          },
+          "feeds_final_selection": {
+            "const": false
+          },
+          "checkpoint": {
+            "type": "object",
+            "required": [
+              "epoch",
+              "path",
+              "sha256",
+              "size_bytes"
+            ],
+            "properties": {
+              "epoch": {
+                "const": 9
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^/lustre/.+\\.(pth|ckpt)$"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Immutable DINO sensitivity accuracy artifact",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "status",
+    "study_id",
+    "feeds_final_selection",
+    "manual_selection_permitted",
+    "winner_selected",
+    "selection",
+    "source",
+    "entries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "artifact_id": {
+      "const": "dino_sensitivity_training_accuracy_20260728_v1"
+    },
+    "status": {
+      "const": "complete"
+    },
+    "study_id": {
+      "const": "dino_one_factor_latency_sensitivity_20260728_v1"
+    },
+    "feeds_final_selection": {
+      "const": false
+    },
+    "manual_selection_permitted": {
+      "const": false
+    },
+    "winner_selected": {
+      "const": false
+    },
+    "selection": {
+      "type": "object",
+      "required": [
+        "performed"
+      ],
+      "properties": {
+        "performed": {
+          "const": false
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "manifest_sha256",
+        "frozen_training_plan_sha256",
+        "checkpoint_artifact_sha256",
+        "evaluation_plan_sha256",
+        "evaluation_submissions_sha256",
+        "workflow_script_sha256"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 42,
+      "maxItems": 42,
+      "items": {
+        "type": "object",
+        "required": [
+          "entry_id",
+          "profile_id",
+          "seed",
+          "checkpoint_source_entry_id",
+          "checkpoint",
+          "resolved_model_spec_sha256",
+          "sdk_status",
+          "slurm_state",
+          "slurm_exit_code",
+          "mAP50",
+          "same_seed_accuracy_retention",
+          "feeds_final_selection"
+        ],
+        "properties": {
+          "sdk_status": {
+            "const": "Complete"
+          },
+          "slurm_state": {
+            "const": "COMPLETED"
+          },
+          "slurm_exit_code": {
+            "const": "0:0"
+          },
+          "mAP50": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "feeds_final_selection": {
+            "const": false
+          },
+          "same_seed_accuracy_retention": {
+            "description": "Independent constrained-latency suitability evidence only. This value must never gate latency-effect qualification or inclusion in a future shared multi-objective search.",
+            "type": "object",
+            "required": [
+              "reference_entry_id",
+              "reference_mAP50",
+              "retention_fraction",
+              "required_mAP50",
+              "passes"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

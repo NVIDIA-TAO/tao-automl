@@ -1,0 +1,123 @@
+{
+  "batch_size_per_replica": 1,
+  "benchmark_seed": 20260727,
+  "caption": "cone . forklift . cart . fire_extinguisher .",
+  "category_prompts": [
+    "cone",
+    "forklift",
+    "cart",
+    "fire_extinguisher"
+  ],
+  "dataset_id": "tao_od_synthetic_full_dino_coco",
+  "dtype": "float32",
+  "images": [
+    {
+      "file_name": "000246.jpg",
+      "height": 720,
+      "id": 0,
+      "width": 1280
+    },
+    {
+      "file_name": "001170.jpg",
+      "height": 720,
+      "id": 1,
+      "width": 1280
+    },
+    {
+      "file_name": "001602.jpg",
+      "height": 720,
+      "id": 2,
+      "width": 1280
+    },
+    {
+      "file_name": "000291.jpg",
+      "height": 720,
+      "id": 3,
+      "width": 1280
+    },
+    {
+      "file_name": "001372.jpg",
+      "height": 720,
+      "id": 4,
+      "width": 1280
+    },
+    {
+      "file_name": "000078.jpg",
+      "height": 720,
+      "id": 5,
+      "width": 1280
+    },
+    {
+      "file_name": "001548.jpg",
+      "height": 720,
+      "id": 6,
+      "width": 1280
+    },
+    {
+      "file_name": "000681.jpg",
+      "height": 720,
+      "id": 7,
+      "width": 1280
+    },
+    {
+      "file_name": "000865.jpg",
+      "height": 720,
+      "id": 8,
+      "width": 1280
+    },
+    {
+      "file_name": "000454.jpg",
+      "height": 720,
+      "id": 9,
+      "width": 1280
+    },
+    {
+      "file_name": "000482.jpg",
+      "height": 720,
+      "id": 10,
+      "width": 1280
+    },
+    {
+      "file_name": "000864.jpg",
+      "height": 720,
+      "id": 11,
+      "width": 1280
+    },
+    {
+      "file_name": "000858.jpg",
+      "height": 720,
+      "id": 12,
+      "width": 1280
+    },
+    {
+      "file_name": "001213.jpg",
+      "height": 720,
+      "id": 13,
+      "width": 1280
+    },
+    {
+      "file_name": "000643.jpg",
+      "height": 720,
+      "id": 14,
+      "width": 1280
+    },
+    {
+      "file_name": "001398.jpg",
+      "height": 720,
+      "id": 15,
+      "width": 1280
+    }
+  ],
+  "padding_mask_channel": 3,
+  "preloaded_batches": 16,
+  "required_hardware": {
+    "compute_capability": "8.0",
+    "gpu_name": "NVIDIA A100-SXM4-80GB",
+    "total_memory_bytes": 85174583296
+  },
+  "schema_version": 1,
+  "selection_rule": "first_16_images_in_frozen_contiguous_coco_annotation_order",
+  "source_annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json",
+  "source_annotation_sha256": "621f89401b4ab219274486b6c392540772707bcc0e5983a40c5c359f7277737b",
+  "text_tokenization_scope": "precomputed_outside_timed_scope"
+}

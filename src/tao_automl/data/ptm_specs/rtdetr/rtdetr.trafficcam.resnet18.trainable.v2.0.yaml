@@ -1,0 +1,27 @@
+model:
+  backbone: resnet_18
+  train_backbone: true
+  load_teacher_enc_dec: true
+  num_queries: 300
+  num_select: 300
+  num_feature_levels: 3
+  return_interm_indices:
+    - 1
+    - 2
+    - 3
+  feat_strides:
+    - 8
+    - 16
+    - 32
+  feat_channels:
+    - 256
+    - 256
+    - 256
+  use_encoder_idx:
+    - 2
+  hidden_dim: 256
+  nheads: 8
+  dropout_ratio: 0.0
+  enc_layers: 1
+  dim_feedforward: 1024
+  dec_layers: 6

@@ -18,6 +18,7 @@ from tao_automl.brain.prompts.autoresearch_prompts import (
     build_hybrid_strategy_prompt,
 )
 from tao_automl.types import JobStates
+from tao_automl.objectives import implicit_direction
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ LORA_PARAMETERS = (
 
 
 def _metric_is_minimized(metric: str) -> bool:
-    return "loss" in (metric or "").lower()
+    return implicit_direction(metric) == "minimize"
 
 
 class HybridStrategist:

@@ -1,0 +1,96 @@
+{
+  "campaign_id": "grounding-dino-synthetic-detection-objective-aware-20260730-v2",
+  "dataset": {
+    "audit_file": "source_annotation_audit.v1.json",
+    "conversion_manifest_file": "dataset_conversion.v1.json",
+    "converted_lustre_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1",
+    "manifest_file": "../datasets/tao_od_synthetic_full_dino_coco/manifest.v1.json",
+    "stage_record_file": "dataset_stage.v1.json"
+  },
+  "predecessor_gates": {
+    "deformable_detr": {
+      "artifact_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/deformable_detr_automl_synthetic_export_and_gate_fix_v1/first_candidate_gate/automatic_release.json",
+      "manifest_sha256": "bab0bbf33efad3ccd4d7472661a80efb132820e0149b0deb346c4e7facf0eef8",
+      "required_candidate_id_template": "{mode}_rec_0",
+      "required_reason": "all frozen candidate gates passed",
+      "required_release_fields": {
+        "automatic": true,
+        "released": true,
+        "released_modes": [
+          "accuracy",
+          "latency",
+          "multi_objective"
+        ],
+        "remaining_candidates_per_mode": 19,
+        "schema_version": 1
+      },
+      "static_campaign_manifest_sha256": "09285bf1d9479c35348c82d81a7e5786e17972aeded96fcaf3bc17d49f9783cc",
+      "status": "corrected_fresh_runtime_bound_release_pending"
+    },
+    "rtdetr": {
+      "artifact_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/rtdetr_three_mode_synthetic_nonfinite_signature_fix_v1/first_candidate_gate/release.json",
+      "contract_sha256": "0f82d8751501e05726e1109904bd43e52db8af835311a0048d9d7b1394a73253",
+      "required_first_candidate_fields": {
+        "latency_quality_gate_passed": true,
+        "passed": true
+      },
+      "required_fields": {
+        "modes": [
+          "accuracy",
+          "latency",
+          "multi_objective"
+        ],
+        "release_remaining_budget": true
+      }
+    }
+  },
+  "ptm_staging": {
+    "bert_cache_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased",
+    "checkpoint_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino",
+    "download_before_gpu_allocation": true
+  },
+  "qualification": {
+    "checkpoint_interval": 1,
+    "evaluation_batch_size_per_gpu": 4,
+    "precision": "fp32",
+    "seed": 1234,
+    "train_batch_size_per_gpu": 4,
+    "training_epochs": 10,
+    "validation_interval": 1
+  },
+  "runtime": {
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "base_results_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+    "container_mounts": "/lustre",
+    "image_reference": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
+    "partition": "polar3",
+    "sdk_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-sdk-slurm-a2e50d0",
+    "sdk_revision": "a2e50d0930c3e3785b4b39fa8c3da88b39ff89e5",
+    "skill_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-grounding-dino",
+    "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "sqsh_size_bytes": 28860358656,
+    "tao_version": "7.1.0-rc-245"
+  },
+  "search": {
+    "algorithm": "bayesian",
+    "calibration_points": 8,
+    "candidate_budget_per_mode": 20,
+    "first_candidate_gate_per_mode": 1,
+    "latency_accuracy_retention": 0.9,
+    "latency_practical_tolerance_ms": 0.73553775,
+    "search_seed": 271828,
+    "training_epochs": 10,
+    "training_seed": 1234
+  },
+  "source": {
+    "repository": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino"
+  },
+  "tao_dataservices": {
+    "coco_to_contiguous_sha256": "3e06c65928945087b8c827a5c1ec3d7c5aa8a927e683d885702abc3a66722249",
+    "coco_to_odvg_sha256": "beb9079f23c4e56947a56949c3716ca094ef2896c5ebcffddc72326932556cbe",
+    "repository": "/localhome/local-rarunachalam/tao-dataservices",
+    "revision": "dcea3a39bd3e4709e2325e4b61a4f179efebde4c"
+  }
+}

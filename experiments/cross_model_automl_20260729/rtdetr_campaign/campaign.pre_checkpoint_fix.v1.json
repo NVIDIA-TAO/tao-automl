@@ -1,0 +1,472 @@
+{
+  "campaign_id": "rtdetr-synthetic-coco-four-ptm-qualification-20260730",
+  "completion_contract": {
+    "automatic_after_all_workflows_terminal": true,
+    "terminal_artifact_name": "completion.json",
+    "terminal_on_partial_or_total_failure": true,
+    "workflow_artifact_name": "workflow_completion.json"
+  },
+  "cpu_runs": 0,
+  "dataset": {
+    "eval_class_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "id": "tao_od_synthetic_full_dino_coco",
+    "manifest": {
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/datasets/tao_od_synthetic_full_dino_coco/manifest.v1.json",
+      "sha256": "020b6845c6429703169346d20d56c2801287acc11678385e3fcafe4f073e1d1c",
+      "size_bytes": 2385
+    },
+    "num_classes": 5,
+    "remap_mscoco_category": false,
+    "source_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "splits": {
+      "train": {
+        "annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+        "annotation_count": 8395,
+        "annotation_sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+        "annotation_size_bytes": 3070605,
+        "image_count": 1414,
+        "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+        "image_tree": {
+          "algorithm": "sha256_of_sorted_sha256sum_basename_lines",
+          "file_count": 1414,
+          "sha256": "8234aa9c82589690a721575fb60590df39f91e6a782fa0f1201c264e97f07b47",
+          "total_bytes": 112526760
+        }
+      },
+      "validation": {
+        "annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+        "annotation_count": 2186,
+        "annotation_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+        "annotation_size_bytes": 307755,
+        "image_count": 353,
+        "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+        "image_tree": {
+          "algorithm": "sha256_of_sorted_sha256sum_basename_lines",
+          "file_count": 353,
+          "sha256": "4a4edf90146f6928e213fc0b9e1d61dbdf7214915c68025617ec07617c8608eb",
+          "total_bytes": 28345111
+        }
+      }
+    },
+    "staged_lustre_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco"
+  },
+  "execution": {
+    "cpu_runs": 0,
+    "full_in_training_validation": true,
+    "full_training": true,
+    "kind": "direct_full_qualification",
+    "local_model_runs": 0,
+    "ministep_runs": 0,
+    "parallel_workflows": true,
+    "qualification_workflows": 4,
+    "requires_direct_full_dataset_acknowledgement": true,
+    "smoke_runs": 0,
+    "standalone_evaluation": true,
+    "submission_ready_after_artifact_preflight": true
+  },
+  "failure_policy": {
+    "manual_ptm_substitution": false,
+    "maximum_evaluation_jobs": 4,
+    "maximum_logical_workflows": 4,
+    "maximum_train_jobs": 4,
+    "preserve_terminal_failures": true,
+    "replace_failed_workflow": false
+  },
+  "integrity": {
+    "inputs_sha256": "065323c3d2fc6a3e93c417a1ff91ac7896c56a0171720bd2ec769fa98e88a241",
+    "launcher_sha256": "8609d09d1e6f98eccabf2938b13810dfc86817a0aabe24923a4152c2a0fdfdbb",
+    "manifest_generator_sha256": "55e90d8b017da36d3ec18d5f7b4f83dfc2f8c66ce588ddc25cb75bf8355bc737",
+    "ptm_registry_sha256": "5eda26a2e0b8b9cc2f5d3f9c74854d3006750eeda993de9580cd46dea5054560",
+    "workflow_support_sha256": "abf44c5c87b161aee183bafe42bbe22ced9b108a7b6609447e15f3b8f1d224da"
+  },
+  "manifest_sha256": "a0f6a0d5aa54a9c2dcbdf70a87c1138f708965b11c8e7060b83f7aaabc5be141",
+  "model": "rtdetr",
+  "ptms": [
+    {
+      "agent_intervention_flags": {
+        "agent_changed_budget_after_results": false,
+        "agent_changed_ptm_after_results": false,
+        "agent_changed_seed_after_results": false,
+        "agent_changed_threshold_after_results": false,
+        "agent_injected_candidate": false,
+        "agent_modified_search_space_after_results": false,
+        "agent_overrode_winner": false,
+        "agent_selected_candidate": false
+      },
+      "artifact": {
+        "availability_required_at_launch": true,
+        "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/rtdetr.trafficcam.resnet50.trainable.v2.0/5b06b64110f2f40d38d9953f/resnet50_trafficcamnet_rtdetr.pth",
+        "sha256": "9e21450a1eac2012ab713dc103e1655eb438a73a125e2f23b0a2ba8c0583ea6a",
+        "size_bytes": 511956488,
+        "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/rtdetr/rtdetr.trafficcam.resnet50.trainable.v2.0/resnet50_trafficcamnet_rtdetr.pth"
+      },
+      "backbone": "resnet_50",
+      "checkpoint_spec": {
+        "path": "/localhome/local-rarunachalam/tao-automl/src/tao_automl/data/ptm_specs/rtdetr/rtdetr.trafficcam.resnet50.trainable.v2.0.yaml",
+        "sha256": "9e749300b7f5aaf231745c7a925e1007949e86cd3c25beb4b973e2e6458fbf19"
+      },
+      "checkpoint_target": "train.pretrained_model_path",
+      "default_spec_overrides": {
+        "model": {
+          "backbone": "resnet_50",
+          "dec_layers": 6,
+          "dim_feedforward": 1024,
+          "dropout_ratio": 0.0,
+          "enc_layers": 1,
+          "feat_channels": [
+            256,
+            256,
+            256
+          ],
+          "feat_strides": [
+            8,
+            16,
+            32
+          ],
+          "hidden_dim": 256,
+          "nheads": 8,
+          "num_feature_levels": 3,
+          "num_queries": 300,
+          "num_select": 300,
+          "return_interm_indices": [
+            1,
+            2,
+            3
+          ],
+          "train_backbone": true,
+          "use_encoder_idx": [
+            2
+          ]
+        }
+      },
+      "id": "rtdetr.trafficcam.resnet50.trainable.v2.0",
+      "input_contract": {
+        "channels": 3,
+        "height": 544,
+        "preprocessing": {
+          "color_space": "rgb",
+          "layout": "nchw",
+          "preserve_aspect_ratio": false
+        },
+        "width": 960
+      },
+      "registry_record_sha256": "01c733677982c8a4a58d8b43716af20564022750bfda28c2bfdd9475faf5df1d",
+      "registry_status_before_qualification": "unverified",
+      "source": {
+        "immutable_identity": "ngc://nvidia/tao/trafficcamnet_transformer_lite:trainable_resnet50_v2.0#resnet50_trafficcamnet_rtdetr.pth",
+        "member": "resnet50_trafficcamnet_rtdetr.pth",
+        "official": true,
+        "provider": "ngc",
+        "registry": "nvidia/tao",
+        "resource": "trafficcamnet_transformer_lite",
+        "version": "trainable_resnet50_v2.0"
+      },
+      "source_identity": "ngc://nvidia/tao/trafficcamnet_transformer_lite:trainable_resnet50_v2.0#resnet50_trafficcamnet_rtdetr.pth",
+      "workflow_id": "trafficcam_resnet50"
+    },
+    {
+      "agent_intervention_flags": {
+        "agent_changed_budget_after_results": false,
+        "agent_changed_ptm_after_results": false,
+        "agent_changed_seed_after_results": false,
+        "agent_changed_threshold_after_results": false,
+        "agent_injected_candidate": false,
+        "agent_modified_search_space_after_results": false,
+        "agent_overrode_winner": false,
+        "agent_selected_candidate": false
+      },
+      "artifact": {
+        "availability_required_at_launch": true,
+        "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/rtdetr.trafficcam.resnet18.trainable.v2.0/dfa34dc90f6193e5f012d963/resnet18_trafficcamnet_rtdetr.pth",
+        "sha256": "f7db8cfc7b0e36bdd190cbfeebed91f71460cdb347553e0de401c06c7a9fc1dd",
+        "size_bytes": 357560178,
+        "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/rtdetr/rtdetr.trafficcam.resnet18.trainable.v2.0/resnet18_trafficcamnet_rtdetr.pth"
+      },
+      "backbone": "resnet_18",
+      "checkpoint_spec": {
+        "path": "/localhome/local-rarunachalam/tao-automl/src/tao_automl/data/ptm_specs/rtdetr/rtdetr.trafficcam.resnet18.trainable.v2.0.yaml",
+        "sha256": "ba3312a74238ddd06c4715f7e18bac93865262d6d01bfe362e2ed5364344359a"
+      },
+      "checkpoint_target": "train.pretrained_model_path",
+      "default_spec_overrides": {
+        "model": {
+          "backbone": "resnet_18",
+          "dec_layers": 6,
+          "dim_feedforward": 1024,
+          "dropout_ratio": 0.0,
+          "enc_layers": 1,
+          "feat_channels": [
+            256,
+            256,
+            256
+          ],
+          "feat_strides": [
+            8,
+            16,
+            32
+          ],
+          "hidden_dim": 256,
+          "load_teacher_enc_dec": true,
+          "nheads": 8,
+          "num_feature_levels": 3,
+          "num_queries": 300,
+          "num_select": 300,
+          "return_interm_indices": [
+            1,
+            2,
+            3
+          ],
+          "train_backbone": true,
+          "use_encoder_idx": [
+            2
+          ]
+        }
+      },
+      "id": "rtdetr.trafficcam.resnet18.trainable.v2.0",
+      "input_contract": {
+        "channels": 3,
+        "height": 544,
+        "preprocessing": {
+          "color_space": "rgb",
+          "layout": "nchw",
+          "preserve_aspect_ratio": false
+        },
+        "width": 960
+      },
+      "registry_record_sha256": "20472a714e567ce94db6614727370c93a2a3ab8e1a35b9b7c318d56664a6f95b",
+      "registry_status_before_qualification": "unverified",
+      "source": {
+        "immutable_identity": "ngc://nvidia/tao/trafficcamnet_transformer_lite:trainable_resnet18_v2.0#resnet18_trafficcamnet_rtdetr.pth",
+        "member": "resnet18_trafficcamnet_rtdetr.pth",
+        "official": true,
+        "provider": "ngc",
+        "registry": "nvidia/tao",
+        "resource": "trafficcamnet_transformer_lite",
+        "version": "trainable_resnet18_v2.0"
+      },
+      "source_identity": "ngc://nvidia/tao/trafficcamnet_transformer_lite:trainable_resnet18_v2.0#resnet18_trafficcamnet_rtdetr.pth",
+      "workflow_id": "trafficcam_resnet18"
+    },
+    {
+      "agent_intervention_flags": {
+        "agent_changed_budget_after_results": false,
+        "agent_changed_ptm_after_results": false,
+        "agent_changed_seed_after_results": false,
+        "agent_changed_threshold_after_results": false,
+        "agent_injected_candidate": false,
+        "agent_modified_search_space_after_results": false,
+        "agent_overrode_winner": false,
+        "agent_selected_candidate": false
+      },
+      "artifact": {
+        "availability_required_at_launch": true,
+        "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/rtdetr.warehouse.resnet50.trainable.v1.0.2/24cbd72747c1866f8cbaadba/rtdetr_warehouse_v1.0.2.pth",
+        "sha256": "745f42d0378f915f27c00baca86d788de995475af990aac370340c235bee6377",
+        "size_bytes": 514392577,
+        "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/rtdetr/rtdetr.warehouse.resnet50.trainable.v1.0.2/rtdetr_warehouse_v1.0.2.pth"
+      },
+      "backbone": "resnet_50",
+      "checkpoint_spec": {
+        "path": "/localhome/local-rarunachalam/tao-automl/src/tao_automl/data/ptm_specs/rtdetr/rtdetr.warehouse.resnet50.trainable.v1.0.2.yaml",
+        "sha256": "7c4144e30fec5f2a65ea369e586fe4c1c37529c84d3ac53a883a25620a403406"
+      },
+      "checkpoint_target": "train.pretrained_model_path",
+      "default_spec_overrides": {
+        "model": {
+          "backbone": "resnet_50",
+          "dec_layers": 6,
+          "dim_feedforward": 1024,
+          "dropout_ratio": 0.0,
+          "enc_layers": 1,
+          "feat_channels": [
+            256,
+            256,
+            256
+          ],
+          "feat_strides": [
+            8,
+            16,
+            32
+          ],
+          "hidden_dim": 256,
+          "load_teacher_enc_dec": true,
+          "nheads": 8,
+          "num_feature_levels": 3,
+          "num_queries": 300,
+          "num_select": 300,
+          "return_interm_indices": [
+            1,
+            2,
+            3
+          ],
+          "train_backbone": true,
+          "use_encoder_idx": [
+            2
+          ]
+        }
+      },
+      "id": "rtdetr.warehouse.resnet50.trainable.v1.0.2",
+      "input_contract": {
+        "channels": 3,
+        "height": 640,
+        "preprocessing": {
+          "color_space": "rgb",
+          "layout": "nchw",
+          "preserve_aspect_ratio": false
+        },
+        "width": 640
+      },
+      "registry_record_sha256": "25f3f465c3484b54e883a64d1e9e9b2b931f9643179e6a7c3defa849b9ab6f8f",
+      "registry_status_before_qualification": "unverified",
+      "source": {
+        "immutable_identity": "ngc://nvidia/tao/rtdetr_2d_warehouse:trainable_rn50_v1.0.2#rtdetr_warehouse_v1.0.2.pth",
+        "member": "rtdetr_warehouse_v1.0.2.pth",
+        "official": true,
+        "provider": "ngc",
+        "registry": "nvidia/tao",
+        "resource": "rtdetr_2d_warehouse",
+        "version": "trainable_rn50_v1.0.2"
+      },
+      "source_identity": "ngc://nvidia/tao/rtdetr_2d_warehouse:trainable_rn50_v1.0.2#rtdetr_warehouse_v1.0.2.pth",
+      "workflow_id": "warehouse_resnet50"
+    },
+    {
+      "agent_intervention_flags": {
+        "agent_changed_budget_after_results": false,
+        "agent_changed_ptm_after_results": false,
+        "agent_changed_seed_after_results": false,
+        "agent_changed_threshold_after_results": false,
+        "agent_injected_candidate": false,
+        "agent_modified_search_space_after_results": false,
+        "agent_overrode_winner": false,
+        "agent_selected_candidate": false
+      },
+      "artifact": {
+        "availability_required_at_launch": true,
+        "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/rtdetr.warehouse.efficientvit_l2.trainable.v1.0/b3a31c2469a23adabacdae62/rtdetr_warehouse_v1.0.pth",
+        "sha256": "18c21b12478855e11d7f6012a4386f515465bd47fc013ea452ee76ca3fd7ecdb",
+        "size_bytes": 813085917,
+        "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/rtdetr/rtdetr.warehouse.efficientvit_l2.trainable.v1.0/rtdetr_warehouse_v1.0.pth"
+      },
+      "backbone": "efficientvit_l2",
+      "checkpoint_spec": {
+        "path": "/localhome/local-rarunachalam/tao-automl/src/tao_automl/data/ptm_specs/rtdetr/rtdetr.warehouse.efficientvit_l2.trainable.v1.0.yaml",
+        "sha256": "188c376977275b2e17a32b13d5ba54dc567058e3945aa32c67ecf2f3ea6027b3"
+      },
+      "checkpoint_target": "train.pretrained_model_path",
+      "default_spec_overrides": {
+        "model": {
+          "backbone": "efficientvit_l2",
+          "dec_layers": 6,
+          "dim_feedforward": 1024,
+          "dropout_ratio": 0.0,
+          "enc_layers": 1,
+          "feat_channels": [
+            256,
+            256,
+            256
+          ],
+          "feat_strides": [
+            8,
+            16,
+            32
+          ],
+          "hidden_dim": 256,
+          "load_teacher_enc_dec": false,
+          "nheads": 8,
+          "num_feature_levels": 3,
+          "num_queries": 300,
+          "num_select": 300,
+          "return_interm_indices": [
+            1,
+            2,
+            3
+          ],
+          "train_backbone": true,
+          "use_encoder_idx": [
+            2
+          ]
+        }
+      },
+      "id": "rtdetr.warehouse.efficientvit_l2.trainable.v1.0",
+      "input_contract": {
+        "channels": 3,
+        "height": 544,
+        "preprocessing": {
+          "color_space": "rgb",
+          "layout": "nchw",
+          "preserve_aspect_ratio": false
+        },
+        "width": 960
+      },
+      "registry_record_sha256": "94239e42a5c5e42204add377fd84bfdb7aa5278f1497bf610767a3b18a1faf87",
+      "registry_status_before_qualification": "unverified",
+      "source": {
+        "immutable_identity": "ngc://nvidia/tao/rtdetr_2d_warehouse:trainable_efficientvit_l2_v1.0#rtdetr_warehouse_v1.0.pth",
+        "member": "rtdetr_warehouse_v1.0.pth",
+        "official": true,
+        "provider": "ngc",
+        "registry": "nvidia/tao",
+        "resource": "rtdetr_2d_warehouse",
+        "version": "trainable_efficientvit_l2_v1.0"
+      },
+      "source_identity": "ngc://nvidia/tao/rtdetr_2d_warehouse:trainable_efficientvit_l2_v1.0#rtdetr_warehouse_v1.0.pth",
+      "workflow_id": "warehouse_efficientvit_l2"
+    }
+  ],
+  "qualification": {
+    "checkpoint_interval": 10,
+    "evaluation_batch_size_per_gpu": 4,
+    "precision": "fp32",
+    "seed": 1234,
+    "train_batch_size_per_gpu": 4,
+    "training_epochs": 10,
+    "validation_interval": 1
+  },
+  "runtime": {
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "base_results_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+    "container_mounts": "/lustre",
+    "distributed_workers_per_node": 8,
+    "gpus_per_node": 8,
+    "hardware_contract": {
+      "compute_capability": "8.0",
+      "gpu_count": 8,
+      "gpu_name": "NVIDIA A100-SXM4-80GB",
+      "nvidia_smi_memory_mib": 81920
+    },
+    "image_reference": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
+    "max_infrastructure_retries": 10,
+    "nodes": 1,
+    "partition": "polar3",
+    "platform": "slurm",
+    "sdk_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-sdk-slurm-a2e50d0",
+    "sdk_revision": "a2e50d0930c3e3785b4b39fa8c3da88b39ff89e5",
+    "skill_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-rtdetr",
+    "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",
+    "slurm_image_conversion": false,
+    "slurm_use_requeue": true,
+    "slurm_use_sqsh_conversion": false,
+    "sqsh_direct_path": true,
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "sqsh_size_bytes": 28860358656,
+    "tao_version": "7.1.0-rc-245",
+    "tasks_per_node": 1,
+    "time_hours": 4.0,
+    "timeout_hours": 3.8
+  },
+  "schema_version": 1,
+  "smoke_runs": 0,
+  "source": {
+    "commit": "253489c58c30ee59404b680bd0fc8d1b581b0eec",
+    "launch_head_policy": "clean_descendant",
+    "repository": "/localhome/local-rarunachalam/tao-automl"
+  },
+  "task": "object_detection"
+}

@@ -30,7 +30,7 @@ class BOHB(AutoMLAlgorithmBase):
         """Initialize the BOHB algorithm class"""
         super().__init__(context, state_store, network, parameters)
         self.epoch_multiplier = int(epoch_multiplier)
-        self.metric = metric
+        self._configure_objective(metric)
         self.ni = {}
         self.ri = {}
         self.brackets_and_sh_sequence(max_epochs, reduction_factor)
@@ -44,9 +44,7 @@ class BOHB(AutoMLAlgorithmBase):
         self.expt_iter = 0
         self.complete = False
 
-        self.reverse_sort = True
-        if metric == "loss" or "loss" in metric.lower() or metric.lower() in ("evaluation_cost",):
-            self.reverse_sort = False
+        self.reverse_sort = self.metric_direction == "maximize"
         self.last_launched_count = 0
 
         # TPE-specific variables
@@ -429,6 +427,9 @@ class BOHB(AutoMLAlgorithmBase):
         state_dict["observations"] = [
             (obs[0].tolist(), obs[1]) for obs in self.observations
         ]
+        state_dict["experiments_considered_ids"] = [
+            int(rec.id) for rec in self.experiments_considered
+        ]
 
         self.state_store.save_brain_info(self.context.id, state_dict)
 
@@ -456,6 +457,15 @@ class BOHB(AutoMLAlgorithmBase):
         brain.complete = json_loaded["complete"]
         brain.epoch_number = json_loaded["epoch_number"]
         brain.last_launched_count = json_loaded.get("last_launched_count", 0)
+        brain.ni = copy.deepcopy(json_loaded.get("ni", brain.ni))
+        brain.ri = copy.deepcopy(json_loaded.get("ri", brain.ri))
+        brain._restored_experiments_considered_ids = [
+            int(identifier)
+            for identifier in json_loaded.get(
+                "experiments_considered_ids",
+                [],
+            )
+        ]
 
         if "observations" in json_loaded:
             brain.observations = [
@@ -494,21 +504,55 @@ class BOHB(AutoMLAlgorithmBase):
         else:
             lower = -1 * self.ni.get(self.bracket, [0])[0]
 
+            if self.expt_iter > 0 and not self.experiments_considered:
+                by_id = {int(rec.id): rec for rec in history}
+                restored_ids = getattr(
+                    self,
+                    "_restored_experiments_considered_ids",
+                    [],
+                )
+                missing_ids = [
+                    identifier
+                    for identifier in restored_ids
+                    if identifier not in by_id
+                ]
+                if missing_ids:
+                    raise ValueError(
+                        "Cannot resume BOHB promotion; recommendation IDs are "
+                        f"missing from history: {missing_ids}"
+                    )
+                self.experiments_considered = [
+                    by_id[identifier] for identifier in restored_ids
+                ]
+
             if self.expt_iter == 0:
                 if self.sh_iter == 1:
+                    promotable = [
+                        rec for rec in history[lower:]
+                        if self._completed_observation_value(rec) is not None
+                    ]
                     self.experiments_considered = sorted(
-                        history[lower:],
+                        promotable,
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
                 else:
                     for experiment in self.experiments_considered:
                         experiment.result = history[experiment.id].result
+                    self.experiments_considered = [
+                        rec for rec in self.experiments_considered
+                        if self._completed_observation_value(rec) is not None
+                    ]
                     self.experiments_considered = sorted(
                         self.experiments_considered,
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
+                self.ni[self.bracket][self.sh_iter] = len(
+                    self.experiments_considered
+                )
+                if not self.experiments_considered:
+                    return self._generate_one_recommendation(history)
 
             self.epoch_number = self.ri[self.bracket][self.sh_iter] * self.epoch_multiplier
             final_epoch = self.ri[self.bracket][-1] * self.epoch_multiplier
@@ -578,7 +622,8 @@ class BOHB(AutoMLAlgorithmBase):
 
         # Update observations with completed experiments
         for rec in history:
-            if rec.status == JobStates.success and rec.result != 0.0:
+            observation = self._completed_observation_value(rec)
+            if observation is not None:
                 config = []
                 for param in self.parameters:
                     param_name = param["parameter"]
@@ -599,8 +644,11 @@ class BOHB(AutoMLAlgorithmBase):
                         np.allclose(obs[0], config_array) for obs in self.observations
                     )
                     if not is_duplicate:
-                        self.observations.append((config_array, rec.result))
-                        logger.info(f"Added observation: config with result={rec.result}")
+                        self.observations.append((config_array, observation))
+                        logger.info(
+                            "Added observation: config with result=%s",
+                            observation,
+                        )
 
         if history == []:
             num_configs_in_rung = self.ni[self.bracket][self.sh_iter]

@@ -1,0 +1,9 @@
+model:
+  backbone: resnet_50
+  train_backbone: true
+  num_feature_levels: 4
+  enc_layers: 6
+  dec_layers: 6
+  num_queries: 300
+  with_box_refine: true
+  dropout_ratio: 0.3

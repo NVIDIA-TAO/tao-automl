@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "audit_id": "mask-grounding-dino-ddp-unused-parameters-v2-20260801",
+  "model": "mask_grounding_dino",
+  "failure_scope": "qualification_v1_first_distributed_training_batch",
+  "v1_preserved": {
+    "completion_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/mask_grounding_dino_coco2017_ptm_qualification_v1/completion.json",
+    "completion_sha256": "a48d8d8d2a5c65e35c9d39bd5ed1362be54e2be0b89dcda5471812da331a6996",
+    "slurm_job_ids": [
+      "31243535",
+      "31243536",
+      "31243537",
+      "31243538"
+    ],
+    "all_four_terminal_failures_preserved": true,
+    "replacement_submitted_in_v1": false,
+    "error_message_sha256": "049879aebc731f85fa2b10afe253502bd393835f650f2e5da8a305782dfdf9e8"
+  },
+  "pinned_runtime": {
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "train_launcher_path": "/usr/local/lib/python3.12/dist-packages/nvidia_tao_pytorch/cv/mask_grounding_dino/scripts/train.py",
+    "train_launcher_sha256": "83d8e8cfc717fbe76e44ef0363cf4f787daefbd2d12b05120f964632205746ff",
+    "train_config_path": "/usr/local/lib/python3.12/dist-packages/nvidia_tao_pytorch/config/grounding_dino/train.py",
+    "train_config_sha256": "797ea0288ef81e298d1df56f40d9d3c0302761ca1d810f29ce565035388fcbfe"
+  },
+  "tao_config_support": {
+    "distributed_strategy_valid_values": [
+      "ddp",
+      "fsdp"
+    ],
+    "direct_ddp_find_unused_parameters_true_value_supported": false,
+    "supported_resolution": {
+      "train.distributed_strategy": "ddp",
+      "train.activation_checkpoint": false,
+      "resolved_lightning_strategy": "ddp_find_unused_parameters_true"
+    }
+  },
+  "v2_change_scope": {
+    "effective_distributed_strategy_changed": true,
+    "ptm_changed": false,
+    "dataset_changed": false,
+    "search_space_changed": false,
+    "training_epochs_changed": false,
+    "objective_changed": false,
+    "seed_changed": false,
+    "candidate_injected": false,
+    "cpu_model_runs": 0,
+    "smoke_model_runs": 0,
+    "mini_step_runs": 0
+  }
+}

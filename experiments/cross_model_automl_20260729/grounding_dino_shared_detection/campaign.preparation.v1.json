@@ -1,0 +1,735 @@
+{
+  "agent_intervention_flags": {
+    "agent_changed_budget_after_results": false,
+    "agent_changed_ptm_after_results": false,
+    "agent_changed_seed_after_results": false,
+    "agent_changed_threshold_after_results": false,
+    "agent_injected_candidate": false,
+    "agent_modified_search_space_after_results": false,
+    "agent_overrode_winner": false,
+    "agent_selected_candidate": false
+  },
+  "automatic_gate": {
+    "blockers": [
+      {
+        "code": "referring_expression_annotation_contract_missing",
+        "reason": "Plain COCO category annotations contain neither per-image language expressions nor token-positive spans. Category names may drive category-prompted detection, but must not be represented as referring expressions.",
+        "scope": "grounding_claim"
+      },
+      {
+        "code": "category_detection_metric_policy_not_supported",
+        "reason": "No metric sanity policy is registered for model 'grounding_dino' and metric 'val_mAP50'",
+        "scope": "objective_aware_campaign"
+      },
+      {
+        "code": "official_ptms_not_production_qualified",
+        "ptm_ids": [
+          "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+          "grounding_dino.commercial.swin_tiny.trainable.v1.1"
+        ],
+        "reason": "Only evidence-backed supported PTMs may enter production hierarchical PTM search.",
+        "scope": "objective_aware_campaign"
+      },
+      {
+        "code": "converted_dataset_artifacts_not_sealed",
+        "reason": "The repository-owned preparation records conversion commands but does not assert that ungenerated files exist.",
+        "required_paths": [
+          "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco_grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+          "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco_grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json",
+          "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco_grounding_dino_odvg_v1/validation/annotations_remapped.json"
+        ],
+        "scope": "direct_qualification"
+      }
+    ],
+    "launch_authorized": false,
+    "policy": "fail_closed",
+    "release_requirements": [
+      "converted_dataset_integrity_sealed",
+      "category_detection_metric_policy_supported",
+      "at_least_one_official_ptm_evidence_qualified",
+      "production_wheel_includes_required_runtime",
+      "source_sdk_and_skill_revisions_clean_and_pinned",
+      "one_candidate_per_mode_gate_then_automatic_release"
+    ]
+  },
+  "automl": {
+    "algorithm": "bayesian",
+    "candidate_budget_per_mode": 20,
+    "independent_mode_jobs": true,
+    "latency_protocol": {
+      "batch_size_per_replica": 1,
+      "practical_tolerance_ms": 0.73553775,
+      "precision": "fp32",
+      "raw_samples_per_candidate": 4000,
+      "repeated_rounds": 5,
+      "replicas": 8,
+      "synchronization": "accelerator_sync_before_and_after_each_sample",
+      "timed_iterations": 100,
+      "warmup_iterations": 50
+    },
+    "modes": [
+      {
+        "candidate_ptm_ids": [
+          "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+          "grounding_dino.commercial.swin_tiny.trainable.v1.1"
+        ],
+        "initial_observation_ids": [],
+        "job_id": "grounding-dino-synthetic-detection-objective-aware-20260730-accuracy",
+        "mode": "accuracy",
+        "objective": {
+          "acquisition": "expected_improvement",
+          "metrics": [
+            {
+              "direction": "maximize",
+              "name": "val_mAP50",
+              "role": "accuracy"
+            }
+          ],
+          "mode": "accuracy",
+          "quality_constraint": null,
+          "selection_policy": "highest_valid_accuracy"
+        },
+        "objective_sha256": "c4c0801bf343f2ae5525bd9a41549afface9e731f7159d4b84a1e5b2b4cf382e",
+        "observation_namespace": "grounding-dino-synthetic-detection-objective-aware-20260730-accuracy-observations",
+        "observation_sharing": false,
+        "ptm_policy": "all_qualified_explicit",
+        "qualified_ptm_ids_resolved_at_gate": true,
+        "search_seed": 271828
+      },
+      {
+        "candidate_ptm_ids": [
+          "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+          "grounding_dino.commercial.swin_tiny.trainable.v1.1"
+        ],
+        "initial_observation_ids": [],
+        "job_id": "grounding-dino-synthetic-detection-objective-aware-20260730-latency",
+        "mode": "latency",
+        "objective": {
+          "acquisition": "constrained_expected_improvement",
+          "metrics": [
+            {
+              "direction": "maximize",
+              "name": "val_mAP50",
+              "role": "accuracy"
+            },
+            {
+              "direction": "minimize",
+              "name": "median_latency_ms",
+              "role": "latency"
+            }
+          ],
+          "mode": "latency",
+          "quality_constraint": {
+            "reference": "best_observed_within_job",
+            "reference_updates": "monotonic",
+            "retained_fraction": 0.9,
+            "terminal_reference": "terminal_archive_accuracy_winner",
+            "type": "relative_retention"
+          },
+          "selection_policy": "equivalent_fastest_accuracy_tiebreak"
+        },
+        "objective_sha256": "db6f698a4265cf98720b3d508a24ce0c07c1643a70104f802f8db72f8225134b",
+        "observation_namespace": "grounding-dino-synthetic-detection-objective-aware-20260730-latency-observations",
+        "observation_sharing": false,
+        "ptm_policy": "all_qualified_explicit",
+        "qualified_ptm_ids_resolved_at_gate": true,
+        "search_seed": 271828
+      },
+      {
+        "candidate_ptm_ids": [
+          "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+          "grounding_dino.commercial.swin_tiny.trainable.v1.1"
+        ],
+        "initial_observation_ids": [],
+        "job_id": "grounding-dino-synthetic-detection-objective-aware-20260730-multi_objective",
+        "mode": "multi_objective",
+        "objective": {
+          "acquisition": "parego_expected_improvement",
+          "metrics": [
+            {
+              "direction": "maximize",
+              "name": "val_mAP50",
+              "role": "accuracy"
+            },
+            {
+              "direction": "minimize",
+              "name": "median_latency_ms",
+              "role": "latency"
+            }
+          ],
+          "mode": "multi_objective",
+          "quality_constraint": null,
+          "selection_policy": "normalized_augmented_chebyshev"
+        },
+        "objective_sha256": "ef6eefc3f9967d066c149b549c9c642d98706a6558bd623c817cda4e6018d28e",
+        "observation_namespace": "grounding-dino-synthetic-detection-objective-aware-20260730-multi_objective-observations",
+        "observation_sharing": false,
+        "ptm_policy": "all_qualified_explicit",
+        "qualified_ptm_ids_resolved_at_gate": true,
+        "search_seed": 271828
+      }
+    ],
+    "ptm_representation": "hierarchical_nonordinal_arms",
+    "search_schema": {
+      "automl_enabled": true,
+      "model_id": "grounding_dino",
+      "model_skill": "tao-train-grounding-dino",
+      "parameter_names": [
+        "dataset.augmentation.horizontal_flip_prob",
+        "dataset.augmentation.train_random_crop_max",
+        "dataset.augmentation.train_random_crop_min",
+        "model.dec_layers",
+        "model.enc_layers",
+        "model.num_select",
+        "train.optim.lr",
+        "train.optim.lr_backbone",
+        "train.optim.lr_decay",
+        "train.optim.lr_linear_proj_mult",
+        "train.optim.lr_step_size",
+        "train.optim.momentum",
+        "train.optim.weight_decay"
+      ],
+      "parameters": {
+        "dataset.augmentation.horizontal_flip_prob": {
+          "automl_enabled": true,
+          "default": 0.5,
+          "description": "The probability for horizonal flip during training",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "horizontal flip probability",
+          "type": "float"
+        },
+        "dataset.augmentation.train_random_crop_max": {
+          "automl_enabled": true,
+          "default": 600,
+          "depends_on": "dataset.augmentation.train_random_crop_min",
+          "description": "The maximum random crop size for training data. Must be > train_random_crop_min",
+          "math_cond": "> depends_on",
+          "maximum": 1333,
+          "minimum": 32,
+          "title": "Maximum random crop size",
+          "type": "int"
+        },
+        "dataset.augmentation.train_random_crop_min": {
+          "automl_enabled": true,
+          "default": 384,
+          "description": "The minimum random crop size for training data",
+          "maximum": "+infinity",
+          "minimum": 32,
+          "parent_param": "TRUE",
+          "title": "minumum random crop size",
+          "type": "int"
+        },
+        "model.dec_layers": {
+          "automl_enabled": true,
+          "default": 6,
+          "description": "Numer of decoder layers in the transformer",
+          "minimum": 1,
+          "title": "decoder layers",
+          "type": "int"
+        },
+        "model.enc_layers": {
+          "automl_enabled": true,
+          "default": 6,
+          "description": "Numer of encoder layers in the transformer",
+          "minimum": 1,
+          "title": "encoder layers",
+          "type": "int"
+        },
+        "model.num_select": {
+          "automl_enabled": true,
+          "default": 300,
+          "depends_on": "model.num_queries",
+          "description": "The number of top-K predictions selected during post-process. Must be < num_queries * num_classes",
+          "maximum": 1000,
+          "minimum": 1,
+          "popular": true,
+          "title": "num select",
+          "type": "int"
+        },
+        "train.optim.lr": {
+          "automl_enabled": true,
+          "default": 0.0002,
+          "description": "The initial learning rate for training the model, excluding the backbone.",
+          "maximum": "+infinity",
+          "minimum": 0.0,
+          "title": "learning rate",
+          "type": "float"
+        },
+        "train.optim.lr_backbone": {
+          "automl_enabled": true,
+          "default": 2e-05,
+          "description": "The initial learning rate for training the backbone.",
+          "maximum": "+infinity",
+          "minimum": 0.0,
+          "popular": true,
+          "title": "learning rate - backbone",
+          "type": "float"
+        },
+        "train.optim.lr_decay": {
+          "automl_enabled": true,
+          "default": 0.1,
+          "description": "The decreasing factor for the learning rate scheduler.",
+          "maximum": "+infinity",
+          "minimum": 0.0,
+          "title": "learning rate decay",
+          "type": "float"
+        },
+        "train.optim.lr_linear_proj_mult": {
+          "automl_enabled": true,
+          "default": 0.1,
+          "description": "The initial learning rate for training the linear projection layer.",
+          "maximum": "+infinity",
+          "minimum": 0.0,
+          "popular": true,
+          "title": "learning rate - linear projection",
+          "type": "float"
+        },
+        "train.optim.lr_step_size": {
+          "automl_enabled": true,
+          "default": 10,
+          "description": "The number of steps to decrease the learning rate in the StepLR.",
+          "maximum": "+infinity",
+          "minimum": 0,
+          "title": "learning rate step size",
+          "type": "int"
+        },
+        "train.optim.momentum": {
+          "automl_enabled": true,
+          "default": 0.9,
+          "description": "The momentum for the AdamW optimizer.",
+          "maximum": "+infinity",
+          "minimum": 0.0,
+          "popular": true,
+          "title": "momentum - AdamW",
+          "type": "float"
+        },
+        "train.optim.weight_decay": {
+          "automl_enabled": true,
+          "default": 0.0001,
+          "description": "The weight decay coefficient.",
+          "maximum": "+infinity",
+          "minimum": 0.0,
+          "popular": true,
+          "title": "weight decay",
+          "type": "float"
+        }
+      },
+      "parameters_sha256": "68944960ccf3e71b6ea199953f4e1c7c3caa5628ee7201e1b07ab4c5501b7621",
+      "schema_path": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-grounding-dino/schemas/train.schema.json",
+      "schema_sha256": "8c69565bc1641c4ac89329ab54521be56a2b11416210900a9c7373af5c5e080f",
+      "source": "packaged_train_schema_automl_default_parameters",
+      "train_action_mode": "config",
+      "train_command": "grounding_dino train -e {config_path}"
+    },
+    "shared_observations": false,
+    "training_epochs": 10
+  },
+  "campaign_id": "grounding-dino-synthetic-detection-objective-aware-20260730",
+  "dataset": {
+    "category_contract": {
+      "label_map": {
+        "0": "cone",
+        "1": "forklift",
+        "2": "cart",
+        "3": "fire_extinguisher"
+      },
+      "manual_prompt_or_synonym_injection": false,
+      "mapping_sha256": "c0d82e6b28f5dbab3d30fe38e10d04e845ff3c785aebc382f62f43670c6dde17",
+      "model_category_ids": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "prompt_list": [
+        "cone",
+        "forklift",
+        "cart",
+        "fire_extinguisher"
+      ],
+      "prompt_mapping": [
+        {
+          "derivation": "exact_source_coco_category_name",
+          "model_category_id": 0,
+          "prompt": "cone",
+          "source_category_id": 1
+        },
+        {
+          "derivation": "exact_source_coco_category_name",
+          "model_category_id": 1,
+          "prompt": "forklift",
+          "source_category_id": 2
+        },
+        {
+          "derivation": "exact_source_coco_category_name",
+          "model_category_id": 2,
+          "prompt": "cart",
+          "source_category_id": 3
+        },
+        {
+          "derivation": "exact_source_coco_category_name",
+          "model_category_id": 3,
+          "prompt": "fire_extinguisher",
+          "source_category_id": 4
+        }
+      ],
+      "source_category_count": 4,
+      "source_category_ids": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "conversion": {
+      "empty_training_image_policy": "official_converter_excludes_and_audit_preserves_ids",
+      "expected_excluded_empty_train_images": 49,
+      "implementation": "nvidia-tao-dataservices",
+      "paths": {
+        "train_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+        "train_label_map": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco_grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json",
+        "train_odvg_jsonl": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco_grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+        "validation_coco_contiguous": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco_grounding_dino_odvg_v1/validation/annotations_remapped.json",
+        "validation_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images"
+      },
+      "source": {
+        "actual_revision": "dcea3a39bd3e4709e2325e4b61a4f179efebde4c",
+        "clean": true,
+        "coco_to_contiguous_sha256": "3e06c65928945087b8c827a5c1ec3d7c5aa8a927e683d885702abc3a66722249",
+        "coco_to_odvg_sha256": "beb9079f23c4e56947a56949c3716ca094ef2896c5ebcffddc72326932556cbe",
+        "repository": "/localhome/local-rarunachalam/tao-dataservices",
+        "revision": "dcea3a39bd3e4709e2325e4b61a4f179efebde4c"
+      },
+      "train_command": [
+        "python",
+        "nvidia_tao_ds/annotations/scripts/convert.py",
+        "coco.ann_file=/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+        "coco.use_all_categories=false",
+        "data.input_format=COCO",
+        "data.output_format=ODVG",
+        "results_dir=/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco_grounding_dino_odvg_v1/train"
+      ],
+      "use_all_categories": false,
+      "validation_command": [
+        "python",
+        "nvidia_tao_ds/annotations/scripts/convert.py",
+        "coco.ann_file=/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+        "coco.use_all_categories=false",
+        "data.input_format=COCO",
+        "data.output_format=COCO",
+        "results_dir=/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco_grounding_dino_odvg_v1/validation"
+      ]
+    },
+    "grounding_contract": {
+      "category_prompted_detection": {
+        "metric": "val_mAP50",
+        "supported_by_source": true,
+        "training_contract": "TAO ODVG detection records plus label map",
+        "validation_contract": "contiguous-ID COCO bbox evaluation"
+      },
+      "referring_expression_box_grounding": {
+        "annotations_with_tokens_positive": 0,
+        "blocker": "Plain COCO category annotations contain neither per-image language expressions nor token-positive spans. Category names may drive category-prompted detection, but must not be represented as referring expressions.",
+        "images_with_caption": 0,
+        "required_annotation_field": "tokens_positive",
+        "required_image_field": "caption",
+        "supported_by_source": false
+      }
+    },
+    "source_annotation_audit": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/source_annotation_audit.v1.json",
+    "source_annotation_audit_sha256": "7e474846bd06d756d8b8effa3af56595a15b3358746bca108c5f47926e70139a",
+    "source_manifest": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino/experiments/cross_model_automl_20260729/datasets/tao_od_synthetic_full_dino_coco/manifest.v1.json",
+    "source_manifest_sha256": "020b6845c6429703169346d20d56c2801287acc11678385e3fcafe4f073e1d1c",
+    "source_task": "object_detection"
+  },
+  "direct_qualification": {
+    "cpu_model_runs": false,
+    "jobs": [
+      {
+        "checkpoint_target": "train.pretrained_model_path",
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "swin_tiny_224_1k",
+            "class_embed_bias": true,
+            "dec_layers": 6,
+            "dim_feedforward": 2048,
+            "dropout_ratio": 0.0,
+            "enc_layers": 6,
+            "log_scale": "auto",
+            "num_feature_levels": 4,
+            "num_queries": 900
+          }
+        },
+        "ptm_id": "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+        "registry_status_before_qualification": "unverified",
+        "resource": {
+          "distributed_workers_per_node": 8,
+          "gpus_per_node": 8,
+          "nodes": 1,
+          "platform": "slurm",
+          "tasks_per_node": 1
+        },
+        "source_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.0#grounding_dino_swin_tiny_commercial_trainable.pth",
+        "source_member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+        "workflow": [
+          "full_10_epoch_train_with_validation_each_epoch",
+          "standalone_evaluate_from_exact_terminal_checkpoint",
+          "artifact_and_metric_contract_validation",
+          "evidence_based_registry_promotion_or_structured_exclusion"
+        ]
+      },
+      {
+        "checkpoint_target": "train.pretrained_model_path",
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "swin_tiny_224_1k",
+            "class_embed_bias": true,
+            "dec_layers": 6,
+            "dim_feedforward": 2048,
+            "dropout_ratio": 0.0,
+            "enc_layers": 6,
+            "log_scale": "auto",
+            "num_feature_levels": 4,
+            "num_queries": 900
+          }
+        },
+        "ptm_id": "grounding_dino.commercial.swin_tiny.trainable.v1.1",
+        "registry_status_before_qualification": "unverified",
+        "resource": {
+          "distributed_workers_per_node": 8,
+          "gpus_per_node": 8,
+          "nodes": 1,
+          "platform": "slurm",
+          "tasks_per_node": 1
+        },
+        "source_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.1#grounding_dino_swin_tiny_commercial_trainable.pth",
+        "source_member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+        "workflow": [
+          "full_10_epoch_train_with_validation_each_epoch",
+          "standalone_evaluate_from_exact_terminal_checkpoint",
+          "artifact_and_metric_contract_validation",
+          "evidence_based_registry_promotion_or_structured_exclusion"
+        ]
+      }
+    ],
+    "launches_prepared": 2,
+    "smoke_or_ministep_runs": false,
+    "standalone_evaluation": true,
+    "training_epochs": 10,
+    "validation_interval": 1
+  },
+  "execution": {
+    "jobs_submitted": 0,
+    "model_execution_performed": false,
+    "scheduler_mutation_performed": false
+  },
+  "metric_contract": {
+    "registry_sha256": "da30d0d32f121d06f5944273b9cfffe7336312707acd82e03e13de6485ef9012",
+    "val_Pr@0.5": {
+      "availability": "blocked",
+      "policy_id": "grounding_dino.referring_box_pr50",
+      "reason": "The inspected Grounding DINO validation loader constructs CocoDetection and emits COCO bbox AP; it does not implement a phrase-grounding Pr@0.5 evaluator or verified output scale.",
+      "task": "referring_expression_box_grounding"
+    },
+    "val_mAP50": {
+      "availability": "unregistered",
+      "reason": "No metric sanity policy is registered for model 'grounding_dino' and metric 'val_mAP50'"
+    }
+  },
+  "model": {
+    "forbidden_claim": "referring_expression_box_grounding",
+    "id": "grounding_dino",
+    "skill": "tao-train-grounding-dino",
+    "task": "category_prompted_open_vocabulary_detection"
+  },
+  "official_ptm_inventory": {
+    "candidate_ids": [
+      "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+      "grounding_dino.commercial.swin_tiny.trainable.v1.1"
+    ],
+    "count": 2,
+    "derivation": "all source.official=true records under ptm_registry.models.grounding_dino",
+    "manual_ptm_selection": false,
+    "records": [
+      {
+        "architecture": "grounding_dino",
+        "backbone": "swin_tiny_224_1k",
+        "checkpoint_spec_file": {
+          "path": "data/ptm_specs/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.0.yaml",
+          "provenance": {
+            "evidence": "grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.0#experiment.yaml sha256=b6c1f211cb8da80e4ae3e882b87358087befd6e69c097a12b909de52f447e4da",
+            "source": "Curated path-free projection of the official NGC experiment.yaml"
+          },
+          "sha256": "49bc2090236277dd429df7f5b94733cdabc1e6cb785671fc24430de06d62427f",
+          "source": "repository"
+        },
+        "checkpoint_target": "train.pretrained_model_path",
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "swin_tiny_224_1k",
+            "class_embed_bias": true,
+            "dec_layers": 6,
+            "dim_feedforward": 2048,
+            "dropout_ratio": 0.0,
+            "enc_layers": 6,
+            "log_scale": "auto",
+            "num_feature_levels": 4,
+            "num_queries": 900
+          }
+        },
+        "deprecation": {
+          "is_deprecated": false
+        },
+        "expected_size_bytes": 2070704394,
+        "id": "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+        "input_contract": {
+          "channels": 3,
+          "height": 544,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "max_text_length": 256,
+            "text_encoder": "bert_base",
+            "tokenization_outside_deployment_graph": true
+          },
+          "width": 960
+        },
+        "license": {
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license"
+          ],
+          "name": "NVIDIA Open Model License",
+          "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/"
+        },
+        "model_family": "grounding_dino",
+        "registry_record_sha256": "3a4cdeb98a7c8571f1cb2fd4dc019ab32e323e583ff37bc402403e2513636599",
+        "registry_sha256": "5eda26a2e0b8b9cc2f5d3f9c74854d3006750eeda993de9580cd46dea5054560",
+        "source": {
+          "immutable_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.0#grounding_dino_swin_tiny_commercial_trainable.pth",
+          "member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+          "official": true,
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "grounding_dino",
+          "version": "grounding_dino_swin_tiny_commercial_trainable_v1.0"
+        },
+        "status": "unverified",
+        "status_reason": "Official immutable NGC checkpoint and experiment-YAML identities, sizes, multimodal input contract, and license are recorded. NGC publishes no checkpoint checksum for this older member; TAO compatibility and checkpoint load, training, validation, and inference mini-steps remain unverified.",
+        "task_compatibility": [
+          "grounded_object_detection"
+        ]
+      },
+      {
+        "architecture": "grounding_dino",
+        "backbone": "swin_tiny_224_1k",
+        "checkpoint_spec_file": {
+          "path": "data/ptm_specs/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.1.yaml",
+          "provenance": {
+            "evidence": "grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.1#experiment.yaml sha256=b6c1f211cb8da80e4ae3e882b87358087befd6e69c097a12b909de52f447e4da",
+            "source": "Curated path-free projection of the official NGC experiment.yaml"
+          },
+          "sha256": "49bc2090236277dd429df7f5b94733cdabc1e6cb785671fc24430de06d62427f",
+          "source": "repository"
+        },
+        "checkpoint_target": "train.pretrained_model_path",
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "swin_tiny_224_1k",
+            "class_embed_bias": true,
+            "dec_layers": 6,
+            "dim_feedforward": 2048,
+            "dropout_ratio": 0.0,
+            "enc_layers": 6,
+            "log_scale": "auto",
+            "num_feature_levels": 4,
+            "num_queries": 900
+          }
+        },
+        "deprecation": {
+          "is_deprecated": false
+        },
+        "expected_size_bytes": 2070860191,
+        "id": "grounding_dino.commercial.swin_tiny.trainable.v1.1",
+        "input_contract": {
+          "channels": 3,
+          "height": 544,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "max_text_length": 256,
+            "text_encoder": "bert_base",
+            "tokenization_outside_deployment_graph": true
+          },
+          "width": 960
+        },
+        "license": {
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license"
+          ],
+          "name": "NVIDIA Open Model License",
+          "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/"
+        },
+        "model_family": "grounding_dino",
+        "registry_record_sha256": "8b0a7a3664782215fbf1c013d801d204aca102e096cdde1807508143d76fdfb0",
+        "registry_sha256": "5eda26a2e0b8b9cc2f5d3f9c74854d3006750eeda993de9580cd46dea5054560",
+        "sha256": "8ea7e089e174e72a7fe57ff63cdba5e1e4994b159e41cf72122a7e0d841beaa6",
+        "source": {
+          "immutable_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.1#grounding_dino_swin_tiny_commercial_trainable.pth",
+          "member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+          "official": true,
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "grounding_dino",
+          "version": "grounding_dino_swin_tiny_commercial_trainable_v1.1"
+        },
+        "status": "unverified",
+        "status_reason": "Official NGC checkpoint and experiment-YAML identities, SHA-256 values, sizes, multimodal input contract, and license are recorded. The path-bearing official YAML was reduced to architecture-only defaults; TAO compatibility and checkpoint load, training, validation, and inference mini-steps remain unverified.",
+        "task_compatibility": [
+          "grounded_object_detection"
+        ]
+      }
+    ]
+  },
+  "preparation_sha256": "120b74fc04cf6c747dc07e025a6f71734147ceedee224558c56d30bc6d327e64",
+  "runtime": {
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "base_results_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+    "container_mounts": "/lustre",
+    "distributed_workers_per_node": 8,
+    "gpus_per_node": 8,
+    "image_reference": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
+    "nodes": 1,
+    "partition": "polar3",
+    "platform": "slurm",
+    "sdk_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-sdk-slurm-a2e50d0",
+    "sdk_revision": "a2e50d0930c3e3785b4b39fa8c3da88b39ff89e5",
+    "skill_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-grounding-dino",
+    "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",
+    "slurm_use_sqsh_conversion": false,
+    "sqsh_direct_path": true,
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "sqsh_size_bytes": 28860358656,
+    "tao_version": "7.1.0-rc-245",
+    "tasks_per_node": 1,
+    "time_hours": 4,
+    "timeout_hours": 3.8
+  },
+  "schema_version": 1,
+  "selection_isolation_flags": {
+    "algorithm_selected_candidate_overridden": false,
+    "measurements_feed_reselection": false,
+    "measurements_feed_selection": false,
+    "selection_time_objectives_replaced": false,
+    "selector_invoked_on_matched_measurements": false
+  },
+  "source": {
+    "commit": "e524e31248fa56f5a40a2341b9565e7c670699e6",
+    "dirty": false,
+    "launch_head_policy": "clean_descendant",
+    "repository": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino"
+  }
+}

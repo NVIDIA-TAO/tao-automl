@@ -1,0 +1,760 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "official_ngc_dino_source_inventory",
+  "resolved_date_utc": "2026-07-29",
+  "registry": "nvidia/tao",
+  "scope": {
+    "model_family": "dino",
+    "metadata_only": true,
+    "checkpoint_payload_downloaded": false,
+    "model_execution_performed": false,
+    "secrets_persisted": false,
+    "signed_urls_persisted": false
+  },
+  "normalization": {
+    "retained_fields": [
+      "resource",
+      "version",
+      "member",
+      "size_bytes"
+    ],
+    "discarded_volatile_fields": [
+      "requestStatus",
+      "requestId",
+      "createdDate",
+      "updatedDate",
+      "latestVersionIdStr"
+    ],
+    "records_sha256_algorithm": "sha256(canonical-json(resources[*].records))",
+    "records_sha256": "715942c92b7ee5523cc421621913e7715cdd1abe9713240ccfb70d117d133ea7"
+  },
+  "official_api": {
+    "provider": "ngc",
+    "authenticated_versions_endpoint_template": "https://api.ngc.nvidia.com/v2/org/nvidia/team/tao/models/{resource}/versions",
+    "authenticated_files_endpoint_template": "https://api.ngc.nvidia.com/v2/org/nvidia/team/tao/models/{resource}/versions/{version}/files",
+    "catalog_endpoint_template": "https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/{resource}",
+    "credential_material_recorded": false
+  },
+  "resources": [
+    {
+      "resource": "pretrained_dino_coco",
+      "resource_classification": "full_detector",
+      "metadata_endpoint": "https://api.ngc.nvidia.com/v2/org/nvidia/team/tao/models/pretrained_dino_coco/versions",
+      "catalog_endpoint": "https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pretrained_dino_coco",
+      "mapping_provenance": {
+        "model_card_description_sha256": "cdd64e8fb8eb02204f7f650b44280b5508faf44eb1fac35576d6626c77144212",
+        "runtime_backbone_basis": "official model-card model-version descriptions",
+        "checkpoint_target_basis": "TAO DINO full-detector experiment-spec contract",
+        "resolution_basis": "official model-card Input section: B X 3 X 544 X 960"
+      },
+      "version_count": 7,
+      "member_count": 7,
+      "total_size_bytes": 3583842900,
+      "records": [
+        {
+          "source_order": 0,
+          "version": "dino_fan_large_trainable_v1.0",
+          "member": "dino_fan_large_imagenet22k_36ep.pth",
+          "size_bytes": 1197490926,
+          "artifact_role": "full_detector_trainable",
+          "runtime_backbone": "fan_large",
+          "checkpoint_target": "train.pretrained_model_path",
+          "resolution": {
+            "scope": "detector_input",
+            "height": 544,
+            "width": 960
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_fan_large_trainable_v1.0#dino_fan_large_imagenet22k_36ep.pth"
+        },
+        {
+          "source_order": 1,
+          "version": "dino_fan_small_deployable_v1.0",
+          "member": "dino_fan_small_ep12.onnx",
+          "size_bytes": 215567293,
+          "artifact_role": "full_detector_deployable",
+          "runtime_backbone": "fan_small",
+          "checkpoint_target": null,
+          "resolution": {
+            "scope": "detector_input",
+            "height": 544,
+            "width": 960
+          },
+          "automl_training_artifact": false,
+          "runtime_status": "excluded_deployable_not_trainable",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_fan_small_deployable_v1.0#dino_fan_small_ep12.onnx"
+        },
+        {
+          "source_order": 2,
+          "version": "dino_fan_small_trainable_v1.0",
+          "member": "dino_fan_small_ep12.pth",
+          "size_bytes": 580862106,
+          "artifact_role": "full_detector_trainable",
+          "runtime_backbone": "fan_small",
+          "checkpoint_target": "train.pretrained_model_path",
+          "resolution": {
+            "scope": "detector_input",
+            "height": 544,
+            "width": 960
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_fan_small_trainable_v1.0#dino_fan_small_ep12.pth"
+        },
+        {
+          "source_order": 3,
+          "version": "dino_gc_vit_tiny_deployable_v1.0",
+          "member": "dino_gcvit_tiny0_ep12.onnx",
+          "size_bytes": 234840909,
+          "artifact_role": "full_detector_deployable",
+          "runtime_backbone": "gc_vit_tiny",
+          "checkpoint_target": null,
+          "resolution": {
+            "scope": "detector_input",
+            "height": 544,
+            "width": 960
+          },
+          "automl_training_artifact": false,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_gc_vit_tiny_deployable_v1.0#dino_gcvit_tiny0_ep12.onnx"
+        },
+        {
+          "source_order": 4,
+          "version": "dino_gc_vit_tiny_trainable_v1.0",
+          "member": "dino_gcvit_tiny0_ep12.pth",
+          "size_bytes": 577043347,
+          "artifact_role": "full_detector_trainable",
+          "runtime_backbone": "gc_vit_tiny",
+          "checkpoint_target": "train.pretrained_model_path",
+          "resolution": {
+            "scope": "detector_input",
+            "height": 544,
+            "width": 960
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_gc_vit_tiny_trainable_v1.0#dino_gcvit_tiny0_ep12.pth"
+        },
+        {
+          "source_order": 5,
+          "version": "dino_resnet_50_deployable_v1.0",
+          "member": "dino_resnet50_ep12.onnx",
+          "size_bytes": 209270924,
+          "artifact_role": "full_detector_deployable",
+          "runtime_backbone": "resnet_50",
+          "checkpoint_target": null,
+          "resolution": {
+            "scope": "detector_input",
+            "height": 544,
+            "width": 960
+          },
+          "automl_training_artifact": false,
+          "runtime_status": "excluded_deployable_not_trainable",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_resnet_50_deployable_v1.0#dino_resnet50_ep12.onnx"
+        },
+        {
+          "source_order": 6,
+          "version": "dino_resnet_50_trainable_v1.0",
+          "member": "dino_resnet50_ep12.pth",
+          "size_bytes": 568767395,
+          "artifact_role": "full_detector_trainable",
+          "runtime_backbone": "resnet_50",
+          "checkpoint_target": "train.pretrained_model_path",
+          "resolution": {
+            "scope": "detector_input",
+            "height": 544,
+            "width": 960
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_resnet_50_trainable_v1.0#dino_resnet50_ep12.pth"
+        }
+      ]
+    },
+    {
+      "resource": "dino_with_fm_backbone",
+      "resource_classification": "full_detector",
+      "metadata_endpoint": "https://api.ngc.nvidia.com/v2/org/nvidia/team/tao/models/dino_with_fm_backbone/versions",
+      "catalog_endpoint": "https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/dino_with_fm_backbone",
+      "mapping_provenance": {
+        "model_card_description_sha256": "a029e64e8602fe57ecd51070b632f1d73dcc4b031630382cad72089fdbcad715",
+        "runtime_backbone_basis": "official transfer-learning YAML prescribes vit_large_dinov2; the NVDINOv2 resource/member name does not replace that runtime key",
+        "checkpoint_target_basis": "TAO DINO full-detector experiment-spec contract",
+        "resolution_basis": "official model-card Input section: B X 3 X 1536 X 1536"
+      },
+      "version_count": 2,
+      "member_count": 2,
+      "total_size_bytes": 5706228909,
+      "records": [
+        {
+          "source_order": 0,
+          "version": "deployable_v1.0",
+          "member": "dino_nvdinov2_518_1536_coco_e36_op17.onnx",
+          "size_bytes": 1473738476,
+          "artifact_role": "full_detector_deployable",
+          "runtime_backbone": "vit_large_dinov2",
+          "checkpoint_target": null,
+          "resolution": {
+            "scope": "detector_input",
+            "height": 1536,
+            "width": 1536
+          },
+          "automl_training_artifact": false,
+          "runtime_status": "excluded_deployable_not_trainable",
+          "immutable_identity": "ngc://nvidia/tao/dino_with_fm_backbone:deployable_v1.0#dino_nvdinov2_518_1536_coco_e36_op17.onnx"
+        },
+        {
+          "source_order": 1,
+          "version": "trainable_v1.0",
+          "member": "dino_nvdinov2_518_1536_coco_e36.pth",
+          "size_bytes": 4232490433,
+          "artifact_role": "full_detector_trainable",
+          "runtime_backbone": "vit_large_dinov2",
+          "checkpoint_target": "train.pretrained_model_path",
+          "resolution": {
+            "scope": "detector_input",
+            "height": 1536,
+            "width": 1536
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/dino_with_fm_backbone:trainable_v1.0#dino_nvdinov2_518_1536_coco_e36.pth"
+        }
+      ]
+    },
+    {
+      "resource": "pretrained_dino_imagenet",
+      "resource_classification": "backbone_only",
+      "metadata_endpoint": "https://api.ngc.nvidia.com/v2/org/nvidia/team/tao/models/pretrained_dino_imagenet/versions",
+      "catalog_endpoint": "https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pretrained_dino_imagenet",
+      "mapping_provenance": {
+        "model_card_description_sha256": "4d48b820b2ab13bffa0441b1b31e17e73e6f2243240c01bd11fe2a91489a2f88",
+        "runtime_backbone_basis": "official supported-backbone and model-version names",
+        "checkpoint_target_basis": "official model-card pretrained-backbone experiment-spec snippet",
+        "resolution_basis": "official model-version resolution labels; explicit 384 variants override the 224 backbone default"
+      },
+      "version_count": 16,
+      "member_count": 16,
+      "total_size_bytes": 4549471223,
+      "records": [
+        {
+          "source_order": 0,
+          "version": "gcvit_large_imagenet22k_384",
+          "member": "gcvit_large_imagenet22k_384.pth",
+          "size_bytes": 864054197,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_large_384",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 384,
+            "width": 384
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_large_imagenet22k_384#gcvit_large_imagenet22k_384.pth"
+        },
+        {
+          "source_order": 1,
+          "version": "gcvit_large_imagenet1k",
+          "member": "gcvit_large_imagenet1k.pth",
+          "size_bytes": 814560029,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_large",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_large_imagenet1k#gcvit_large_imagenet1k.pth"
+        },
+        {
+          "source_order": 2,
+          "version": "gcvit_base_imagenet1k",
+          "member": "gcvit_base_imagenet1k.pth",
+          "size_bytes": 367540965,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_base",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_base_imagenet1k#gcvit_base_imagenet1k.pth"
+        },
+        {
+          "source_order": 3,
+          "version": "gcvit_small_imagenet1k",
+          "member": "gcvit_small_imagenet1k.pth",
+          "size_bytes": 210626653,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_small",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_small_imagenet1k#gcvit_small_imagenet1k.pth"
+        },
+        {
+          "source_order": 4,
+          "version": "gcvit_tiny_imagenet1k",
+          "member": "gcvit_tiny_imagenet1k.pth",
+          "size_bytes": 119124861,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_tiny",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_tiny_imagenet1k#gcvit_tiny_imagenet1k.pth"
+        },
+        {
+          "source_order": 5,
+          "version": "gcvit_xtiny_imagenet1k",
+          "member": "gcvit_xtiny_imagenet1k.pth",
+          "size_bytes": 82106937,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_xtiny",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_xtiny_imagenet1k#gcvit_xtiny_imagenet1k.pth"
+        },
+        {
+          "source_order": 6,
+          "version": "gcvit_xxtiny_imagenet1k",
+          "member": "gcvit_xxtiny_imagenet1k.pth",
+          "size_bytes": 50020581,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_xxtiny",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_xxtiny_imagenet1k#gcvit_xxtiny_imagenet1k.pth"
+        },
+        {
+          "source_order": 7,
+          "version": "fan_hybrid_tiny",
+          "member": "fan_hybrid_tiny.pth",
+          "size_bytes": 30032227,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_tiny",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_tiny#fan_hybrid_tiny.pth"
+        },
+        {
+          "source_order": 8,
+          "version": "fan_hybrid_small",
+          "member": "fan_hybrid_small.pth",
+          "size_bytes": 104729466,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_small",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_small#fan_hybrid_small.pth"
+        },
+        {
+          "source_order": 9,
+          "version": "fan_hybrid_large_in22k",
+          "member": "fan_hybrid_large_in22k.pth",
+          "size_bytes": 342977114,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_large",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_large_in22k#fan_hybrid_large_in22k.pth"
+        },
+        {
+          "source_order": 10,
+          "version": "fan_hybrid_large_in22k_384",
+          "member": "fan_hybrid_large_in22k_384.pth",
+          "size_bytes": 308027006,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_large",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 384,
+            "width": 384
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_large_in22k_384#fan_hybrid_large_in22k_384.pth"
+        },
+        {
+          "source_order": 11,
+          "version": "fan_hybrid_large_in22k_1k",
+          "member": "fan_hybrid_large_in22k_1k.pth",
+          "size_bytes": 308026197,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_large",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_large_in22k_1k#fan_hybrid_large_in22k_1k.pth"
+        },
+        {
+          "source_order": 12,
+          "version": "fan_hybrid_large_in22k_1k_384",
+          "member": "fan_hybrid_large_in22k_1k_384.pth",
+          "size_bytes": 308029433,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_large",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 384,
+            "width": 384
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_large_in22k_1k_384#fan_hybrid_large_in22k_1k_384.pth"
+        },
+        {
+          "source_order": 13,
+          "version": "fan_hybrid_base_in22k",
+          "member": "fan_hybrid_base_in22k.pth",
+          "size_bytes": 234955105,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_base",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_base_in22k#fan_hybrid_base_in22k.pth"
+        },
+        {
+          "source_order": 14,
+          "version": "fan_hybrid_base_in22k_1k",
+          "member": "fan_hybrid_base_in22k_1k.pth",
+          "size_bytes": 202329016,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_base",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_base_in22k_1k#fan_hybrid_base_in22k_1k.pth"
+        },
+        {
+          "source_order": 15,
+          "version": "fan_hybrid_base_in22k_1k_384",
+          "member": "fan_hybrid_base_in22k_1k_384.pth",
+          "size_bytes": 202331436,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_base",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 384,
+            "width": 384
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_base_in22k_1k_384#fan_hybrid_base_in22k_1k_384.pth"
+        }
+      ]
+    },
+    {
+      "resource": "pretrained_dino_nvimagenet",
+      "resource_classification": "backbone_only",
+      "metadata_endpoint": "https://api.ngc.nvidia.com/v2/org/nvidia/team/tao/models/pretrained_dino_nvimagenet/versions",
+      "catalog_endpoint": "https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pretrained_dino_nvimagenet",
+      "mapping_provenance": {
+        "model_card_description_sha256": "c25a61e8e525d149cb7a8498100c5346229e7e808006bf2ab72902f2e36318e2",
+        "runtime_backbone_basis": "official supported-backbone and model-version names",
+        "checkpoint_target_basis": "official model-card pretrained-backbone experiment-spec snippet",
+        "resolution_basis": "official model-version contract; no 384 variant is exposed"
+      },
+      "version_count": 10,
+      "member_count": 10,
+      "total_size_bytes": 1781675757,
+      "records": [
+        {
+          "source_order": 0,
+          "version": "resnet50",
+          "member": "resnet50_nvimagenetv2.pth.tar",
+          "size_bytes": 307117121,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "resnet_50",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:resnet50#resnet50_nvimagenetv2.pth.tar"
+        },
+        {
+          "source_order": 1,
+          "version": "fan_large_hybrid_nvimagenet",
+          "member": "fan_large_hybrid_nvimagenet.pth",
+          "size_bytes": 308027815,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_large",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:fan_large_hybrid_nvimagenet#fan_large_hybrid_nvimagenet.pth"
+        },
+        {
+          "source_order": 2,
+          "version": "fan_small_hybrid_nvimagenet",
+          "member": "fan_small_hybrid_nvimagenet.pth",
+          "size_bytes": 104734139,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_small",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:fan_small_hybrid_nvimagenet#fan_small_hybrid_nvimagenet.pth"
+        },
+        {
+          "source_order": 3,
+          "version": "fan_base_hybrid_nvimagenet",
+          "member": "fan_base_hybrid_nvimagenet.pth",
+          "size_bytes": 202330226,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_base",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:fan_base_hybrid_nvimagenet#fan_base_hybrid_nvimagenet.pth"
+        },
+        {
+          "source_order": 4,
+          "version": "gcvit_base_nvimagenet",
+          "member": "gcvit_base_nvimagenet.pth",
+          "size_bytes": 367540965,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_base",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_base_nvimagenet#gcvit_base_nvimagenet.pth"
+        },
+        {
+          "source_order": 5,
+          "version": "gcvit_small_nvimagenet",
+          "member": "gcvit_small_nvimagenet.pth",
+          "size_bytes": 210626653,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_small",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_small_nvimagenet#gcvit_small_nvimagenet.pth"
+        },
+        {
+          "source_order": 6,
+          "version": "gcvit_tiny_nvimagenet",
+          "member": "gcvit_tiny_nvimagenet.pth",
+          "size_bytes": 119124861,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_tiny",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_tiny_nvimagenet#gcvit_tiny_nvimagenet.pth"
+        },
+        {
+          "source_order": 7,
+          "version": "gcvit_xtiny_nvimagenet",
+          "member": "gcvit_xtiny_nvimagenet.pth",
+          "size_bytes": 82106937,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_xtiny",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_xtiny_nvimagenet#gcvit_xtiny_nvimagenet.pth"
+        },
+        {
+          "source_order": 8,
+          "version": "gcvit_xxtiny_nvimagenet",
+          "member": "gcvit_xxtiny_nvimagenet.pth",
+          "size_bytes": 50020581,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "gc_vit_xxtiny",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "excluded_static_tao71_gcvit",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_xxtiny_nvimagenet#gcvit_xxtiny_nvimagenet.pth"
+        },
+        {
+          "source_order": 9,
+          "version": "fan_hybrid_tiny_nvimagenet",
+          "member": "fan_hybrid_tiny_nvimagenetv2.pth.tar",
+          "size_bytes": 30046459,
+          "artifact_role": "backbone_only",
+          "runtime_backbone": "fan_tiny",
+          "checkpoint_target": "model.pretrained_backbone_path",
+          "resolution": {
+            "scope": "backbone_pretraining",
+            "height": 224,
+            "width": 224
+          },
+          "automl_training_artifact": true,
+          "runtime_status": "catalogued_requires_preflight",
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:fan_hybrid_tiny_nvimagenet#fan_hybrid_tiny_nvimagenetv2.pth.tar"
+        }
+      ]
+    }
+  ],
+  "catalog_discrepancies": [
+    {
+      "resource": "pretrained_dino_coco",
+      "model_card_label": "dino_fan_large_deployable_v1.0",
+      "official_versions_api_present": false,
+      "handling": "not_inventoried_without_an_exact_registry_version"
+    },
+    {
+      "resource": "dino_with_fm_backbone",
+      "model_card_label": "dino_dinov2_trainable_v1.0",
+      "official_versions_api_exact_id": "trainable_v1.0",
+      "handling": "official_versions_api_identity_is_authoritative"
+    },
+    {
+      "resource": "dino_with_fm_backbone",
+      "model_card_label": "dino_dinov2_deployable_v1.0",
+      "official_versions_api_exact_id": "deployable_v1.0",
+      "handling": "official_versions_api_identity_is_authoritative"
+    },
+    {
+      "resource": "pretrained_dino_imagenet",
+      "official_versions_api_exact_id": "fan_hybrid_base_in22k",
+      "model_card_description_architecture": "FAN-Hybrid-Small",
+      "runtime_backbone": "fan_base",
+      "handling": "exact_version_and_member_identity_are_authoritative"
+    },
+    {
+      "resource": "pretrained_dino_nvimagenet",
+      "official_versions_api_exact_id": "fan_large_hybrid_nvimagenet",
+      "model_card_description_architecture": "FAN-Hybrid-Base",
+      "runtime_backbone": "fan_large",
+      "handling": "exact_version_and_member_identity_are_authoritative"
+    }
+  ],
+  "pinned_tao71_static_runtime_evidence": {
+    "evidence_kind": "static_container_source_inspection",
+    "dynamic_model_execution_performed": false,
+    "container_image": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
+    "container_format": "sqsh",
+    "container_size_bytes": 28860358656,
+    "container_sha256": "0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e",
+    "source_member": "/usr/local/lib/python3.12/dist-packages/nvidia_tao_pytorch/cv/dino/model/backbone.py",
+    "source_member_sha256": "4be339eb5791d168cf295e8ebb4bb2c32439399577848e9d4c4731f799e012c7",
+    "source_line_evidence": {
+      "imports_and_backbone_dictionaries": "21-40",
+      "supported_architecture_construction": "143-230",
+      "fallback_not_implemented": 230
+    },
+    "facts": {
+      "gc_vit_import_present": false,
+      "gc_vit_dictionary_present": false,
+      "gc_vit_construction_branch_present": false,
+      "unknown_backbone_falls_through_to_not_implemented": true
+    },
+    "exclusion_code": "pinned_tao71_dino_gcvit_not_implemented",
+    "conclusion": "Every DINO catalog record mapped to a gc_vit_* runtime backbone is structurally excluded from this pinned TAO 7.1 runtime before checkpoint loading."
+  }
+}

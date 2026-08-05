@@ -24,7 +24,7 @@ class DEHB(AutoMLAlgorithmBase):
         """Initialize the DEHB algorithm class"""
         super().__init__(context, state_store, network, parameters)
         self.epoch_multiplier = int(epoch_multiplier)
-        self.metric = metric
+        self._configure_objective(metric)
         self.ni = {}
         self.ri = {}
         self.brackets_and_sh_sequence(max_epochs, reduction_factor)
@@ -40,9 +40,7 @@ class DEHB(AutoMLAlgorithmBase):
         self.expt_iter = 0
         self.complete = False
 
-        self.reverse_sort = True
-        if metric == "loss" or "loss" in metric.lower() or metric.lower() in ("evaluation_cost",):
-            self.reverse_sort = False
+        self.reverse_sort = self.metric_direction == "maximize"
         self.last_launched_count = 0
 
         self.population = []
@@ -262,6 +260,9 @@ class DEHB(AutoMLAlgorithmBase):
         state_dict["metric"] = self.metric
         state_dict["population"] = [p.tolist() for p in self.population]
         state_dict["population_results"] = self.population_results
+        state_dict["experiments_considered_ids"] = [
+            int(rec.id) for rec in self.experiments_considered
+        ]
 
         self.state_store.save_brain_info(self.context.id, state_dict)
 
@@ -283,6 +284,15 @@ class DEHB(AutoMLAlgorithmBase):
         brain.complete = json_loaded["complete"]
         brain.epoch_number = json_loaded["epoch_number"]
         brain.last_launched_count = json_loaded.get("last_launched_count", 0)
+        brain.ni = copy.deepcopy(json_loaded.get("ni", brain.ni))
+        brain.ri = copy.deepcopy(json_loaded.get("ri", brain.ri))
+        brain._restored_experiments_considered_ids = [
+            int(identifier)
+            for identifier in json_loaded.get(
+                "experiments_considered_ids",
+                [],
+            )
+        ]
 
         if "population" in json_loaded:
             brain.population = [np.array(p) for p in json_loaded["population"]]
@@ -318,21 +328,55 @@ class DEHB(AutoMLAlgorithmBase):
         else:
             lower = -1 * self.ni.get(self.bracket, [0])[0]
 
+            if self.expt_iter > 0 and not self.experiments_considered:
+                by_id = {int(rec.id): rec for rec in history}
+                restored_ids = getattr(
+                    self,
+                    "_restored_experiments_considered_ids",
+                    [],
+                )
+                missing_ids = [
+                    identifier
+                    for identifier in restored_ids
+                    if identifier not in by_id
+                ]
+                if missing_ids:
+                    raise ValueError(
+                        "Cannot resume DEHB promotion; recommendation IDs are "
+                        f"missing from history: {missing_ids}"
+                    )
+                self.experiments_considered = [
+                    by_id[identifier] for identifier in restored_ids
+                ]
+
             if self.expt_iter == 0:
                 if self.sh_iter == 1:
+                    promotable = [
+                        rec for rec in history[lower:]
+                        if self._completed_observation_value(rec) is not None
+                    ]
                     self.experiments_considered = sorted(
-                        history[lower:],
+                        promotable,
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
                 else:
                     for experiment in self.experiments_considered:
                         experiment.result = history[experiment.id].result
+                    self.experiments_considered = [
+                        rec for rec in self.experiments_considered
+                        if self._completed_observation_value(rec) is not None
+                    ]
                     self.experiments_considered = sorted(
                         self.experiments_considered,
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
+                self.ni[self.bracket][self.sh_iter] = len(
+                    self.experiments_considered
+                )
+                if not self.experiments_considered:
+                    return self._generate_one_recommendation(history)
 
             self.epoch_number = self.ri[self.bracket][self.sh_iter] * self.epoch_multiplier
             final_epoch = self.ri[self.bracket][-1] * self.epoch_multiplier
@@ -387,12 +431,13 @@ class DEHB(AutoMLAlgorithmBase):
 
         # Update DE population
         for rec in history:
-            if rec.status == JobStates.success and rec.result is not None:
+            observation = self._completed_observation_value(rec)
+            if observation is not None:
                 config_vector = self._normalize_config_to_vector(rec.specs)
                 is_duplicate = any(np.allclose(config_vector, p) for p in self.population)
                 if not is_duplicate:
                     self.population.append(config_vector)
-                    self.population_results.append(rec.result)
+                    self.population_results.append(observation)
 
                     if len(self.population) > 50:
                         if self.reverse_sort:

@@ -1,0 +1,1128 @@
+{
+  "agent_intervention_flags": {
+    "agent_changed_budget_after_results": false,
+    "agent_changed_ptm_after_results": false,
+    "agent_changed_seed_after_results": false,
+    "agent_changed_threshold_after_results": false,
+    "agent_injected_candidate": false,
+    "agent_modified_search_space_after_results": false,
+    "agent_overrode_winner": false,
+    "agent_selected_candidate": false
+  },
+  "automatic_trigger": {
+    "armed": true,
+    "launch_command": [
+      "/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin/python",
+      "-m",
+      "experiments.cross_model_automl_20260729.grounding_dino_shared_detection.qualification_campaign",
+      "--contract",
+      "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/successor.runtime.contract.v2.json",
+      "--launch"
+    ],
+    "policy": "fail_closed",
+    "poll_seconds": 30,
+    "predecessor_waits_for_full_budget": false
+  },
+  "campaign_id": "grounding-dino-synthetic-detection-objective-aware-20260730-v3",
+  "contract_sha256": "d8ddb091aa4b8f15c50660cb8394ec24073fe9fa27c102fd562d2037f6f1fee5",
+  "dataset": {
+    "conversion_manifest_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/dataset_conversion.v1.json",
+    "conversion_manifest_sha256": "25cf4bcc903d442be6fe3391778f693352a7dd7cac8ee077d4d6dcf1084e3dc4",
+    "paths": {
+      "train_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+      "train_label_map": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json",
+      "train_odvg_jsonl": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+      "validation_coco_contiguous": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json",
+      "validation_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images"
+    },
+    "source_manifest_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/datasets/tao_od_synthetic_full_dino_coco/manifest.v1.json",
+    "source_manifest_sha256": "020b6845c6429703169346d20d56c2801287acc11678385e3fcafe4f073e1d1c",
+    "stage_record_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/dataset_stage.v1.json",
+    "stage_record_sha256": "bc65ef486ea0c5e72f9068f652fa7e2fdc37e166a0170997d7a73ff64bd4134d",
+    "train_image_identity": {
+      "algorithm": "sha256_of_sorted_sha256sum_basename_lines",
+      "file_count": 1414,
+      "sha256": "8234aa9c82589690a721575fb60590df39f91e6a782fa0f1201c264e97f07b47",
+      "total_bytes": 112526760
+    },
+    "validation_image_identity": {
+      "algorithm": "sha256_of_sorted_sha256sum_basename_lines",
+      "file_count": 353,
+      "sha256": "4a4edf90146f6928e213fc0b9e1d61dbdf7214915c68025617ec07617c8608eb",
+      "total_bytes": 28345111
+    }
+  },
+  "execution": {
+    "jobs_submitted": 0,
+    "model_execution_performed": false,
+    "scheduler_mutation_performed": false
+  },
+  "integrity": {
+    "automatic_trigger_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/automatic_trigger.py",
+    "automatic_trigger_sha256": "166d455e5628cbfcf8c83078c1203b92b55d61a3afdc8ce7c43636de25475ad5",
+    "future_contract_generator_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/future_contract.py",
+    "future_contract_generator_sha256": "11c451f576693c8ac2cf13ba6422142a410b98501904e952382ad8e869133e96",
+    "inputs_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/campaign.inputs.v3.json",
+    "inputs_sha256": "387f2b3fee428d72dd4e4194c7d6a2a977bfc8b9375821c015c274d5d85669eb",
+    "qualification_launcher_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/qualification_campaign.py",
+    "qualification_launcher_sha256": "ab30c403b840e7a459fce2026deecca9b120122dec1868aa410cbaf705334d19",
+    "runtime_input_stage_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/runtime_input_stage.py",
+    "runtime_input_stage_sha256": "9ed212f69e0fdb7fc2d76c5aed8b34bc8fa62f9f4615896a7484cc270969e324",
+    "runtime_stage_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/runtime_inputs.stage.v1.json",
+    "runtime_stage_sha256": "ac5b6c12bc7d5abd06beaeb61c79426a6f917d4671551fce202fa63fe6dbe160"
+  },
+  "metric": {
+    "policy_id": "grounding_dino.coco_bbox_ap50",
+    "policy_sha256": "354077fc152f8f4b5b2bbbedf2b6889706c3e3531963eda88199d708002473d3",
+    "selection_metric": "val_mAP50",
+    "standalone_metric": "test_mAP50",
+    "standalone_metric_feeds_selection": false
+  },
+  "model": {
+    "id": "grounding_dino",
+    "task": "category_prompted_open_vocabulary_detection"
+  },
+  "pilot_handoff": {
+    "automatic": true,
+    "manual_confirmation": false,
+    "modes": [
+      "accuracy",
+      "latency",
+      "multi_objective"
+    ],
+    "one_algorithm_generated_candidate_per_mode": true,
+    "remaining_budget_release": "automatic after all three Grounding DINO candidate-0 gates pass",
+    "start_only_after_terminal_ptm_qualification": true
+  },
+  "predecessor_release": {
+    "deformable_detr": {
+      "artifact_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/deformable_detr_automl_synthetic_structured_config_fix_v1/first_candidate_gate/automatic_release.json",
+      "release_scope": "three_mode_first_candidate_gate_only; candidates 1-19 are explicitly not a dependency",
+      "required_candidate_id_template": "{mode}_rec_0",
+      "required_reason": "all frozen candidate gates passed",
+      "required_release_fields": {
+        "automatic": true,
+        "released": true,
+        "released_modes": [
+          "accuracy",
+          "latency",
+          "multi_objective"
+        ],
+        "remaining_candidates_per_mode": 19,
+        "schema_version": 1
+      },
+      "runtime_launch_manifest_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/deformable_detr_automl_synthetic_structured_config_fix_v1/launch_manifest.json",
+      "source_head": "8386f524502b1ae7e1a021a37ed8128e7a2fb719",
+      "static_campaign_manifest_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/deformable_detr_automl_synthetic/campaign.v1.json",
+      "static_campaign_manifest_sha256": "d70063f3fc6c4ed7c44d8c7d979e2dc3ffc27f576ddd13cf000648a2c2a26e83",
+      "status": "fresh_runtime_bound_release_pending"
+    },
+    "rtdetr": {
+      "artifact_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/rtdetr_three_mode_synthetic_nonfinite_signature_fix_v1/first_candidate_gate/release.json",
+      "contract_sha256": "0f82d8751501e05726e1109904bd43e52db8af835311a0048d9d7b1394a73253",
+      "required_fields": {
+        "modes": [
+          "accuracy",
+          "latency",
+          "multi_objective"
+        ],
+        "release_remaining_budget": true
+      },
+      "required_first_candidate_fields": {
+        "latency_quality_gate_passed": true,
+        "passed": true
+      }
+    }
+  },
+  "qualification": {
+    "cpu_model_runs": 0,
+    "failed_ptm_policy": "preserve_and_structurally_exclude",
+    "first_model_execution": "real_one_node_eight_gpu_full_qualification",
+    "jobs": [
+      {
+        "evaluate": {
+          "checkpoint_resolution": "one exact terminal model_epoch_009_step_*.pth under the bound training result root",
+          "command": "grounding_dino evaluate -e {config_path}",
+          "spec": {
+            "dataset": {
+              "augmentation": {
+                "fixed_padding": true,
+                "fixed_random_crop": 1024,
+                "horizontal_flip_prob": 0.5,
+                "input_mean": [
+                  0.485,
+                  0.456,
+                  0.406
+                ],
+                "input_std": [
+                  0.229,
+                  0.224,
+                  0.225
+                ],
+                "random_resize_max_size": 1333,
+                "scales": [
+                  480,
+                  512,
+                  544,
+                  576,
+                  608,
+                  640,
+                  672,
+                  704,
+                  736,
+                  768,
+                  800
+                ],
+                "test_random_resize": 800,
+                "train_random_crop_max": 600,
+                "train_random_crop_min": 384,
+                "train_random_resize": [
+                  400,
+                  500,
+                  600
+                ]
+              },
+              "batch_size": 4,
+              "dataset_type": "serialized",
+              "eval_class_ids": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "infer_data_sources": {
+                "captions": [
+                  ""
+                ],
+                "image_dir": [
+                  ""
+                ]
+              },
+              "max_labels": 50,
+              "pin_memory": true,
+              "quant_calibration_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "test_data_sources": {
+                "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+                "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json"
+              },
+              "train_data_sources": [
+                {
+                  "image_dir": "",
+                  "json_file": "",
+                  "label_map": ""
+                }
+              ],
+              "val_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "workers": 8
+            },
+            "encryption_key": "",
+            "evaluate": {
+              "batch_size": 4,
+              "checkpoint": "resolve_from_exact_training_terminal_evidence",
+              "conf_threshold": 0.0,
+              "gpu_ids": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "num_gpus": 8,
+              "num_nodes": 1,
+              "results_dir": "",
+              "trt_engine": ""
+            },
+            "model": {
+              "aux_loss": true,
+              "backbone": "swin_tiny_224_1k",
+              "backbone_names": [
+                "backbone.0",
+                "bert"
+              ],
+              "bbox_loss_coef": 5.0,
+              "class_embed_bias": true,
+              "clip_max_norm": 0.1,
+              "cls_loss_coef": 2.0,
+              "dec_layers": 6,
+              "dec_n_points": 4,
+              "decoder_sa_type": "sa",
+              "dilation": false,
+              "dim_feedforward": 2048,
+              "dn_box_noise_scale": 1.0,
+              "dn_label_noise_ratio": 0.5,
+              "dn_number": 0,
+              "dropout_ratio": 0.0,
+              "embed_init_tgt": true,
+              "enc_layers": 6,
+              "enc_n_points": 4,
+              "fix_refpoints_hw": -1,
+              "focal_alpha": 0.25,
+              "focal_gamma": 2.0,
+              "giou_loss_coef": 2.0,
+              "hidden_dim": 256,
+              "interm_loss_coef": 1.0,
+              "linear_proj_names": [
+                "reference_points",
+                "sampling_offsets"
+              ],
+              "log_scale": "auto",
+              "loss_types": [
+                "labels",
+                "boxes"
+              ],
+              "max_text_len": 256,
+              "nheads": 8,
+              "no_interm_box_loss": false,
+              "num_feature_levels": 4,
+              "num_queries": 900,
+              "num_select": 300,
+              "pe_temperatureH": 20,
+              "pe_temperatureW": 20,
+              "pre_norm": false,
+              "pretrained_backbone_path": "",
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "set_cost_bbox": 5.0,
+              "set_cost_class": 1.0,
+              "set_cost_giou": 2.0,
+              "text_encoder_type": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased/86b5e0934494bd15c9632b12f734a8a67f723594",
+              "train_backbone": true,
+              "two_stage_type": "standard",
+              "use_dn": true
+            },
+            "model_name": "",
+            "quantize": {
+              "algorithm": "minmax",
+              "backend": "torchao",
+              "backend_kwargs": {},
+              "device": "cuda",
+              "layers": [],
+              "mode": "weight_only_ptq",
+              "model_path": "",
+              "results_dir": "",
+              "skip_names": []
+            },
+            "results_dir": "",
+            "train": {
+              "activation_checkpoint": true,
+              "checkpoint_interval": 1,
+              "checkpoint_interval_unit": "epoch",
+              "clip_grad_norm": 0.1,
+              "cudnn": {
+                "benchmark": false,
+                "deterministic": true
+              },
+              "distributed_strategy": "ddp",
+              "freeze": [],
+              "gpu_ids": [
+                0
+              ],
+              "is_dry_run": false,
+              "num_epochs": 10,
+              "num_gpus": 1,
+              "num_nodes": 1,
+              "optim": {
+                "lr": 0.0002,
+                "lr_backbone": 2e-05,
+                "lr_decay": 0.1,
+                "lr_linear_proj_mult": 0.1,
+                "lr_scheduler": "MultiStep",
+                "lr_step_size": 10,
+                "lr_steps": [
+                  10
+                ],
+                "momentum": 0.9,
+                "monitor_name": "val_loss",
+                "optimizer": "AdamW",
+                "weight_decay": 0.0001
+              },
+              "precision": "fp32",
+              "pretrained_model_path": "",
+              "results_dir": "",
+              "resume_training_checkpoint_path": "",
+              "seed": 1234,
+              "validation_interval": 1
+            },
+            "wandb": {
+              "enable": false,
+              "entity": "",
+              "group": "",
+              "name": "TAO Toolkit Training",
+              "project": "TAO Toolkit",
+              "reinit": false,
+              "run_id": "",
+              "save_code": false,
+              "sync_tensorboard": false,
+              "tags": [
+                "tao-toolkit"
+              ]
+            }
+          },
+          "spec_sha256": "f5216f6d87f3861ffbaeb8972ad2e53b3a38562884ac9f6e3cace5a588ae6084",
+          "test_metrics_feed_selection": false
+        },
+        "ptm_id": "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+        "registry_status_before_qualification": "unverified",
+        "resources": {
+          "distributed_workers": 8,
+          "gpus_per_node": 8,
+          "nodes": 1,
+          "time_hours": 4,
+          "timeout_hours": 3.8
+        },
+        "staged_checkpoint": {
+          "mode": "400",
+          "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.0/grounding_dino_swin_tiny_commercial_trainable.pth",
+          "sha256": "20c3ea116d1b841063aa5efffdd386b3d85a1c35f2d702d3c95150ef1efead73",
+          "size_bytes": 2070704394,
+          "verification_mode": "immutable_identity_observed_sha256"
+        },
+        "text_encoder_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased/86b5e0934494bd15c9632b12f734a8a67f723594",
+        "train": {
+          "command": "grounding_dino train -e {config_path}",
+          "spec": {
+            "dataset": {
+              "augmentation": {
+                "fixed_padding": true,
+                "fixed_random_crop": 1024,
+                "horizontal_flip_prob": 0.5,
+                "input_mean": [
+                  0.485,
+                  0.456,
+                  0.406
+                ],
+                "input_std": [
+                  0.229,
+                  0.224,
+                  0.225
+                ],
+                "random_resize_max_size": 1333,
+                "scales": [
+                  480,
+                  512,
+                  544,
+                  576,
+                  608,
+                  640,
+                  672,
+                  704,
+                  736,
+                  768,
+                  800
+                ],
+                "test_random_resize": 800,
+                "train_random_crop_max": 600,
+                "train_random_crop_min": 384,
+                "train_random_resize": [
+                  400,
+                  500,
+                  600
+                ]
+              },
+              "batch_size": 4,
+              "dataset_type": "serialized",
+              "eval_class_ids": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "infer_data_sources": {
+                "captions": [
+                  ""
+                ],
+                "image_dir": [
+                  ""
+                ]
+              },
+              "max_labels": 50,
+              "pin_memory": true,
+              "quant_calibration_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "test_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "train_data_sources": [
+                {
+                  "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+                  "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+                  "label_map": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json"
+                }
+              ],
+              "val_data_sources": {
+                "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+                "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json"
+              },
+              "workers": 8
+            },
+            "encryption_key": "",
+            "model": {
+              "aux_loss": true,
+              "backbone": "swin_tiny_224_1k",
+              "backbone_names": [
+                "backbone.0",
+                "bert"
+              ],
+              "bbox_loss_coef": 5.0,
+              "class_embed_bias": true,
+              "clip_max_norm": 0.1,
+              "cls_loss_coef": 2.0,
+              "dec_layers": 6,
+              "dec_n_points": 4,
+              "decoder_sa_type": "sa",
+              "dilation": false,
+              "dim_feedforward": 2048,
+              "dn_box_noise_scale": 1.0,
+              "dn_label_noise_ratio": 0.5,
+              "dn_number": 0,
+              "dropout_ratio": 0.0,
+              "embed_init_tgt": true,
+              "enc_layers": 6,
+              "enc_n_points": 4,
+              "fix_refpoints_hw": -1,
+              "focal_alpha": 0.25,
+              "focal_gamma": 2.0,
+              "giou_loss_coef": 2.0,
+              "hidden_dim": 256,
+              "interm_loss_coef": 1.0,
+              "linear_proj_names": [
+                "reference_points",
+                "sampling_offsets"
+              ],
+              "log_scale": "auto",
+              "loss_types": [
+                "labels",
+                "boxes"
+              ],
+              "max_text_len": 256,
+              "nheads": 8,
+              "no_interm_box_loss": false,
+              "num_feature_levels": 4,
+              "num_queries": 900,
+              "num_select": 300,
+              "pe_temperatureH": 20,
+              "pe_temperatureW": 20,
+              "pre_norm": false,
+              "pretrained_backbone_path": "",
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "set_cost_bbox": 5.0,
+              "set_cost_class": 1.0,
+              "set_cost_giou": 2.0,
+              "text_encoder_type": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased/86b5e0934494bd15c9632b12f734a8a67f723594",
+              "train_backbone": true,
+              "two_stage_type": "standard",
+              "use_dn": true
+            },
+            "model_name": "",
+            "quantize": {
+              "algorithm": "minmax",
+              "backend": "torchao",
+              "backend_kwargs": {},
+              "device": "cuda",
+              "layers": [],
+              "mode": "weight_only_ptq",
+              "model_path": "",
+              "results_dir": "",
+              "skip_names": []
+            },
+            "results_dir": "",
+            "train": {
+              "activation_checkpoint": true,
+              "checkpoint_interval": 1,
+              "checkpoint_interval_unit": "epoch",
+              "clip_grad_norm": 0.1,
+              "cudnn": {
+                "benchmark": false,
+                "deterministic": true
+              },
+              "distributed_strategy": "ddp",
+              "freeze": [],
+              "gpu_ids": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "is_dry_run": false,
+              "num_epochs": 10,
+              "num_gpus": 8,
+              "num_nodes": 1,
+              "optim": {
+                "lr": 0.0002,
+                "lr_backbone": 2e-05,
+                "lr_decay": 0.1,
+                "lr_linear_proj_mult": 0.1,
+                "lr_scheduler": "MultiStep",
+                "lr_step_size": 10,
+                "lr_steps": [
+                  10
+                ],
+                "momentum": 0.9,
+                "monitor_name": "val_loss",
+                "optimizer": "AdamW",
+                "weight_decay": 0.0001
+              },
+              "precision": "fp32",
+              "pretrained_model_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.0/grounding_dino_swin_tiny_commercial_trainable.pth",
+              "results_dir": "",
+              "resume_training_checkpoint_path": "",
+              "seed": 1234,
+              "validation_interval": 1
+            },
+            "wandb": {
+              "enable": false,
+              "entity": "",
+              "group": "",
+              "name": "TAO Toolkit Training",
+              "project": "TAO Toolkit",
+              "reinit": false,
+              "run_id": "",
+              "save_code": false,
+              "sync_tensorboard": false,
+              "tags": [
+                "tao-toolkit"
+              ]
+            }
+          },
+          "spec_sha256": "fa60e62c87bbdb7a503ef3586d801a34b6154ce4a4ab7768990fba20761a9e34"
+        },
+        "workflow_id": "official_ptm_0"
+      },
+      {
+        "evaluate": {
+          "checkpoint_resolution": "one exact terminal model_epoch_009_step_*.pth under the bound training result root",
+          "command": "grounding_dino evaluate -e {config_path}",
+          "spec": {
+            "dataset": {
+              "augmentation": {
+                "fixed_padding": true,
+                "fixed_random_crop": 1024,
+                "horizontal_flip_prob": 0.5,
+                "input_mean": [
+                  0.485,
+                  0.456,
+                  0.406
+                ],
+                "input_std": [
+                  0.229,
+                  0.224,
+                  0.225
+                ],
+                "random_resize_max_size": 1333,
+                "scales": [
+                  480,
+                  512,
+                  544,
+                  576,
+                  608,
+                  640,
+                  672,
+                  704,
+                  736,
+                  768,
+                  800
+                ],
+                "test_random_resize": 800,
+                "train_random_crop_max": 600,
+                "train_random_crop_min": 384,
+                "train_random_resize": [
+                  400,
+                  500,
+                  600
+                ]
+              },
+              "batch_size": 4,
+              "dataset_type": "serialized",
+              "eval_class_ids": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "infer_data_sources": {
+                "captions": [
+                  ""
+                ],
+                "image_dir": [
+                  ""
+                ]
+              },
+              "max_labels": 50,
+              "pin_memory": true,
+              "quant_calibration_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "test_data_sources": {
+                "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+                "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json"
+              },
+              "train_data_sources": [
+                {
+                  "image_dir": "",
+                  "json_file": "",
+                  "label_map": ""
+                }
+              ],
+              "val_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "workers": 8
+            },
+            "encryption_key": "",
+            "evaluate": {
+              "batch_size": 4,
+              "checkpoint": "resolve_from_exact_training_terminal_evidence",
+              "conf_threshold": 0.0,
+              "gpu_ids": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "num_gpus": 8,
+              "num_nodes": 1,
+              "results_dir": "",
+              "trt_engine": ""
+            },
+            "model": {
+              "aux_loss": true,
+              "backbone": "swin_tiny_224_1k",
+              "backbone_names": [
+                "backbone.0",
+                "bert"
+              ],
+              "bbox_loss_coef": 5.0,
+              "class_embed_bias": true,
+              "clip_max_norm": 0.1,
+              "cls_loss_coef": 2.0,
+              "dec_layers": 6,
+              "dec_n_points": 4,
+              "decoder_sa_type": "sa",
+              "dilation": false,
+              "dim_feedforward": 2048,
+              "dn_box_noise_scale": 1.0,
+              "dn_label_noise_ratio": 0.5,
+              "dn_number": 0,
+              "dropout_ratio": 0.0,
+              "embed_init_tgt": true,
+              "enc_layers": 6,
+              "enc_n_points": 4,
+              "fix_refpoints_hw": -1,
+              "focal_alpha": 0.25,
+              "focal_gamma": 2.0,
+              "giou_loss_coef": 2.0,
+              "hidden_dim": 256,
+              "interm_loss_coef": 1.0,
+              "linear_proj_names": [
+                "reference_points",
+                "sampling_offsets"
+              ],
+              "log_scale": "auto",
+              "loss_types": [
+                "labels",
+                "boxes"
+              ],
+              "max_text_len": 256,
+              "nheads": 8,
+              "no_interm_box_loss": false,
+              "num_feature_levels": 4,
+              "num_queries": 900,
+              "num_select": 300,
+              "pe_temperatureH": 20,
+              "pe_temperatureW": 20,
+              "pre_norm": false,
+              "pretrained_backbone_path": "",
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "set_cost_bbox": 5.0,
+              "set_cost_class": 1.0,
+              "set_cost_giou": 2.0,
+              "text_encoder_type": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased/86b5e0934494bd15c9632b12f734a8a67f723594",
+              "train_backbone": true,
+              "two_stage_type": "standard",
+              "use_dn": true
+            },
+            "model_name": "",
+            "quantize": {
+              "algorithm": "minmax",
+              "backend": "torchao",
+              "backend_kwargs": {},
+              "device": "cuda",
+              "layers": [],
+              "mode": "weight_only_ptq",
+              "model_path": "",
+              "results_dir": "",
+              "skip_names": []
+            },
+            "results_dir": "",
+            "train": {
+              "activation_checkpoint": true,
+              "checkpoint_interval": 1,
+              "checkpoint_interval_unit": "epoch",
+              "clip_grad_norm": 0.1,
+              "cudnn": {
+                "benchmark": false,
+                "deterministic": true
+              },
+              "distributed_strategy": "ddp",
+              "freeze": [],
+              "gpu_ids": [
+                0
+              ],
+              "is_dry_run": false,
+              "num_epochs": 10,
+              "num_gpus": 1,
+              "num_nodes": 1,
+              "optim": {
+                "lr": 0.0002,
+                "lr_backbone": 2e-05,
+                "lr_decay": 0.1,
+                "lr_linear_proj_mult": 0.1,
+                "lr_scheduler": "MultiStep",
+                "lr_step_size": 10,
+                "lr_steps": [
+                  10
+                ],
+                "momentum": 0.9,
+                "monitor_name": "val_loss",
+                "optimizer": "AdamW",
+                "weight_decay": 0.0001
+              },
+              "precision": "fp32",
+              "pretrained_model_path": "",
+              "results_dir": "",
+              "resume_training_checkpoint_path": "",
+              "seed": 1234,
+              "validation_interval": 1
+            },
+            "wandb": {
+              "enable": false,
+              "entity": "",
+              "group": "",
+              "name": "TAO Toolkit Training",
+              "project": "TAO Toolkit",
+              "reinit": false,
+              "run_id": "",
+              "save_code": false,
+              "sync_tensorboard": false,
+              "tags": [
+                "tao-toolkit"
+              ]
+            }
+          },
+          "spec_sha256": "f5216f6d87f3861ffbaeb8972ad2e53b3a38562884ac9f6e3cace5a588ae6084",
+          "test_metrics_feed_selection": false
+        },
+        "ptm_id": "grounding_dino.commercial.swin_tiny.trainable.v1.1",
+        "registry_status_before_qualification": "unverified",
+        "resources": {
+          "distributed_workers": 8,
+          "gpus_per_node": 8,
+          "nodes": 1,
+          "time_hours": 4,
+          "timeout_hours": 3.8
+        },
+        "staged_checkpoint": {
+          "mode": "400",
+          "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.1/grounding_dino_swin_tiny_commercial_trainable.pth",
+          "sha256": "8ea7e089e174e72a7fe57ff63cdba5e1e4994b159e41cf72122a7e0d841beaa6",
+          "size_bytes": 2070860191,
+          "verification_mode": "registered_sha256"
+        },
+        "text_encoder_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased/86b5e0934494bd15c9632b12f734a8a67f723594",
+        "train": {
+          "command": "grounding_dino train -e {config_path}",
+          "spec": {
+            "dataset": {
+              "augmentation": {
+                "fixed_padding": true,
+                "fixed_random_crop": 1024,
+                "horizontal_flip_prob": 0.5,
+                "input_mean": [
+                  0.485,
+                  0.456,
+                  0.406
+                ],
+                "input_std": [
+                  0.229,
+                  0.224,
+                  0.225
+                ],
+                "random_resize_max_size": 1333,
+                "scales": [
+                  480,
+                  512,
+                  544,
+                  576,
+                  608,
+                  640,
+                  672,
+                  704,
+                  736,
+                  768,
+                  800
+                ],
+                "test_random_resize": 800,
+                "train_random_crop_max": 600,
+                "train_random_crop_min": 384,
+                "train_random_resize": [
+                  400,
+                  500,
+                  600
+                ]
+              },
+              "batch_size": 4,
+              "dataset_type": "serialized",
+              "eval_class_ids": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "infer_data_sources": {
+                "captions": [
+                  ""
+                ],
+                "image_dir": [
+                  ""
+                ]
+              },
+              "max_labels": 50,
+              "pin_memory": true,
+              "quant_calibration_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "test_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "train_data_sources": [
+                {
+                  "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+                  "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+                  "label_map": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json"
+                }
+              ],
+              "val_data_sources": {
+                "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+                "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json"
+              },
+              "workers": 8
+            },
+            "encryption_key": "",
+            "model": {
+              "aux_loss": true,
+              "backbone": "swin_tiny_224_1k",
+              "backbone_names": [
+                "backbone.0",
+                "bert"
+              ],
+              "bbox_loss_coef": 5.0,
+              "class_embed_bias": true,
+              "clip_max_norm": 0.1,
+              "cls_loss_coef": 2.0,
+              "dec_layers": 6,
+              "dec_n_points": 4,
+              "decoder_sa_type": "sa",
+              "dilation": false,
+              "dim_feedforward": 2048,
+              "dn_box_noise_scale": 1.0,
+              "dn_label_noise_ratio": 0.5,
+              "dn_number": 0,
+              "dropout_ratio": 0.0,
+              "embed_init_tgt": true,
+              "enc_layers": 6,
+              "enc_n_points": 4,
+              "fix_refpoints_hw": -1,
+              "focal_alpha": 0.25,
+              "focal_gamma": 2.0,
+              "giou_loss_coef": 2.0,
+              "hidden_dim": 256,
+              "interm_loss_coef": 1.0,
+              "linear_proj_names": [
+                "reference_points",
+                "sampling_offsets"
+              ],
+              "log_scale": "auto",
+              "loss_types": [
+                "labels",
+                "boxes"
+              ],
+              "max_text_len": 256,
+              "nheads": 8,
+              "no_interm_box_loss": false,
+              "num_feature_levels": 4,
+              "num_queries": 900,
+              "num_select": 300,
+              "pe_temperatureH": 20,
+              "pe_temperatureW": 20,
+              "pre_norm": false,
+              "pretrained_backbone_path": "",
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "set_cost_bbox": 5.0,
+              "set_cost_class": 1.0,
+              "set_cost_giou": 2.0,
+              "text_encoder_type": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased/86b5e0934494bd15c9632b12f734a8a67f723594",
+              "train_backbone": true,
+              "two_stage_type": "standard",
+              "use_dn": true
+            },
+            "model_name": "",
+            "quantize": {
+              "algorithm": "minmax",
+              "backend": "torchao",
+              "backend_kwargs": {},
+              "device": "cuda",
+              "layers": [],
+              "mode": "weight_only_ptq",
+              "model_path": "",
+              "results_dir": "",
+              "skip_names": []
+            },
+            "results_dir": "",
+            "train": {
+              "activation_checkpoint": true,
+              "checkpoint_interval": 1,
+              "checkpoint_interval_unit": "epoch",
+              "clip_grad_norm": 0.1,
+              "cudnn": {
+                "benchmark": false,
+                "deterministic": true
+              },
+              "distributed_strategy": "ddp",
+              "freeze": [],
+              "gpu_ids": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "is_dry_run": false,
+              "num_epochs": 10,
+              "num_gpus": 8,
+              "num_nodes": 1,
+              "optim": {
+                "lr": 0.0002,
+                "lr_backbone": 2e-05,
+                "lr_decay": 0.1,
+                "lr_linear_proj_mult": 0.1,
+                "lr_scheduler": "MultiStep",
+                "lr_step_size": 10,
+                "lr_steps": [
+                  10
+                ],
+                "momentum": 0.9,
+                "monitor_name": "val_loss",
+                "optimizer": "AdamW",
+                "weight_decay": 0.0001
+              },
+              "precision": "fp32",
+              "pretrained_model_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.1/grounding_dino_swin_tiny_commercial_trainable.pth",
+              "results_dir": "",
+              "resume_training_checkpoint_path": "",
+              "seed": 1234,
+              "validation_interval": 1
+            },
+            "wandb": {
+              "enable": false,
+              "entity": "",
+              "group": "",
+              "name": "TAO Toolkit Training",
+              "project": "TAO Toolkit",
+              "reinit": false,
+              "run_id": "",
+              "save_code": false,
+              "sync_tensorboard": false,
+              "tags": [
+                "tao-toolkit"
+              ]
+            }
+          },
+          "spec_sha256": "3054f48f0d7f5c6caf865e260ba4b7f328a0496164cd924bf192502773b30af5"
+        },
+        "workflow_id": "official_ptm_1"
+      }
+    ],
+    "minimum_supported_ptms_for_pilot": 1,
+    "replacement_ptm_submission": false,
+    "smoke_or_ministep_runs": 0,
+    "submit_in_parallel": true
+  },
+  "runtime": {
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "base_results_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+    "container_mounts": "/lustre",
+    "offline_environment": {
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "model_text_encoder_type": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased/86b5e0934494bd15c9632b12f734a8a67f723594"
+    },
+    "partition": "polar3",
+    "sdk_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-sdk-slurm-a2e50d0",
+    "sdk_revision": "a2e50d0930c3e3785b4b39fa8c3da88b39ff89e5",
+    "skill_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-grounding-dino",
+    "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "sqsh_size_bytes": 28860358656,
+    "tao_version": "7.1.0-rc-245"
+  },
+  "runtime_inputs": {
+    "bert_revision": "86b5e0934494bd15c9632b12f734a8a67f723594",
+    "bert_tree_sha256": "04cd5cc67804f4752df93e7c05dd51d904e82fc05d28794ddb03504cca689fb5",
+    "official_ptm_count": 2,
+    "stage_record_file_sha256": "ac5b6c12bc7d5abd06beaeb61c79426a6f917d4671551fce202fa63fe6dbe160",
+    "stage_record_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/runtime_inputs.stage.v1.json",
+    "stage_record_semantic_sha256": "3b52818de9bd438330a8530c36c5e60c62fdb367b9f7ae93688eebafaa38db8f"
+  },
+  "schema_version": 2,
+  "source": {
+    "minimum_ancestor_commit": "8c2c24bb5d5a4919819fc548b802e22e5850ee19",
+    "repository": "/localhome/local-rarunachalam/tao-automl"
+  }
+}

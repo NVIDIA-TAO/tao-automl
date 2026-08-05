@@ -1,0 +1,170 @@
+{
+  "algorithm_only_generation_and_selection": true,
+  "frozen_prohibitions": {
+    "manual_candidate_injection": false,
+    "matched_measurements_feed_reselection": false,
+    "matched_measurements_feed_selection": false,
+    "multi_objective_inherits_latency_retention": false,
+    "post_result_range_change": false,
+    "post_result_seed_or_budget_change": false,
+    "post_result_threshold_change": false,
+    "winner_override": false
+  },
+  "manifest_id": "dino_low_latency_followup_90pct_20260728_v1",
+  "manifest_sha256": "c1b6b5c5d704ec2a4eb5fc792b7666470e20d5245f26301a67afeae1ba684280",
+  "manual_candidate_injection_permitted": false,
+  "runtime": {
+    "container_format": "SQSH",
+    "gpus_per_node": 8,
+    "num_nodes": 1,
+    "platform": "SLURM via TAO SDK",
+    "precision": "fp32",
+    "retain_every_produced_checkpoint": true,
+    "retain_every_trial_artifact": true,
+    "target_runtime_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/low_latency_followup_v1",
+    "train_epochs": 10
+  },
+  "schema_version": 1,
+  "scope": {
+    "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "model_family": "DINO ResNet50",
+    "other_datasets_permitted": false,
+    "other_models_permitted": false
+  },
+  "sealed_source": {
+    "existing_archive": {
+      "candidate_count": 60,
+      "candidate_table_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_candidate_table.json",
+      "candidate_table_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03",
+      "combined_selection_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_combined_selection.json",
+      "combined_selection_sha256": "78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1",
+      "final_selection_input": true,
+      "optimizer_prior_input": false
+    },
+    "expanded_search_manifest": {
+      "internal_manifest_sha256": "910744ae2fead7e4e2e9a53fc672baef1ac43307e3979671b2b876fff422de96",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_manifest.v2.json",
+      "whole_file_sha256": "9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a"
+    },
+    "expanded_search_runner": {
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_runner.py",
+      "reuse": "schema/spec/SLURM/evaluation/latency/resume/archive execution engine",
+      "sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073"
+    },
+    "followup_runner": {
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_90_policy/low_latency_followup_runner.py",
+      "sha256": "003704d292d011d58081d8309af0ddc534aeefccdf2c5a653079ae5d97f077fe"
+    },
+    "latency_policy_profile": {
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/dino_latency_90_policy_profile.v1.json",
+      "sha256": "f6e56ff8d61c91654a13c9759d7cc63f371ed66a9e958bb90ae56cba5112739e"
+    },
+    "source_repository": {
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "path": "/localhome/local-rarunachalam/tao-automl",
+      "required_ancestor_commit": "d92d9e8517128fbb168b47dbdf2de591ace199d6"
+    }
+  },
+  "search_design": {
+    "algorithm": "bayesian",
+    "final_selection_population": "sealed_60_plus_all_valid_new_candidates",
+    "manual_candidate_injection_permitted": false,
+    "new_candidate_budget": 60,
+    "optimizer_generation_population": "new_candidates_only",
+    "optimizer_selection_mode": "latency",
+    "recommendations_per_seed": 20,
+    "result_ordered_search_changes_permitted": false,
+    "search_seeds": [
+      409976740,
+      1455024938,
+      1415367367
+    ],
+    "seed_derivation": {
+      "formula": "int.from_bytes(SHA256(UTF8(material)).digest()[:4], 'big') & 0x7fffffff",
+      "records": [
+        {
+          "index": 0,
+          "material_utf8": "dino-low-latency-followup-v1:0",
+          "seed": 409976740,
+          "sha256": "186fbfa40c701027265e21568fb156c4e5e76f8b335cf68934558e9218c78aa5"
+        },
+        {
+          "index": 1,
+          "material_utf8": "dino-low-latency-followup-v1:1",
+          "seed": 1455024938,
+          "sha256": "d6b9eb2a44d1c99ee3fa6f5f627bdd03e53092b6ecfc32d1c846c9180709cea2"
+        },
+        {
+          "index": 2,
+          "material_utf8": "dino-low-latency-followup-v1:2",
+          "seed": 1415367367,
+          "sha256": "d45ccac7d0bdeb4df3bc0c72e698a3707dfc08f10a08bf514b35bef5b41cfb47"
+        }
+      ]
+    },
+    "training_seed": 1234
+  },
+  "search_space": {
+    "rationale": "Use latency-mode Bayesian generation over the complete supported architecture domain whose encoder and decoder depth effects exceeded the frozen noise floor. The production 90%-retention constrained latency objective prioritizes low meaningful latency without a weighted accuracy-latency score. New SHA-derived trajectories provide additional algorithmic opportunities to pair low layer counts with accuracy-supporting optimizer settings; no categorical weighting or result-driven narrowing is used.",
+    "search_domains": {
+      "model.dec_layers": {
+        "representation": "ordered_integer_levels",
+        "valid_max": 6,
+        "valid_min": 3,
+        "valid_options": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "model.enc_layers": {
+        "representation": "ordered_integer_levels",
+        "valid_max": 6,
+        "valid_min": 3,
+        "valid_options": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "train.optim.lr": {
+        "representation": "continuous",
+        "valid_max": 0.0005,
+        "valid_min": 1e-05
+      },
+      "train.optim.weight_decay": {
+        "representation": "continuous",
+        "valid_max": 0.001,
+        "valid_min": 1e-05
+      }
+    },
+    "search_parameters": [
+      "model.enc_layers",
+      "model.dec_layers",
+      "train.optim.lr",
+      "train.optim.weight_decay"
+    ]
+  },
+  "selection": {
+    "final_union_threshold_rule": "Production latency mode recomputes 0.90 * the highest valid accuracy in the sealed-old-plus-new union.",
+    "fixed_opportunity_question": {
+      "does_not_replace_relative_policy_for_final_union_selection": true,
+      "minimum_mAP50": 0.589872445081493,
+      "purpose": "Determine whether an algorithm-generated lower-latency architecture reaches the frozen existing-archive floor.",
+      "reference_accuracy": 0.6554138278683255,
+      "reference_archive_accuracy_winner": "seed_271828_rec_18",
+      "retained_fraction": 0.9
+    },
+    "latency_accuracy_retention": {
+      "reference": "accuracy_winner",
+      "retained_fraction": 0.9,
+      "type": "relative"
+    },
+    "latency_tolerance_ms": 0.73553775,
+    "multi_objective_min_accuracy": null
+  },
+  "status": "preregistered_ready_to_launch",
+  "winner_override_permitted": false
+}

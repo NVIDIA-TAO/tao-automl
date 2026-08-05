@@ -1,0 +1,68 @@
+{
+  "audit_role": "read_only_static_preflight",
+  "container": {
+    "image_reference": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
+    "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "size_bytes": 28860358656
+  },
+  "execution": {
+    "cpu_model_runs": 0,
+    "gpu_model_runs": 0,
+    "mini_step_runs": 0,
+    "model_smoke_runs": 0,
+    "slurm_jobs_submitted": 0
+  },
+  "findings": [
+    {
+      "code": "oneformer_full_checkpoint_loader_missing",
+      "evidence": {
+        "callee": "OneformerPlModule.load_pretrained_weights",
+        "caller": "nvidia_tao_pytorch.cv.oneformer.scripts.train",
+        "method_defined_on_packaged_class": false
+      },
+      "launch_blocking": true,
+      "reason": "The packaged train entrypoint calls an undefined method whenever train.pretrained_model is populated."
+    },
+    {
+      "code": "oneformer_panoptic_pq_not_emitted",
+      "evidence": {
+        "emitted_metric": "mIoU",
+        "requested_task": "panoptic_segmentation",
+        "task_correct_product_metric": "PQ"
+      },
+      "launch_blocking": true,
+      "reason": "The packaged train/evaluate implementation computes semantic IoU from panoptic annotations and does not emit Panoptic Quality."
+    },
+    {
+      "code": "oneformer_ddp_status_metric_not_globally_reduced",
+      "evidence": {
+        "lightning_log_sync_dist": true,
+        "status_kpi_source": "per_process_combined_miou",
+        "status_kpi_written_after_global_confusion_reduction": false
+      },
+      "launch_blocking": true,
+      "reason": "The status KPI consumed by the campaign is assigned from each process's local aggregate instead of a globally reduced confusion statistic."
+    }
+  ],
+  "files": [
+    {
+      "path": "usr/local/lib/python3.12/dist-packages/nvidia_tao_pytorch/cv/oneformer/model/pl_oneformer.py",
+      "sha256": "ff88ebe709fc0f036a389c93cdb52534f5a9ad16bc3145050e4307e188b427b9",
+      "size_bytes": 38594
+    },
+    {
+      "path": "usr/local/lib/python3.12/dist-packages/nvidia_tao_pytorch/cv/oneformer/scripts/train.py",
+      "sha256": "0e089ec27fc21acacd179fead4d46617becacd31c9f4d9451c5ded09602cfc23",
+      "size_bytes": 2663
+    },
+    {
+      "path": "usr/local/lib/python3.12/dist-packages/nvidia_tao_pytorch/cv/oneformer/scripts/evaluate.py",
+      "sha256": "46019bd393d534e40d41297f4d88363806810ecf50a53c2d0acdbf3eb202e5cd",
+      "size_bytes": 1693
+    }
+  ],
+  "model": "oneformer",
+  "schema_version": 1,
+  "verdict": "blocked_before_model_execution"
+}

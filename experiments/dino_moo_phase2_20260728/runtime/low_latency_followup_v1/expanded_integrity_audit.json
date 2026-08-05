@@ -1,0 +1,99 @@
+{
+  "artifacts": {
+    "candidate_table_csv": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/low_latency_followup_v1/expanded_candidate_table.csv",
+    "candidate_table_csv_sha256": "a52003ce292c63f5904f1a632d986f40e22403dda7a667748b0f5a0a82167e03",
+    "candidate_table_json": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/low_latency_followup_v1/expanded_candidate_table.json",
+    "candidate_table_json_sha256": "fe423a61b3efa9222b4b25b6da0f303c3e84eb4e5cc1864aad09c5b6a311479c",
+    "combined_selection": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/low_latency_followup_v1/expanded_combined_selection.json",
+    "combined_selection_sha256": "d94a95a8a5cdf5116465caa7944912a5a2fb1de37983aa5032516411ae2c773c"
+  },
+  "candidate_budget": {
+    "new_expected": 60,
+    "new_observed": 60,
+    "new_successful": 59,
+    "sealed": 60,
+    "union_observed": 120,
+    "union_successful": 119
+  },
+  "checkpoint_retention": {
+    "automl_delete_intermediate_ckpt": false,
+    "every_produced_checkpoint_retained": true,
+    "every_trial_artifact_retained": true
+  },
+  "created_at_utc": "2026-07-29T05:29:12Z",
+  "generation": {
+    "algorithm_only": true,
+    "manual_candidate_injection_used": false,
+    "optimizer_prior_candidate_count": 0,
+    "result_ordered_search_changes_used": false
+  },
+  "manifest": {
+    "internal_manifest_sha256": "c1b6b5c5d704ec2a4eb5fc792b7666470e20d5245f26301a67afeae1ba684280",
+    "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_90_policy/low_latency_followup_manifest.v1.json",
+    "whole_file_sha256": "1f0e25f0230fa84f702f3ff60dac91bce0fa284e90b4faf950b27e9cb2cbed7a"
+  },
+  "schema_version": 1,
+  "scope": {
+    "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "model_family": "DINO ResNet50",
+    "other_datasets_permitted": false,
+    "other_models_permitted": false
+  },
+  "selection": {
+    "candidate_reordering_used": false,
+    "manual_override_used": false,
+    "selected_candidate_ids": {
+      "accuracy": "seed_271828_rec_18",
+      "latency": "seed_271828_rec_19",
+      "multi_objective": "seed_271828_rec_19"
+    },
+    "settings": {
+      "accuracy_metric": "mAP50",
+      "accuracy_tolerance": 1e-12,
+      "algorithm": "bayesian",
+      "augmentation_rho": 1e-06,
+      "automl_checkpoint_retention_strategy": "terminal",
+      "automl_delete_intermediate_ckpt": false,
+      "automl_max_concurrent": 1,
+      "automl_max_recommendations": 20,
+      "experiment_id": "dino_low_latency_followup_seed_409976740",
+      "latency_accuracy_retention": {
+        "reference": "accuracy_winner",
+        "retained_fraction": 0.9,
+        "type": "relative"
+      },
+      "latency_ci_high_metric": "latency_ci95_high",
+      "latency_ci_low_metric": "latency_ci95_low",
+      "latency_metric": "latency_ms",
+      "latency_tolerance": 0.73553775,
+      "multi_objective_min_accuracy": null,
+      "objective_normalization": "pareto_front",
+      "objectives": [
+        {
+          "direction": "maximize",
+          "metric": "mAP50",
+          "weight": 1.0
+        },
+        {
+          "direction": "minimize",
+          "metric": "latency_ms",
+          "weight": 1.0
+        }
+      ],
+      "random_seed": 409976740,
+      "require_eval_fn_success": true,
+      "run_baseline": false,
+      "run_final_evaluation": false,
+      "selection_mode": "latency",
+      "selection_score_tolerance": 1e-12,
+      "session_id": "dino_low_latency_followup_seed_409976740"
+    }
+  },
+  "selection_isolation": {
+    "algorithm_selected_candidate_overridden": false,
+    "measurements_feed_reselection": false,
+    "measurements_feed_selection": false,
+    "selection_time_objectives_replaced": false,
+    "selector_invoked_on_matched_measurements": false
+  }
+}

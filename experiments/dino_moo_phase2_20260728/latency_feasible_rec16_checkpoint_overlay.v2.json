@@ -1,0 +1,106 @@
+{
+  "execution_tools": {
+    "latency_feasible_checkpoint_overlay.py": {
+      "clean_against_head": true,
+      "committed": true,
+      "git_blob": "a86605419a8d926d5de8c209d9ccf27187829ea6",
+      "head_git_blob": "a86605419a8d926d5de8c209d9ccf27187829ea6",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_feasible_checkpoint_overlay.py",
+      "relative_path": "experiments/dino_moo_phase2_20260728/latency_feasible_checkpoint_overlay.py",
+      "sha256": "98ea3bf0adafafd09500437ba153174939e597b374f17302d1cfd4fac1920570",
+      "tracked": true
+    },
+    "latency_feasible_matched_aggregator_v2.py": {
+      "clean_against_head": true,
+      "committed": true,
+      "git_blob": "4f0887c9c9cfcdc887a16ad9b6df440c035dcfe1",
+      "head_git_blob": "4f0887c9c9cfcdc887a16ad9b6df440c035dcfe1",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_feasible_matched_aggregator_v2.py",
+      "relative_path": "experiments/dino_moo_phase2_20260728/latency_feasible_matched_aggregator_v2.py",
+      "sha256": "738fc0e6b17cc44b6ca46d69f73a262b515b229e53eedf36dbff3839c15e9ada",
+      "tracked": true
+    },
+    "latency_feasible_matched_launcher_v2.py": {
+      "clean_against_head": true,
+      "committed": true,
+      "git_blob": "6064c759d7ba9caa00c94a29a03cedddeda1b9a0",
+      "head_git_blob": "6064c759d7ba9caa00c94a29a03cedddeda1b9a0",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_feasible_matched_launcher_v2.py",
+      "relative_path": "experiments/dino_moo_phase2_20260728/latency_feasible_matched_launcher_v2.py",
+      "sha256": "ff34ec203f24f936adb0fa39126debc187b06f7c463d5398a30e4209204d7d4b",
+      "tracked": true
+    }
+  },
+  "invariants": {
+    "candidate_audits_changed": false,
+    "candidate_order_changed": false,
+    "candidate_set_changed": false,
+    "frozen_archive_mutated": false,
+    "original_checkpoint_still_recorded": true,
+    "recovered_checkpoint_is_historical_artifact": false,
+    "resolved_model_spec_changed": false,
+    "schedule_changed": false,
+    "selection_snapshot_changed": false,
+    "selection_time_objectives_changed": false,
+    "substitution_count": 1,
+    "winner_identities_changed": false
+  },
+  "overlay_id": "dino_latency_feasible_rec16_checkpoint_overlay_20260728_v2",
+  "overlay_sha256": "e2e6446e3dca7f52e7b2bac682c26bc5b711067b0a18dae71cfbb24f5a44402c",
+  "parent_manifest": {
+    "candidate_audits_sha256": "1f32e4eb8ae7c63f70c409c552762942bd863a2f6cfcef47a3f09c34b70ccd43",
+    "candidate_set_sha256": "143a2cf63b3b6d700cc2cd124f15a12ef6bdf58b85c2a6af5fdc4bcbfc73bce1",
+    "internal_sha256": "32c268f11742c26bdc47c61272f73a6d9f651317606e9102e75585bc7d2100e9",
+    "manifest_id": "dino_latency_feasible_matched_20260728_v1",
+    "objective_projection_sha256": "cc05fe80a9c9d78e0038e39c5dd232d8f76ca049beb196a4725ce66674f6d29e",
+    "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_feasible_matched_manifest.v1.json",
+    "schedule_sha256": "19cb88f9a061ab1dc46eb7aa1177fe9a93ae148524850d502d99af98089c4f9d",
+    "selection_snapshot_sha256": "bba9d8463db5e889ed8342d468df277c195e61ddd3cc231f009c711384900736",
+    "whole_file_sha256": "f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4",
+    "winner_projection_sha256": "25718917435aa71426256a65673a195d948eb1072b81ddf9480392b3b4a72bc6"
+  },
+  "recovery_evidence": {
+    "evidence_id": "dino_rec16_checkpoint_recovery_20260728_v1",
+    "internal_sha256": "01715fecc26c3f2b5085650f3bd17f62a502dfc6a85560f11cfa968d08ac9456",
+    "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/rec16_checkpoint_recovery_evidence.v1.json",
+    "whole_file_sha256": "923284e51f9e41f6954a1615f683ea6221b62fce0f490c3d5252b7c0d67f3e56"
+  },
+  "schema_version": 2,
+  "scope": {
+    "candidate_id": "seed_271828_rec_16",
+    "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "model_family": "DINO ResNet50",
+    "use": "validation_only_latency_measurement_surrogate"
+  },
+  "selection_isolation": {
+    "algorithm_selected_candidate_overridden": false,
+    "measurements_feed_reselection": false,
+    "measurements_feed_selection": false,
+    "selection_time_objectives_replaced": false,
+    "selector_invoked_on_matched_measurements": false
+  },
+  "status": "immutable_ready_to_launch",
+  "substitution": {
+    "accuracy_evidence_replaced": false,
+    "candidate_id": "seed_271828_rec_16",
+    "checkpoint_origin": "exact_config_retrain",
+    "effective_checkpoint": {
+      "epoch": 9,
+      "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/7b585a7b-a291-4473-8bda-8e2b542e3982/results_dir/train/model_epoch_009_step_00440.pth",
+      "sha256": "931bc787eb7b9b1752bd7613558a2e0f1d26ae7cc5a983d8f4333ef59abbd304",
+      "size_bytes": 506687042
+    },
+    "historical_byte_match": false,
+    "historical_checkpoint": {
+      "epoch": 9,
+      "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/92d8f699-a780-4229-94ba-3520806d75da/results_dir/train/model_epoch_009_step_00440.pth",
+      "sha256": "4b5ff50181ff919a2796cdd54027fff92eb57c908701a34408d29136d5565b4d",
+      "size_bytes": 506687042
+    },
+    "role": "latency_measurement_surrogate_only",
+    "selected_recovery_slurm_job_id": "31002892",
+    "selected_recovery_submission_index": 0,
+    "selected_recovery_tao_job_id": "7b585a7b-a291-4473-8bda-8e2b542e3982",
+    "selection_time_latency_replaced": false
+  }
+}

@@ -1,0 +1,3714 @@
+{
+  "evaluations": [
+    {
+      "accuracy_evaluation": {
+        "job_id": "87afd9d7-0d47-4df1-8a37-60dee0e24c6a",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/87afd9d7-0d47-4df1-8a37-60dee0e24c6a",
+        "slurm_job_id": "30907941",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_0",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6b36ef24-9207-4d6f-bd5d-ef0783ad13e1/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "cbcdb70d-b47b-4d87-87d8-ff9d52a3d332",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00831",
+              "nvidia_smi": "GPU-eb770560-7c3a-abbf-6641-8368f7c0c743, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 138.72, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00831",
+              "nvidia_smi": "GPU-ec0ca682-6517-2b94-87eb-04d2992c0ce6, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 110.48, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00831",
+              "nvidia_smi": "GPU-008db434-f4c7-012d-392a-cf7556f3c68c, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 319.22, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00831",
+              "nvidia_smi": "GPU-bee70b29-e440-bc18-7a6c-bf454cb2042b, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 176.40, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00831",
+              "nvidia_smi": "GPU-d933969c-3dc5-3926-4936-c9bb0651712c, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 60, 1410, 1593, 236.55, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00831",
+              "nvidia_smi": "GPU-d9a3318d-d898-a204-3f58-4af054f25dc9, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 283.48, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00831",
+              "nvidia_smi": "GPU-1ef11e1b-9760-cdf2-0f7a-fd880bbb24c5, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 127.79, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00831",
+              "nvidia_smi": "GPU-0ee2aa17-a4cf-86b3-4fa6-2809921c0e89, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 66, 1410, 1593, 298.71, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/cbcdb70d-b47b-4d87-87d8-ff9d52a3d332/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/cbcdb70d-b47b-4d87-87d8-ff9d52a3d332",
+        "slurm_job_id": "30908018",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0015951679417657526,
+          "bootstrap_ci_width_ms": 0.1265460000000047,
+          "bootstrap_median_ci_ms": [
+            79.29977875,
+            79.42632475
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.005343817647090675,
+          "device_median_range_ms": 0.42392949999998564,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.2062772499999852,
+          "is_valid": true,
+          "mad_ms": 0.08708250000000106,
+          "median_ms": 79.330832,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.6718325
+            ],
+            [
+              "1",
+              79.2919335
+            ],
+            [
+              "2",
+              79.314594
+            ],
+            [
+              "3",
+              79.24790300000001
+            ],
+            [
+              "4",
+              79.31326899999999
+            ],
+            [
+              "5",
+              79.4527625
+            ],
+            [
+              "6",
+              79.31569400000001
+            ],
+            [
+              "7",
+              79.48505349999999
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.07528600000000552
+            ],
+            [
+              "1",
+              0.02246500000001106
+            ],
+            [
+              "2",
+              0.0593965000000054
+            ],
+            [
+              "3",
+              0.08158099999998569
+            ],
+            [
+              "4",
+              0.07734150000000284
+            ],
+            [
+              "5",
+              0.07654650000000629
+            ],
+            [
+              "6",
+              0.05335049999999342
+            ],
+            [
+              "7",
+              0.040705000000002656
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.07528600000000552
+            ],
+            [
+              "1",
+              0.05227550000000747
+            ],
+            [
+              "2",
+              0.0593965000000054
+            ],
+            [
+              "3",
+              0.08158099999998569
+            ],
+            [
+              "4",
+              0.07734150000000284
+            ],
+            [
+              "5",
+              0.07654650000000629
+            ],
+            [
+              "6",
+              0.07094599999999218
+            ],
+            [
+              "7",
+              0.0760815000000008
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.28975874999999
+            ],
+            [
+              1,
+              79.31913175
+            ],
+            [
+              2,
+              79.311109
+            ],
+            [
+              3,
+              79.34671475
+            ],
+            [
+              4,
+              79.34380475
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.0016274695631580112,
+          "round_drift_fraction": 0.0006812735809957698,
+          "round_drift_ms": 0.054046000000013805,
+          "round_median_range_fraction": 0.0007179554098211623,
+          "round_median_range_ms": 0.05695600000001377,
+          "synchronized_median_ms": 79.6772225,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 79.8604595,
+          "tail_latency_ms": 79.7035575,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.5279109255336222,
+      "num_queries": 636,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.1265460000000047,
+        "latency_ci95_high": 79.42632475,
+        "latency_ci95_low": 79.29977875,
+        "latency_device_range_fraction": 0.005343817647090675,
+        "latency_iqr_ms": 0.2062772499999852,
+        "latency_mad_ms": 0.08708250000000106,
+        "latency_ms": 79.330832,
+        "latency_p95_ms": 79.7035575,
+        "latency_robust_cv": 0.0016274695631580112,
+        "latency_round_drift_fraction": 0.0006812735809957698,
+        "latency_synchronized_median_ms": 79.6772225,
+        "latency_synchronized_p95_ms": 79.8604595,
+        "mAP50": 0.5279109255336222
+      },
+      "rec_id": 0,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 636,
+        "train.optim.lr": 8.818759502582175e-05,
+        "train.optim.weight_decay": 0.00041383427965251606
+      },
+      "status": "success",
+      "train_job_id": "6b36ef24-9207-4d6f-bd5d-ef0783ad13e1",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "b861a28f-69fb-4e5c-bdc0-ff26cfce5164",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/b861a28f-69fb-4e5c-bdc0-ff26cfce5164",
+        "slurm_job_id": "30908893",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_1",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/baa72a84-88ce-4285-a7eb-f34185023524/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "e4582eaf-a793-47b4-bef4-d03a55585715",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01850",
+              "nvidia_smi": "GPU-110aa4f7-7277-536c-8950-f97aebe76c41, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 351.48, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01850",
+              "nvidia_smi": "GPU-5f97e1eb-c3b1-ffbd-f284-f8c7caee464d, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 307.09, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01850",
+              "nvidia_smi": "GPU-1cf08df7-8017-17a8-fdb0-fad621cb3c67, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 219.72, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01850",
+              "nvidia_smi": "GPU-03de85d7-26ac-f22d-0bbd-db9045b6192f, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 278.50, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01850",
+              "nvidia_smi": "GPU-19d789a2-b112-40bd-8b70-488e62f655f4, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 118.11, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01850",
+              "nvidia_smi": "GPU-b52bfe41-d6fb-714f-584f-fd0e3af8466e, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 132.58, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01850",
+              "nvidia_smi": "GPU-e48273a7-76d4-1b64-f441-5a758e220dd9, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 52, 1410, 1593, 107.83, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01850",
+              "nvidia_smi": "GPU-539ff821-4afb-2ea6-eabe-e0faf0ae6004, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 130.63, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/e4582eaf-a793-47b4-bef4-d03a55585715/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/e4582eaf-a793-47b4-bef4-d03a55585715",
+        "slurm_job_id": "30909104",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0009322066123986773,
+          "bootstrap_ci_width_ms": 0.07420625000000314,
+          "bootstrap_median_ci_ms": [
+            79.5756945,
+            79.64990075
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.009478593295087113,
+          "device_median_range_ms": 0.7545225000000073,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.28371649999999704,
+          "is_valid": true,
+          "mad_ms": 0.10841700000000998,
+          "median_ms": 79.60279299999999,
+          "per_device_median_ms": [
+            [
+              "0",
+              80.1359965
+            ],
+            [
+              "1",
+              79.51158649999999
+            ],
+            [
+              "2",
+              79.580882
+            ],
+            [
+              "3",
+              79.677009
+            ],
+            [
+              "4",
+              79.602233
+            ],
+            [
+              "5",
+              79.381474
+            ],
+            [
+              "6",
+              79.6141935
+            ],
+            [
+              "7",
+              79.554317
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.1316410000000019
+            ],
+            [
+              "1",
+              0.16368250000000728
+            ],
+            [
+              "2",
+              0.2589539999999886
+            ],
+            [
+              "3",
+              0.1397775000000081
+            ],
+            [
+              "4",
+              0.25992399999999805
+            ],
+            [
+              "5",
+              0.20657400000000337
+            ],
+            [
+              "6",
+              0.184497499999992
+            ],
+            [
+              "7",
+              0.2770749999999964
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.1316410000000019
+            ],
+            [
+              "1",
+              0.19286250000000393
+            ],
+            [
+              "2",
+              0.27076349999998683
+            ],
+            [
+              "3",
+              0.15795800000000781
+            ],
+            [
+              "4",
+              0.2916500000000042
+            ],
+            [
+              "5",
+              0.21061849999999538
+            ],
+            [
+              "6",
+              0.184497499999992
+            ],
+            [
+              "7",
+              0.2986894999999947
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.57127975
+            ],
+            [
+              1,
+              79.548362
+            ],
+            [
+              2,
+              79.5863125
+            ],
+            [
+              3,
+              79.60843299999999
+            ],
+            [
+              4,
+              79.79170325
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.0020192638743217815,
+          "round_drift_fraction": 0.0027690422872473264,
+          "round_drift_ms": 0.22042349999999544,
+          "round_median_range_fraction": 0.003056943617543675,
+          "round_median_range_ms": 0.2433412500000003,
+          "synchronized_median_ms": 80.163547,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 82.70426214999999,
+          "tail_latency_ms": 80.401804,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.5754530654219836,
+      "num_queries": 672,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.07420625000000314,
+        "latency_ci95_high": 79.64990075,
+        "latency_ci95_low": 79.5756945,
+        "latency_device_range_fraction": 0.009478593295087113,
+        "latency_iqr_ms": 0.28371649999999704,
+        "latency_mad_ms": 0.10841700000000998,
+        "latency_ms": 79.60279299999999,
+        "latency_p95_ms": 80.401804,
+        "latency_robust_cv": 0.0020192638743217815,
+        "latency_round_drift_fraction": 0.0027690422872473264,
+        "latency_synchronized_median_ms": 80.163547,
+        "latency_synchronized_p95_ms": 82.70426214999999,
+        "mAP50": 0.5754530654219836
+      },
+      "rec_id": 1,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 672,
+        "train.optim.lr": 0.00037299167765394693,
+        "train.optim.weight_decay": 0.000607346295509618
+      },
+      "status": "success",
+      "train_job_id": "baa72a84-88ce-4285-a7eb-f34185023524",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "ba73fb9a-8d82-4e64-a42d-3a52f4e36b9b",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/ba73fb9a-8d82-4e64-a42d-3a52f4e36b9b",
+        "slurm_job_id": "30910357",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_2",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/07502f42-5cfe-4ca3-8d0d-762f4b60b235/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "c7b2014f-3a50-4018-87bc-6c4cc05271b5",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03072",
+              "nvidia_smi": "GPU-30d35eb8-9eeb-28a3-f397-9319e538eeec, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 122.49, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03072",
+              "nvidia_smi": "GPU-fd1989f6-7c8d-5d8f-f3cf-3760af2b6ece, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 118.86, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03072",
+              "nvidia_smi": "GPU-bda8e22b-11c9-d7fa-206b-33386362b53f, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 52, 1410, 1593, 121.90, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03072",
+              "nvidia_smi": "GPU-f5a59e06-07fc-fda4-f9ab-6c7c8d4a1fda, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 52, 1410, 1593, 116.53, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03072",
+              "nvidia_smi": "GPU-cfeb06b8-e934-3baf-7d81-2449704a61d5, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 259.71, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03072",
+              "nvidia_smi": "GPU-f1584a49-642c-ccca-d0b8-6e7cc1f98e87, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 194.23, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03072",
+              "nvidia_smi": "GPU-03ec60d0-8fe8-6e4a-67a8-2637dcdcbcf3, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 51, 1410, 1593, 104.43, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03072",
+              "nvidia_smi": "GPU-a7952d6c-a26f-63a0-a48d-a24f16e41848, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 330.13, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/c7b2014f-3a50-4018-87bc-6c4cc05271b5/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/c7b2014f-3a50-4018-87bc-6c4cc05271b5",
+        "slurm_job_id": "30910709",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0029664222462785056,
+          "bootstrap_ci_width_ms": 0.23586450000000525,
+          "bootstrap_median_ci_ms": [
+            79.38672375,
+            79.62258825
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.004577473466286263,
+          "device_median_range_ms": 0.36396150000000205,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.3074757499999947,
+          "is_valid": true,
+          "mad_ms": 0.1499524999999977,
+          "median_ms": 79.5114385,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.592757
+            ],
+            [
+              "1",
+              79.6284985
+            ],
+            [
+              "2",
+              79.648334
+            ],
+            [
+              "3",
+              79.409479
+            ],
+            [
+              "4",
+              79.330373
+            ],
+            [
+              "5",
+              79.2921125
+            ],
+            [
+              "6",
+              79.293027
+            ],
+            [
+              "7",
+              79.656074
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.05637650000001315
+            ],
+            [
+              "1",
+              0.08004199999999173
+            ],
+            [
+              "2",
+              0.059120499999991694
+            ],
+            [
+              "3",
+              0.06016650000000823
+            ],
+            [
+              "4",
+              0.09169300000002067
+            ],
+            [
+              "5",
+              -0.042930999999995834
+            ],
+            [
+              "6",
+              0.041145999999997684
+            ],
+            [
+              "7",
+              0.06981650000000172
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.06978700000000515
+            ],
+            [
+              "1",
+              0.08004199999999173
+            ],
+            [
+              "2",
+              0.06735550000000501
+            ],
+            [
+              "3",
+              0.06016650000000823
+            ],
+            [
+              "4",
+              0.09169300000002067
+            ],
+            [
+              "5",
+              0.11689199999999289
+            ],
+            [
+              "6",
+              0.0635664999999932
+            ],
+            [
+              "7",
+              0.06981650000000172
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.48806049999999
+            ],
+            [
+              1,
+              79.4820455
+            ],
+            [
+              2,
+              79.501118
+            ],
+            [
+              3,
+              79.52950150000001
+            ],
+            [
+              4,
+              79.546332
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.002796070360367038,
+          "round_drift_fraction": 0.0007328693971499182,
+          "round_drift_ms": 0.058271500000017795,
+          "round_median_range_fraction": 0.0008085188900211958,
+          "round_median_range_ms": 0.06428650000000857,
+          "synchronized_median_ms": 79.698605,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 79.8606545,
+          "tail_latency_ms": 79.756012,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.5780608108132506,
+      "num_queries": 311,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.23586450000000525,
+        "latency_ci95_high": 79.62258825,
+        "latency_ci95_low": 79.38672375,
+        "latency_device_range_fraction": 0.004577473466286263,
+        "latency_iqr_ms": 0.3074757499999947,
+        "latency_mad_ms": 0.1499524999999977,
+        "latency_ms": 79.5114385,
+        "latency_p95_ms": 79.756012,
+        "latency_robust_cv": 0.002796070360367038,
+        "latency_round_drift_fraction": 0.0007328693971499182,
+        "latency_synchronized_median_ms": 79.698605,
+        "latency_synchronized_p95_ms": 79.8606545,
+        "mAP50": 0.5780608108132506
+      },
+      "rec_id": 2,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 311,
+        "train.optim.lr": 0.0004060061439459554,
+        "train.optim.weight_decay": 0.0007521168489046003
+      },
+      "status": "success",
+      "train_job_id": "07502f42-5cfe-4ca3-8d0d-762f4b60b235",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "a1058229-58c7-4152-9f7c-05eb93922d1d",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/a1058229-58c7-4152-9f7c-05eb93922d1d",
+        "slurm_job_id": "30911903",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_3",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/a882b3f8-e385-4ce5-9361-23ececbe4234/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "81b9ff24-e8d7-4a87-b477-c2ac880ce90b",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03264",
+              "nvidia_smi": "GPU-3234d5d9-fd38-1686-73fe-e77df67495fe, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 371.58, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03264",
+              "nvidia_smi": "GPU-446bf7b6-fb27-a444-8408-7f5cf92bc0aa, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 52, 1410, 1593, 94.08, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03264",
+              "nvidia_smi": "GPU-984002c0-4a60-b4c4-48e9-7d7042559e7e, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 52, 1410, 1593, 210.51, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03264",
+              "nvidia_smi": "GPU-3a2ca387-926e-07e2-d4bf-8225f3ce2350, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 112.35, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03264",
+              "nvidia_smi": "GPU-376b0c0a-77f9-8cc8-46ca-1db7040443a2, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 201.36, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03264",
+              "nvidia_smi": "GPU-99a44f97-bc11-0efb-587c-eef89eeaef18, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 297.53, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03264",
+              "nvidia_smi": "GPU-7cb9629f-194a-674b-df42-327dd7e824db, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 108.16, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03264",
+              "nvidia_smi": "GPU-b762991e-0ae0-2e29-d4fd-3347d3fb80b6, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 269.55, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/81b9ff24-e8d7-4a87-b477-c2ac880ce90b/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/81b9ff24-e8d7-4a87-b477-c2ac880ce90b",
+        "slurm_job_id": "30912242",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0012537172808823314,
+          "bootstrap_ci_width_ms": 0.10042449999998837,
+          "bootstrap_median_ci_ms": [
+            80.06625700000001,
+            80.1666815
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.005016167477987396,
+          "device_median_range_ms": 0.40180200000000355,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.20928050000000553,
+          "is_valid": true,
+          "mad_ms": 0.10081149999999894,
+          "median_ms": 80.1013925,
+          "per_device_median_ms": [
+            [
+              "0",
+              80.1058075
+            ],
+            [
+              "1",
+              80.2440005
+            ],
+            [
+              "2",
+              80.37354250000001
+            ],
+            [
+              "3",
+              79.97174050000001
+            ],
+            [
+              "4",
+              80.127133
+            ],
+            [
+              "5",
+              80.191665
+            ],
+            [
+              "6",
+              80.00380150000001
+            ],
+            [
+              "7",
+              80.037937
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.11528200000000766
+            ],
+            [
+              "1",
+              0.10006200000000831
+            ],
+            [
+              "2",
+              0.09653649999998493
+            ],
+            [
+              "3",
+              0.1043524999999903
+            ],
+            [
+              "4",
+              0.05363599999999735
+            ],
+            [
+              "5",
+              0.035710999999992055
+            ],
+            [
+              "6",
+              0.13231150000001435
+            ],
+            [
+              "7",
+              0.11586650000000986
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.11528200000000766
+            ],
+            [
+              "1",
+              0.10006200000000831
+            ],
+            [
+              "2",
+              0.15772749999999292
+            ],
+            [
+              "3",
+              0.11253199999998742
+            ],
+            [
+              "4",
+              0.07344150000000127
+            ],
+            [
+              "5",
+              0.14332249999999647
+            ],
+            [
+              "6",
+              0.14675700000000802
+            ],
+            [
+              "7",
+              0.11586650000000986
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              80.07799975
+            ],
+            [
+              1,
+              80.07228749999999
+            ],
+            [
+              2,
+              80.11647024999999
+            ],
+            [
+              3,
+              80.14783374999999
+            ],
+            [
+              4,
+              80.16245875
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.0018659242397065499,
+          "round_drift_fraction": 0.0010544011453982576,
+          "round_drift_ms": 0.0844589999999954,
+          "round_median_range_fraction": 0.0011257138881825503,
+          "round_median_range_ms": 0.09017125000001158,
+          "synchronized_median_ms": 80.3845475,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.60185495,
+          "tail_latency_ms": 80.43076295,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.5685110586144432,
+      "num_queries": 427,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.10042449999998837,
+        "latency_ci95_high": 80.1666815,
+        "latency_ci95_low": 80.06625700000001,
+        "latency_device_range_fraction": 0.005016167477987396,
+        "latency_iqr_ms": 0.20928050000000553,
+        "latency_mad_ms": 0.10081149999999894,
+        "latency_ms": 80.1013925,
+        "latency_p95_ms": 80.43076295,
+        "latency_robust_cv": 0.0018659242397065499,
+        "latency_round_drift_fraction": 0.0010544011453982576,
+        "latency_synchronized_median_ms": 80.3845475,
+        "latency_synchronized_p95_ms": 80.60185495,
+        "mAP50": 0.5685110586144432
+      },
+      "rec_id": 3,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 427,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 0.0009
+      },
+      "status": "success",
+      "train_job_id": "a882b3f8-e385-4ce5-9361-23ececbe4234",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "349be46e-780a-42d8-b8ee-065430083f55",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/349be46e-780a-42d8-b8ee-065430083f55",
+        "slurm_job_id": "30913444",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_4",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/cbb31c19-6bbd-4874-940d-571faf9b608c/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "f9ee53e3-5ab8-48f0-8ea0-4fb22bb2cbff",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03401",
+              "nvidia_smi": "GPU-a99da2b3-2125-8c86-8533-34116d44a3ae, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 181.92, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03401",
+              "nvidia_smi": "GPU-4a7e4790-6209-17ce-6cc9-09b7157a4dde, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 329.61, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03401",
+              "nvidia_smi": "GPU-c84fef06-69d6-a3ce-eede-daa51c717b73, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 240.79, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03401",
+              "nvidia_smi": "GPU-f83e2d1c-9b94-b154-7b2a-17e1e95ae6b5, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 126.59, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03401",
+              "nvidia_smi": "GPU-5c1c34e1-c38e-76d8-dd02-d7129906c4c3, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 137.69, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03401",
+              "nvidia_smi": "GPU-8a564470-6539-185e-058c-51f1271c4af0, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 142.91, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03401",
+              "nvidia_smi": "GPU-e46a2fff-0918-78a7-b42e-70b595df1774, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 133.38, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03401",
+              "nvidia_smi": "GPU-18c41d41-a620-450a-31ba-44ba2f6a2091, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 337.61, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f9ee53e3-5ab8-48f0-8ea0-4fb22bb2cbff/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f9ee53e3-5ab8-48f0-8ea0-4fb22bb2cbff",
+        "slurm_job_id": "30913697",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0009993625469995244,
+          "bootstrap_ci_width_ms": 0.0798964999999896,
+          "bootstrap_median_ci_ms": [
+            79.90873950000001,
+            79.988636
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.005840316677216769,
+          "device_median_range_ms": 0.46691849999999135,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.19899875000001543,
+          "is_valid": true,
+          "mad_ms": 0.09866650000000021,
+          "median_ms": 79.94746275,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.82253800000001
+            ],
+            [
+              "1",
+              79.9654655
+            ],
+            [
+              "2",
+              80.0351025
+            ],
+            [
+              "3",
+              80.010301
+            ],
+            [
+              "4",
+              79.9297495
+            ],
+            [
+              "5",
+              79.7925275
+            ],
+            [
+              "6",
+              79.938425
+            ],
+            [
+              "7",
+              80.259446
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.08927149999999529
+            ],
+            [
+              "1",
+              0.12381700000000251
+            ],
+            [
+              "2",
+              0.07277100000000303
+            ],
+            [
+              "3",
+              0.05002500000000509
+            ],
+            [
+              "4",
+              0.06617149999999583
+            ],
+            [
+              "5",
+              0.05275550000000351
+            ],
+            [
+              "6",
+              0.07400099999999554
+            ],
+            [
+              "7",
+              0.07613100000000372
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.08927149999999529
+            ],
+            [
+              "1",
+              0.14276750000000504
+            ],
+            [
+              "2",
+              0.0747765000000129
+            ],
+            [
+              "3",
+              0.19339299999998616
+            ],
+            [
+              "4",
+              0.06617149999999583
+            ],
+            [
+              "5",
+              0.05275550000000351
+            ],
+            [
+              "6",
+              0.07400099999999554
+            ],
+            [
+              "7",
+              0.08491149999998981
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.90018950000001
+            ],
+            [
+              1,
+              79.90983250000001
+            ],
+            [
+              2,
+              79.95194525
+            ],
+            [
+              3,
+              79.99609125
+            ],
+            [
+              4,
+              79.987291
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.0018297385291317493,
+          "round_drift_fraction": 0.0010894842313177553,
+          "round_drift_ms": 0.08710149999998862,
+          "round_median_range_fraction": 0.0011995596445616519,
+          "round_median_range_ms": 0.0959017499999959,
+          "synchronized_median_ms": 80.27411599999999,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.4555725,
+          "tail_latency_ms": 80.304166,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.6131103791599072,
+      "num_queries": 469,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.0798964999999896,
+        "latency_ci95_high": 79.988636,
+        "latency_ci95_low": 79.90873950000001,
+        "latency_device_range_fraction": 0.005840316677216769,
+        "latency_iqr_ms": 0.19899875000001543,
+        "latency_mad_ms": 0.09866650000000021,
+        "latency_ms": 79.94746275,
+        "latency_p95_ms": 80.304166,
+        "latency_robust_cv": 0.0018297385291317493,
+        "latency_round_drift_fraction": 0.0010894842313177553,
+        "latency_synchronized_median_ms": 80.27411599999999,
+        "latency_synchronized_p95_ms": 80.4555725,
+        "mAP50": 0.6131103791599072
+      },
+      "rec_id": 4,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 469,
+        "train.optim.lr": 0.00045,
+        "train.optim.weight_decay": 1.1000000000000001e-05
+      },
+      "status": "success",
+      "train_job_id": "cbb31c19-6bbd-4874-940d-571faf9b608c",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "af82344b-3131-4273-9a5e-4f01158b04ae",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/af82344b-3131-4273-9a5e-4f01158b04ae",
+        "slurm_job_id": "30917529",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_5",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/89c60414-4b45-43a8-91b1-b99f9420f90a/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "531be154-5fbf-4b43-a407-157643b0251f",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03481",
+              "nvidia_smi": "GPU-338fda21-f06c-1d66-aaab-1470ecc22f6f, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 167.27, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03481",
+              "nvidia_smi": "GPU-414fcb22-d999-0aa6-1a0e-f84e3234502c, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 301.26, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03481",
+              "nvidia_smi": "GPU-d9d9c9bf-cef7-16ad-d0ae-33e84c9698a3, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 121.31, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03481",
+              "nvidia_smi": "GPU-6d671cd3-2bfc-63ac-616f-025fe564d8ce, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 264.79, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03481",
+              "nvidia_smi": "GPU-58e172e3-8b61-3568-6687-a89e3071f4bf, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 291.84, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03481",
+              "nvidia_smi": "GPU-fb01c330-9f50-ed62-9fe1-da32ee8fc4ee, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 121.68, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03481",
+              "nvidia_smi": "GPU-fbecf813-0241-c951-5190-8d7f5f30bda8, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 240.11, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03481",
+              "nvidia_smi": "GPU-4133baaf-9e90-c71b-a4d5-5b3bd1feaa76, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 124.33, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/531be154-5fbf-4b43-a407-157643b0251f/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/531be154-5fbf-4b43-a407-157643b0251f",
+        "slurm_job_id": "30917774",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0009481696387727979,
+          "bootstrap_ci_width_ms": 0.07591149999998947,
+          "bootstrap_median_ci_ms": [
+            80.027702,
+            80.1036135
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.005525174208988946,
+          "device_median_range_ms": 0.4423515000000009,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.23854525000000137,
+          "is_valid": true,
+          "mad_ms": 0.09319049999999152,
+          "median_ms": 80.0610955,
+          "per_device_median_ms": [
+            [
+              "0",
+              80.37229049999999
+            ],
+            [
+              "1",
+              80.32503349999999
+            ],
+            [
+              "2",
+              80.02140650000001
+            ],
+            [
+              "3",
+              80.1086295
+            ],
+            [
+              "4",
+              80.029652
+            ],
+            [
+              "5",
+              80.07339350000001
+            ],
+            [
+              "6",
+              79.92993899999999
+            ],
+            [
+              "7",
+              80.009067
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.05672600000001182
+            ],
+            [
+              "1",
+              -0.01505599999998708
+            ],
+            [
+              "2",
+              0.051481499999994185
+            ],
+            [
+              "3",
+              0.030741000000006125
+            ],
+            [
+              "4",
+              0.03823099999999613
+            ],
+            [
+              "5",
+              0.06254599999999755
+            ],
+            [
+              "6",
+              0.09175100000000214
+            ],
+            [
+              "7",
+              0.04719599999999957
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.05672600000001182
+            ],
+            [
+              "1",
+              0.07892199999997729
+            ],
+            [
+              "2",
+              0.06246099999999899
+            ],
+            [
+              "3",
+              0.070281499999993
+            ],
+            [
+              "4",
+              0.05642649999998639
+            ],
+            [
+              "5",
+              0.06575650000000621
+            ],
+            [
+              "6",
+              0.09175100000000214
+            ],
+            [
+              "7",
+              0.0656864999999982
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              80.03295725
+            ],
+            [
+              1,
+              80.0388595
+            ],
+            [
+              2,
+              80.05152275
+            ],
+            [
+              3,
+              80.08845825
+            ],
+            [
+              4,
+              80.08334574999999
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.0017257350082099168,
+          "round_drift_fraction": 0.0006293755997879999,
+          "round_drift_ms": 0.05038849999999684,
+          "round_median_range_fraction": 0.0006932330822278929,
+          "round_median_range_ms": 0.055501000000006684,
+          "synchronized_median_ms": 80.388926,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.56973805000001,
+          "tail_latency_ms": 80.4219965,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.6012344187576898,
+      "num_queries": 390,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.07591149999998947,
+        "latency_ci95_high": 80.1036135,
+        "latency_ci95_low": 80.027702,
+        "latency_device_range_fraction": 0.005525174208988946,
+        "latency_iqr_ms": 0.23854525000000137,
+        "latency_mad_ms": 0.09319049999999152,
+        "latency_ms": 80.0610955,
+        "latency_p95_ms": 80.4219965,
+        "latency_robust_cv": 0.0017257350082099168,
+        "latency_round_drift_fraction": 0.0006293755997879999,
+        "latency_synchronized_median_ms": 80.388926,
+        "latency_synchronized_p95_ms": 80.56973805000001,
+        "mAP50": 0.6012344187576898
+      },
+      "rec_id": 5,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 390,
+        "train.optim.lr": 0.00042067257344835616,
+        "train.optim.weight_decay": 0.00029484690693347225
+      },
+      "status": "success",
+      "train_job_id": "89c60414-4b45-43a8-91b1-b99f9420f90a",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "59aeccde-12bb-449e-9437-ae5df4715cdb",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/59aeccde-12bb-449e-9437-ae5df4715cdb",
+        "slurm_job_id": "30918809",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_6",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/5a1b3fda-bf1d-4ad4-8957-bb2670d93650/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "dc805007-7a64-493d-83eb-866f100cffe4",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01476",
+              "nvidia_smi": "GPU-f8ce124d-b401-f0aa-3efc-64778d71b52a, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 346.83, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01476",
+              "nvidia_smi": "GPU-c26024c5-1510-724d-fff2-bfc6cd9065a1, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 51, 1410, 1593, 119.32, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01476",
+              "nvidia_smi": "GPU-aa94e174-cc6c-ae94-bfaa-b5251e0bc8f5, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 144.58, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01476",
+              "nvidia_smi": "GPU-35030970-e222-52b8-6deb-52c4b164b853, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 180.48, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01476",
+              "nvidia_smi": "GPU-2a0c1a62-3563-b5b5-cd0a-b9ea5c30f3e4, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 60, 1410, 1593, 148.71, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01476",
+              "nvidia_smi": "GPU-9628c807-db08-a43b-ec2a-9ef584f63a97, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 106.75, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01476",
+              "nvidia_smi": "GPU-346c8853-723d-f238-8127-144b0d43c15e, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 51, 1410, 1593, 114.44, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-01476",
+              "nvidia_smi": "GPU-8b538f62-f505-8a74-9910-9f86fbfe3d58, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 137.27, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/dc805007-7a64-493d-83eb-866f100cffe4/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/dc805007-7a64-493d-83eb-866f100cffe4",
+        "slurm_job_id": "30919131",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.001645041836869822,
+          "bootstrap_ci_width_ms": 0.1308520000000044,
+          "bootstrap_median_ci_ms": [
+            79.490827,
+            79.621679
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.00300532669542798,
+          "device_median_range_ms": 0.23905349999999714,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.18778549999998972,
+          "is_valid": true,
+          "mad_ms": 0.0928364999999971,
+          "median_ms": 79.54326575,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.5787615
+            ],
+            [
+              "1",
+              79.672702
+            ],
+            [
+              "2",
+              79.6550125
+            ],
+            [
+              "3",
+              79.482489
+            ],
+            [
+              "4",
+              79.616321
+            ],
+            [
+              "5",
+              79.48828449999999
+            ],
+            [
+              "6",
+              79.46939900000001
+            ],
+            [
+              "7",
+              79.4336485
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.05917600000000789
+            ],
+            [
+              "1",
+              0.10243149999999446
+            ],
+            [
+              "2",
+              0.0772165000000058
+            ],
+            [
+              "3",
+              0.08684550000000968
+            ],
+            [
+              "4",
+              0.077991499999996
+            ],
+            [
+              "5",
+              0.005085000000008222
+            ],
+            [
+              "6",
+              0.06346050000000503
+            ],
+            [
+              "7",
+              0.014809999999997103
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.0945715000000007
+            ],
+            [
+              "1",
+              0.11377149999998437
+            ],
+            [
+              "2",
+              0.0772165000000058
+            ],
+            [
+              "3",
+              0.10188700000000495
+            ],
+            [
+              "4",
+              0.09102150000001075
+            ],
+            [
+              "5",
+              0.0730259999999987
+            ],
+            [
+              "6",
+              0.0754309999999947
+            ],
+            [
+              "7",
+              0.07939149999998563
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.52807274999999
+            ],
+            [
+              1,
+              79.50324975
+            ],
+            [
+              2,
+              79.53062525
+            ],
+            [
+              3,
+              79.5905515
+            ],
+            [
+              4,
+              79.57593825000001
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.0017303714349947428,
+          "round_drift_fraction": 0.0006017542723283844,
+          "round_drift_ms": 0.04786550000001455,
+          "round_median_range_fraction": 0.0010975379144526616,
+          "round_median_range_ms": 0.08730175000000884,
+          "synchronized_median_ms": 79.7204285,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.18870605000001,
+          "tail_latency_ms": 79.81152110000001,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.5747133064895296,
+      "num_queries": 300,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.1308520000000044,
+        "latency_ci95_high": 79.621679,
+        "latency_ci95_low": 79.490827,
+        "latency_device_range_fraction": 0.00300532669542798,
+        "latency_iqr_ms": 0.18778549999998972,
+        "latency_mad_ms": 0.0928364999999971,
+        "latency_ms": 79.54326575,
+        "latency_p95_ms": 79.81152110000001,
+        "latency_robust_cv": 0.0017303714349947428,
+        "latency_round_drift_fraction": 0.0006017542723283844,
+        "latency_synchronized_median_ms": 79.7204285,
+        "latency_synchronized_p95_ms": 80.18870605000001,
+        "mAP50": 0.5747133064895296
+      },
+      "rec_id": 6,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 300,
+        "train.optim.lr": 0.00035563124753991963,
+        "train.optim.weight_decay": 1.1000000000000001e-05
+      },
+      "status": "success",
+      "train_job_id": "5a1b3fda-bf1d-4ad4-8957-bb2670d93650",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "60fd3c94-e32c-4f11-ac2a-a1326c4108ff",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/60fd3c94-e32c-4f11-ac2a-a1326c4108ff",
+        "slurm_job_id": "30920201",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_7",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/0279b5df-3ad1-4d94-bdc2-b818ed233806/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "161abae3-a921-4caa-8ed7-7d5bae7ebab7",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03049",
+              "nvidia_smi": "GPU-8d075f3a-6cd9-cf66-561e-4eedf4a8f1d5, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 62, 1410, 1593, 211.66, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03049",
+              "nvidia_smi": "GPU-d37f3bb5-848b-b4e1-116a-e9d58ad03fc0, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 202.62, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03049",
+              "nvidia_smi": "GPU-720975ab-bff7-e18b-f2f8-4b9f8b4adc29, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 155.59, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03049",
+              "nvidia_smi": "GPU-422ab20e-a30d-577d-eecb-583110ebcbba, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 120.92, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03049",
+              "nvidia_smi": "GPU-d975a89d-e0f7-f08a-01b4-b531c198d687, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 144.70, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03049",
+              "nvidia_smi": "GPU-f8958801-625a-701e-f106-729ba0cc0adc, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 107.83, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03049",
+              "nvidia_smi": "GPU-11865ae3-f084-30f9-765e-69067653fefb, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 183.25, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-03049",
+              "nvidia_smi": "GPU-fd4c8ba1-ce83-1879-b56b-1e98a20a86a5, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 116.30, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/161abae3-a921-4caa-8ed7-7d5bae7ebab7/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/161abae3-a921-4caa-8ed7-7d5bae7ebab7",
+        "slurm_job_id": "30920632",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0012172775978904712,
+          "bootstrap_ci_width_ms": 0.09690750000000037,
+          "bootstrap_median_ci_ms": [
+            79.5528735,
+            79.649781
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.0055700271416822995,
+          "device_median_range_ms": 0.44343000000000643,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.23222349999998926,
+          "is_valid": true,
+          "mad_ms": 0.11402249999999725,
+          "median_ms": 79.61002500000001,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.59839500000001
+            ],
+            [
+              "1",
+              79.469507
+            ],
+            [
+              "2",
+              79.615245
+            ],
+            [
+              "3",
+              79.773324
+            ],
+            [
+              "4",
+              79.43069600000001
+            ],
+            [
+              "5",
+              79.703047
+            ],
+            [
+              "6",
+              79.329894
+            ],
+            [
+              "7",
+              79.6832265
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.09806700000001456
+            ],
+            [
+              "1",
+              0.10912699999998665
+            ],
+            [
+              "2",
+              0.07189199999999119
+            ],
+            [
+              "3",
+              0.16273799999999028
+            ],
+            [
+              "4",
+              0.050511000000000195
+            ],
+            [
+              "5",
+              0.044520500000004404
+            ],
+            [
+              "6",
+              0.12695300000000032
+            ],
+            [
+              "7",
+              0.10961199999999849
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.09806700000001456
+            ],
+            [
+              "1",
+              0.11054249999999399
+            ],
+            [
+              "2",
+              0.07866699999999582
+            ],
+            [
+              "3",
+              0.1793079999999918
+            ],
+            [
+              "4",
+              0.10485149999999521
+            ],
+            [
+              "5",
+              0.075357000000011
+            ],
+            [
+              "6",
+              0.13485799999999415
+            ],
+            [
+              "7",
+              0.14399249999999597
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.559749
+            ],
+            [
+              1,
+              79.5941845
+            ],
+            [
+              2,
+              79.60682
+            ],
+            [
+              3,
+              79.642021
+            ],
+            [
+              4,
+              79.6447285
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.002123473249757124,
+          "round_drift_fraction": 0.0010674472216282167,
+          "round_drift_ms": 0.08497950000000287,
+          "round_median_range_fraction": 0.0010674472216282167,
+          "round_median_range_ms": 0.08497950000000287,
+          "synchronized_median_ms": 79.81085999999999,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.0999545,
+          "tail_latency_ms": 79.86761544999999,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.5501852933348778,
+      "num_queries": 510,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.09690750000000037,
+        "latency_ci95_high": 79.649781,
+        "latency_ci95_low": 79.5528735,
+        "latency_device_range_fraction": 0.0055700271416822995,
+        "latency_iqr_ms": 0.23222349999998926,
+        "latency_mad_ms": 0.11402249999999725,
+        "latency_ms": 79.61002500000001,
+        "latency_p95_ms": 79.86761544999999,
+        "latency_robust_cv": 0.002123473249757124,
+        "latency_round_drift_fraction": 0.0010674472216282167,
+        "latency_synchronized_median_ms": 79.81085999999999,
+        "latency_synchronized_p95_ms": 80.0999545,
+        "mAP50": 0.5501852933348778
+      },
+      "rec_id": 7,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 510,
+        "train.optim.lr": 0.00012479148122745244,
+        "train.optim.weight_decay": 0.0001831487401936998
+      },
+      "status": "success",
+      "train_job_id": "0279b5df-3ad1-4d94-bdc2-b818ed233806",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "7bfe7ec2-1de2-43c9-9756-b71e6c2efb9d",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/7bfe7ec2-1de2-43c9-9756-b71e6c2efb9d",
+        "slurm_job_id": "30922828",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_8",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/d62dbe33-8d33-47b9-afb0-64b3383c382a/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "11d40923-558d-40a2-afaa-003fdcb23626",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00035",
+              "nvidia_smi": "GPU-8471f27d-9c21-f5c9-e189-7dbf1225b429, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 111.40, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00035",
+              "nvidia_smi": "GPU-b99efece-b295-006c-1435-fd7040146f69, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 162.56, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00035",
+              "nvidia_smi": "GPU-91e2eb17-8aeb-0053-3e30-1557a2653dc9, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 224.43, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00035",
+              "nvidia_smi": "GPU-52c0f21b-7202-1613-ee58-45acb520f449, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 119.96, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00035",
+              "nvidia_smi": "GPU-ca93e6b7-2c4f-f97f-b850-5ffc245603fd, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 144.72, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00035",
+              "nvidia_smi": "GPU-1adeed7b-3958-6856-0104-951d2b2f5122, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 177.79, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00035",
+              "nvidia_smi": "GPU-f88ac8d8-4677-a629-8ced-04bc8ce2ffbb, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 102.45, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00035",
+              "nvidia_smi": "GPU-11f81dfd-77d8-7771-9baf-4ea22ae6f028, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 115.81, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/11d40923-558d-40a2-afaa-003fdcb23626/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/11d40923-558d-40a2-afaa-003fdcb23626",
+        "slurm_job_id": "30923735",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.001475274235428291,
+          "bootstrap_ci_width_ms": 0.11762000000000228,
+          "bootstrap_median_ci_ms": [
+            79.66483575,
+            79.78245575
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.003985040315377136,
+          "device_median_range_ms": 0.31771749999998633,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.19901149999999745,
+          "is_valid": true,
+          "mad_ms": 0.09906974999999107,
+          "median_ms": 79.72754975,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.8249945
+            ],
+            [
+              "1",
+              79.8569455
+            ],
+            [
+              "2",
+              79.711107
+            ],
+            [
+              "3",
+              79.53922800000001
+            ],
+            [
+              "4",
+              79.59984399999999
+            ],
+            [
+              "5",
+              79.793063
+            ],
+            [
+              "6",
+              79.61540450000001
+            ],
+            [
+              "7",
+              79.737887
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.09924700000000541
+            ],
+            [
+              "1",
+              -0.08134249999999099
+            ],
+            [
+              "2",
+              0.10759699999999839
+            ],
+            [
+              "3",
+              0.10126749999999163
+            ],
+            [
+              "4",
+              0.08829099999999812
+            ],
+            [
+              "5",
+              0.09251650000000211
+            ],
+            [
+              "6",
+              0.056445999999994
+            ],
+            [
+              "7",
+              0.0840365000000105
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.09924700000000541
+            ],
+            [
+              "1",
+              0.1447534999999931
+            ],
+            [
+              "2",
+              0.10759699999999839
+            ],
+            [
+              "3",
+              0.10126749999999163
+            ],
+            [
+              "4",
+              0.08829099999999812
+            ],
+            [
+              "5",
+              0.22146000000000754
+            ],
+            [
+              "6",
+              0.0706765000000047
+            ],
+            [
+              "7",
+              0.0840365000000105
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.68464125
+            ],
+            [
+              1,
+              79.713049
+            ],
+            [
+              2,
+              79.7217795
+            ],
+            [
+              3,
+              79.774913
+            ],
+            [
+              4,
+              79.775968
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.0018422842770229092,
+          "round_drift_fraction": 0.0011454854725421618,
+          "round_drift_ms": 0.09132675000000745,
+          "round_median_range_fraction": 0.0011454854725421618,
+          "round_median_range_ms": 0.09132675000000745,
+          "synchronized_median_ms": 79.90815599999999,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.06685345000001,
+          "tail_latency_ms": 79.94668349999999,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.6048002442855679,
+      "num_queries": 900,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.11762000000000228,
+        "latency_ci95_high": 79.78245575,
+        "latency_ci95_low": 79.66483575,
+        "latency_device_range_fraction": 0.003985040315377136,
+        "latency_iqr_ms": 0.19901149999999745,
+        "latency_mad_ms": 0.09906974999999107,
+        "latency_ms": 79.72754975,
+        "latency_p95_ms": 79.94668349999999,
+        "latency_robust_cv": 0.0018422842770229092,
+        "latency_round_drift_fraction": 0.0011454854725421618,
+        "latency_synchronized_median_ms": 79.90815599999999,
+        "latency_synchronized_p95_ms": 80.06685345000001,
+        "mAP50": 0.6048002442855679
+      },
+      "rec_id": 8,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 900,
+        "train.optim.lr": 0.0004897936696945464,
+        "train.optim.weight_decay": 0.00021758635876237026
+      },
+      "status": "success",
+      "train_job_id": "d62dbe33-8d33-47b9-afb0-64b3383c382a",
+      "training_seed": 1234
+    },
+    {
+      "accuracy_evaluation": {
+        "job_id": "e0ce6cdd-cb0f-48a5-83a6-eacec69d1dfb",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/e0ce6cdd-cb0f-48a5-83a6-eacec69d1dfb",
+        "slurm_job_id": "30927776",
+        "status": "Complete"
+      },
+      "candidate_id": "seed_161803_rec_9",
+      "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7075d9a-abc9-40f3-b0ab-c9002be6a241/results_dir/train/model_epoch_009_step_00440.pth",
+      "latency": {
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "758e3aa2-74e1-4f28-bd9e-56ff5b8c5cd9",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00024",
+              "nvidia_smi": "GPU-ea5607e2-4eca-ce68-2da5-9dfff4a38257, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 201.15, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00024",
+              "nvidia_smi": "GPU-d155ddec-1cc6-b986-8151-fd04defb5e96, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 151.80, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00024",
+              "nvidia_smi": "GPU-0a167573-6f4c-0bd3-5e36-938df31d42aa, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 114.66, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00024",
+              "nvidia_smi": "GPU-8af07b36-5028-f7ce-9179-b39a23a11684, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 271.21, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00024",
+              "nvidia_smi": "GPU-7bf911a1-affc-8c7e-b542-f7590b484c3f, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 127.31, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00024",
+              "nvidia_smi": "GPU-9cc787e3-1303-db86-f0d5-ada523bf8f5d, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 52, 1410, 1593, 131.12, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00024",
+              "nvidia_smi": "GPU-85af1967-4e89-e8d2-218b-e640c711c748, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 241.12, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00024",
+              "nvidia_smi": "GPU-69fa7124-d2a1-7508-46f0-d44feda2c1fb, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 60, 1410, 1593, 134.95, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/758e3aa2-74e1-4f28-bd9e-56ff5b8c5cd9/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/758e3aa2-74e1-4f28-bd9e-56ff5b8c5cd9",
+        "slurm_job_id": "30928843",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.002254330497978979,
+          "bootstrap_ci_width_ms": 0.17952425000000005,
+          "bootstrap_median_ci_ms": [
+            79.53717,
+            79.71669425
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.009117522550941417,
+          "device_median_range_ms": 0.7260765000000049,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.27252699999999663,
+          "is_valid": true,
+          "mad_ms": 0.13450799999999674,
+          "median_ms": 79.63528425000001,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.727229
+            ],
+            [
+              "1",
+              79.505134
+            ],
+            [
+              "2",
+              79.74013
+            ],
+            [
+              "3",
+              80.10127800000001
+            ],
+            [
+              "4",
+              79.53717
+            ],
+            [
+              "5",
+              79.5249095
+            ],
+            [
+              "6",
+              79.73557500000001
+            ],
+            [
+              "7",
+              79.3752015
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.17532899999999074
+            ],
+            [
+              "1",
+              0.1022130000000061
+            ],
+            [
+              "2",
+              0.11555699999999547
+            ],
+            [
+              "3",
+              0.2056699999999978
+            ],
+            [
+              "4",
+              0.19891450000000077
+            ],
+            [
+              "5",
+              0.21842399999999884
+            ],
+            [
+              "6",
+              0.0771854999999988
+            ],
+            [
+              "7",
+              0.20391850000001455
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.17532899999999074
+            ],
+            [
+              "1",
+              0.1022130000000061
+            ],
+            [
+              "2",
+              0.11555699999999547
+            ],
+            [
+              "3",
+              0.22343500000000915
+            ],
+            [
+              "4",
+              0.19891450000000077
+            ],
+            [
+              "5",
+              0.21842399999999884
+            ],
+            [
+              "6",
+              0.0771854999999988
+            ],
+            [
+              "7",
+              0.20391850000001455
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.56690524999999
+            ],
+            [
+              1,
+              79.59166599999999
+            ],
+            [
+              2,
+              79.61257925
+            ],
+            [
+              3,
+              79.6554275
+            ],
+            [
+              4,
+              79.68470250000001
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "robust_cv": 0.0025041859607601654,
+          "round_drift_fraction": 0.0014792092614402102,
+          "round_drift_ms": 0.11779725000002372,
+          "round_median_range_fraction": 0.0014792092614402102,
+          "round_median_range_ms": 0.11779725000002372,
+          "synchronized_median_ms": 80.0891025,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.90620355,
+          "tail_latency_ms": 80.15138305,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "mAP50": 0.4174749954599677,
+      "num_queries": 365,
+      "objective_values": {
+        "latency_bootstrap_ci_width_ms": 0.17952425000000005,
+        "latency_ci95_high": 79.71669425,
+        "latency_ci95_low": 79.53717,
+        "latency_device_range_fraction": 0.009117522550941417,
+        "latency_iqr_ms": 0.27252699999999663,
+        "latency_mad_ms": 0.13450799999999674,
+        "latency_ms": 79.63528425000001,
+        "latency_p95_ms": 80.15138305,
+        "latency_robust_cv": 0.0025041859607601654,
+        "latency_round_drift_fraction": 0.0014792092614402102,
+        "latency_synchronized_median_ms": 80.0891025,
+        "latency_synchronized_p95_ms": 80.90620355,
+        "mAP50": 0.4174749954599677
+      },
+      "rec_id": 9,
+      "search_seed": 161803,
+      "specs": {
+        "model.num_queries": 365,
+        "train.optim.lr": 1.1000000000000001e-05,
+        "train.optim.weight_decay": 0.00019510358347995776
+      },
+      "status": "success",
+      "train_job_id": "f7075d9a-abc9-40f3-b0ab-c9002be6a241",
+      "training_seed": 1234
+    }
+  ]
+}

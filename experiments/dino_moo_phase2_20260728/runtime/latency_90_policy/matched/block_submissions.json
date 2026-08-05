@@ -1,0 +1,685 @@
+{
+  "allocation_count": 6,
+  "expected_allocation_count": 6,
+  "feeds_final_selection": false,
+  "feeds_reselection": false,
+  "ledger_revision": 1,
+  "ledger_sha256": "e8882169ed0e5e2afffb2aa7361fb991231dd76425fb3c2c68a03ce15f4cd254",
+  "manifest_id": "dino_expanded_post_front_matched_20260728_v1",
+  "manifest_sha256": "c2ab8e650da99dc243b943f0ba2a89089aaa1e72331a254d6f4ee11793cd8090",
+  "parent_ledger_sha256": null,
+  "pending_submission": null,
+  "phase": "expanded_post_front_matched_latency",
+  "schedule_sha256": "bef77aaafa7d6ad7693ed2d4b554bb799e08286392db33dd1054e67668e810e5",
+  "schema_version": 1,
+  "selection_time_objective_replacement_permitted": false,
+  "source_checks": {
+    "campaign_id": "dino_latency_90pct_matched_20260728_v1",
+    "checkpoint_recovery_evidence": {
+      "internal_sha256": "de528df5b0d93df7fdd22575f244bb3dd767762ea71303951f0a403d14b0400b",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_90_policy/matched/rec6_checkpoint_recovery_evidence.v1.json",
+      "whole_file_sha256": "acc0c46f9a58121a7e77e266ab0fe6611082809fe62ef641eed6299a287c39d0"
+    },
+    "launch_contract": {
+      "internal_sha256": "7005ab4be8f4f8b2a0c2db48f6db1ed0e853a8c210854459bf32c41ef65ce11a",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/latency_90_policy/matched/launch_contract.v1.json",
+      "whole_file_sha256": "d76bd45ef8bd87a95193c01c38c7fe8547741171102d4ccb2082aa963a5180b6"
+    },
+    "launch_source_state": {
+      "base_campaign": {
+        "repository": "/localhome/local-rarunachalam/tao-automl",
+        "source_count": 7,
+        "tao_sdk_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "tao_sdk_commit": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+        "tao_sdk_worktree_clean": true,
+        "tracked_committed_clean": true
+      },
+      "latency_90_campaign": {
+        "source_count": 4,
+        "tracked_committed_clean": true
+      }
+    },
+    "machinery_reuse": {
+      "aggregation": "latency_90_policy_matched_aggregator reusing post_front_matched_aggregator.aggregate_bundles and paired inference utilities",
+      "block_runner": "post_front_matched_block_runner.py",
+      "config_builder": "post_front_matched_launcher.generate_configs",
+      "plan_builder": "post_front_matched_launcher.build_block_plan",
+      "prebuilt_sqsh": true,
+      "schedule_builder": "post_front_matched_manifest_generator.build_schedule",
+      "sdk_api": "tao_sdk.platforms.slurm.SlurmSDK.create_job",
+      "secure_staging": "post_front_matched_launcher.staged_command",
+      "submission": "post_front_matched_launcher.submit_all"
+    },
+    "projection_source_bindings": {
+      "archive_replay": {
+        "expected_sha256": "7441053780c8b400a239a71f5e50b0b37813f8968a1284567fccd3dc857d33a9",
+        "match": true,
+        "observed_sha256": "7441053780c8b400a239a71f5e50b0b37813f8968a1284567fccd3dc857d33a9",
+        "path": "experiments/dino_moo_phase2_20260728/latency_90_policy/archive_replay.v1.json"
+      },
+      "base_post_front_manifest": {
+        "expected_sha256": "d468d5d26f607b115c7c1732966f0ac98664fd232ce83abfa6becc0ce062b7b6",
+        "match": true,
+        "observed_sha256": "d468d5d26f607b115c7c1732966f0ac98664fd232ce83abfa6becc0ce062b7b6",
+        "path": "experiments/dino_moo_phase2_20260728/post_front_matched_manifest.v1.json"
+      },
+      "dino_evaluate_template": {
+        "expected_sha256": "561227c8fc7380db2fe4ae4922e44a83f7ade16281df589b9d63993488f1130a",
+        "match": true,
+        "observed_sha256": "561227c8fc7380db2fe4ae4922e44a83f7ade16281df589b9d63993488f1130a",
+        "path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/references/spec_template_evaluate.yaml"
+      },
+      "dino_latency_benchmark": {
+        "expected_sha256": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "match": true,
+        "observed_sha256": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "path": "experiments/dino_moo_review_20260727/dino_latency_benchmark.py"
+      },
+      "execution_projection_launcher": {
+        "expected_sha256": "7a64b6cbea7db62cac7196d963d3f19048f047efff80d94bdc304f5f9f8701ba",
+        "match": true,
+        "observed_sha256": "7a64b6cbea7db62cac7196d963d3f19048f047efff80d94bdc304f5f9f8701ba",
+        "path": "experiments/dino_moo_phase2_20260728/latency_90_policy_matched_launcher.py"
+      },
+      "expanded_candidate_table": {
+        "expected_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03",
+        "match": true,
+        "observed_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03",
+        "path": "experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_candidate_table.json"
+      },
+      "expanded_runner": {
+        "expected_sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073",
+        "match": true,
+        "observed_sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073",
+        "path": "experiments/dino_moo_phase2_20260728/expanded_search_runner.py"
+      },
+      "latency_90_policy_matched_aggregator": {
+        "expected_sha256": "8643cdf4ad322a147a8b2858179f0092bb61c7a4d1d609b8440fe15c550078ce",
+        "match": true,
+        "observed_sha256": "8643cdf4ad322a147a8b2858179f0092bb61c7a4d1d609b8440fe15c550078ce",
+        "path": "experiments/dino_moo_phase2_20260728/latency_90_policy_matched_aggregator.py"
+      },
+      "latency_stats": {
+        "expected_sha256": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "match": true,
+        "observed_sha256": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "path": "src/tao_automl/latency_stats.py"
+      },
+      "policy_profile": {
+        "expected_sha256": "f6e56ff8d61c91654a13c9759d7cc63f371ed66a9e958bb90ae56cba5112739e",
+        "match": true,
+        "observed_sha256": "f6e56ff8d61c91654a13c9759d7cc63f371ed66a9e958bb90ae56cba5112739e",
+        "path": "experiments/dino_moo_phase2_20260728/dino_latency_90_policy_profile.v1.json"
+      },
+      "post_front_matched_block_runner": {
+        "expected_sha256": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6",
+        "match": true,
+        "observed_sha256": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6",
+        "path": "experiments/dino_moo_phase2_20260728/post_front_matched_block_runner.py"
+      },
+      "post_front_matched_launcher": {
+        "expected_sha256": "e64108dff03da40a91642217dcac453e29bdad7046cb58ad5c05e7e65fa9a887",
+        "match": true,
+        "observed_sha256": "e64108dff03da40a91642217dcac453e29bdad7046cb58ad5c05e7e65fa9a887",
+        "path": "experiments/dino_moo_phase2_20260728/post_front_matched_launcher.py"
+      },
+      "post_front_matched_manifest_generator": {
+        "expected_sha256": "e535ad59beb11b02c49527f6490719f29b1bd680ae990a7b8beb739f8c7899da",
+        "match": true,
+        "observed_sha256": "e535ad59beb11b02c49527f6490719f29b1bd680ae990a7b8beb739f8c7899da",
+        "path": "experiments/dino_moo_phase2_20260728/post_front_matched_manifest_generator.py"
+      },
+      "sealed_combined_selection": {
+        "expected_sha256": "78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1",
+        "match": true,
+        "observed_sha256": "78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1",
+        "path": "experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/expanded_combined_selection.json"
+      }
+    }
+  },
+  "status": "complete",
+  "submission_recovery_events": [],
+  "submissions": [
+    {
+      "allocation_id": "post_front_allocation_00",
+      "allocation_index": 0,
+      "block_plan_sha256": "d49f020145d7b4539404cd8d6f80b78811274b38f7e4e60365c365cab7addbc1",
+      "candidate_count": 2,
+      "candidate_order": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "command_bytes": 43132,
+      "command_sha256": "a4eee3e91e9702cec98a0696dfbc76627264bf9ad5dfce384273032b7e82901f",
+      "design_row_index": 0,
+      "failed_slurm_job_ids": [],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "launch_uncertain": false,
+      "max_runtime_argument_bytes": 39508,
+      "max_staging_chunk_bytes": 39508,
+      "output_root_expression": "$TAO_RESULTS_ROOT/$TAO_JOB_ID",
+      "remote_entrypoint_sha256": "77b256d3b19a5b550e1a5b51d3d5adfc33048952eb73952516f73dbd45856175",
+      "remote_sdk_containment": {
+        "base_mode": "0700",
+        "base_owner_uid": 41852,
+        "canonical_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam",
+        "configured_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+        "evidence_sha256": "cbf3b3fc124dbece506c0ea89fc8c398f842fef0043992db698a370d3ec26183",
+        "secret_values_recorded": false,
+        "sensitive_directories": [
+          {
+            "mode": "0700",
+            "name": "sbatch",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "env",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "meta",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "entrypoints",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "specs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "slurm-logs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "results",
+            "owner_uid": 41852,
+            "real_directory": true
+          }
+        ]
+      },
+      "retry_count": 0,
+      "sdk_results_uri": "lustre:///lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/88825e1c-5ca0-462f-ad79-7cf14251650f",
+      "slurm_job_id": "31021945",
+      "staging_bundle_compression": "gzip_mtime_0_level_9",
+      "staging_bundle_json_sha256": "052ef40781d64619d37d9cc4bce940dd60bf3f149a2450dbd7c301e72c584e1f",
+      "staging_bundle_sha256": "8fda3eb1cfee48f2393685fd3200464b52d248749635a54b52ab90420727b767",
+      "staging_chunk_count": 1,
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_00.json": "0e469553c15b8d915512fff9ec751c1c04bdef01b9795f6d1ed9f3548ecee070",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "staging_root_policy": "mktemp job-scoped under TMPDIR with 0700 directory, 0600 regular files, owner/symlink/digest validation",
+      "tao_job_id": "88825e1c-5ca0-462f-ad79-7cf14251650f"
+    },
+    {
+      "allocation_id": "post_front_allocation_01",
+      "allocation_index": 1,
+      "block_plan_sha256": "78def7a71d9bb80bfb36c7158402b4a40e1fcbc878b73736ceeadd526321265e",
+      "candidate_count": 2,
+      "candidate_order": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "command_bytes": 43136,
+      "command_sha256": "0895105d6f00275fdadddb26d8de38a38040b6803568216c5f49bd6978abd803",
+      "design_row_index": 0,
+      "failed_slurm_job_ids": [],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "launch_uncertain": false,
+      "max_runtime_argument_bytes": 39512,
+      "max_staging_chunk_bytes": 39512,
+      "output_root_expression": "$TAO_RESULTS_ROOT/$TAO_JOB_ID",
+      "remote_entrypoint_sha256": "5f6d53a79612cb503aa6d945bc826e5bfc8d59d9b772c7b4790b525ea6e793ec",
+      "remote_sdk_containment": {
+        "base_mode": "0700",
+        "base_owner_uid": 41852,
+        "canonical_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam",
+        "configured_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+        "evidence_sha256": "cbf3b3fc124dbece506c0ea89fc8c398f842fef0043992db698a370d3ec26183",
+        "secret_values_recorded": false,
+        "sensitive_directories": [
+          {
+            "mode": "0700",
+            "name": "sbatch",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "env",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "meta",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "entrypoints",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "specs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "slurm-logs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "results",
+            "owner_uid": 41852,
+            "real_directory": true
+          }
+        ]
+      },
+      "retry_count": 0,
+      "sdk_results_uri": "lustre:///lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/98688222-6e20-4910-a9fc-5b29e38b461d",
+      "slurm_job_id": "31021984",
+      "staging_bundle_compression": "gzip_mtime_0_level_9",
+      "staging_bundle_json_sha256": "83d18dee696e9ae9f7cd7b9eefd43513433060d2da1a82849f7efe966842c0bb",
+      "staging_bundle_sha256": "7bf0e72b8c6d1c24160e5cdaa808137ea3f56a7383f66064dfb8cce4e03c60c4",
+      "staging_chunk_count": 1,
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_01.json": "9e0f94f599e9c88dbd0d680c296616dbe93910a368fb67f18397e33df696001b",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "staging_root_policy": "mktemp job-scoped under TMPDIR with 0700 directory, 0600 regular files, owner/symlink/digest validation",
+      "tao_job_id": "98688222-6e20-4910-a9fc-5b29e38b461d"
+    },
+    {
+      "allocation_id": "post_front_allocation_02",
+      "allocation_index": 2,
+      "block_plan_sha256": "e5e5ee4799f4c3d322d52d424d73c28d05b00493b0dc688e0c5c1fd01280d5a7",
+      "candidate_count": 2,
+      "candidate_order": [
+        "seed_271828_rec_19",
+        "seed_271828_rec_6"
+      ],
+      "command_bytes": 43132,
+      "command_sha256": "570351d364f12b2baf6276690b06ca3fdeddb6e5f7f9aceb34ba839c7b55c879",
+      "design_row_index": 0,
+      "failed_slurm_job_ids": [],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "launch_uncertain": false,
+      "max_runtime_argument_bytes": 39508,
+      "max_staging_chunk_bytes": 39508,
+      "output_root_expression": "$TAO_RESULTS_ROOT/$TAO_JOB_ID",
+      "remote_entrypoint_sha256": "9794bf98c9e48e22b685ffd1e9abc34cc212a6f96ac938c8414a9f6e43edfb0a",
+      "remote_sdk_containment": {
+        "base_mode": "0700",
+        "base_owner_uid": 41852,
+        "canonical_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam",
+        "configured_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+        "evidence_sha256": "cbf3b3fc124dbece506c0ea89fc8c398f842fef0043992db698a370d3ec26183",
+        "secret_values_recorded": false,
+        "sensitive_directories": [
+          {
+            "mode": "0700",
+            "name": "sbatch",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "env",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "meta",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "entrypoints",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "specs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "slurm-logs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "results",
+            "owner_uid": 41852,
+            "real_directory": true
+          }
+        ]
+      },
+      "retry_count": 0,
+      "sdk_results_uri": "lustre:///lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/6915e2cf-b9dc-4486-b736-ab1e7eb5a303",
+      "slurm_job_id": "31021991",
+      "staging_bundle_compression": "gzip_mtime_0_level_9",
+      "staging_bundle_json_sha256": "baa8a60a9858c9e437e3b869cdafc355bdd25159cae479df1a986c2476b0ffa2",
+      "staging_bundle_sha256": "a39dd39f62132aba4d43bdcf0785bfa39827c485e767a310083566fc6eb547de",
+      "staging_chunk_count": 1,
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_02.json": "2cb6bd5feac1d7dde497997b9cb6601e673e62c51191874ebc8ea335fc33e019",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "staging_root_policy": "mktemp job-scoped under TMPDIR with 0700 directory, 0600 regular files, owner/symlink/digest validation",
+      "tao_job_id": "6915e2cf-b9dc-4486-b736-ab1e7eb5a303"
+    },
+    {
+      "allocation_id": "post_front_allocation_03",
+      "allocation_index": 3,
+      "block_plan_sha256": "a058382fa3fa1215ba57409ca21cdcf92dda3b21cb0cad165af0402fd57b0283",
+      "candidate_count": 2,
+      "candidate_order": [
+        "seed_271828_rec_6",
+        "seed_271828_rec_19"
+      ],
+      "command_bytes": 43144,
+      "command_sha256": "6ef950960c9fd6eab5d641883f87af24e42df4db9fc643100cd68fd4b99debd6",
+      "design_row_index": 1,
+      "failed_slurm_job_ids": [],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "launch_uncertain": false,
+      "max_runtime_argument_bytes": 39520,
+      "max_staging_chunk_bytes": 39520,
+      "output_root_expression": "$TAO_RESULTS_ROOT/$TAO_JOB_ID",
+      "remote_entrypoint_sha256": "a7f3822db230223ab00b793f9f4c1cb713f9428bdd9a9ec5e6f01e54829d355f",
+      "remote_sdk_containment": {
+        "base_mode": "0700",
+        "base_owner_uid": 41852,
+        "canonical_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam",
+        "configured_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+        "evidence_sha256": "cbf3b3fc124dbece506c0ea89fc8c398f842fef0043992db698a370d3ec26183",
+        "secret_values_recorded": false,
+        "sensitive_directories": [
+          {
+            "mode": "0700",
+            "name": "sbatch",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "env",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "meta",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "entrypoints",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "specs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "slurm-logs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "results",
+            "owner_uid": 41852,
+            "real_directory": true
+          }
+        ]
+      },
+      "retry_count": 0,
+      "sdk_results_uri": "lustre:///lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/67a941eb-bee8-4310-9e70-62ffef7740c5",
+      "slurm_job_id": "31022014",
+      "staging_bundle_compression": "gzip_mtime_0_level_9",
+      "staging_bundle_json_sha256": "c0ed69c7d1b56a44da27b693f5db4138b40c51ae27c58ba9f052233337cd50a9",
+      "staging_bundle_sha256": "b6af0b9bb36c666cf9e038a63264490be4358989437e9fe9a421ef23c251f404",
+      "staging_chunk_count": 1,
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_03.json": "7f825353534b30af5e5453f6f672835645d351e45ebf3c7f2288646f2634fafc",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "staging_root_policy": "mktemp job-scoped under TMPDIR with 0700 directory, 0600 regular files, owner/symlink/digest validation",
+      "tao_job_id": "67a941eb-bee8-4310-9e70-62ffef7740c5"
+    },
+    {
+      "allocation_id": "post_front_allocation_04",
+      "allocation_index": 4,
+      "block_plan_sha256": "181840f61600f3c775224a68b575c79c53e493f2c4c0bca79949ee431664fcb0",
+      "candidate_count": 2,
+      "candidate_order": [
+        "seed_271828_rec_6",
+        "seed_271828_rec_19"
+      ],
+      "command_bytes": 43144,
+      "command_sha256": "c92c791be9ba4077027c0324ea702d6286d7d227ca1b5c9bb96b92c5b95111df",
+      "design_row_index": 1,
+      "failed_slurm_job_ids": [],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "launch_uncertain": false,
+      "max_runtime_argument_bytes": 39520,
+      "max_staging_chunk_bytes": 39520,
+      "output_root_expression": "$TAO_RESULTS_ROOT/$TAO_JOB_ID",
+      "remote_entrypoint_sha256": "c988861011e78334cc93cc000d243749345dcebb2c1c5d9ebb7a6a83ed3cf138",
+      "remote_sdk_containment": {
+        "base_mode": "0700",
+        "base_owner_uid": 41852,
+        "canonical_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam",
+        "configured_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+        "evidence_sha256": "cbf3b3fc124dbece506c0ea89fc8c398f842fef0043992db698a370d3ec26183",
+        "secret_values_recorded": false,
+        "sensitive_directories": [
+          {
+            "mode": "0700",
+            "name": "sbatch",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "env",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "meta",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "entrypoints",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "specs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "slurm-logs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "results",
+            "owner_uid": 41852,
+            "real_directory": true
+          }
+        ]
+      },
+      "retry_count": 0,
+      "sdk_results_uri": "lustre:///lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f7351cd3-365d-4f9d-824e-af49124cf234",
+      "slurm_job_id": "31022016",
+      "staging_bundle_compression": "gzip_mtime_0_level_9",
+      "staging_bundle_json_sha256": "d61b6149077b9a14b494d2e74e9737436631d55a1f5a9b60cb0e0761b735890f",
+      "staging_bundle_sha256": "2ce800e71eca4ff58d0d871eebb25f2757ea3b73cbbbe5141ecc9be93a3e212a",
+      "staging_chunk_count": 1,
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_04.json": "0a9acd72015e821009b0e2bfeaacb78ff6fa4e300249a0876753b3e65f7aa307",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "staging_root_policy": "mktemp job-scoped under TMPDIR with 0700 directory, 0600 regular files, owner/symlink/digest validation",
+      "tao_job_id": "f7351cd3-365d-4f9d-824e-af49124cf234"
+    },
+    {
+      "allocation_id": "post_front_allocation_05",
+      "allocation_index": 5,
+      "block_plan_sha256": "57bfbaab7a939c0dfc54ee71a36fecb3fca94e2fa6abbcb3be8d488b4c16427f",
+      "candidate_count": 2,
+      "candidate_order": [
+        "seed_271828_rec_6",
+        "seed_271828_rec_19"
+      ],
+      "command_bytes": 43148,
+      "command_sha256": "0936e984e6f9d3a9b8ee45d1aa64d4c7f2a2dd9c7f38fbf268a910f9959759b4",
+      "design_row_index": 1,
+      "failed_slurm_job_ids": [],
+      "feeds_final_selection": false,
+      "feeds_reselection": false,
+      "launch_uncertain": false,
+      "max_runtime_argument_bytes": 39524,
+      "max_staging_chunk_bytes": 39524,
+      "output_root_expression": "$TAO_RESULTS_ROOT/$TAO_JOB_ID",
+      "remote_entrypoint_sha256": "d775fd7969e13a1a352b66538443486606b62e6939fb79ed7adcf6cf4fb7ab0a",
+      "remote_sdk_containment": {
+        "base_mode": "0700",
+        "base_owner_uid": 41852,
+        "canonical_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam",
+        "configured_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+        "evidence_sha256": "cbf3b3fc124dbece506c0ea89fc8c398f842fef0043992db698a370d3ec26183",
+        "secret_values_recorded": false,
+        "sensitive_directories": [
+          {
+            "mode": "0700",
+            "name": "sbatch",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "env",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "meta",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "entrypoints",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "specs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "slurm-logs",
+            "owner_uid": 41852,
+            "real_directory": true
+          },
+          {
+            "mode": "0700",
+            "name": "results",
+            "owner_uid": 41852,
+            "real_directory": true
+          }
+        ]
+      },
+      "retry_count": 0,
+      "sdk_results_uri": "lustre:///lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/19b45940-5e88-4e5c-ae48-8ed3e1e9424f",
+      "slurm_job_id": "31022018",
+      "staging_bundle_compression": "gzip_mtime_0_level_9",
+      "staging_bundle_json_sha256": "030c23b8f5f0c37f2a42a7170b4c9483ab2d4d038e2f8634c9d0fc454731e8ad",
+      "staging_bundle_sha256": "0da451f1ec90890dc496c85b9623c25d72cf696c588d8ba487fad7eec62da5d2",
+      "staging_chunk_count": 1,
+      "staging_file_sha256": {
+        "configs/seed_271828_rec_19.yaml": "982a38330435f3261c11ce2c7d03cf4fd799acb7b54e5fd33d8a80e8fe55b545",
+        "configs/seed_271828_rec_6.yaml": "bb65c9b2224aa1ffa4d7a03de4b9a69dc4982d64d6165f41f3dbfcf8dfe6ff5f",
+        "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+        "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+        "plans/post_front_allocation_05.json": "f089e7318f534ca2349e3fe0c60f2939c5f9c4169e383696501ef7777c6abe1c",
+        "post_front_matched_block_runner.py": "8a82ea7d9e0a06c617c94ae83c3cf5b333ed887d051a9fe816c3cc138c37aae6"
+      },
+      "staging_root_policy": "mktemp job-scoped under TMPDIR with 0700 directory, 0600 regular files, owner/symlink/digest validation",
+      "tao_job_id": "19b45940-5e88-4e5c-ae48-8ed3e1e9424f"
+    }
+  ],
+  "superseded_submissions": []
+}

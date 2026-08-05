@@ -1,0 +1,1360 @@
+{
+  "agent_intervention_flags": {
+    "agent_changed_budget_after_results": false,
+    "agent_changed_ptm_after_results": false,
+    "agent_changed_seed_after_results": false,
+    "agent_changed_threshold_after_results": false,
+    "agent_injected_candidate": false,
+    "agent_modified_search_space_after_results": false,
+    "agent_overrode_winner": false,
+    "agent_selected_candidate": false
+  },
+  "automatic_trigger": {
+    "blockers": [
+      {
+        "code": "deformable_detr_first_candidate_gate_not_passed",
+        "details": [
+          "required automatic release artifact is absent"
+        ]
+      },
+      {
+        "code": "official_ptm_checkpoints_not_staged",
+        "ptm_ids": [
+          "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+          "grounding_dino.commercial.swin_tiny.trainable.v1.1"
+        ]
+      },
+      {
+        "code": "bert_base_uncased_cache_not_sealed",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/huggingface/bert-base-uncased"
+      },
+      {
+        "code": "official_ptms_not_full_gpu_qualified",
+        "ptm_ids": [
+          "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+          "grounding_dino.commercial.swin_tiny.trainable.v1.1"
+        ]
+      }
+    ],
+    "launch_authorized": false,
+    "policy": "fail_closed",
+    "trigger_sequence": [
+      "validate_rtdetr_and_deformable_detr_first_candidate_releases",
+      "stage_and_hash_all_official_ptms_and_bert_cache_before_gpu",
+      "submit_official_ptm_qualification_jobs_in_parallel",
+      "qualify_or_structurally_exclude_each_ptm_from_full_evidence",
+      "submit_one_algorithm_generated_candidate_per_mode_in_parallel",
+      "validate_all_three_first_candidate_gates",
+      "automatically_release_remaining_frozen_budget"
+    ]
+  },
+  "automl_successor": {
+    "automatic_remaining_budget_release_requires_all_mode_pilots": true,
+    "candidate_budget_per_mode": 20,
+    "manual_candidate_injection": false,
+    "manual_ptm_selection": false,
+    "mode_jobs": [
+      {
+        "acquisition": "expected_improvement",
+        "algorithm": "bayesian",
+        "candidate_generation": "algorithm_only",
+        "first_candidate_gate": 1,
+        "independent_observation_namespace": "grounding-dino-synthetic-detection-objective-aware-20260730-v2-accuracy-observations",
+        "job_id": "grounding-dino-synthetic-detection-objective-aware-20260730-v2-accuracy",
+        "mode": "accuracy",
+        "objective": {
+          "accuracy": {
+            "direction": "maximize",
+            "metric": "val_mAP50"
+          },
+          "latency": null,
+          "latency_accuracy_retention": null,
+          "multi_objective_min_accuracy": null
+        },
+        "observation_sharing": false,
+        "ptm_dimension": "qualified_official_ptm_hierarchical_arm",
+        "remaining_candidate_budget_after_gate": 19,
+        "search_seed": 271828
+      },
+      {
+        "acquisition": "constrained_expected_improvement",
+        "algorithm": "bayesian",
+        "candidate_generation": "algorithm_only",
+        "first_candidate_gate": 1,
+        "independent_observation_namespace": "grounding-dino-synthetic-detection-objective-aware-20260730-v2-latency-observations",
+        "job_id": "grounding-dino-synthetic-detection-objective-aware-20260730-v2-latency",
+        "mode": "latency",
+        "objective": {
+          "accuracy": {
+            "direction": "maximize",
+            "metric": "val_mAP50"
+          },
+          "latency": {
+            "direction": "minimize",
+            "metric": "median_latency_ms"
+          },
+          "latency_accuracy_retention": {
+            "reference": "best_observed_within_job",
+            "reference_updates": "monotonic",
+            "retained_fraction": 0.9,
+            "type": "relative"
+          },
+          "multi_objective_min_accuracy": null
+        },
+        "observation_sharing": false,
+        "ptm_dimension": "qualified_official_ptm_hierarchical_arm",
+        "remaining_candidate_budget_after_gate": 19,
+        "search_seed": 271828
+      },
+      {
+        "acquisition": "parego_expected_improvement",
+        "algorithm": "bayesian",
+        "candidate_generation": "algorithm_only",
+        "first_candidate_gate": 1,
+        "independent_observation_namespace": "grounding-dino-synthetic-detection-objective-aware-20260730-v2-multi_objective-observations",
+        "job_id": "grounding-dino-synthetic-detection-objective-aware-20260730-v2-multi_objective",
+        "mode": "multi_objective",
+        "objective": {
+          "accuracy": {
+            "direction": "maximize",
+            "metric": "val_mAP50"
+          },
+          "latency": {
+            "direction": "minimize",
+            "metric": "median_latency_ms"
+          },
+          "latency_accuracy_retention": null,
+          "multi_objective_min_accuracy": null
+        },
+        "observation_sharing": false,
+        "ptm_dimension": "qualified_official_ptm_hierarchical_arm",
+        "remaining_candidate_budget_after_gate": 19,
+        "search_seed": 271828
+      }
+    ],
+    "mode_pilots_may_submit_in_parallel_after_ptm_qualification": true,
+    "training_epochs": 10
+  },
+  "campaign_id": "grounding-dino-synthetic-detection-objective-aware-20260730-v2",
+  "contract_sha256": "be523b211a856469b15039176fd81816d4b94651100819a0d6455f0a3ea95dfa",
+  "dataset": {
+    "annotation_lossless": true,
+    "conversion_manifest_file_sha256": "25cf4bcc903d442be6fe3391778f693352a7dd7cac8ee077d4d6dcf1084e3dc4",
+    "conversion_manifest_path": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/dataset_conversion.v1.json",
+    "conversion_manifest_semantic_sha256": "3f78d2b38ea630d9843a5a5d9b82ecf49546c2948de2c829acf7f6ed0521f268",
+    "excluded_empty_train_images": 49,
+    "paths": {
+      "train_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+      "train_label_map": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json",
+      "train_odvg_jsonl": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+      "validation_coco_contiguous": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json",
+      "validation_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images"
+    },
+    "stage_record_file_sha256": "bc65ef486ea0c5e72f9068f652fa7e2fdc37e166a0170997d7a73ff64bd4134d",
+    "stage_record_path": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/dataset_stage.v1.json",
+    "stage_record_semantic_sha256": "762ecb5264fddf91f3d0b1aa012ff6e4abb8e3177c81e74d838d94ed6fb5dee0"
+  },
+  "execution": {
+    "jobs_submitted": 0,
+    "model_execution_performed": false,
+    "scheduler_mutation_performed": false
+  },
+  "metric_contract": {
+    "policy_id": "grounding_dino.coco_bbox_ap50",
+    "policy_sha256": "354077fc152f8f4b5b2bbbedf2b6889706c3e3531963eda88199d708002473d3",
+    "registry_sha256": "e424f2bf4ca326b6ef1366303c922be6ae4699f7404519da20414baad1f574a2",
+    "standalone_qualification_metric": "test_mAP50",
+    "standalone_test_metric_feeds_selection": false,
+    "training_selection_metric": "val_mAP50"
+  },
+  "model": {
+    "forbidden_claim": "referring_expression_box_grounding",
+    "id": "grounding_dino",
+    "task": "category_prompted_open_vocabulary_detection"
+  },
+  "predecessor_first_candidate_gates": {
+    "deformable_detr": {
+      "artifact_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/deformable_detr_automl_synthetic_export_and_gate_fix_v1/first_candidate_gate/automatic_release.json",
+      "blockers": [
+        "required automatic release artifact is absent"
+      ],
+      "expected_manifest_sha256": "bab0bbf33efad3ccd4d7472661a80efb132820e0149b0deb346c4e7facf0eef8",
+      "model": "deformable_detr",
+      "passed": false
+    },
+    "rtdetr": {
+      "artifact_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/rtdetr_three_mode_synthetic_nonfinite_signature_fix_v1/first_candidate_gate/release.json",
+      "artifact_sha256": "60142a7e60797ca473c453067b975d773cecb0331e9d93eaaa027b824bd6406d",
+      "blockers": [],
+      "expected_contract_sha256": "0f82d8751501e05726e1109904bd43e52db8af835311a0048d9d7b1394a73253",
+      "model": "rtdetr",
+      "passed": true
+    }
+  },
+  "ptm_inventory": {
+    "derivation": "all repository records with source.official=true",
+    "jobs_may_submit_in_parallel_after_predecessor_release": true,
+    "manual_ptm_selection": false,
+    "qualification_jobs": [
+      {
+        "checkpoint_staged_and_verified": false,
+        "evaluate": {
+          "checkpoint_resolution": "exact terminal training checkpoint from bound status and file hash evidence; never latest-file guessing",
+          "command": "grounding_dino evaluate -e {config_path}",
+          "expected_metric": "test_mAP50",
+          "required_metric_status_message": "Test metrics generated.",
+          "required_terminal_status_message": "Evaluate finished successfully.",
+          "spec": {
+            "dataset": {
+              "augmentation": {
+                "fixed_padding": true,
+                "fixed_random_crop": 1024,
+                "horizontal_flip_prob": 0.5,
+                "input_mean": [
+                  0.485,
+                  0.456,
+                  0.406
+                ],
+                "input_std": [
+                  0.229,
+                  0.224,
+                  0.225
+                ],
+                "random_resize_max_size": 1333,
+                "scales": [
+                  480,
+                  512,
+                  544,
+                  576,
+                  608,
+                  640,
+                  672,
+                  704,
+                  736,
+                  768,
+                  800
+                ],
+                "test_random_resize": 800,
+                "train_random_crop_max": 600,
+                "train_random_crop_min": 384,
+                "train_random_resize": [
+                  400,
+                  500,
+                  600
+                ]
+              },
+              "batch_size": 4,
+              "dataset_type": "serialized",
+              "eval_class_ids": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "infer_data_sources": {
+                "captions": [
+                  ""
+                ],
+                "image_dir": [
+                  ""
+                ]
+              },
+              "max_labels": 50,
+              "pin_memory": true,
+              "quant_calibration_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "test_data_sources": {
+                "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+                "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json"
+              },
+              "train_data_sources": [
+                {
+                  "image_dir": "",
+                  "json_file": "",
+                  "label_map": ""
+                }
+              ],
+              "val_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "workers": 8
+            },
+            "encryption_key": "",
+            "evaluate": {
+              "batch_size": 4,
+              "checkpoint": "resolve_from_exact_training_terminal_evidence",
+              "conf_threshold": 0.0,
+              "gpu_ids": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "num_gpus": 8,
+              "num_nodes": 1,
+              "results_dir": "",
+              "trt_engine": ""
+            },
+            "model": {
+              "aux_loss": true,
+              "backbone": "swin_tiny_224_1k",
+              "backbone_names": [
+                "backbone.0",
+                "bert"
+              ],
+              "bbox_loss_coef": 5.0,
+              "class_embed_bias": true,
+              "clip_max_norm": 0.1,
+              "cls_loss_coef": 2.0,
+              "dec_layers": 6,
+              "dec_n_points": 4,
+              "decoder_sa_type": "sa",
+              "dilation": false,
+              "dim_feedforward": 2048,
+              "dn_box_noise_scale": 1.0,
+              "dn_label_noise_ratio": 0.5,
+              "dn_number": 0,
+              "dropout_ratio": 0.0,
+              "embed_init_tgt": true,
+              "enc_layers": 6,
+              "enc_n_points": 4,
+              "fix_refpoints_hw": -1,
+              "focal_alpha": 0.25,
+              "focal_gamma": 2.0,
+              "giou_loss_coef": 2.0,
+              "hidden_dim": 256,
+              "interm_loss_coef": 1.0,
+              "linear_proj_names": [
+                "reference_points",
+                "sampling_offsets"
+              ],
+              "log_scale": "auto",
+              "loss_types": [
+                "labels",
+                "boxes"
+              ],
+              "max_text_len": 256,
+              "nheads": 8,
+              "no_interm_box_loss": false,
+              "num_feature_levels": 4,
+              "num_queries": 900,
+              "num_select": 300,
+              "pe_temperatureH": 20,
+              "pe_temperatureW": 20,
+              "pre_norm": false,
+              "pretrained_backbone_path": "",
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "set_cost_bbox": 5.0,
+              "set_cost_class": 1.0,
+              "set_cost_giou": 2.0,
+              "text_encoder_type": "bert-base-uncased",
+              "train_backbone": true,
+              "two_stage_type": "standard",
+              "use_dn": true
+            },
+            "model_name": "",
+            "quantize": {
+              "algorithm": "minmax",
+              "backend": "torchao",
+              "backend_kwargs": {},
+              "device": "cuda",
+              "layers": [],
+              "mode": "weight_only_ptq",
+              "model_path": "",
+              "results_dir": "",
+              "skip_names": []
+            },
+            "results_dir": "",
+            "train": {
+              "activation_checkpoint": true,
+              "checkpoint_interval": 1,
+              "checkpoint_interval_unit": "epoch",
+              "clip_grad_norm": 0.1,
+              "cudnn": {
+                "benchmark": false,
+                "deterministic": true
+              },
+              "distributed_strategy": "ddp",
+              "freeze": [],
+              "gpu_ids": [
+                0
+              ],
+              "is_dry_run": false,
+              "num_epochs": 10,
+              "num_gpus": 1,
+              "num_nodes": 1,
+              "optim": {
+                "lr": 0.0002,
+                "lr_backbone": 2e-05,
+                "lr_decay": 0.1,
+                "lr_linear_proj_mult": 0.1,
+                "lr_scheduler": "MultiStep",
+                "lr_step_size": 10,
+                "lr_steps": [
+                  10
+                ],
+                "momentum": 0.9,
+                "monitor_name": "val_loss",
+                "optimizer": "AdamW",
+                "weight_decay": 0.0001
+              },
+              "precision": "fp32",
+              "pretrained_model_path": "",
+              "results_dir": "",
+              "resume_training_checkpoint_path": "",
+              "seed": 1234,
+              "validation_interval": 1
+            },
+            "wandb": {
+              "enable": false,
+              "entity": "",
+              "group": "",
+              "name": "TAO Toolkit Training",
+              "project": "TAO Toolkit",
+              "reinit": false,
+              "run_id": "",
+              "save_code": false,
+              "sync_tensorboard": false,
+              "tags": [
+                "tao-toolkit"
+              ]
+            }
+          },
+          "spec_sha256": "efd886dc8aec516931c137b5ff30816f007ed7ffd45de57524f29c085cf54a44",
+          "test_metric_may_not_feed_automl_selection": true
+        },
+        "expected_checkpoint_sha256": null,
+        "expected_checkpoint_size_bytes": 2070704394,
+        "production_preflight": {
+          "api": "PTMCheckpointPreflight.run_qualification",
+          "checkpoint_ids": [
+            "grounding_dino.commercial.swin_tiny.trainable.v1.0"
+          ],
+          "cpu_load_smoke": false,
+          "execution_location": "inside allocated eight-GPU job",
+          "model": "grounding_dino",
+          "tao_version": "7.1.0-rc-245",
+          "task": "grounded_object_detection",
+          "validation_statuses": [
+            "unverified"
+          ]
+        },
+        "ptm_id": "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+        "registry_status_before_qualification": "unverified",
+        "resources": {
+          "account": "edgeai_tao-ptm_image-foundation-model-clip",
+          "distributed_workers_per_node": 8,
+          "gpus_per_node": 8,
+          "nodes": 1,
+          "partition": "polar3",
+          "platform": "slurm",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+          "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+          "tasks_per_node": 1,
+          "time_hours": 4,
+          "timeout_hours": 3.8,
+          "use_sqsh_conversion": false
+        },
+        "source": {
+          "immutable_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.0#grounding_dino_swin_tiny_commercial_trainable.pth",
+          "member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+          "official": true,
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "grounding_dino",
+          "version": "grounding_dino_swin_tiny_commercial_trainable_v1.0"
+        },
+        "staged_checkpoint_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.0/grounding_dino_swin_tiny_commercial_trainable.pth",
+        "train": {
+          "command": "grounding_dino train -e {config_path}",
+          "expected_validation_metric": "val_mAP50",
+          "required_status_message": "Eval metrics generated.",
+          "spec": {
+            "dataset": {
+              "augmentation": {
+                "fixed_padding": true,
+                "fixed_random_crop": 1024,
+                "horizontal_flip_prob": 0.5,
+                "input_mean": [
+                  0.485,
+                  0.456,
+                  0.406
+                ],
+                "input_std": [
+                  0.229,
+                  0.224,
+                  0.225
+                ],
+                "random_resize_max_size": 1333,
+                "scales": [
+                  480,
+                  512,
+                  544,
+                  576,
+                  608,
+                  640,
+                  672,
+                  704,
+                  736,
+                  768,
+                  800
+                ],
+                "test_random_resize": 800,
+                "train_random_crop_max": 600,
+                "train_random_crop_min": 384,
+                "train_random_resize": [
+                  400,
+                  500,
+                  600
+                ]
+              },
+              "batch_size": 4,
+              "dataset_type": "serialized",
+              "eval_class_ids": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "infer_data_sources": {
+                "captions": [
+                  ""
+                ],
+                "image_dir": [
+                  ""
+                ]
+              },
+              "max_labels": 50,
+              "pin_memory": true,
+              "quant_calibration_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "test_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "train_data_sources": [
+                {
+                  "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+                  "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+                  "label_map": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json"
+                }
+              ],
+              "val_data_sources": {
+                "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+                "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json"
+              },
+              "workers": 8
+            },
+            "encryption_key": "",
+            "model": {
+              "aux_loss": true,
+              "backbone": "swin_tiny_224_1k",
+              "backbone_names": [
+                "backbone.0",
+                "bert"
+              ],
+              "bbox_loss_coef": 5.0,
+              "class_embed_bias": true,
+              "clip_max_norm": 0.1,
+              "cls_loss_coef": 2.0,
+              "dec_layers": 6,
+              "dec_n_points": 4,
+              "decoder_sa_type": "sa",
+              "dilation": false,
+              "dim_feedforward": 2048,
+              "dn_box_noise_scale": 1.0,
+              "dn_label_noise_ratio": 0.5,
+              "dn_number": 0,
+              "dropout_ratio": 0.0,
+              "embed_init_tgt": true,
+              "enc_layers": 6,
+              "enc_n_points": 4,
+              "fix_refpoints_hw": -1,
+              "focal_alpha": 0.25,
+              "focal_gamma": 2.0,
+              "giou_loss_coef": 2.0,
+              "hidden_dim": 256,
+              "interm_loss_coef": 1.0,
+              "linear_proj_names": [
+                "reference_points",
+                "sampling_offsets"
+              ],
+              "log_scale": "auto",
+              "loss_types": [
+                "labels",
+                "boxes"
+              ],
+              "max_text_len": 256,
+              "nheads": 8,
+              "no_interm_box_loss": false,
+              "num_feature_levels": 4,
+              "num_queries": 900,
+              "num_select": 300,
+              "pe_temperatureH": 20,
+              "pe_temperatureW": 20,
+              "pre_norm": false,
+              "pretrained_backbone_path": "",
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "set_cost_bbox": 5.0,
+              "set_cost_class": 1.0,
+              "set_cost_giou": 2.0,
+              "text_encoder_type": "bert-base-uncased",
+              "train_backbone": true,
+              "two_stage_type": "standard",
+              "use_dn": true
+            },
+            "model_name": "",
+            "quantize": {
+              "algorithm": "minmax",
+              "backend": "torchao",
+              "backend_kwargs": {},
+              "device": "cuda",
+              "layers": [],
+              "mode": "weight_only_ptq",
+              "model_path": "",
+              "results_dir": "",
+              "skip_names": []
+            },
+            "results_dir": "",
+            "train": {
+              "activation_checkpoint": true,
+              "checkpoint_interval": 1,
+              "checkpoint_interval_unit": "epoch",
+              "clip_grad_norm": 0.1,
+              "cudnn": {
+                "benchmark": false,
+                "deterministic": true
+              },
+              "distributed_strategy": "ddp",
+              "freeze": [],
+              "gpu_ids": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "is_dry_run": false,
+              "num_epochs": 10,
+              "num_gpus": 8,
+              "num_nodes": 1,
+              "optim": {
+                "lr": 0.0002,
+                "lr_backbone": 2e-05,
+                "lr_decay": 0.1,
+                "lr_linear_proj_mult": 0.1,
+                "lr_scheduler": "MultiStep",
+                "lr_step_size": 10,
+                "lr_steps": [
+                  10
+                ],
+                "momentum": 0.9,
+                "monitor_name": "val_loss",
+                "optimizer": "AdamW",
+                "weight_decay": 0.0001
+              },
+              "precision": "fp32",
+              "pretrained_model_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.0/grounding_dino_swin_tiny_commercial_trainable.pth",
+              "results_dir": "",
+              "resume_training_checkpoint_path": "",
+              "seed": 1234,
+              "validation_interval": 1
+            },
+            "wandb": {
+              "enable": false,
+              "entity": "",
+              "group": "",
+              "name": "TAO Toolkit Training",
+              "project": "TAO Toolkit",
+              "reinit": false,
+              "run_id": "",
+              "save_code": false,
+              "sync_tensorboard": false,
+              "tags": [
+                "tao-toolkit"
+              ]
+            }
+          },
+          "spec_sha256": "7e450de3c0daf6bbd007d2abbe5ca15682d914e7c2d9119bdfa7671b0f380d5f"
+        }
+      },
+      {
+        "checkpoint_staged_and_verified": false,
+        "evaluate": {
+          "checkpoint_resolution": "exact terminal training checkpoint from bound status and file hash evidence; never latest-file guessing",
+          "command": "grounding_dino evaluate -e {config_path}",
+          "expected_metric": "test_mAP50",
+          "required_metric_status_message": "Test metrics generated.",
+          "required_terminal_status_message": "Evaluate finished successfully.",
+          "spec": {
+            "dataset": {
+              "augmentation": {
+                "fixed_padding": true,
+                "fixed_random_crop": 1024,
+                "horizontal_flip_prob": 0.5,
+                "input_mean": [
+                  0.485,
+                  0.456,
+                  0.406
+                ],
+                "input_std": [
+                  0.229,
+                  0.224,
+                  0.225
+                ],
+                "random_resize_max_size": 1333,
+                "scales": [
+                  480,
+                  512,
+                  544,
+                  576,
+                  608,
+                  640,
+                  672,
+                  704,
+                  736,
+                  768,
+                  800
+                ],
+                "test_random_resize": 800,
+                "train_random_crop_max": 600,
+                "train_random_crop_min": 384,
+                "train_random_resize": [
+                  400,
+                  500,
+                  600
+                ]
+              },
+              "batch_size": 4,
+              "dataset_type": "serialized",
+              "eval_class_ids": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "infer_data_sources": {
+                "captions": [
+                  ""
+                ],
+                "image_dir": [
+                  ""
+                ]
+              },
+              "max_labels": 50,
+              "pin_memory": true,
+              "quant_calibration_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "test_data_sources": {
+                "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+                "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json"
+              },
+              "train_data_sources": [
+                {
+                  "image_dir": "",
+                  "json_file": "",
+                  "label_map": ""
+                }
+              ],
+              "val_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "workers": 8
+            },
+            "encryption_key": "",
+            "evaluate": {
+              "batch_size": 4,
+              "checkpoint": "resolve_from_exact_training_terminal_evidence",
+              "conf_threshold": 0.0,
+              "gpu_ids": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "num_gpus": 8,
+              "num_nodes": 1,
+              "results_dir": "",
+              "trt_engine": ""
+            },
+            "model": {
+              "aux_loss": true,
+              "backbone": "swin_tiny_224_1k",
+              "backbone_names": [
+                "backbone.0",
+                "bert"
+              ],
+              "bbox_loss_coef": 5.0,
+              "class_embed_bias": true,
+              "clip_max_norm": 0.1,
+              "cls_loss_coef": 2.0,
+              "dec_layers": 6,
+              "dec_n_points": 4,
+              "decoder_sa_type": "sa",
+              "dilation": false,
+              "dim_feedforward": 2048,
+              "dn_box_noise_scale": 1.0,
+              "dn_label_noise_ratio": 0.5,
+              "dn_number": 0,
+              "dropout_ratio": 0.0,
+              "embed_init_tgt": true,
+              "enc_layers": 6,
+              "enc_n_points": 4,
+              "fix_refpoints_hw": -1,
+              "focal_alpha": 0.25,
+              "focal_gamma": 2.0,
+              "giou_loss_coef": 2.0,
+              "hidden_dim": 256,
+              "interm_loss_coef": 1.0,
+              "linear_proj_names": [
+                "reference_points",
+                "sampling_offsets"
+              ],
+              "log_scale": "auto",
+              "loss_types": [
+                "labels",
+                "boxes"
+              ],
+              "max_text_len": 256,
+              "nheads": 8,
+              "no_interm_box_loss": false,
+              "num_feature_levels": 4,
+              "num_queries": 900,
+              "num_select": 300,
+              "pe_temperatureH": 20,
+              "pe_temperatureW": 20,
+              "pre_norm": false,
+              "pretrained_backbone_path": "",
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "set_cost_bbox": 5.0,
+              "set_cost_class": 1.0,
+              "set_cost_giou": 2.0,
+              "text_encoder_type": "bert-base-uncased",
+              "train_backbone": true,
+              "two_stage_type": "standard",
+              "use_dn": true
+            },
+            "model_name": "",
+            "quantize": {
+              "algorithm": "minmax",
+              "backend": "torchao",
+              "backend_kwargs": {},
+              "device": "cuda",
+              "layers": [],
+              "mode": "weight_only_ptq",
+              "model_path": "",
+              "results_dir": "",
+              "skip_names": []
+            },
+            "results_dir": "",
+            "train": {
+              "activation_checkpoint": true,
+              "checkpoint_interval": 1,
+              "checkpoint_interval_unit": "epoch",
+              "clip_grad_norm": 0.1,
+              "cudnn": {
+                "benchmark": false,
+                "deterministic": true
+              },
+              "distributed_strategy": "ddp",
+              "freeze": [],
+              "gpu_ids": [
+                0
+              ],
+              "is_dry_run": false,
+              "num_epochs": 10,
+              "num_gpus": 1,
+              "num_nodes": 1,
+              "optim": {
+                "lr": 0.0002,
+                "lr_backbone": 2e-05,
+                "lr_decay": 0.1,
+                "lr_linear_proj_mult": 0.1,
+                "lr_scheduler": "MultiStep",
+                "lr_step_size": 10,
+                "lr_steps": [
+                  10
+                ],
+                "momentum": 0.9,
+                "monitor_name": "val_loss",
+                "optimizer": "AdamW",
+                "weight_decay": 0.0001
+              },
+              "precision": "fp32",
+              "pretrained_model_path": "",
+              "results_dir": "",
+              "resume_training_checkpoint_path": "",
+              "seed": 1234,
+              "validation_interval": 1
+            },
+            "wandb": {
+              "enable": false,
+              "entity": "",
+              "group": "",
+              "name": "TAO Toolkit Training",
+              "project": "TAO Toolkit",
+              "reinit": false,
+              "run_id": "",
+              "save_code": false,
+              "sync_tensorboard": false,
+              "tags": [
+                "tao-toolkit"
+              ]
+            }
+          },
+          "spec_sha256": "efd886dc8aec516931c137b5ff30816f007ed7ffd45de57524f29c085cf54a44",
+          "test_metric_may_not_feed_automl_selection": true
+        },
+        "expected_checkpoint_sha256": "8ea7e089e174e72a7fe57ff63cdba5e1e4994b159e41cf72122a7e0d841beaa6",
+        "expected_checkpoint_size_bytes": 2070860191,
+        "production_preflight": {
+          "api": "PTMCheckpointPreflight.run_qualification",
+          "checkpoint_ids": [
+            "grounding_dino.commercial.swin_tiny.trainable.v1.1"
+          ],
+          "cpu_load_smoke": false,
+          "execution_location": "inside allocated eight-GPU job",
+          "model": "grounding_dino",
+          "tao_version": "7.1.0-rc-245",
+          "task": "grounded_object_detection",
+          "validation_statuses": [
+            "unverified"
+          ]
+        },
+        "ptm_id": "grounding_dino.commercial.swin_tiny.trainable.v1.1",
+        "registry_status_before_qualification": "unverified",
+        "resources": {
+          "account": "edgeai_tao-ptm_image-foundation-model-clip",
+          "distributed_workers_per_node": 8,
+          "gpus_per_node": 8,
+          "nodes": 1,
+          "partition": "polar3",
+          "platform": "slurm",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+          "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+          "tasks_per_node": 1,
+          "time_hours": 4,
+          "timeout_hours": 3.8,
+          "use_sqsh_conversion": false
+        },
+        "source": {
+          "immutable_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.1#grounding_dino_swin_tiny_commercial_trainable.pth",
+          "member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+          "official": true,
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "grounding_dino",
+          "version": "grounding_dino_swin_tiny_commercial_trainable_v1.1"
+        },
+        "staged_checkpoint_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.1/grounding_dino_swin_tiny_commercial_trainable.pth",
+        "train": {
+          "command": "grounding_dino train -e {config_path}",
+          "expected_validation_metric": "val_mAP50",
+          "required_status_message": "Eval metrics generated.",
+          "spec": {
+            "dataset": {
+              "augmentation": {
+                "fixed_padding": true,
+                "fixed_random_crop": 1024,
+                "horizontal_flip_prob": 0.5,
+                "input_mean": [
+                  0.485,
+                  0.456,
+                  0.406
+                ],
+                "input_std": [
+                  0.229,
+                  0.224,
+                  0.225
+                ],
+                "random_resize_max_size": 1333,
+                "scales": [
+                  480,
+                  512,
+                  544,
+                  576,
+                  608,
+                  640,
+                  672,
+                  704,
+                  736,
+                  768,
+                  800
+                ],
+                "test_random_resize": 800,
+                "train_random_crop_max": 600,
+                "train_random_crop_min": 384,
+                "train_random_resize": [
+                  400,
+                  500,
+                  600
+                ]
+              },
+              "batch_size": 4,
+              "dataset_type": "serialized",
+              "eval_class_ids": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "infer_data_sources": {
+                "captions": [
+                  ""
+                ],
+                "image_dir": [
+                  ""
+                ]
+              },
+              "max_labels": 50,
+              "pin_memory": true,
+              "quant_calibration_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "test_data_sources": {
+                "image_dir": "",
+                "json_file": ""
+              },
+              "train_data_sources": [
+                {
+                  "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+                  "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+                  "label_map": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json"
+                }
+              ],
+              "val_data_sources": {
+                "image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+                "json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json"
+              },
+              "workers": 8
+            },
+            "encryption_key": "",
+            "model": {
+              "aux_loss": true,
+              "backbone": "swin_tiny_224_1k",
+              "backbone_names": [
+                "backbone.0",
+                "bert"
+              ],
+              "bbox_loss_coef": 5.0,
+              "class_embed_bias": true,
+              "clip_max_norm": 0.1,
+              "cls_loss_coef": 2.0,
+              "dec_layers": 6,
+              "dec_n_points": 4,
+              "decoder_sa_type": "sa",
+              "dilation": false,
+              "dim_feedforward": 2048,
+              "dn_box_noise_scale": 1.0,
+              "dn_label_noise_ratio": 0.5,
+              "dn_number": 0,
+              "dropout_ratio": 0.0,
+              "embed_init_tgt": true,
+              "enc_layers": 6,
+              "enc_n_points": 4,
+              "fix_refpoints_hw": -1,
+              "focal_alpha": 0.25,
+              "focal_gamma": 2.0,
+              "giou_loss_coef": 2.0,
+              "hidden_dim": 256,
+              "interm_loss_coef": 1.0,
+              "linear_proj_names": [
+                "reference_points",
+                "sampling_offsets"
+              ],
+              "log_scale": "auto",
+              "loss_types": [
+                "labels",
+                "boxes"
+              ],
+              "max_text_len": 256,
+              "nheads": 8,
+              "no_interm_box_loss": false,
+              "num_feature_levels": 4,
+              "num_queries": 900,
+              "num_select": 300,
+              "pe_temperatureH": 20,
+              "pe_temperatureW": 20,
+              "pre_norm": false,
+              "pretrained_backbone_path": "",
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "set_cost_bbox": 5.0,
+              "set_cost_class": 1.0,
+              "set_cost_giou": 2.0,
+              "text_encoder_type": "bert-base-uncased",
+              "train_backbone": true,
+              "two_stage_type": "standard",
+              "use_dn": true
+            },
+            "model_name": "",
+            "quantize": {
+              "algorithm": "minmax",
+              "backend": "torchao",
+              "backend_kwargs": {},
+              "device": "cuda",
+              "layers": [],
+              "mode": "weight_only_ptq",
+              "model_path": "",
+              "results_dir": "",
+              "skip_names": []
+            },
+            "results_dir": "",
+            "train": {
+              "activation_checkpoint": true,
+              "checkpoint_interval": 1,
+              "checkpoint_interval_unit": "epoch",
+              "clip_grad_norm": 0.1,
+              "cudnn": {
+                "benchmark": false,
+                "deterministic": true
+              },
+              "distributed_strategy": "ddp",
+              "freeze": [],
+              "gpu_ids": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "is_dry_run": false,
+              "num_epochs": 10,
+              "num_gpus": 8,
+              "num_nodes": 1,
+              "optim": {
+                "lr": 0.0002,
+                "lr_backbone": 2e-05,
+                "lr_decay": 0.1,
+                "lr_linear_proj_mult": 0.1,
+                "lr_scheduler": "MultiStep",
+                "lr_step_size": 10,
+                "lr_steps": [
+                  10
+                ],
+                "momentum": 0.9,
+                "monitor_name": "val_loss",
+                "optimizer": "AdamW",
+                "weight_decay": 0.0001
+              },
+              "precision": "fp32",
+              "pretrained_model_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptms/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.1/grounding_dino_swin_tiny_commercial_trainable.pth",
+              "results_dir": "",
+              "resume_training_checkpoint_path": "",
+              "seed": 1234,
+              "validation_interval": 1
+            },
+            "wandb": {
+              "enable": false,
+              "entity": "",
+              "group": "",
+              "name": "TAO Toolkit Training",
+              "project": "TAO Toolkit",
+              "reinit": false,
+              "run_id": "",
+              "save_code": false,
+              "sync_tensorboard": false,
+              "tags": [
+                "tao-toolkit"
+              ]
+            }
+          },
+          "spec_sha256": "de4b78c5ec7915db23c049431813e8198ed5d38f8dfea84f59c19426790b8da8"
+        }
+      }
+    ],
+    "records": [
+      {
+        "architecture": "grounding_dino",
+        "backbone": "swin_tiny_224_1k",
+        "checkpoint_spec_file": {
+          "path": "data/ptm_specs/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.0.yaml",
+          "provenance": {
+            "evidence": "grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.0#experiment.yaml sha256=b6c1f211cb8da80e4ae3e882b87358087befd6e69c097a12b909de52f447e4da",
+            "source": "Curated path-free projection of the official NGC experiment.yaml"
+          },
+          "sha256": "49bc2090236277dd429df7f5b94733cdabc1e6cb785671fc24430de06d62427f",
+          "source": "repository"
+        },
+        "checkpoint_target": "train.pretrained_model_path",
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "swin_tiny_224_1k",
+            "class_embed_bias": true,
+            "dec_layers": 6,
+            "dim_feedforward": 2048,
+            "dropout_ratio": 0.0,
+            "enc_layers": 6,
+            "log_scale": "auto",
+            "num_feature_levels": 4,
+            "num_queries": 900
+          }
+        },
+        "deprecation": {
+          "is_deprecated": false
+        },
+        "expected_size_bytes": 2070704394,
+        "id": "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+        "input_contract": {
+          "channels": 3,
+          "height": 544,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "max_text_length": 256,
+            "text_encoder": "bert_base",
+            "tokenization_outside_deployment_graph": true
+          },
+          "width": 960
+        },
+        "license": {
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license"
+          ],
+          "name": "NVIDIA Open Model License",
+          "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/"
+        },
+        "model_family": "grounding_dino",
+        "registry_record_sha256": "3a4cdeb98a7c8571f1cb2fd4dc019ab32e323e583ff37bc402403e2513636599",
+        "registry_sha256": "5eda26a2e0b8b9cc2f5d3f9c74854d3006750eeda993de9580cd46dea5054560",
+        "source": {
+          "immutable_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.0#grounding_dino_swin_tiny_commercial_trainable.pth",
+          "member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+          "official": true,
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "grounding_dino",
+          "version": "grounding_dino_swin_tiny_commercial_trainable_v1.0"
+        },
+        "status": "unverified",
+        "status_reason": "Official immutable NGC checkpoint and experiment-YAML identities, sizes, multimodal input contract, and license are recorded. NGC publishes no checkpoint checksum for this older member; TAO compatibility and checkpoint load, training, validation, and inference mini-steps remain unverified.",
+        "task_compatibility": [
+          "grounded_object_detection"
+        ]
+      },
+      {
+        "architecture": "grounding_dino",
+        "backbone": "swin_tiny_224_1k",
+        "checkpoint_spec_file": {
+          "path": "data/ptm_specs/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.1.yaml",
+          "provenance": {
+            "evidence": "grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.1#experiment.yaml sha256=b6c1f211cb8da80e4ae3e882b87358087befd6e69c097a12b909de52f447e4da",
+            "source": "Curated path-free projection of the official NGC experiment.yaml"
+          },
+          "sha256": "49bc2090236277dd429df7f5b94733cdabc1e6cb785671fc24430de06d62427f",
+          "source": "repository"
+        },
+        "checkpoint_target": "train.pretrained_model_path",
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "swin_tiny_224_1k",
+            "class_embed_bias": true,
+            "dec_layers": 6,
+            "dim_feedforward": 2048,
+            "dropout_ratio": 0.0,
+            "enc_layers": 6,
+            "log_scale": "auto",
+            "num_feature_levels": 4,
+            "num_queries": 900
+          }
+        },
+        "deprecation": {
+          "is_deprecated": false
+        },
+        "expected_size_bytes": 2070860191,
+        "id": "grounding_dino.commercial.swin_tiny.trainable.v1.1",
+        "input_contract": {
+          "channels": 3,
+          "height": 544,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "max_text_length": 256,
+            "text_encoder": "bert_base",
+            "tokenization_outside_deployment_graph": true
+          },
+          "width": 960
+        },
+        "license": {
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license"
+          ],
+          "name": "NVIDIA Open Model License",
+          "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/"
+        },
+        "model_family": "grounding_dino",
+        "registry_record_sha256": "8b0a7a3664782215fbf1c013d801d204aca102e096cdde1807508143d76fdfb0",
+        "registry_sha256": "5eda26a2e0b8b9cc2f5d3f9c74854d3006750eeda993de9580cd46dea5054560",
+        "sha256": "8ea7e089e174e72a7fe57ff63cdba5e1e4994b159e41cf72122a7e0d841beaa6",
+        "source": {
+          "immutable_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.1#grounding_dino_swin_tiny_commercial_trainable.pth",
+          "member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+          "official": true,
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "grounding_dino",
+          "version": "grounding_dino_swin_tiny_commercial_trainable_v1.1"
+        },
+        "status": "unverified",
+        "status_reason": "Official NGC checkpoint and experiment-YAML identities, SHA-256 values, sizes, multimodal input contract, and license are recorded. The path-bearing official YAML was reduced to architecture-only defaults; TAO compatibility and checkpoint load, training, validation, and inference mini-steps remain unverified.",
+        "task_compatibility": [
+          "grounded_object_detection"
+        ]
+      }
+    ]
+  },
+  "schema_version": 1,
+  "skill_contract": {
+    "evaluate_template_path": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-grounding-dino/references/spec_template_evaluate.yaml",
+    "evaluate_template_sha256": "593e330e009e34830667ac8d23cc3d897114a764cee2f3a606b8fad2af5c56f6",
+    "skill_info_path": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-grounding-dino/references/skill_info.yaml",
+    "skill_info_sha256": "ebb018afb6977710199b200c7c188fc8f59b4e7f04177471a117d70bad50630f",
+    "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",
+    "train_template_path": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-grounding-dino/references/spec_template_train.yaml",
+    "train_template_sha256": "91cf27b41b7a597a6c9edc5a86989244302808276901c3989cd9344cf2c1409b"
+  }
+}

@@ -1,0 +1,534 @@
+{
+  "execution": {
+    "accuracy_evaluation_per_successful_candidate": true,
+    "concurrent_seed_controllers": 3,
+    "gpus_per_job": 8,
+    "image": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+    "launched": false,
+    "nodes_per_job": 1,
+    "one_training_job_per_candidate": true,
+    "platform": "SLURM",
+    "post_front_remeasurement_is_separate": true,
+    "selection_time_latency_measurements_preserved": true,
+    "stabilized_latency_job_per_successful_candidate": true
+  },
+  "manifest": {
+    "internal_manifest_sha256": "910744ae2fead7e4e2e9a53fc672baef1ac43307e3979671b2b876fff422de96",
+    "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_manifest.v2.json",
+    "whole_file_sha256": "9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a"
+  },
+  "post_front_matched_validation": {
+    "contract": {
+      "allocation_design": {
+        "allocation_count": 6,
+        "execution": "candidates run sequentially within each allocation using their exact retained checkpoint and resolved model mapping",
+        "gpus_per_node": 8,
+        "hardware_and_runtime_identity": "exactly the expanded-search frozen runtime identity",
+        "incomplete_allocation_policy": "Exclude the entire allocation and rerun the complete front under a new TAO job ID; never combine a partial block.",
+        "independence": "six distinct TAO SDK jobs and SLURM allocations",
+        "matching": "Every allocation benchmarks every global rank-zero candidate exactly once on the same node; candidate-pair differences are matched within allocation.",
+        "nodes_per_allocation": 1
+      },
+      "candidate_set": {
+        "canonical_order": "ascending UTF-8 candidate_id",
+        "empty_front_policy": "block with an integrity error",
+        "manual_addition_or_removal_permitted": false,
+        "missing_checkpoint_policy": "report blocked; never substitute or manually promote another candidate",
+        "rule": "Include every valid candidate whose global pareto_rank is exactly zero, regardless of mode winner status, candidate ID, parameter values, or expected desirability.",
+        "selection_time_objective_replacement_permitted": false,
+        "source": "expanded_combined_selection.json produced by tao_automl.selection.analyze_archive over the complete shared archive"
+      },
+      "latency_protocol": {
+        "gpu_count": 8,
+        "invalid_measurement_policy": "invalidate the complete allocation block",
+        "raw_samples_per_candidate_allocation": 4000,
+        "repeated_rounds": 5,
+        "same_batch_size_precision_timed_scope_and_synchronization_required": true,
+        "same_input_digest_required": true,
+        "source": "frozen_identity.latency_protocol",
+        "timed_iterations_per_round": 100,
+        "warmup_iterations": 50
+      },
+      "ordering": {
+        "algorithm": "balanced_williams_rows_v1",
+        "audit": "Record canonical candidate IDs, every design-row index used, all six candidate orders, position counts, immediate ordered-adjacency counts, and a canonical schedule SHA256.",
+        "base_row": "For n canonical candidates, form index order [0,1,n-1,2,n-2,3,n-3,...] without duplicates until all n indices appear.",
+        "design_rows": "Create n modulo-addition rotations of the base row. If n is odd, append the reversal of each rotation, giving 2n design rows.",
+        "determinism": "Candidate IDs, n, allocation index, and this formula are the only ordering inputs; observed objectives and measurements are forbidden inputs.",
+        "selected_rows": "Let R be the design-row count. Allocation k in [0,5] uses design row floor(k*R/6)."
+      },
+      "paired_analysis": {
+        "allocation_variability_must_be_reported": true,
+        "bootstrap": "paired percentile bootstrap resampling the six allocation-level differences with replacement",
+        "bootstrap_confidence_level": 0.95,
+        "bootstrap_resamples": 10000,
+        "bootstrap_seed": 20260728,
+        "comparison_set": "all unordered pairs of global rank-zero candidates",
+        "endpoints": [
+          "median_ms",
+          "p95_ms"
+        ],
+        "equivalence_rule": "Report practical equivalence when the complete paired 95 percent CI lies within the plus-or-minus practical tolerance band; otherwise report uncertainty.",
+        "estimator": "median of the six allocation-level paired differences, first candidate minus second candidate",
+        "pairing_unit": "allocation",
+        "practical_tolerance_changes_permitted": false,
+        "practical_tolerance_source": "selection.latency_tolerance.value_ms imported exactly from sensitivity_result.noise_floor.effective_noise_floor_ms",
+        "stable_difference_rule": "Claim a relative latency direction only when the paired 95 percent CI lies wholly below negative practical tolerance or wholly above positive practical tolerance."
+      },
+      "purpose": "Measure allocation-stable relative latency for every algorithmic global Pareto-front candidate without changing the frozen selection.",
+      "selection_isolation": {
+        "algorithm_selected_candidate_overridden": false,
+        "allowed_use": "stability analysis and hypothesis verdict only",
+        "measurements_feed_reselection": false,
+        "original_selection_time_measurements_replaced": false,
+        "winner_reselection_permitted": false
+      },
+      "status": "preregistered_before_expanded_search_results"
+    },
+    "contract_sha256": "aba3a961bf50caf15803f271b59d7ffbd091414816d14f3deb793452f75ec281",
+    "launched": false,
+    "measurements_feed_reselection": false
+  },
+  "remote_checks": {
+    "all_verified": true,
+    "artifacts": [
+      {
+        "expected_sha256": "88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e",
+        "kind": "sqsh",
+        "observed_sha256": "88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+        "verified": true
+      },
+      {
+        "expected_sha256": "7a391fb84a18714b60258becdb512594ec54faff5dccbf17ca53c5d902137512",
+        "kind": "pretrained_model",
+        "observed_sha256": "7a391fb84a18714b60258becdb512594ec54faff5dccbf17ca53c5d902137512",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+        "verified": true
+      },
+      {
+        "expected_sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+        "kind": "train_annotation",
+        "observed_sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+        "verified": true
+      },
+      {
+        "expected_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+        "kind": "validation_annotation",
+        "observed_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+        "verified": true
+      },
+      {
+        "kind": "train_image_dir",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+        "verified": true
+      },
+      {
+        "kind": "validation_image_dir",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+        "verified": true
+      }
+    ],
+    "loaded_secret_keys": [
+      "ACCESS_KEY",
+      "AUTOML_LLM_API_KEY",
+      "GITLAB_TOKEN",
+      "HF_TOKEN",
+      "NGC_KEY",
+      "SECRET_KEY",
+      "SLURM_HOSTNAME",
+      "SLURM_USER",
+      "SSH_KEY_PATH",
+      "base_url",
+      "model"
+    ],
+    "secret_values_recorded": false
+  },
+  "runner_source": {
+    "blockers": [],
+    "clean_against_head": true,
+    "commit_identity_checks": {
+      "git_blob_matches_current": true,
+      "git_blob_matches_head": true,
+      "recorded_commit_blob_matches": true,
+      "recorded_commit_exists": true,
+      "recorded_commit_is_ancestor": true,
+      "relative_path_matches": true,
+      "repository_matches": true,
+      "sha256_matches": true
+    },
+    "committed": true,
+    "corrected_runner_commit_identity": {
+      "git_blob": "34046eca32633953dccea9b52c5b9d5d07d127aa",
+      "head_commit": "e4b6a412545614668affd371a82231e090998ec0",
+      "relative_path": "experiments/dino_moo_phase2_20260728/expanded_search_runner.py",
+      "repository": "/localhome/local-rarunachalam/tao-automl",
+      "sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073"
+    },
+    "current_git_blob": "34046eca32633953dccea9b52c5b9d5d07d127aa",
+    "current_head_commit": "b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d",
+    "expected_sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073",
+    "head_git_blob": "34046eca32633953dccea9b52c5b9d5d07d127aa",
+    "head_matches_current": true,
+    "launch_source_ready": true,
+    "observed_sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073",
+    "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_runner.py",
+    "relative_path": "experiments/dino_moo_phase2_20260728/expanded_search_runner.py",
+    "repository": "/localhome/local-rarunachalam/tao-automl",
+    "tracked": true
+  },
+  "runtime_supersession": {
+    "corrected_runner_commit_identity": {
+      "git_blob": "34046eca32633953dccea9b52c5b9d5d07d127aa",
+      "head_commit": "e4b6a412545614668affd371a82231e090998ec0",
+      "relative_path": "experiments/dino_moo_phase2_20260728/expanded_search_runner.py",
+      "repository": "/localhome/local-rarunachalam/tao-automl",
+      "sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073"
+    },
+    "erratum_id": "dino_expanded_search_runtime_erratum_20260728_v1",
+    "erratum_internal_sha256": "b61196e5b76153fa71f4e73c58e4bc6f58eeba1f8fed3783482ba8c3156e5954",
+    "erratum_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_runtime_erratum.v1.json",
+    "erratum_sha256": "a89b5816b45e1df9c6286c25ccbe8314daee53843decc4400882ec33f10ffa17",
+    "strict_metric_parser": {
+      "accept_native_int_or_float": true,
+      "accept_strict_json_number_string": true,
+      "finite_result_required": true,
+      "function": "parse_finite_numeric_metric",
+      "reject_bool": true,
+      "reject_empty_or_whitespace": true,
+      "reject_junk": true,
+      "reject_nan_or_infinity": true
+    },
+    "target_runtime_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2",
+    "v1_runtime_reused": false,
+    "valid_objective_observations_reused": 0
+  },
+  "schema_version": 1,
+  "scope": {
+    "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "model_family": "DINO ResNet50",
+    "other_datasets_permitted": false,
+    "other_models_permitted": false
+  },
+  "search": {
+    "base_train_spec_sha256": "a1bd84c83cc72400674e4e9eb729a20a78f7c37e3bc87ffb9154477d5b0ba623",
+    "custom_param_ranges": {
+      "model.dec_layers": {
+        "valid_options": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "model.enc_layers": {
+        "valid_options": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "train.optim.lr": {
+        "valid_max": 0.0005,
+        "valid_min": 1e-05
+      },
+      "train.optim.weight_decay": {
+        "valid_max": 0.001,
+        "valid_min": 1e-05
+      }
+    },
+    "derived_schema_sha256": "9eb137c5f7aec7c28468ca9b642a29d1e96b522b362bf437938bdce2882c8681",
+    "domains": {
+      "model.dec_layers": {
+        "representation": "ordered_integer_levels",
+        "valid_max": 6,
+        "valid_min": 3,
+        "valid_options": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "model.enc_layers": {
+        "representation": "ordered_integer_levels",
+        "valid_max": 6,
+        "valid_min": 3,
+        "valid_options": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "train.optim.lr": {
+        "representation": "continuous",
+        "valid_max": 0.0005,
+        "valid_min": 1e-05
+      },
+      "train.optim.weight_decay": {
+        "representation": "continuous",
+        "valid_max": 0.001,
+        "valid_min": 1e-05
+      }
+    },
+    "manual_candidate_injection_permitted": false,
+    "numeric_finite_domains_encoded_as_json_schema_enum": [
+      "model.enc_layers",
+      "model.dec_layers"
+    ],
+    "packaged_schema_sha256": "10ccf469bfee1e5891653eec6db2505695c38385482a2f3b3ded29328a6ddc8f",
+    "parameters": [
+      "model.enc_layers",
+      "model.dec_layers",
+      "train.optim.lr",
+      "train.optim.weight_decay"
+    ],
+    "reference_model_spec_sha256": "91497df28e34298db1a878323920542dd8683d4b4e0ddf1bcd0181bf4b4ff4b0",
+    "subarchives": [
+      {
+        "budget": 20,
+        "candidate_ids": [
+          "seed_314159_rec_0",
+          "seed_314159_rec_1",
+          "seed_314159_rec_2",
+          "seed_314159_rec_3",
+          "seed_314159_rec_4",
+          "seed_314159_rec_5",
+          "seed_314159_rec_6",
+          "seed_314159_rec_7",
+          "seed_314159_rec_8",
+          "seed_314159_rec_9",
+          "seed_314159_rec_10",
+          "seed_314159_rec_11",
+          "seed_314159_rec_12",
+          "seed_314159_rec_13",
+          "seed_314159_rec_14",
+          "seed_314159_rec_15",
+          "seed_314159_rec_16",
+          "seed_314159_rec_17",
+          "seed_314159_rec_18",
+          "seed_314159_rec_19"
+        ],
+        "generation": "sequential Bayesian; later recommendations depend on measured prior candidates",
+        "search_seed": 314159
+      },
+      {
+        "budget": 20,
+        "candidate_ids": [
+          "seed_271828_rec_0",
+          "seed_271828_rec_1",
+          "seed_271828_rec_2",
+          "seed_271828_rec_3",
+          "seed_271828_rec_4",
+          "seed_271828_rec_5",
+          "seed_271828_rec_6",
+          "seed_271828_rec_7",
+          "seed_271828_rec_8",
+          "seed_271828_rec_9",
+          "seed_271828_rec_10",
+          "seed_271828_rec_11",
+          "seed_271828_rec_12",
+          "seed_271828_rec_13",
+          "seed_271828_rec_14",
+          "seed_271828_rec_15",
+          "seed_271828_rec_16",
+          "seed_271828_rec_17",
+          "seed_271828_rec_18",
+          "seed_271828_rec_19"
+        ],
+        "generation": "sequential Bayesian; later recommendations depend on measured prior candidates",
+        "search_seed": 271828
+      },
+      {
+        "budget": 20,
+        "candidate_ids": [
+          "seed_161803_rec_0",
+          "seed_161803_rec_1",
+          "seed_161803_rec_2",
+          "seed_161803_rec_3",
+          "seed_161803_rec_4",
+          "seed_161803_rec_5",
+          "seed_161803_rec_6",
+          "seed_161803_rec_7",
+          "seed_161803_rec_8",
+          "seed_161803_rec_9",
+          "seed_161803_rec_10",
+          "seed_161803_rec_11",
+          "seed_161803_rec_12",
+          "seed_161803_rec_13",
+          "seed_161803_rec_14",
+          "seed_161803_rec_15",
+          "seed_161803_rec_16",
+          "seed_161803_rec_17",
+          "seed_161803_rec_18",
+          "seed_161803_rec_19"
+        ],
+        "generation": "sequential Bayesian; later recommendations depend on measured prior candidates",
+        "search_seed": 161803
+      }
+    ],
+    "total_candidate_budget": 60
+  },
+  "selector": {
+    "parsed_selection": {
+      "accuracy_metric": "mAP50",
+      "accuracy_tolerance": 1e-12,
+      "augmentation_rho": 1e-06,
+      "latency_accuracy_retention": {
+        "reference": "accuracy_winner",
+        "reference_candidate_id": null,
+        "reference_value": null,
+        "type": "relative",
+        "value": 0.98
+      },
+      "latency_ci_high_metric": "latency_ci95_high",
+      "latency_ci_low_metric": "latency_ci95_low",
+      "latency_metric": "latency_ms",
+      "latency_tolerance": 0.73553775,
+      "mode": "multi_objective",
+      "multi_objective_min_accuracy": null,
+      "normalization": "pareto_front",
+      "score_tolerance": 1e-12
+    },
+    "settings": {
+      "accuracy_metric": "mAP50",
+      "accuracy_tolerance": 1e-12,
+      "algorithm": "bayesian",
+      "augmentation_rho": 1e-06,
+      "automl_checkpoint_retention_strategy": "terminal",
+      "automl_delete_intermediate_ckpt": true,
+      "automl_max_concurrent": 1,
+      "automl_max_recommendations": 20,
+      "experiment_id": "dino_expanded_search_seed_314159",
+      "latency_accuracy_retention": {
+        "reference": "accuracy_winner",
+        "retained_fraction": 0.98,
+        "type": "relative"
+      },
+      "latency_ci_high_metric": "latency_ci95_high",
+      "latency_ci_low_metric": "latency_ci95_low",
+      "latency_metric": "latency_ms",
+      "latency_tolerance": 0.73553775,
+      "multi_objective_min_accuracy": null,
+      "objective_normalization": "pareto_front",
+      "objectives": [
+        {
+          "direction": "maximize",
+          "metric": "mAP50",
+          "weight": 1.0
+        },
+        {
+          "direction": "minimize",
+          "metric": "latency_ms",
+          "weight": 1.0
+        }
+      ],
+      "random_seed": 314159,
+      "require_eval_fn_success": true,
+      "run_baseline": false,
+      "run_final_evaluation": false,
+      "selection_mode": "multi_objective",
+      "selection_score_tolerance": 1e-12,
+      "session_id": "dino_expanded_search_seed_314159"
+    }
+  },
+  "source_checks": {
+    "benchmark": {
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_review_20260727/dino_latency_benchmark.py",
+      "sha256": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd"
+    },
+    "evaluate_template": {
+      "path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/references/spec_template_evaluate.yaml",
+      "sha256": "561227c8fc7380db2fe4ae4922e44a83f7ade16281df589b9d63993488f1130a"
+    },
+    "manifest_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_manifest.v2.json",
+    "runner_source": {
+      "blockers": [],
+      "clean_against_head": true,
+      "commit_identity_checks": {
+        "git_blob_matches_current": true,
+        "git_blob_matches_head": true,
+        "recorded_commit_blob_matches": true,
+        "recorded_commit_exists": true,
+        "recorded_commit_is_ancestor": true,
+        "relative_path_matches": true,
+        "repository_matches": true,
+        "sha256_matches": true
+      },
+      "committed": true,
+      "corrected_runner_commit_identity": {
+        "git_blob": "34046eca32633953dccea9b52c5b9d5d07d127aa",
+        "head_commit": "e4b6a412545614668affd371a82231e090998ec0",
+        "relative_path": "experiments/dino_moo_phase2_20260728/expanded_search_runner.py",
+        "repository": "/localhome/local-rarunachalam/tao-automl",
+        "sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073"
+      },
+      "current_git_blob": "34046eca32633953dccea9b52c5b9d5d07d127aa",
+      "current_head_commit": "b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d",
+      "expected_sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073",
+      "head_git_blob": "34046eca32633953dccea9b52c5b9d5d07d127aa",
+      "head_matches_current": true,
+      "launch_source_ready": true,
+      "observed_sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_runner.py",
+      "relative_path": "experiments/dino_moo_phase2_20260728/expanded_search_runner.py",
+      "repository": "/localhome/local-rarunachalam/tao-automl",
+      "tracked": true
+    },
+    "runtime_supersession": {
+      "preserved_v1_manifest": {
+        "internal_manifest_sha256": "39fb50997a39ff4bfaa8036cd6222127f3ce8dda25a704ac188eab4dd6b75b82",
+        "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_manifest.v1.json",
+        "whole_file_sha256": "57e331686b8896989263a39f72edb69543fc58833f20a1e6e698c31f34d2e8be"
+      },
+      "runtime_erratum": {
+        "internal_audit_sha256": "b61196e5b76153fa71f4e73c58e4bc6f58eeba1f8fed3783482ba8c3156e5954",
+        "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_runtime_erratum.v1.json",
+        "whole_file_sha256": "a89b5816b45e1df9c6286c25ccbe8314daee53843decc4400882ec33f10ffa17"
+      },
+      "source_runtime_reused": false,
+      "target_runtime_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2",
+      "valid_objective_observations_reused": 0
+    },
+    "sensitivity_manifest": {
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/sensitivity_latency_manifest.v2.json",
+      "sha256": "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655"
+    },
+    "sensitivity_result": {
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/sensitivity_latency_analysis.v2.json",
+      "sha256": "33aea1c13ece0ce632587abd16ed6020ecc88c63220f89891a5f30183322eaea"
+    },
+    "skill_info": {
+      "path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/references/skill_info.yaml",
+      "sha256": "124c40e8842c2a4050ecdb9e1ed77c17e1059782326d2ead7b25fa605fac3fa0"
+    },
+    "tao_automl": {
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "b1a0ae235be53ba3ced7e4c880cb0be1f6b8157d",
+      "path": "/localhome/local-rarunachalam/tao-automl"
+    },
+    "tao_sdk": {
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+      "path": "/localhome/local-rarunachalam/tao-sdk"
+    },
+    "tao_skills": {
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "18f831c7c83b424861a60353fb735dd80efcfded",
+      "path": "/localhome/local-rarunachalam/tao-skills-external"
+    },
+    "train_schema": {
+      "path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/schemas/train.schema.json",
+      "sha256": "10ccf469bfee1e5891653eec6db2505695c38385482a2f3b3ded29328a6ddc8f"
+    },
+    "train_template": {
+      "path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/references/spec_template_train.yaml",
+      "sha256": "6dad54a29776758687284c3c3e5894bce08e06a1be82e7437d941c6a4933f372"
+    }
+  },
+  "status": "dry_run_validated_not_launched"
+}

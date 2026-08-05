@@ -27,15 +27,13 @@ class PBT(AutoMLAlgorithmBase):
         self.max_generations = int(max_generations)
         self.eval_interval = int(eval_interval)
         self.perturbation_factor = float(perturbation_factor)
-        self.metric = metric
+        self._configure_objective(metric)
 
         self.population = {}
         self.generation = 0
         self.complete = False
 
-        self.reverse_sort = True
-        if metric == "loss" or "loss" in metric.lower() or metric.lower() in ("evaluation_cost",):
-            self.reverse_sort = False
+        self.reverse_sort = self.metric_direction == "maximize"
         self.next_member_id = 0
         self.epoch_number = eval_interval
 
@@ -279,19 +277,31 @@ class PBT(AutoMLAlgorithmBase):
             self.track_id = 0
             return recommendations
 
+        current_batch = history[-self.population_size:]
         all_complete = all(
-            rec.status in [JobStates.success, JobStates.failure]
-            for rec in history[-self.population_size:]
+            rec.status in [
+                JobStates.success,
+                JobStates.done,
+                JobStates.failure,
+                JobStates.error,
+                JobStates.canceled,
+            ]
+            for rec in current_batch
         )
 
         if not all_complete:
             return []
 
-        for rec in history[-self.population_size:]:
+        valid_results = {}
+        for rec in current_batch:
+            observation = self._completed_observation_value(rec)
+            if observation is None:
+                continue
             member_id = rec.id
             if member_id in self.population:
-                self.population[member_id]["result"] = rec.result
+                self.population[member_id]["result"] = observation
                 self.population[member_id]["epochs"] = self.population[member_id].get("epochs", 0) + self.eval_interval
+                valid_results[member_id] = observation
 
         self.generation += 1
         self.epoch_number = (self.generation + 1) * self.eval_interval
@@ -300,8 +310,16 @@ class PBT(AutoMLAlgorithmBase):
             self.complete = True
             return []
 
+        if not valid_results:
+            logger.warning(
+                "PBT has no successful finite population member to promote; "
+                "ending the search"
+            )
+            self.complete = True
+            return []
+
         population_results = sorted(
-            [(mid, self.population[mid]["result"]) for mid in self.population.keys()],
+            valid_results.items(),
             key=lambda x: x[1],
             reverse=self.reverse_sort
         )

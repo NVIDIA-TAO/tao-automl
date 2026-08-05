@@ -1,0 +1,405 @@
+{
+  "artifact_sha256": {
+    "combined_selection.json": "794c038c9506b805b57c7812355ec173e5ea0275b21587befaf8c91a78cbe2f7",
+    "full_candidate_table.csv": "679c0221f0e544dcb552dfd8d04c12375320a4c5e936aeb1d700f75640699860",
+    "hardware_contract.json": "75888145e590203cdaec1197db1ee434c47fe88056260538ec015cefa543173b",
+    "launch_manifest.json": "d6d374cdc41db57983bf20eeba7f0b955a8320662a6fde868d61341e3fcb9fd2",
+    "per_seed_selection.json": "719dea6ded39a293fafc795744b160e36a7f5df84322b83653a30447882366a6",
+    "process_status.json": "f1032d6f317e62c63d3fc665a74e89919a10e808fc1c9540569a5a3976676a00",
+    "seed_161803/candidate_evaluations.json": "9f8cc57d0939e6744f78057da5b284d639402d6a91d9fdd1d66a6fb65818e258",
+    "seed_161803/result.json": "3f52484a219710dd1dbf54f24cf5945a91e9f475f6dd6b0c16f673cee0629eb0",
+    "seed_271828/candidate_evaluations.json": "5e10721a3ee0016222c6c9a23054e4a2837d15a8182cd94a1e4941fe84b316f3",
+    "seed_271828/result.json": "e0222f6cf4d2f75571a3b0108fd8d9c5b2b2efb79d53fee3a6fa7f2229174fee",
+    "seed_314159/candidate_evaluations.json": "d7701574825b7d8df5acbe84fc9b87df27f1afce784e1c9322a8deec8f7507ff",
+    "seed_314159/result.json": "529bd25d729a56f8aa024a3c22348745ad960851fbc6d286c28e230691d07491",
+    "smoke/result.json": "54710cafeac6793aa792ab6254e2267f0a0f823e6c1752d49415b3840064afcd",
+    "winner_latency_repeats.json": "e7f38eb3e7d3505c59ccd9db7f8ae79e78d24c50bb0431ebae9b46222ba1ffc5"
+  },
+  "commits": {
+    "final_objective_validity_hardening_automl": "09f9fe53a6050422a928046072397b41c4fdd857",
+    "per_seed_replay_automl": "82d473f0820e32ec85f981d036b7758377fe9e9c",
+    "primary_launch": {
+      "tao_automl": {
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "commit": "c0393ead46605f133cef8121c7f1335777b49b90",
+        "path": "/localhome/local-rarunachalam/tao-automl"
+      },
+      "tao_sdk": {
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "commit": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+        "path": "/localhome/local-rarunachalam/tao-sdk"
+      },
+      "tao_skills": {
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "commit": "18f831c7c83b424861a60353fb735dd80efcfded",
+        "path": "/localhome/local-rarunachalam/tao-skills-external"
+      }
+    },
+    "repeat_evidence_automl": "5839c945e1d08c9638f2c8a0ddac377b6058f66a"
+  },
+  "data_and_models": {
+    "dataset_inventory": {
+      "category_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "train_annotation_sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+      "train_annotations": 8395,
+      "train_images": 1414,
+      "validation_annotation_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+      "validation_annotations": 2186,
+      "validation_images": 353
+    },
+    "ptm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+    "ptm_sha256": "7a391fb84a18714b60258becdb512594ec54faff5dccbf17ca53c5d902137512",
+    "winner_checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/768b852a-aa1d-42c0-b0ec-586f5ceca222/results_dir/train/model_epoch_009_step_00440.pth",
+    "winner_checkpoint_sha256": "f09741401515e972b9b82bae4b80d7d800aca4db7a1a87f66bebb10b204c3d2e"
+  },
+  "job_accounting": {
+    "combined": {
+      "completed_exit_0_0": 93,
+      "eight_gpu_allocations": 93,
+      "original_plus_repeat_winner_latency_allocations": 4,
+      "original_plus_repeat_winner_latency_unique_nodes": 2
+    },
+    "primary": {
+      "completed_exit_0_0": 90,
+      "eight_gpu_allocations": 90,
+      "latency_allocations": 30,
+      "manual_requeue_then_success": [
+        {
+          "candidate_id": "seed_161803_rec_4",
+          "phase": "latency_benchmark",
+          "slurm_job_id": "30913697"
+        },
+        {
+          "candidate_id": "seed_271828_rec_5",
+          "phase": "train",
+          "slurm_job_id": "30913760"
+        }
+      ],
+      "phase_counts": {
+        "accuracy_evaluation": 30,
+        "latency_benchmark": 30,
+        "train": 30
+      },
+      "unique_latency_nodes": 30,
+      "unique_nodes_all_phases": 59
+    },
+    "repeats": {
+      "completed_exit_0_0": 3,
+      "eight_gpu_allocations": 3,
+      "nodes": [
+        "batch-block7-00843"
+      ],
+      "unique_nodes": 1,
+      "unique_slurm_allocations": 3
+    },
+    "selected_original_latency": {
+      "node": "batch-block7-03393",
+      "slurm_job_id": "30917544"
+    }
+  },
+  "latency_repeat_validation": {
+    "aggregate": {
+      "all_jobs_used_identical_inputs": true,
+      "independent_job_count": 3,
+      "input_identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+      "median_latency_ms": {
+        "coefficient_of_variation": 0.0024104822612970823,
+        "count": 3,
+        "maximum": 79.62417775,
+        "mean": 79.40082683333333,
+        "median": 79.42156525,
+        "minimum": 79.15673749999999,
+        "population_standard_deviation": 0.19139428461407137,
+        "range": 0.4674402500000099
+      },
+      "original_selection_measurement_median_ms": 79.89227525,
+      "p95_latency_ms": {
+        "coefficient_of_variation": 0.0033338763814511623,
+        "count": 3,
+        "maximum": 80.1542135,
+        "mean": 79.80421965,
+        "median": 79.74883894999999,
+        "minimum": 79.50960649999999,
+        "population_standard_deviation": 0.26605740303127573,
+        "range": 0.6446070000000077
+      },
+      "repeat_delta_from_original_ms": [
+        -0.735537750000006,
+        -0.47070999999999685,
+        -0.2680974999999961
+      ]
+    },
+    "feeds_selection": false,
+    "input_identity": {
+      "batch_count": 16,
+      "definition": "sha256(canonical JSON of batch order, image names, original sizes, tensor/mask shapes+dtypes, and exact preprocessed tensor/mask hashes)",
+      "dtype": "torch.float32",
+      "example_count": 16,
+      "identical_across_24_rank_records": true,
+      "identical_across_jobs": true,
+      "image_tensor_shape": [
+        1,
+        3,
+        800,
+        1333
+      ],
+      "model_input_shape": [
+        1,
+        4,
+        800,
+        1333
+      ],
+      "padding_mask_shape": [
+        1,
+        1,
+        800,
+        1333
+      ],
+      "sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+    },
+    "interpretation": "Three independent SLURM jobs/allocations completed, but all three repeat allocations landed on the same physical node. The original winner latency allocation used a different node. These repeats validate within-node independent-allocation repeatability, not three-node repeatability.",
+    "per_job": [
+      {
+        "bootstrap_ci95_ms": [
+          79.03559375,
+          79.2041465
+        ],
+        "median_latency_ms": 79.15673749999999,
+        "node": "batch-block7-00843",
+        "p95_latency_ms": 79.50960649999999,
+        "raw_sample_count_total": 4000,
+        "repeat_index": 0,
+        "samples_per_device": 500,
+        "slurm_job_id": "30931806",
+        "tao_job_id": "c5e5ca6d-fe96-4e99-8f70-9210b60543e5",
+        "valid": true
+      },
+      {
+        "bootstrap_ci95_ms": [
+          79.39657725,
+          79.48423700000001
+        ],
+        "median_latency_ms": 79.42156525,
+        "node": "batch-block7-00843",
+        "p95_latency_ms": 79.74883894999999,
+        "raw_sample_count_total": 4000,
+        "repeat_index": 1,
+        "samples_per_device": 500,
+        "slurm_job_id": "30932032",
+        "tao_job_id": "10450946-9dc2-4dcb-9a6c-c0addd7261bf",
+        "valid": true
+      },
+      {
+        "bootstrap_ci95_ms": [
+          79.58802399999999,
+          79.6813815
+        ],
+        "median_latency_ms": 79.62417775,
+        "node": "batch-block7-00843",
+        "p95_latency_ms": 80.1542135,
+        "raw_sample_count_total": 4000,
+        "repeat_index": 2,
+        "samples_per_device": 500,
+        "slurm_job_id": "30932183",
+        "tao_job_id": "ccdcfc05-2893-48bb-9640-610c859098ea",
+        "valid": true
+      }
+    ],
+    "protocol": {
+      "bootstrap_confidence_level": 0.95,
+      "bootstrap_resamples": 5000,
+      "bootstrap_seed": 424242,
+      "expected_devices": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "repeated_rounds": 5,
+      "tail_percentile": 95.0,
+      "timed_iterations": 100,
+      "validity_thresholds": {
+        "max_absolute_round_drift_fraction": 0.05,
+        "max_bootstrap_ci_width_fraction": 0.03,
+        "max_device_median_range_fraction": 0.05,
+        "max_robust_cv": 0.1,
+        "max_round_median_range_fraction": 0.05
+      },
+      "warmup_iterations": 50
+    },
+    "selected_candidate_id": "seed_271828_rec_5",
+    "status": "complete",
+    "validation_only": true
+  },
+  "limitations": [
+    "The 98% retention rule leaves one feasible point, so no distinct feasible Pareto compromise exists.",
+    "The primary measurement predates exact input fingerprinting; the three validation repeats have exact, matching input identities.",
+    "All repeat jobs were distinct allocations but scheduled on one node; the original winner measurement provides the second node.",
+    "Per-seed best achieved mAP50 varies, so selector invariants are stable while search-quality stability across seeds is not established."
+  ],
+  "per_seed_read_only_replay": {
+    "artifact_sha256": "719dea6ded39a293fafc795744b160e36a7f5df84322b83653a30447882366a6",
+    "feeds_union_selection": false,
+    "seeds": {
+      "161803": {
+        "accuracy": "seed_161803_rec_4",
+        "accuracy_reference": 0.6131103791599072,
+        "accuracy_threshold": 0.600848171576709,
+        "feasible_count": 3,
+        "feasible_front": [
+          "seed_161803_rec_4",
+          "seed_161803_rec_8"
+        ],
+        "latency": "seed_161803_rec_8",
+        "multi_objective": "seed_161803_rec_4"
+      },
+      "271828": {
+        "accuracy": "seed_271828_rec_5",
+        "accuracy_reference": 0.6359897329231639,
+        "accuracy_threshold": 0.6232699382647006,
+        "feasible_count": 1,
+        "feasible_front": [
+          "seed_271828_rec_5"
+        ],
+        "latency": "seed_271828_rec_5",
+        "multi_objective": "seed_271828_rec_5"
+      },
+      "314159": {
+        "accuracy": "seed_314159_rec_8",
+        "accuracy_reference": 0.5613662317186087,
+        "accuracy_threshold": 0.5501389070842365,
+        "feasible_count": 5,
+        "feasible_front": [
+          "seed_314159_rec_7",
+          "seed_314159_rec_8"
+        ],
+        "latency": "seed_314159_rec_7",
+        "multi_objective": "seed_314159_rec_8"
+      }
+    }
+  },
+  "runtime": {
+    "driver": "535.129.03",
+    "hardware_contract": {
+      "compute_capability": "8.0",
+      "cuda": "13.2",
+      "cudnn": 92000,
+      "gpu_name": "NVIDIA A100-SXM4-80GB",
+      "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+      "torch": "2.11.0",
+      "total_memory_bytes": 85174583296,
+      "world_size": 8
+    },
+    "precision": "fp32",
+    "python": "3.12.3",
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+    "sqsh_sha256": "88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e"
+  },
+  "schema_version": 1,
+  "scope": {
+    "dataset": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "model": "DINO ResNet50",
+    "primary_candidates": 30,
+    "primary_phase_jobs": 90,
+    "validation_repeat_jobs": 3
+  },
+  "selection": {
+    "accuracy_threshold": 0.6232699382647006,
+    "algorithm_only": true,
+    "candidate_id": "seed_271828_rec_5",
+    "feasible_candidate_ids": [
+      "seed_271828_rec_5"
+    ],
+    "global_pareto_front": [
+      "seed_161803_rec_0",
+      "seed_161803_rec_2",
+      "seed_271828_rec_1",
+      "seed_271828_rec_2",
+      "seed_271828_rec_5",
+      "seed_314159_rec_7"
+    ],
+    "mAP50": 0.6359897329231639,
+    "mode_winners": {
+      "accuracy": "seed_271828_rec_5",
+      "latency": "seed_271828_rec_5",
+      "multi_objective": "seed_271828_rec_5"
+    },
+    "multi_objective": {
+      "distinct_compromise": false,
+      "dominated_by": [],
+      "fallback_used": true,
+      "feasible_dominated_by": [],
+      "feasible_pareto_rank": 0,
+      "pareto_rank": 0,
+      "reason": "No distinct Pareto compromise exists in the evaluated search space. The deterministic augmented-Chebyshev fallback selected an extreme point."
+    },
+    "original_median_latency_ms": 79.89227525,
+    "original_p95_latency_ms": 80.21695199999999,
+    "selection_source_sha256": "794c038c9506b805b57c7812355ec173e5ea0275b21587befaf8c91a78cbe2f7",
+    "specs": {
+      "model.num_queries": 594,
+      "train.optim.lr": 0.00045,
+      "train.optim.weight_decay": 0.00026967723799334445
+    }
+  },
+  "source_sha256": {
+    "dino_latency_benchmark.py": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+    "latency_stats.py": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d",
+    "repeat_selected_winner_latency.py": "c575b49054bc230a6f4ac32b584e5cc0ceb5a2790040bd2227339c08ff9e9ebe",
+    "selection.py": "1f9d8fda046653e87db76c50a8a12a912afb552740aba3d758b12ac85b6851bb"
+  },
+  "status": "PASS",
+  "verification": {
+    "failed": 0,
+    "failures": [],
+    "groups": {
+      "job_accounting": {
+        "checks": 16,
+        "failed": 0,
+        "passed": 16
+      },
+      "per_seed_replay": {
+        "checks": 19,
+        "failed": 0,
+        "passed": 19
+      },
+      "primary_archive": {
+        "checks": 17,
+        "failed": 0,
+        "passed": 17
+      },
+      "primary_selection": {
+        "checks": 10,
+        "failed": 0,
+        "passed": 10
+      },
+      "provenance": {
+        "checks": 4,
+        "failed": 0,
+        "passed": 4
+      },
+      "repeat_inputs": {
+        "checks": 13,
+        "failed": 0,
+        "passed": 13
+      },
+      "repeat_validation": {
+        "checks": 25,
+        "failed": 0,
+        "passed": 25
+      }
+    },
+    "passed": 104,
+    "status": "PASS",
+    "total_checks": 104
+  }
+}

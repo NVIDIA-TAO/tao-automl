@@ -38,7 +38,7 @@ class HyperBand(AutoMLAlgorithmBase):
         """
         super().__init__(context, state_store, network, parameters)
         self.epoch_multiplier = int(epoch_multiplier)
-        self.metric = metric
+        self._configure_objective(metric)
         self.ni = {}
         self.ri = {}
         self.brackets_and_sh_sequence(max_epochs, reduction_factor)
@@ -51,12 +51,7 @@ class HyperBand(AutoMLAlgorithmBase):
         self.expt_iter = 0  # Recommendations within the SH
         self.complete = False
 
-        # Determine reverse_sort based on metric (same logic as controller)
-        # Default: higher is better (accuracy, mIoU, etc.)
-        self.reverse_sort = True
-        # For loss metrics: lower is better
-        if metric == "loss" or "loss" in metric.lower() or metric.lower() in ("evaluation_cost",):
-            self.reverse_sort = False
+        self.reverse_sort = self.metric_direction == "maximize"
         # Track how many configs were launched in current rung (for parallel execution)
         self.last_launched_count = 0
         logger.info(
@@ -318,6 +313,9 @@ class HyperBand(AutoMLAlgorithmBase):
         state_dict["ri"] = self.ri
         state_dict["last_launched_count"] = self.last_launched_count
         state_dict["metric"] = self.metric
+        state_dict["experiments_considered_ids"] = [
+            int(rec.id) for rec in self.experiments_considered
+        ]
 
         self.state_store.save_brain_info(self.context.id, state_dict)
 
@@ -347,6 +345,15 @@ class HyperBand(AutoMLAlgorithmBase):
         brain.complete = json_loaded["complete"]
         brain.epoch_number = json_loaded["epoch_number"]
         brain.last_launched_count = json_loaded.get("last_launched_count", 0)
+        brain.ni = copy.deepcopy(json_loaded.get("ni", brain.ni))
+        brain.ri = copy.deepcopy(json_loaded.get("ri", brain.ri))
+        brain._restored_experiments_considered_ids = [
+            int(identifier)
+            for identifier in json_loaded.get(
+                "experiments_considered_ids",
+                [],
+            )
+        ]
 
         return brain
 
@@ -386,21 +393,58 @@ class HyperBand(AutoMLAlgorithmBase):
             # We take history[-bracket_size:] and prune this at every SH step
             lower = -1 * self.ni.get(self.bracket, [0])[0]
 
+            if self.expt_iter > 0 and not self.experiments_considered:
+                by_id = {int(rec.id): rec for rec in history}
+                restored_ids = getattr(
+                    self,
+                    "_restored_experiments_considered_ids",
+                    [],
+                )
+                missing_ids = [
+                    identifier
+                    for identifier in restored_ids
+                    if identifier not in by_id
+                ]
+                if missing_ids:
+                    raise ValueError(
+                        "Cannot resume Hyperband promotion; recommendation "
+                        f"IDs are missing from history: {missing_ids}"
+                    )
+                self.experiments_considered = [
+                    by_id[identifier] for identifier in restored_ids
+                ]
+
             if self.expt_iter == 0:
                 if self.sh_iter == 1:
+                    promotable = [
+                        rec for rec in history[lower:]
+                        if self._completed_observation_value(rec) is not None
+                    ]
                     self.experiments_considered = sorted(
-                        history[lower:],
+                        promotable,
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
                 else:
                     for experiment in self.experiments_considered:
                         experiment.result = history[experiment.id].result
+                    self.experiments_considered = [
+                        rec for rec in self.experiments_considered
+                        if self._completed_observation_value(rec) is not None
+                    ]
                     self.experiments_considered = sorted(
                         self.experiments_considered,
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
+                # Failed or corrupt trials reduce the promotable population.
+                # Clamp this rung so subsequent calls advance after issuing
+                # every valid survivor instead of indexing absent candidates.
+                self.ni[self.bracket][self.sh_iter] = len(
+                    self.experiments_considered
+                )
+                if not self.experiments_considered:
+                    return self._generate_one_recommendation(history)
 
             self.epoch_number = self.ri[self.bracket][self.sh_iter] * self.epoch_multiplier
             final_epoch = self.ri[self.bracket][-1] * self.epoch_multiplier

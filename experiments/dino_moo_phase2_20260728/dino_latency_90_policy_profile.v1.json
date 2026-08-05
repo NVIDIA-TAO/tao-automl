@@ -1,0 +1,50 @@
+{
+  "automl_settings": {
+    "accuracy_metric": "mAP50",
+    "accuracy_tolerance": 1e-12,
+    "latency_accuracy_retention": {
+      "reference": "accuracy_winner",
+      "retained_fraction": 0.9,
+      "type": "relative"
+    },
+    "latency_metric": "latency_ms",
+    "latency_tolerance": 0.73553775,
+    "multi_objective_min_accuracy": null,
+    "objectives": [
+      {
+        "direction": "maximize",
+        "metric": "mAP50",
+        "weight": 1.0
+      },
+      {
+        "direction": "minimize",
+        "metric": "latency_ms",
+        "weight": 1.0
+      }
+    ],
+    "selection_mode": "latency"
+  },
+  "policy": {
+    "accuracy_reference": "highest-accuracy valid candidate",
+    "accuracy_tie_break_scope": "equivalent-fastest feasible cohort only",
+    "feasibility_relation": "accuracy >= minimum_accuracy",
+    "latency_objective": "minimize stabilized latency over the accuracy-feasible population",
+    "minimum_accuracy_formula": "0.90 * accuracy_mode_winner_accuracy",
+    "multi_objective_inherits_latency_accuracy_retention": false,
+    "relative_not_percentage_point_subtraction": true
+  },
+  "profile_id": "dino_latency_mode_90pct_retention",
+  "schema_version": 1,
+  "scope": {
+    "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "model_family": "DINO"
+  },
+  "validation": {
+    "accuracy_retention_finite": true,
+    "accuracy_retention_inclusive_maximum": 1.0,
+    "accuracy_retention_strict_minimum": 0.0,
+    "multi_objective_min_accuracy_required": false,
+    "repository_default_changed_by_profile": false,
+    "repository_default_retention": 0.98
+  }
+}

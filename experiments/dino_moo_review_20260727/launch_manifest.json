@@ -1,0 +1,231 @@
+{
+  "account": "edgeai_tao-ptm_image-foundation-model-clip",
+  "accuracy_evaluation": {
+    "batch_size_per_gpu": 4,
+    "fixed_padding": true,
+    "gpu_count": 8,
+    "metric": "mAP50",
+    "precision": "fp32",
+    "random_resize_max_size": 1333,
+    "test_random_resize": 800
+  },
+  "created_utc": "2026-07-27T20:30:28Z",
+  "dataset_inventory": {
+    "category_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "train_annotation_sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+    "train_annotations": 8395,
+    "train_images": 1414,
+    "validation_annotation_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+    "validation_annotations": 2186,
+    "validation_images": 353
+  },
+  "direct_sqsh": true,
+  "gpu_count_per_job": 8,
+  "image_uri": "nvcr.io/nvidia/tao/tao-toolkit:7.0.1-pyt",
+  "latency_benchmark": {
+    "batch_size_per_gpu": 1,
+    "benchmark_seed": 20260727,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
+    "excluded_scope": [
+      "checkpoint_load",
+      "disk_io",
+      "decode_resize_normalize",
+      "host_to_device_transfer",
+      "coco_accumulation",
+      "distributed_gather"
+    ],
+    "precision": "fp32",
+    "preloaded_batches": 16,
+    "primary_estimator": "median_of_device_round_medians",
+    "raw_samples_per_candidate": 4000,
+    "synchronization": "cuda_sync_each_sample_and_nccl_barrier",
+    "tf32": false,
+    "timed_scope": "model_forward_plus_dino_gpu_postprocess"
+  },
+  "latency_protocol": {
+    "bootstrap_confidence_level": 0.95,
+    "bootstrap_resamples": 5000,
+    "bootstrap_seed": 424242,
+    "expected_devices": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7"
+    ],
+    "repeated_rounds": 5,
+    "tail_percentile": 95.0,
+    "timed_iterations": 100,
+    "validity_thresholds": {
+      "max_absolute_round_drift_fraction": 0.05,
+      "max_bootstrap_ci_width_fraction": 0.03,
+      "max_device_median_range_fraction": 0.05,
+      "max_robust_cv": 0.1,
+      "max_round_median_range_fraction": 0.05
+    },
+    "warmup_iterations": 50
+  },
+  "model": "DINO ResNet50",
+  "num_nodes": 1,
+  "partition": "polar3",
+  "ptm": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+  "recommendations_per_seed": 10,
+  "repositories": {
+    "tao_automl": {
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "c0393ead46605f133cef8121c7f1335777b49b90",
+      "path": "/localhome/local-rarunachalam/tao-automl"
+    },
+    "tao_sdk": {
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+      "path": "/localhome/local-rarunachalam/tao-sdk"
+    },
+    "tao_skills": {
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "18f831c7c83b424861a60353fb735dd80efcfded",
+      "path": "/localhome/local-rarunachalam/tao-skills-external"
+    }
+  },
+  "search_parameters": [
+    "model.num_queries",
+    "train.optim.lr",
+    "train.optim.weight_decay"
+  ],
+  "search_ranges": {
+    "model.num_queries": {
+      "valid_max": 900,
+      "valid_min": 300
+    },
+    "train.optim.lr": {
+      "valid_max": 0.0005,
+      "valid_min": 1e-05
+    },
+    "train.optim.weight_decay": {
+      "valid_max": 0.001,
+      "valid_min": 1e-05
+    }
+  },
+  "search_seeds": [
+    314159,
+    271828,
+    161803
+  ],
+  "selection": {
+    "accuracy_constraint": {
+      "reference": "accuracy_winner",
+      "retained_fraction": 0.98,
+      "type": "relative"
+    },
+    "accuracy_tolerance": 1e-12,
+    "algorithm": "bayesian",
+    "augmentation_rho": 1e-06,
+    "automl_checkpoint_retention_strategy": "terminal",
+    "automl_delete_intermediate_ckpt": true,
+    "automl_max_concurrent": 1,
+    "automl_max_recommendations": 10,
+    "baseline_metric": 0.007808934173321529,
+    "experiment_id": "dino_moo_review_seed_314159",
+    "latency_ci_high_metric": "latency_ci95_high",
+    "latency_ci_low_metric": "latency_ci95_low",
+    "latency_tolerance": 0.0,
+    "objective_normalization": "pareto_front",
+    "objectives": [
+      {
+        "direction": "maximize",
+        "metric": "mAP50",
+        "weight": 1.0
+      },
+      {
+        "direction": "minimize",
+        "metric": "latency_ms",
+        "weight": 1.0
+      }
+    ],
+    "random_seed": 314159,
+    "require_eval_fn_success": true,
+    "reuse_best_metric_for_final_evaluation": true,
+    "run_baseline": true,
+    "run_final_evaluation": true,
+    "selection_mode": "multi_objective",
+    "selection_score_tolerance": 1e-12,
+    "session_id": "dino_moo_review_seed_314159"
+  },
+  "shared_archive": {
+    "all_modes_receive_identical_candidates": true,
+    "generation": "three seeded sequential Bayesian sub-archives",
+    "selection_population": "union of every successful measured candidate"
+  },
+  "smoke_baseline": {
+    "checkpoint": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+    "checkpoint_classifier_classes": 91,
+    "evaluation_class_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "purpose": "raw COCO PTM compatibility and launch validation only; never used as the retained-accuracy reference"
+  },
+  "source_dataset": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+  "spec_overrides": {
+    "dataset.batch_size": 4,
+    "dataset.eval_class_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "dataset.num_classes": 5,
+    "dataset.train_data_sources[0].image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+    "dataset.train_data_sources[0].json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+    "dataset.val_data_sources[0].image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+    "dataset.val_data_sources[0].json_file": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+    "model.backbone": "resnet_50",
+    "model.num_queries": 900,
+    "model.num_select": 300,
+    "train.cudnn.benchmark": false,
+    "train.cudnn.deterministic": true,
+    "train.distributed_strategy": "ddp",
+    "train.gpu_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "train.num_epochs": 10,
+    "train.num_gpus": 8,
+    "train.num_nodes": 1,
+    "train.precision": "fp32",
+    "train.pretrained_model_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+    "train.seed": 1234,
+    "train.validation_interval": 1,
+    "wandb.enable": false
+  },
+  "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+  "staged_dataset": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco",
+  "total_candidate_budget": 30,
+  "training_epochs": 10,
+  "training_runtime": {
+    "batch_size_per_gpu": 4,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
+    "distributed_strategy": "ddp",
+    "global_batch_size": 32,
+    "precision": "fp32"
+  },
+  "training_seed": 1234
+}
