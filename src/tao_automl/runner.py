@@ -2076,6 +2076,7 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "enable_llm_range_narrowing",
     "epoch_multiplier",
     "evaluation_records_dir",
+    "evolvable_text_parameters",
     "experiment_id",
     "final_evaluation",
     "final_evaluation_metric",
@@ -3204,7 +3205,8 @@ class AutoMLRunner:
             removed.
 
             - ``best``: ``rec_id``, ``specs``, ``metric_value``,
-              ``objective_score``, ``objective_values``, ``adjustments``
+              ``objective_score``, ``objective_values``, ``adjustments``,
+              ``feedback``
             - ``progress``: ``completed``, ``total``, ``best_metric``,
               ``best_rec_id``, ``algorithm``
             - ``baseline``: ``enabled``, ``metric_name``, ``metric_value``,
@@ -3219,7 +3221,7 @@ class AutoMLRunner:
               ``not_run``.
             - ``history``: list of per-recommendation dicts with ``rec_id``,
               ``metric``, ``objective_score``, ``objective_values``,
-              ``status``, ``failure_reason``, ``adjustments``
+              ``status``, ``failure_reason``, ``adjustments``, ``feedback``
             - ``pareto_front``: present for multi-objective sessions only
         """
         from tao_automl import AutoML
@@ -4161,9 +4163,9 @@ class AutoMLRunner:
         return True
 
     def _recover_pending_job(self, entry, automl, metric_name,
-                              metric_extractor, eval_fn, feedback_fn, workspace_path,
+                              metric_extractor, eval_fn, workspace_path,
                               on_result, objective_names=None,
-                              platform_kwargs=None) -> None:
+                              platform_kwargs=None, feedback_fn=None) -> None:
         """Poll an in-flight job (recovered on resume), extract its result,
         and report it to the brain. Mirrors the tail of _run_one_job.
         """
