@@ -30,7 +30,10 @@ _NO_DISTINCT_COMPROMISE = (
 
 def _candidate_value(candidate: Any, name: str, default: Any = None) -> Any:
     if isinstance(candidate, Mapping):
-        return candidate.get(name, default)
+        missing = object()
+        value = candidate.get(name, missing)
+        if value is not missing:
+            return value
     return getattr(candidate, name, default)
 
 
