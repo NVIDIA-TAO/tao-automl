@@ -61,10 +61,31 @@ def get_valid_range(parameter_config, parent_params, custom_ranges=None):
     v_min = float(valid_min) if valid_min not in (None, '', "") else 0.0
     v_max = float(valid_max) if valid_max not in (None, '', "") else float('inf')
     default_value = float(default_val) if default_val not in (None, '', "") else 0.0
-    if math.isinf(v_min):
-        v_min = default_value
+    # An unbounded schema bound (valid_max="inf", common across TAO configs for
+    # lr, batch_size, epochs, ...) cannot be sampled directly. Collapsing it to
+    # the default is worse than useless: it yields [min, default], so the
+    # optimizer may only ever move *below* the default and can never explore a
+    # larger value. Expand around the default instead, matching the
+    # no-range fallback the brains already use (x10 for floats, x2 for ints).
+    is_int = str(parameter_config.get("value_type", "")).lower() in (
+        "int", "integer", "ordered_int",
+    )
     if math.isinf(v_max):
-        v_max = default_value
+        if default_value > 0:
+            v_max = default_value * (2.0 if is_int else 10.0)
+        elif default_value < 0:
+            v_max = default_value / (2.0 if is_int else 10.0)
+        else:
+            v_max = 100.0 if is_int else 1.0
+    if math.isinf(v_min):
+        if default_value > 0:
+            v_min = default_value / (2.0 if is_int else 10.0)
+        elif default_value < 0:
+            v_min = default_value * (2.0 if is_int else 10.0)
+        else:
+            v_min = 1.0 if is_int else 0.0
+        if is_int:
+            v_min = max(1.0, v_min)
 
     # Apply custom ranges if provided
     if custom_ranges and parameter_name in custom_ranges:

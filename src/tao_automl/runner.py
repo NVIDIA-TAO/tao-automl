@@ -280,6 +280,12 @@ _CANCEL_CONFIRM_TIMEOUT_SECONDS = 30.0
 _CANCEL_CONFIRM_POLL_SECONDS = 0.5
 _TERMINAL_REC_STATUSES = {"success", "done", "failure", "error", "canceled"}
 _SUCCESS_REC_STATUSES = {"success", "done"}
+# A failed trial's artifacts are its only diagnostic trail. The runner cancels
+# and removes the backend job on failure, so once these are pruned the container
+# logs, the generated spec, and the partial results dir are all gone and the
+# user is left with "status=failure" and nothing to debug. Retained by default;
+# opt out with automl_settings["automl_retain_failed_artifacts"] = False.
+_FAILURE_REC_STATUSES = {"failure", "error"}
 _DEFER_ARTIFACT_PRUNING_ALGORITHMS = frozenset({
     "hyperband", "h", "bohb", "asha", "dehb", "hyperband_es", "hes", "pbt",
     "hybrid",
@@ -2334,6 +2340,7 @@ class AutoMLRunner:
         self._delete_intermediate_ckpt = False
         self._algorithm = ""
         self._retain_pareto_front = False
+        self._retain_failed_artifacts = True
         self._terminal_job_ids = {}
         self._deleted_job_ids = set()
         self._cleanup_capability_warned = False
@@ -2478,6 +2485,34 @@ class AutoMLRunner:
             job_id for job_id in self._active_jobs.values()
             if isinstance(job_id, str) and job_id
         }
+
+        # Keep failed trials' artifacts. They are the only record of *why* a
+        # recommendation died -- the backend job is canceled and removed on
+        # failure, so pruning here leaves the user with a bare "status=failure".
+        # Their checkpoints are also the cheapest thing in the workspace: a
+        # trial that failed during setup rarely wrote one at all.
+        if self._retain_failed_artifacts:
+            # Cancellation is also recorded as status="failure" (with
+            # failure_reason="job_canceled"). A cancelled job is not a defect to
+            # diagnose and the caller asked for its resources back, so only
+            # genuine trial failures are retained.
+            cancelled_jobs = {
+                job_id
+                for rec in history
+                for job_id in [getattr(rec, "job_id", None)]
+                if job_id and str(getattr(rec, "failure_reason", "")) == "job_canceled"
+            }
+            failed_jobs = {
+                job_id for job_id, status in self._terminal_job_ids.items()
+                if status in _FAILURE_REC_STATUSES
+            } - cancelled_jobs
+            if failed_jobs:
+                protected.update(failed_jobs)
+                logger.info(
+                    "Retaining artifacts for %d failed job(s) for diagnosis "
+                    "(set automl_retain_failed_artifacts=False to prune them)",
+                    len(failed_jobs),
+                )
         try:
             best = automl.get_best()
         except Exception as ex:
@@ -3178,6 +3213,9 @@ class AutoMLRunner:
             automl_settings.get("automl_delete_intermediate_ckpt", True)
         )
         self._algorithm = str(automl_settings.get("algorithm", "")).lower()
+        self._retain_failed_artifacts = _bool_setting(
+            automl_settings.get("automl_retain_failed_artifacts", True)
+        )
         self._terminal_job_ids = {}
         self._deleted_job_ids = set()
         self._cleanup_capability_warned = False
