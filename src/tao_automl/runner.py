@@ -2474,6 +2474,10 @@ def _compare_to_baseline(
 # key argument, which the source scan cannot see — keep them listed.
 KNOWN_AUTOML_SETTINGS = frozenset({
     "algorithm",
+    "accuracy_constraint",
+    "accuracy_metric",
+    "accuracy_retention_fraction",
+    "accuracy_tolerance",
     "allow_unsafe_effective_batch",
     "api_key",
     "automl_checkpoint_retention_strategy",
@@ -2497,9 +2501,12 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "automl_range_override",
     "automl_reduction_factor",
     "automl_top_n_percent",
+    "augmentation_rho",
     "base_url",
     "baseline_metric",
     "baseline_record_path",
+    "calibration_points",
+    "campaign_id",
     "direction",
     "enable_llm_range_narrowing",
     "epoch_multiplier",
@@ -2510,10 +2517,15 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "final_evaluation_record_path",
     "hybrid_enable_llm_range_narrowing",
     "include_latency",
+    "job_id",
+    "latency_accuracy_retention",
+    "latency_ci_high_metric",
+    "latency_ci_low_metric",
     "latency_direction",
     "latency_metric",
     "latency_objective",
     "latency_scale",
+    "latency_tolerance",
     "latency_weight",
     "llm_api_key",
     "llm_endpoint",
@@ -2523,14 +2535,24 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "metric",
     "metric_scale",
     "metric_weight",
+    "max_accuracy_degradation",
     "model",
     "multi_objective",
+    "multi_objective_min_accuracy",
+    "objective_acquisition",
+    "objective_normalization",
     "objectives",
+    "random_seed",
+    "require_eval_fn_success",
     "research_program",
     "reuse_best_metric_for_final_evaluation",
     "run_baseline",
     "run_final_evaluation",
     "session_id",
+    "seed",
+    "selection_mode",
+    "selection_score_tolerance",
+    "xi",
     # The effective-batch safety check accepts any sample-count spelling in
     # automl_settings (variable-mediated lookup, invisible to the scan).
 }) | frozenset(_SAMPLE_COUNT_KEYS)
@@ -3653,8 +3675,9 @@ class AutoMLRunner:
               (final_eval_fn raised), ``unavailable``, ``skipped``,
               ``not_run``.
             - ``history``: list of per-recommendation dicts with ``rec_id``,
-              ``metric``, ``objective_score``, ``objective_values``,
-              ``status``, ``failure_reason``, ``adjustments``
+              ``specs``, ``job_id``, ``metric``, ``objective_score``,
+              ``objective_values``, ``status``, ``failure_reason``,
+              ``adjustments``, ``selection_audit``
             - ``pareto_front``: present for multi-objective sessions only
         """
         from tao_automl import AutoML

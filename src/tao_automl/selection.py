@@ -56,6 +56,12 @@ def accuracy_feasibility_boundary(
 
 
 def _candidate_value(candidate: Any, name: str, default: Any = None) -> Any:
+    # Recommendation implements Mapping over its searchable specs, while its
+    # identity and measured objectives remain attributes.  Attribute lookup
+    # must therefore win for object candidates; treating every Mapping as a
+    # plain dictionary loses ``id`` and ``objective_values``.
+    if not isinstance(candidate, dict) and hasattr(candidate, name):
+        return getattr(candidate, name)
     if isinstance(candidate, Mapping):
         return candidate.get(name, default)
     return getattr(candidate, name, default)
