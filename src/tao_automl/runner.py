@@ -2014,6 +2014,10 @@ def _compare_to_baseline(
 # ``final_evaluation_record_path`` are read via _evaluation_record_path's
 # key argument, which the source scan cannot see — keep them listed.
 KNOWN_AUTOML_SETTINGS = frozenset({
+    "accuracy_constraint",
+    "accuracy_metric",
+    "accuracy_retention_fraction",
+    "accuracy_tolerance",
     "algorithm",
     "allow_unsafe_effective_batch",
     "api_key",
@@ -2038,6 +2042,7 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "automl_range_override",
     "automl_reduction_factor",
     "automl_top_n_percent",
+    "augmentation_rho",
     "base_url",
     "baseline_metric",
     "baseline_record_path",
@@ -2052,10 +2057,14 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "hybrid_enable_llm_range_narrowing",
     "include_latency",
     "latency_direction",
+    "latency_accuracy_retention",
+    "latency_ci_high_metric",
+    "latency_ci_low_metric",
     "latency_metric",
     "latency_objective",
     "latency_scale",
     "latency_weight",
+    "latency_tolerance",
     "llm_api_key",
     "llm_endpoint",
     "llm_max_tokens",
@@ -2064,14 +2073,22 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "metric",
     "metric_scale",
     "metric_weight",
+    "max_accuracy_degradation",
     "model",
     "multi_objective",
+    "multi_objective_min_accuracy",
+    "objective_normalization",
     "objectives",
     "research_program",
+    "random_seed",
+    "require_eval_fn_success",
     "reuse_best_metric_for_final_evaluation",
     "run_baseline",
     "run_final_evaluation",
     "session_id",
+    "seed",
+    "selection_mode",
+    "selection_score_tolerance",
     # The effective-batch safety check accepts any sample-count spelling in
     # automl_settings (variable-mediated lookup, invisible to the scan).
 }) | frozenset(_SAMPLE_COUNT_KEYS)
@@ -3173,8 +3190,9 @@ class AutoMLRunner:
               (final_eval_fn raised), ``unavailable``, ``skipped``,
               ``not_run``.
             - ``history``: list of per-recommendation dicts with ``rec_id``,
-              ``metric``, ``objective_score``, ``objective_values``,
-              ``status``, ``failure_reason``, ``adjustments``
+              ``specs``, ``job_id``, ``metric``, ``objective_score``,
+              ``objective_values``, ``status``, ``failure_reason``,
+              ``adjustments``, ``selection_audit``
             - ``pareto_front``: present for multi-objective sessions only
         """
         from tao_automl import AutoML

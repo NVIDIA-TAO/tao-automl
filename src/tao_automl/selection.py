@@ -29,9 +29,13 @@ _NO_DISTINCT_COMPROMISE = (
 
 
 def _candidate_value(candidate: Any, name: str, default: Any = None) -> Any:
+    # Recommendation implements Mapping over its *specs*, while selection
+    # metadata such as id/status/objective_values remains on attributes.
+    if hasattr(candidate, name):
+        return getattr(candidate, name)
     if isinstance(candidate, Mapping):
         return candidate.get(name, default)
-    return getattr(candidate, name, default)
+    return default
 
 
 def _candidate_values(candidate: Any) -> Mapping[str, Any]:
