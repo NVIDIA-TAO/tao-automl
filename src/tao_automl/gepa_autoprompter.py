@@ -394,8 +394,6 @@ class TAOGEPAAdapter:
         components_to_update: Sequence[str],
     ) -> dict[str, str]:
         """Route bounded configs to UCB and free-form components to reflection."""
-        from gepa.strategies.instruction_proposal import InstructionProposalSignature
-
         proposals: dict[str, str] = {}
         for component in components_to_update:
             if component in self.config_choices:
@@ -412,6 +410,7 @@ class TAOGEPAAdapter:
                 raise RuntimeError(
                     "Joint GEPA text proposal requires a reflection language model"
                 )
+            from gepa.strategies.instruction_proposal import InstructionProposalSignature
             proposals[component] = InstructionProposalSignature.run(
                 lm=self._component_reflection_lm,
                 input_dict={

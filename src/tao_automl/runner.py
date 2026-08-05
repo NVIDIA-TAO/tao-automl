@@ -4161,9 +4161,9 @@ class AutoMLRunner:
         return True
 
     def _recover_pending_job(self, entry, automl, metric_name,
-                              metric_extractor, eval_fn, feedback_fn, workspace_path,
+                              metric_extractor, eval_fn, workspace_path,
                               on_result, objective_names=None,
-                              platform_kwargs=None) -> None:
+                              platform_kwargs=None, feedback_fn=None) -> None:
         """Poll an in-flight job (recovered on resume), extract its result,
         and report it to the brain. Mirrors the tail of _run_one_job.
         """
