@@ -240,6 +240,74 @@ def _verify_dataset_remote(contract: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _runtime_overlay_install_command(
+    contract: Mapping[str, Any],
+    *,
+    action_name: str,
+) -> str:
+    """Return the qualification-proven, fail-closed source overlay command."""
+    overlay = contract["qualification_policy"].get("runtime_overlay")
+    if (
+        overlay
+        != campaign_contract.FROZEN_QUALIFICATION_RUNTIME_OVERLAY
+        or action_name not in overlay["required_actions"]
+    ):
+        raise CampaignExecutionError(
+            "SegFormer runtime overlay is not authorized for action"
+        )
+    archive = shlex.quote(overlay["archive_path"])
+    installer = shlex.quote(overlay["installer_path"])
+    receipt = shlex.quote(overlay["receipt_path"])
+    archive_sha = shlex.quote(overlay["archive_sha256"])
+    installer_sha = shlex.quote(overlay["installer_sha256"])
+    return " && ".join(
+        [
+            f"test \"$(stat -c '%s' {archive})\" = "
+            f"{overlay['archive_size_bytes']}",
+            f"test \"$(sha256sum {archive} | cut -d ' ' -f1)\" = "
+            f"{archive_sha}",
+            f"test \"$(stat -c '%s' {installer})\" = "
+            f"{overlay['installer_size_bytes']}",
+            f"test \"$(sha256sum {installer} | cut -d ' ' -f1)\" = "
+            f"{installer_sha}",
+            f"python {installer} --archive {archive} "
+            f"--expected-sha256 {archive_sha} --receipt {receipt}",
+            f"test -s {receipt}",
+        ]
+    )
+
+
+def _wrap_with_runtime_overlay(
+    command: str,
+    contract: Mapping[str, Any],
+    *,
+    action_name: str,
+) -> str:
+    if not isinstance(command, str) or not command.strip():
+        raise CampaignExecutionError(
+            "SegFormer runtime command must be non-empty"
+        )
+    return (
+        f"{_runtime_overlay_install_command(contract, action_name=action_name)}"
+        f" && {command}"
+    )
+
+
+def configure_runner_runtime_overlay(
+    runner: Any,
+    contract: Mapping[str, Any],
+) -> str:
+    """Bind the sealed source overlay to every AutoML training command."""
+    action = copy.deepcopy(runner.skill_ctx.action_cfg)
+    action["command"] = _wrap_with_runtime_overlay(
+        action["command"],
+        contract,
+        action_name="train",
+    )
+    runner.skill_ctx.action_cfg = action
+    return text_sha256(action["command"])
+
+
 def verify_local_contract(contract: Mapping[str, Any]) -> dict[str, Any]:
     """Revalidate sealed code, wheel, skills, SDK, and dataset metadata."""
     runtime = contract["runtime"]
@@ -732,7 +800,11 @@ def _launch_evaluation(
         ).read_text(encoding="utf-8")
     )["actions"]["evaluate"]
     entrypoint = build_entrypoint(
-        command=action["command"],
+        command=_wrap_with_runtime_overlay(
+            action["command"],
+            contract,
+            action_name="evaluate",
+        ),
         specs=spec,
         inputs=action["inputs"],
         outputs=action["outputs"],
@@ -754,6 +826,12 @@ def _launch_evaluation(
         "submitted_at_utc": utc_timestamp(),
         "spec_sha256": canonical_sha256(spec),
         "command_sha256": text_sha256(entrypoint["command"]),
+        "runtime_overlay_source_commit": contract[
+            "qualification_policy"
+        ]["runtime_overlay"]["source_commit"],
+        "runtime_overlay_archive_sha256": contract[
+            "qualification_policy"
+        ]["runtime_overlay"]["archive_sha256"],
     }
     status = _wait_for_job(
         sdk,
@@ -963,6 +1041,11 @@ def _launch_latency(
             '"$TAO_RESULTS_ROOT/$TAO_JOB_ID/latency"',
         ]
     )
+    command = _wrap_with_runtime_overlay(
+        command,
+        contract,
+        action_name="evaluate",
+    )
     action = yaml.safe_load(
         (
             Path(contract["runtime"]["skill_dir"])
@@ -996,6 +1079,12 @@ def _launch_latency(
         "input_descriptor": descriptor,
         "input_sha256": canonical_sha256(descriptor),
         "contract_sha256": canonical_sha256(latency_contract),
+        "runtime_overlay_source_commit": contract[
+            "qualification_policy"
+        ]["runtime_overlay"]["source_commit"],
+        "runtime_overlay_archive_sha256": contract[
+            "qualification_policy"
+        ]["runtime_overlay"]["archive_sha256"],
     }
     status = _wait_for_job(
         sdk,
@@ -1218,6 +1307,19 @@ def _run_mode(
     mode_dir.mkdir(parents=True, exist_ok=True)
     events = mode_dir / "events.jsonl"
     evidence_path = mode_dir / "candidate_evidence.json"
+    train_action = yaml.safe_load(
+        (
+            Path(contract["runtime"]["skill_dir"])
+            / "references/skill_info.yaml"
+        ).read_text(encoding="utf-8")
+    )["actions"]["train"]
+    expected_training_command_sha256 = text_sha256(
+        _wrap_with_runtime_overlay(
+            train_action["command"],
+            contract,
+            action_name="train",
+        )
+    )
     candidates: dict[str, Any] = {}
     if resume and evidence_path.is_file():
         document = json.loads(evidence_path.read_text(encoding="utf-8"))
@@ -1225,6 +1327,8 @@ def _run_mode(
             document.get("contract_sha256")
             != contract["contract_sha256"]
             or document.get("mode") != mode
+            or document.get("training_command_sha256")
+            != expected_training_command_sha256
             or not isinstance(document.get("candidates"), Mapping)
         ):
             raise CampaignExecutionError(
@@ -1261,6 +1365,14 @@ def _run_mode(
         action="train",
         poll_interval=10,
     )
+    training_command_sha256 = configure_runner_runtime_overlay(
+        runner,
+        contract,
+    )
+    if training_command_sha256 != expected_training_command_sha256:
+        raise CampaignExecutionError(
+            "sealed AutoML training command changed during runner setup"
+        )
 
     def persist() -> None:
         atomic_json(
@@ -1269,6 +1381,7 @@ def _run_mode(
                 "schema_version": 1,
                 "contract_sha256": contract["contract_sha256"],
                 "mode": mode,
+                "training_command_sha256": training_command_sha256,
                 "candidates": candidates,
             },
         )

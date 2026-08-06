@@ -2922,6 +2922,55 @@ def test_qualification_entrypoint_installs_exact_overlay_for_both_actions(
         )
 
 
+def test_successor_installs_qualification_proven_overlay_for_all_actions(
+    contract,
+):
+    overlay = campaign_contract.FROZEN_QUALIFICATION_RUNTIME_OVERLAY
+    for action in ("train", "evaluate"):
+        wrapped = run_campaign._wrap_with_runtime_overlay(
+            f"segformer {action} -e {{config_path}}",
+            contract,
+            action_name=action,
+        )
+        assert overlay["archive_path"] in wrapped
+        assert overlay["archive_sha256"] in wrapped
+        assert overlay["installer_path"] in wrapped
+        assert overlay["installer_sha256"] in wrapped
+        assert overlay["receipt_path"] in wrapped
+        assert wrapped.endswith(f"segformer {action} -e {{config_path}}")
+
+    changed = copy.deepcopy(contract)
+    changed["qualification_policy"]["runtime_overlay"][
+        "installer_sha256"
+    ] = "0" * 64
+    with pytest.raises(
+        run_campaign.CampaignExecutionError,
+        match="runtime overlay is not authorized",
+    ):
+        run_campaign._wrap_with_runtime_overlay(
+            "segformer train -e {config_path}",
+            changed,
+            action_name="train",
+        )
+
+
+def test_successor_runner_training_command_uses_sealed_overlay(contract):
+    original = "segformer train -e {config_path}"
+    runner = SimpleNamespace(
+        skill_ctx=SimpleNamespace(action_cfg={"command": original})
+    )
+    digest = run_campaign.configure_runner_runtime_overlay(
+        runner,
+        contract,
+    )
+    wrapped = runner.skill_ctx.action_cfg["command"]
+    overlay = campaign_contract.FROZEN_QUALIFICATION_RUNTIME_OVERLAY
+    assert digest == run_campaign.text_sha256(wrapped)
+    assert overlay["archive_sha256"] in wrapped
+    assert overlay["installer_sha256"] in wrapped
+    assert wrapped.endswith(original)
+
+
 def test_training_status_evidence_counts_one_evaluation_record_per_epoch(
     monkeypatch: pytest.MonkeyPatch,
 ):

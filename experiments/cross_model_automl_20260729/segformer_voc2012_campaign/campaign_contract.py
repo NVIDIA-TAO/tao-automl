@@ -544,11 +544,11 @@ FROZEN_V5_QUALIFICATION_CONTRACT = {
 FROZEN_V6_SUCCESSOR_CONTRACT_PATH = (
     "/localhome/local-rarunachalam/.tao/artifacts/"
     "cross_model_automl_20260729/segformer_voc2012_three_mode/"
-    "campaign.v8.json"
+    "campaign.v9.json"
 )
 FROZEN_V6_SUCCESSOR_RUNTIME_ROOT = (
     "/localhome/local-rarunachalam/.tao/artifacts/"
-    "cross_model_automl_20260729/segformer_voc2012_three_mode_v8"
+    "cross_model_automl_20260729/segformer_voc2012_three_mode_v9"
 )
 FROZEN_PRIOR_QUALIFICATION_EVIDENCE = [
     copy.deepcopy(FROZEN_V1_QUALIFICATION_EVIDENCE),
