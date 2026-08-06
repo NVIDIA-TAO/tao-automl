@@ -45,17 +45,17 @@ DEFAULT_STAGE_MANIFEST = (
     "segmentation_datasets/dataset_stage_manifest.v1.json"
 )
 DEFAULT_QUALIFICATION = Path(
-    "/localhome/local-rarunachalam/.tao/artifacts/"
-    "cross_model_automl_20260729/"
-    "segformer_voc2012_ptm_qualification_v5/completion.json"
+    campaign_contract.FROZEN_V5_QUALIFICATION_CONTRACT[
+        "qualification_evidence_path"
+    ]
 )
 DEFAULT_QUALIFICATION_CONTRACT = Path(
     campaign_contract.FROZEN_V5_QUALIFICATION_CONTRACT["path"]
 )
 DEFAULT_PTM_STAGE_MANIFEST = Path(
-    "/localhome/local-rarunachalam/.tao/artifacts/"
-    "cross_model_automl_20260729/"
-    "segformer_voc2012_ptm_qualification_v5/ptm_stage_manifest.json"
+    campaign_contract.FROZEN_V5_QUALIFICATION_CONTRACT[
+        "ptm_stage_manifest_path"
+    ]
 )
 DEFAULT_SUCCESSOR_RUNTIME_ROOT = Path(
     campaign_contract.FROZEN_V6_SUCCESSOR_RUNTIME_ROOT
@@ -72,8 +72,8 @@ EXPECTED_STAGE_MANIFEST_SHA256 = (
 EXPECTED_WHEEL_SHA256 = (
     "a5e78903aa7c540a7c13b9b413ed5daf64534df04cc91a21d9480875e7d16f3e"
 )
-EXPECTED_SDK_COMMIT = "a2e50d0930c3e3785b4b39fa8c3da88b39ff89e5"
-EXPECTED_SKILLS_COMMIT = "2e9c1b25f3c7cb1ae444c75652e36c47eace8229"
+EXPECTED_SDK_COMMIT = "acb3c206bc0e04517ab852914efa9b6c2f7c656c"
+EXPECTED_SKILLS_COMMIT = "6d22b2efcd355454448f075945d318f0608ed480"
 
 
 class ManifestGenerationError(RuntimeError):
@@ -629,7 +629,7 @@ def build_contract(
     repository_path = Path(repository).resolve()
     value = campaign_contract.build_preregistered_contract(
         campaign_id=(
-            "segformer-voc2012-objective-aware-three-mode-20260801-v6"
+            "segformer-voc2012-objective-aware-three-mode-20260806-v7"
         ),
         dataset=dataset_record(dataset_manifest, stage_manifest),
         skill_dir=(

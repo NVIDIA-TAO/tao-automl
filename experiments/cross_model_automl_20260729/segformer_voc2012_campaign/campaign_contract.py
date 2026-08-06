@@ -433,7 +433,7 @@ FROZEN_V4_QUALIFICATION_EVIDENCE = {
     "preserve_immutable": True,
     "reuse_for_v5": "exact_positive_load_terminal_train_phase_only",
 }
-FROZEN_V5_QUALIFICATION_CONTRACT = {
+FROZEN_FAILED_V5_QUALIFICATION_CONTRACT = {
     "path": (
         "/localhome/local-rarunachalam/.tao/artifacts/"
         "cross_model_automl_20260729/segformer_voc2012_three_mode/"
@@ -482,14 +482,73 @@ FROZEN_V5_QUALIFICATION_CONTRACT = {
         "299f92133e024501a34e0744764b7120b6d2f19517907543070695c7d274ad29"
     ),
 }
+FROZEN_V5_QUALIFICATION_CONTRACT = {
+    "path": (
+        "/localhome/local-rarunachalam/.tao/artifacts/"
+        "cross_model_automl_20260729/"
+        "segformer_voc2012_ptm_qualification_cuda_probe_recovery_v2/"
+        "campaign.cuda_probe_recovery_v2.json"
+    ),
+    "whole_file_sha256": (
+        "4a4753053a45dc8f5bdc9c408775960b8f12ba5f703447e72dc9f542ad1f0bdf"
+    ),
+    "contract_sha256": (
+        "63846c8f54ad58bd4fe5c0c631e71b06c28bf83b7567743a10ad001959d24d89"
+    ),
+    "campaign_id": (
+        "segformer-voc2012-direct-full-ptm-qualification-"
+        "cuda-probe-recovery-v2"
+    ),
+    "source_commit": "ad627ecc1a55d88ba577cda786b5a83d53d05123",
+    "wheel_sha256": (
+        "a5e78903aa7c540a7c13b9b413ed5daf64534df04cc91a21d9480875e7d16f3e"
+    ),
+    "sdk_commit": "acb3c206bc0e04517ab852914efa9b6c2f7c656c",
+    "skills_commit": "6d22b2efcd355454448f075945d318f0608ed480",
+    "registry_version": "1.5.0",
+    "registry_sha256": (
+        "8d40ebde0eec2b7c53f4c698285146c44056d3cc2560ce481cc57b6375b25f74"
+    ),
+    "qualification_campaign_id": QUALIFICATION_CAMPAIGN_ID,
+    "qualification_controller_sha256": (
+        "58cb2342d5e6b0813a647ab6eac7476741ae20fd33bf8e321da2a1a6abd9290d"
+    ),
+    "qualification_gate_sha256": (
+        "d5274323511bab2ac1a11e801f1cf76547885dd5a89e051c3f554a6018d9c8ed"
+    ),
+    "qualification_evidence_path": (
+        "/localhome/local-rarunachalam/.tao/artifacts/"
+        "cross_model_automl_20260729/"
+        "segformer_voc2012_ptm_qualification_cuda_probe_recovery_v2/"
+        "completion.json"
+    ),
+    "qualification_evidence_whole_file_sha256": (
+        "56eb69bdbda184c3cc6fd6d3b30a9e4ded0efb5005641bed0aedbc309f957560"
+    ),
+    "qualification_evidence_sha256": (
+        "763f964c05c3424419922ae98c85b6c73536e70ed23c20fe0098375a86567e02"
+    ),
+    "ptm_stage_manifest_path": (
+        "/localhome/local-rarunachalam/.tao/artifacts/"
+        "cross_model_automl_20260729/"
+        "segformer_voc2012_ptm_qualification_cuda_probe_recovery_v2/"
+        "ptm_stage_manifest.json"
+    ),
+    "ptm_stage_manifest_whole_file_sha256": (
+        "524011fb3528427c30b60eea324cec8790ffc8ebd4a2742a71601d2990171504"
+    ),
+    "ptm_stage_manifest_sha256": (
+        "fa44a890e2741be5f88d3341cf51aa71fa4ebe6a9268a76bcc239766e07e0b63"
+    ),
+}
 FROZEN_V6_SUCCESSOR_CONTRACT_PATH = (
     "/localhome/local-rarunachalam/.tao/artifacts/"
     "cross_model_automl_20260729/segformer_voc2012_three_mode/"
-    "campaign.v6.json"
+    "campaign.v7.json"
 )
 FROZEN_V6_SUCCESSOR_RUNTIME_ROOT = (
     "/localhome/local-rarunachalam/.tao/artifacts/"
-    "cross_model_automl_20260729/segformer_voc2012_three_mode_v6"
+    "cross_model_automl_20260729/segformer_voc2012_three_mode_v7"
 )
 FROZEN_PRIOR_QUALIFICATION_EVIDENCE = [
     copy.deepcopy(FROZEN_V1_QUALIFICATION_EVIDENCE),
@@ -1349,6 +1408,7 @@ __all__ = [
     "FROZEN_V4_QUALIFICATION_EVIDENCE",
     "FROZEN_V4_REUSABLE_TRAIN_CHECKPOINT_IDS",
     "FROZEN_V5_QUALIFICATION_CONTRACT",
+    "FROZEN_FAILED_V5_QUALIFICATION_CONTRACT",
     "FROZEN_V6_SUCCESSOR_CONTRACT_PATH",
     "FROZEN_V6_SUCCESSOR_RUNTIME_ROOT",
     "FROZEN_V5_FRESH_TRAIN_CHECKPOINT_IDS",
