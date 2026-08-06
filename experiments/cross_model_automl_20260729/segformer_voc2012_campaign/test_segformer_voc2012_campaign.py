@@ -2674,7 +2674,7 @@ def test_terminal_infrastructure_retry_requires_exact_owned_marker(contract):
         def get_failure_analysis(self, _job_id):
             return {
                 "reason": "infrastructure_failure_pattern",
-                "pattern": "CUDA driver.*insufficient",
+                "pattern": "CUDA runtime probe failed",
                 "match": policy["sdk_failure_analysis_match"],
                 "retriable": True,
             }
@@ -2691,7 +2691,7 @@ def test_terminal_infrastructure_retry_requires_exact_owned_marker(contract):
     )
 
     for logs in (
-        "CUDA driver version is insufficient\n",
+        "CUDA runtime probe failed\n",
         policy["node_preflight_failure_marker"] * 2,
         "model raised CUDA initialization error\n",
     ):
@@ -2731,7 +2731,7 @@ def test_phase_retry_preserves_failed_attempt_and_never_replaces_success(
                 return None
             return {
                 "reason": "infrastructure_failure_pattern",
-                "pattern": "CUDA driver.*insufficient",
+                "pattern": "CUDA runtime probe failed",
                 "match": policy["sdk_failure_analysis_match"],
                 "retriable": True,
             }
@@ -2786,7 +2786,6 @@ def test_qualification_gpu_guard_exports_usable_allocation_port(
         "  *query-gpu=name*) value='NVIDIA A100-SXM4-80GB' ;;\n"
             "  *query-gpu=compute_cap*) value='8.0' ;;\n"
             "  *query-gpu=memory.total*) value='81920' ;;\n"
-            "  *query-gpu=driver_version*) value='580.65.06' ;;\n"
         "  *) exit 2 ;;\n"
         "esac\n"
         "i=0; while [ \"$i\" -lt 8 ]; do printf '%s\\n' \"$value\"; "
@@ -2798,7 +2797,7 @@ def test_qualification_gpu_guard_exports_usable_allocation_port(
     python3.write_text(
         "#!/bin/sh\n"
         "case \"$*\" in\n"
-        "  *cuDriverGetVersion*) exit 0 ;;\n"
+        "  *torch.cuda.is_available*) exit 0 ;;\n"
         "esac\n"
         f"exec {shlex.quote(os.path.realpath(sys.executable))} \"$@\"\n",
         encoding="utf-8",
@@ -2842,8 +2841,7 @@ def test_qualification_gpu_guard_exports_usable_allocation_port(
 
     assert result.stdout == (
         "SEGFORMER_INFRASTRUCTURE_PREFLIGHT_OK "
-        "minimum_nvidia_driver_major=580 "
-        "minimum_cuda_driver_api_version=13000\n"
+        "cuda_runtime_probe=torch_cuda_allocate_and_synchronize\n"
         f"rendezvous=127.0.0.1:{selected_port}\n"
     )
 

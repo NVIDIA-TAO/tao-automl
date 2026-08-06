@@ -170,14 +170,13 @@ FROZEN_QUALIFICATION_RUNTIME_OVERLAY = {
     ],
 }
 FROZEN_QUALIFICATION_INFRASTRUCTURE_POLICY = {
-    "schema_version": 1,
+    "schema_version": 2,
     "container_cuda_toolkit_version": "13.2",
-    "minimum_nvidia_driver_major": 580,
-    "minimum_cuda_driver_api_version": 13000,
+    "cuda_runtime_probe": "torch_cuda_allocate_and_synchronize",
     "node_preflight_failure_exit_code": 92,
     "node_preflight_failure_marker": (
         "SEGFORMER_INFRASTRUCTURE_PREFLIGHT_FAILURE "
-        "CUDA driver version is insufficient"
+        "CUDA runtime probe failed"
     ),
     "node_preflight_success_marker": (
         "SEGFORMER_INFRASTRUCTURE_PREFLIGHT_OK"
@@ -191,7 +190,7 @@ FROZEN_QUALIFICATION_INFRASTRUCTURE_POLICY = {
         "launch an unrecoverable job"
     ),
     "retryable_terminal_status": "Error",
-    "sdk_failure_analysis_match": "CUDA driver version is insufficient",
+    "sdk_failure_analysis_match": "CUDA runtime probe failed",
     "retry_scope": [
         "pre_submission_stable_identity",
         "pre_import_cuda_driver_runtime_compatibility",

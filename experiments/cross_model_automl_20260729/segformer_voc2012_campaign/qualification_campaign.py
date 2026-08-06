@@ -1434,8 +1434,7 @@ def _gpu_guard(command: str) -> str:
     policy = campaign_contract.FROZEN_QUALIFICATION_INFRASTRUCTURE_POLICY
     failure_marker = shlex.quote(policy["node_preflight_failure_marker"])
     failure_exit = policy["node_preflight_failure_exit_code"]
-    minimum_driver_major = policy["minimum_nvidia_driver_major"]
-    minimum_cuda_api = policy["minimum_cuda_driver_api_version"]
+    cuda_runtime_probe = policy["cuda_runtime_probe"]
     success_marker = policy["node_preflight_success_marker"]
     return " ".join(
         [
@@ -1456,22 +1455,14 @@ def _gpu_guard(command: str) -> str:
             "--format=csv,noheader)\";",
             "gpu_mem=\"$(nvidia-smi --query-gpu=memory.total "
             "--format=csv,noheader,nounits)\";",
-            "if ! python3 -c 'import ctypes,subprocess,sys; "
-            "versions=subprocess.check_output([\"nvidia-smi\", "
-            "\"--query-gpu=driver_version\", "
-            "\"--format=csv,noheader\"], text=True).splitlines(); "
-            f"ok=len(versions)==8 and all(v.split(\".\",1)[0].isdigit() "
-            f"and int(v.split(\".\",1)[0])>={minimum_driver_major} "
-            "for v in versions); ok or sys.exit(1); "
-            "d=ctypes.CDLL(\"libcuda.so.1\"); v=ctypes.c_int(); "
-            "r=d.cuInit(0); r and sys.exit(r); "
-            "r=d.cuDriverGetVersion(ctypes.byref(v)); "
-            f"r and sys.exit(r); v.value>={minimum_cuda_api} "
-            "or sys.exit(1)'; then "
+            "if ! python3 -c 'import torch; "
+            "assert torch.cuda.is_available(); "
+            "assert torch.cuda.device_count() == 8; "
+            "probe=torch.empty(1, device=\"cuda\"); "
+            "probe.add_(1); torch.cuda.synchronize()'; then "
             f"printf '%s\\n' {failure_marker}; exit {failure_exit}; fi;",
             f"printf '%s\\n' '{success_marker} "
-            f"minimum_nvidia_driver_major={minimum_driver_major} "
-            f"minimum_cuda_driver_api_version={minimum_cuda_api}';",
+            f"cuda_runtime_probe={cuda_runtime_probe}';",
             "test \"$(printf '%s\\n' \"$gpu_names\" | "
             "sed '/^$/d' | wc -l)\" -eq 8;",
             "test \"$(printf '%s\\n' \"$gpu_names\" | sort -u)\" = "
