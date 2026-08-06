@@ -1643,6 +1643,47 @@ def test_zero_success_terminal_completion_is_rejected():
         manifest_generator._terminal_completion_sha(completion)
 
 
+def test_live_preflight_accepts_expected_nonqualified_registry_arms():
+    decision = SimpleNamespace(
+        checkpoint_ids=("qualified-a", "qualified-b"),
+        exclusions=(
+            {"checkpoint_id": "unqualified-c"},
+            {"checkpoint_id": "unqualified-d"},
+        ),
+    )
+    report = SimpleNamespace(
+        ok=True,
+        prepared=(
+            SimpleNamespace(checkpoint_id="qualified-a"),
+            SimpleNamespace(checkpoint_id="qualified-b"),
+        ),
+        exclusions=(
+            SimpleNamespace(checkpoint_id="unqualified-c"),
+            SimpleNamespace(checkpoint_id="unqualified-d"),
+        ),
+    )
+
+    run_campaign._validate_live_preflight_report(report, decision)
+
+
+def test_live_preflight_rejects_unexpected_exclusion_membership():
+    decision = SimpleNamespace(
+        checkpoint_ids=("qualified-a",),
+        exclusions=({"checkpoint_id": "unqualified-b"},),
+    )
+    report = SimpleNamespace(
+        ok=True,
+        prepared=(SimpleNamespace(checkpoint_id="qualified-a"),),
+        exclusions=(SimpleNamespace(checkpoint_id="unexpected-c"),),
+    )
+
+    with pytest.raises(
+        run_campaign.CampaignExecutionError,
+        match="qualified and excluded arms",
+    ):
+        run_campaign._validate_live_preflight_report(report, decision)
+
+
 def test_automatic_successor_orders_wait_seal_then_launch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

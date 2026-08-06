@@ -487,6 +487,28 @@ def _per_checkpoint_profiles(
     }
 
 
+def _validate_live_preflight_report(
+    report: Any,
+    decision: QualificationDecision,
+) -> None:
+    """Require the live report to preserve both sides of qualification."""
+    prepared_ids = tuple(item.checkpoint_id for item in report.prepared)
+    excluded_ids = tuple(item.checkpoint_id for item in report.exclusions)
+    expected_excluded_ids = tuple(
+        item["checkpoint_id"] for item in decision.exclusions
+    )
+    if (
+        not report.ok
+        or prepared_ids != decision.checkpoint_ids
+        or excluded_ids != expected_excluded_ids
+        or len(set(excluded_ids)) != len(excluded_ids)
+    ):
+        raise CampaignExecutionError(
+            "live PTM preflight did not preserve exactly the qualified and "
+            "excluded arms"
+        )
+
+
 def build_live_runtime_inventory(
     *,
     contract: Mapping[str, Any],
@@ -517,15 +539,7 @@ def build_live_runtime_inventory(
         task="semantic_segmentation",
         tao_version="7.1.0",
     )
-    if (
-        not report.ok
-        or tuple(item.checkpoint_id for item in report.prepared)
-        != decision.checkpoint_ids
-        or report.exclusions
-    ):
-        raise CampaignExecutionError(
-            "live PTM preflight did not preserve exactly the qualified arms"
-        )
+    _validate_live_preflight_report(report, decision)
     template = (
         Path(contract["runtime"]["skill_dir"])
         / "references/spec_template_train.yaml"

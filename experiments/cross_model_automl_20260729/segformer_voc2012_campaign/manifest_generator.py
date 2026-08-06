@@ -629,7 +629,7 @@ def build_contract(
     repository_path = Path(repository).resolve()
     value = campaign_contract.build_preregistered_contract(
         campaign_id=(
-            "segformer-voc2012-objective-aware-three-mode-20260806-v7"
+            "segformer-voc2012-objective-aware-three-mode-20260806-v8"
         ),
         dataset=dataset_record(dataset_manifest, stage_manifest),
         skill_dir=(
