@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """BOHB (Bayesian Optimization and HyperBand) AutoML algorithm modules"""
 import copy
+import hashlib
+import json
 import numpy as np
 import math
 import logging
@@ -120,6 +122,34 @@ class BOHB(AutoMLAlgorithmBase):
         except Exception as e:
             logger.warning(f"Failed to sample from KDE: {e}")
             return None
+
+    def _normalize_observation_value(self, parameter, value):
+        """Map any supported parameter value to a stable scalar for the TPE model."""
+        value_type = parameter.get("value_type")
+
+        options = get_valid_options(parameter, self.custom_ranges)
+        if options not in (None, "", []):
+            options = list(options) if isinstance(options, (list, tuple)) else [options]
+            for index, option in enumerate(options):
+                if value == option:
+                    return index / max(1, len(options) - 1)
+
+        if value_type in ("float", "int"):
+            v_min, v_max = get_valid_range(parameter, self.parent_params, self.custom_ranges)
+            if np.isscalar(v_min) and np.isscalar(v_max) and np.isfinite(v_min) and np.isfinite(v_max):
+                if v_max > v_min:
+                    return float(np.clip((float(value) - v_min) / (v_max - v_min), 0.0, 1.0))
+                return 0.5
+
+        if value_type == "bool" or isinstance(value, bool):
+            return float(bool(value))
+
+        # Lists, collections, and free-form categorical values do not necessarily
+        # have an ordered numeric range. A stable digest keeps distinct proposals
+        # distinct without relying on Python's process-randomized hash().
+        canonical = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+        digest = int.from_bytes(hashlib.sha256(canonical.encode("utf-8")).digest()[:8], "big")
+        return digest / float((1 << 64) - 1)
 
     def _tpe_suggest(self):
         """Use Tree-structured Parzen Estimator to suggest next configuration"""
@@ -557,6 +587,47 @@ class BOHB(AutoMLAlgorithmBase):
             hyperparam_dict[name] = rec
         return hyperparam_dict
 
+    def _generate_unique_recommendation(self, history, existing, max_attempts=32):
+        """Generate a distinct configuration within a warm-up batch when possible."""
+        existing_signatures = {
+            tuple(json.dumps(rec.get(param["parameter"]), sort_keys=True, default=str)
+                  for param in self.parameters)
+            for rec in existing if isinstance(rec, dict)
+        }
+        last_rec = None
+        for attempt in range(max_attempts):
+            rec = self._generate_one_recommendation(history)
+            if not isinstance(rec, dict):
+                return rec
+            last_rec = rec
+            signature = tuple(
+                json.dumps(rec.get(param["parameter"]), sort_keys=True, default=str)
+                for param in self.parameters
+            )
+            if signature not in existing_signatures:
+                return rec
+            if attempt < max_attempts - 1:
+                self.expt_iter = max(0, self.expt_iter - 1)
+                logger.info("BOHB generated a duplicate warm-up configuration; retrying")
+        logger.warning("BOHB could not generate a distinct warm-up configuration after %d attempts", max_attempts)
+        return last_rec
+
+    def _update_observations(self, history):
+        """Add completed, finite trial results to the TPE observation set."""
+        for rec in history:
+            if rec.status != JobStates.success or rec.result is None or is_nan_value(rec.result):
+                continue
+            config_array = np.array([
+                self._normalize_observation_value(param, rec.specs.get(param["parameter"]))
+                for param in self.parameters
+            ])
+            is_duplicate = any(
+                np.allclose(observation[0], config_array) for observation in self.observations
+            )
+            if not is_duplicate:
+                self.observations.append((config_array, rec.result))
+                logger.info(f"Added observation: config with result={rec.result}")
+
     def generate_recommendations(self, history):
         """Generates recommendations for the controller to run (supports parallel execution)"""
         get_flatten_specs(self.default_train_spec, self.default_train_spec_flattened)
@@ -576,37 +647,13 @@ class BOHB(AutoMLAlgorithmBase):
                     self.last_launched_count = 0
             return []
 
-        # Update observations with completed experiments
-        for rec in history:
-            if rec.status == JobStates.success and rec.result != 0.0:
-                config = []
-                for param in self.parameters:
-                    param_name = param["parameter"]
-                    value = rec.specs.get(param_name)
-                    if param["value_type"] == "float":
-                        v_min, v_max = get_valid_range(param, self.parent_params, self.custom_ranges)
-                        if v_max > v_min:
-                            normalized = (value - v_min) / (v_max - v_min)
-                            config.append(np.clip(normalized, 0.0, 1.0))
-                        else:
-                            config.append(0.5)
-                    else:
-                        config.append(0.5)
-
-                if len(config) == len(self.parameters):
-                    config_array = np.array(config)
-                    is_duplicate = any(
-                        np.allclose(obs[0], config_array) for obs in self.observations
-                    )
-                    if not is_duplicate:
-                        self.observations.append((config_array, rec.result))
-                        logger.info(f"Added observation: config with result={rec.result}")
+        self._update_observations(history)
 
         if history == []:
             num_configs_in_rung = self.ni[self.bracket][self.sh_iter]
             recommendations = []
             for _ in range(num_configs_in_rung):
-                rec = self._generate_one_recommendation(history)
+                rec = self._generate_unique_recommendation(history, recommendations)
                 if type(rec) is dict:
                     recommendations.append(rec)
             self.last_launched_count = len(recommendations)
@@ -625,7 +672,7 @@ class BOHB(AutoMLAlgorithmBase):
 
         recommendations = []
         for _ in range(max(num_configs_before, 1)):
-            rec = self._generate_one_recommendation(history)
+            rec = self._generate_unique_recommendation(history, recommendations)
             if rec is None:
                 break
             recommendations.append(rec)
@@ -634,7 +681,7 @@ class BOHB(AutoMLAlgorithmBase):
                 num_configs_in_new_rung = self.ni[self.bracket][self.sh_iter] if not self.complete else 0
                 if num_configs_in_new_rung != num_configs_before:
                     for _ in range(num_configs_in_new_rung - 1):
-                        rec = self._generate_one_recommendation(history)
+                        rec = self._generate_unique_recommendation(history, recommendations)
                         if rec:
                             recommendations.append(rec)
                         else:

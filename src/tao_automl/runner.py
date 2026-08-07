@@ -47,7 +47,7 @@ import signal
 import sys
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -63,6 +63,16 @@ from tao_sdk.checkpoints import (
 from tao_automl.utils.spec_utils import resolve_schema_leaf
 
 logger = logging.getLogger(__name__)
+
+
+# TAO NV-Panoptix3D Lightning checkpoints store the completed epoch using a
+# one-based internal counter while their filenames remain zero-based.  Passing
+# the next Hyperband-family resource budget verbatim therefore makes Lightning
+# stop immediately after restore (for example, epoch-0 checkpoint +
+# ``num_epochs=2`` executes no epoch-1 batches).  The terminal budget must be
+# advanced by one for resumed jobs so the requested additional epoch actually
+# runs and emits a fresh metric/checkpoint.
+_RESUME_EPOCH_BUDGET_OFFSETS = {"nvpanoptix3d": 1}
 
 
 # ---------------------------------------------------------------------------
@@ -1139,6 +1149,25 @@ def _checkpoint_epoch(path: Path) -> int:
     return sdk_checkpoint_epoch(path) or 0
 
 
+def _build_resume_checkpoint_candidate(
+    path: Path,
+    *,
+    is_dir: bool,
+    mtime: float,
+):
+    """Parse position metadata, including zero-indexed ``model_best_N`` files."""
+    candidate = build_checkpoint_candidate(path, is_dir=is_dir, mtime=mtime)
+    if candidate.epoch is None and candidate.is_best and not candidate.is_dir:
+        match = re.search(
+            r"(?:^|[_.-])best[_-]?0*(\d+)(?:\D|$)",
+            path.name,
+            re.IGNORECASE,
+        )
+        if match:
+            candidate = replace(candidate, epoch=int(match.group(1)))
+    return candidate
+
+
 def _find_local_resume_artifact(
     job_id: str,
     platform_kwargs: dict | None,
@@ -1181,7 +1210,7 @@ def _find_local_resume_artifact(
             try:
                 if any(root_path.iterdir()):
                     candidates.append(
-                        build_checkpoint_candidate(
+                        _build_resume_checkpoint_candidate(
                             root_path,
                             is_dir=True,
                             mtime=root_path.stat().st_mtime,
@@ -1199,7 +1228,7 @@ def _find_local_resume_artifact(
                 continue
             try:
                 candidates.append(
-                    build_checkpoint_candidate(
+                    _build_resume_checkpoint_candidate(
                         file_path,
                         is_dir=False,
                         mtime=file_path.stat().st_mtime,
@@ -1222,6 +1251,20 @@ def _find_local_resume_artifact(
     if selected is None:
         return None
     selected = Path(selected)
+    # Cosmos-RL stores each epoch as ``checkpoints/epoch_N/policy``.  The
+    # epoch directory is useful grouping metadata, but the trainer's resume
+    # loader expects the policy directory that contains ``cosmos_config`` and
+    # the rank-specific model/optimizer/scheduler state.  Passing epoch_N
+    # makes Cosmos silently fall back to the base Hugging Face model and
+    # restart at epoch 1, which defeats ASHA/Hyperband promotion semantics.
+    if (
+        model_name.replace("_", "-") == "cosmos-rl"
+        and action in {"resume", "train"}
+        and selected.is_dir()
+    ):
+        policy_dir = selected / "policy"
+        if (policy_dir / "cosmos_config").is_file():
+            selected = policy_dir
     return _as_container_path(selected, host_root, container_root)
 
 
@@ -3151,7 +3194,7 @@ class AutoMLRunner:
             new keys may be added, but existing ones will not be renamed or
             removed.
 
-            - ``best``: ``rec_id``, ``specs``, ``metric_value``,
+            - ``best``: ``rec_id``, ``job_id``, ``specs``, ``metric_value``,
               ``objective_score``, ``objective_values``, ``adjustments``
             - ``progress``: ``completed``, ``total``, ``best_metric``,
               ``best_rec_id``, ``algorithm``
@@ -3166,8 +3209,10 @@ class AutoMLRunner:
               (final_eval_fn raised), ``unavailable``, ``skipped``,
               ``not_run``.
             - ``history``: list of per-recommendation dicts with ``rec_id``,
-              ``metric``, ``objective_score``, ``objective_values``,
+              ``job_id``, ``metric``, ``objective_score``, ``objective_values``,
               ``status``, ``failure_reason``, ``adjustments``
+            - ``algorithm_state``: algorithm-specific decision and reasoning
+              state, or ``None`` when the selected algorithm exposes none
             - ``pareto_front``: present for multi-objective sessions only
         """
         from tao_automl import AutoML
@@ -3676,6 +3721,7 @@ class AutoMLRunner:
         result = {
             "best": {
                 "rec_id": best.id if best else None,
+                "job_id": getattr(best, "job_id", None) if best else None,
                 "specs": best.specs if best else {},
                 "metric_value": best_metric,
                 "objective_score": getattr(best, "objective_score", None),
@@ -3688,6 +3734,7 @@ class AutoMLRunner:
             "history": [
                 {
                     "rec_id": r.id,
+                    "job_id": getattr(r, "job_id", None),
                     "metric": _recommendation_primary_metric(r, metric_name),
                     "objective_score": getattr(r, "objective_score", None),
                     "objective_values": _recommendation_objective_values(r),
@@ -3697,6 +3744,11 @@ class AutoMLRunner:
                 }
                 for r in history
             ],
+            "algorithm_state": (
+                automl.get_algorithm_state()
+                if hasattr(automl, "get_algorithm_state")
+                else {}
+            ),
         }
         baseline["comparison_to_best"] = _compare_to_baseline(
             baseline.get("metric_value"),
@@ -4007,7 +4059,10 @@ class AutoMLRunner:
 
         # fix #4: if an eval_fn is provided, run it post-training and let its
         # return override the log-extracted metric. Errors are isolated.
-        metric_values = dict(cached_metrics)
+        # An explicit evaluator is authoritative for checkpoint selection.
+        # Never relabel a training KPI as an evaluation metric when evaluation
+        # fails or returns no value.
+        metric_values = {} if eval_fn is not None else dict(cached_metrics)
         eval_metric_used = False
         if eval_fn is not None:
             try:
@@ -4015,8 +4070,8 @@ class AutoMLRunner:
                     eval_fn(rec, job.id), "eval_fn"
                 )
             except Exception as ex:
-                logger.warning("eval_fn raised for rec %d: %s; falling back "
-                                "to log-extracted metric", rec.id, ex)
+                logger.warning("eval_fn raised for rec %d: %s; evaluation "
+                               "metric is unavailable", rec.id, ex)
                 eval_metric = None
             if eval_metric is not None:
                 if isinstance(eval_metric, dict):
@@ -4040,6 +4095,12 @@ class AutoMLRunner:
                                 )
                             ))
                 eval_metric_used = True
+        if eval_fn is not None and not eval_metric_used:
+            logger.warning(
+                "Rec %d: eval_fn produced no metric; refusing training-metric fallback",
+                rec.id,
+            )
+            return None, "metric_missing"
         if not eval_metric_used:
             local_metrics = {}
             for index, name in enumerate(metric_names):
@@ -4346,7 +4407,7 @@ class AutoMLRunner:
             report_status = "failure"
             rec.failure_reason = "job_canceled"
         else:
-            metric_values = dict(cached_metrics)
+            metric_values = {} if eval_fn is not None else dict(cached_metrics)
             eval_metric_used = False
             if eval_fn is not None:
                 try:
@@ -4364,6 +4425,21 @@ class AutoMLRunner:
                     else:
                         metric_values[metric_name] = float(em)
                     eval_metric_used = True
+            if eval_fn is not None and not eval_metric_used:
+                metric_value = None
+                report_status = "failure"
+                rec.failure_reason = "evaluation_metric_missing"
+                automl.report_result(
+                    rec_id=rec_id,
+                    metric_value=0.0,
+                    status=report_status,
+                )
+                if on_result:
+                    try:
+                        on_result(rec, metric_value, report_status)
+                    except Exception as ex:
+                        logger.warning("on_result callback failed for rec %d: %s", rec_id, ex)
+                return
             if not eval_metric_used:
                 local_metrics = {}
                 for index, name in enumerate(metric_names):
@@ -4532,6 +4608,12 @@ class AutoMLRunner:
 
         if path_key:
             self._set_nested(specs, path_key, artifact)
+            if bool_or_path_key:
+                # Models such as BEVFusion expose both the checkpoint path and
+                # an explicit resume switch. Supplying only the path makes
+                # MMEngine load weights as initialization and restart epoch 1
+                # instead of restoring optimizer/epoch state.
+                self._set_nested(specs, bool_or_path_key, True)
             logger.info(
                 "Rec %d will resume from parent job %s via %s=%s "
                 "(epoch=%s step=%s)",
@@ -4547,6 +4629,22 @@ class AutoMLRunner:
                 "(epoch=%s step=%s)",
                 rec.id, parent_job_id, bool_or_path_key, artifact,
                 resume_epoch, resume_step,
+            )
+
+        epoch_offset = _RESUME_EPOCH_BUDGET_OFFSETS.get(
+            self.skill_ctx.network_arch, 0
+        )
+        requested_epochs = self._get_nested(specs, "train.num_epochs")
+        if epoch_offset and isinstance(requested_epochs, int):
+            effective_epochs = requested_epochs + epoch_offset
+            self._set_nested(specs, "train.num_epochs", effective_epochs)
+            logger.info(
+                "Rec %d adjusted resumed %s epoch budget from %d to %d so "
+                "the requested terminal epoch executes",
+                rec.id,
+                self.skill_ctx.network_arch,
+                requested_epochs,
+                effective_epochs,
             )
         return specs
 

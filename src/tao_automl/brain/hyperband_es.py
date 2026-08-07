@@ -27,6 +27,9 @@ class HyperBandES(HyperBand):
 
         self.learning_curves = {}
         self.early_stopped_configs = set()
+        self.observed_results = set()
+        self.early_stop_decisions = []
+        self._last_decision = None
 
         logger.info(
             f"HyperBandES initialized with early_stop_threshold={early_stop_threshold}, "
@@ -45,7 +48,10 @@ class HyperBandES(HyperBand):
 
     def _predict_final_performance(self, config_id, current_curve):
         """Predict final performance using learning curve extrapolation"""
-        if len(current_curve) < self.min_epochs_for_prediction:
+        # Three parameters are fitted below, so fewer than three observations
+        # cannot produce a meaningful curve even when the user deliberately
+        # lowers the prediction gate for a small-budget run.
+        if len(current_curve) < max(self.min_epochs_for_prediction, 3):
             return None, 0.0
 
         epochs = np.array([e for e, _ in current_curve])
@@ -81,6 +87,10 @@ class HyperBandES(HyperBand):
     def _should_early_stop(self, config_id, current_result, current_epoch):
         """Determine if a configuration should be stopped early"""
         if config_id in self.early_stopped_configs:
+            self._last_decision = {
+                "decision": "discard", "reason": "already_discarded",
+                "predicted_final": None, "confidence": None,
+            }
             return False
 
         if config_id not in self.learning_curves:
@@ -88,7 +98,14 @@ class HyperBandES(HyperBand):
 
         self.learning_curves[config_id].append((current_epoch, current_result))
 
-        if len(self.learning_curves[config_id]) < self.min_epochs_for_prediction:
+        required_points = max(self.min_epochs_for_prediction, 3)
+        if len(self.learning_curves[config_id]) < required_points:
+            self._last_decision = {
+                "decision": "keep", "reason": "insufficient_curve_points",
+                "points": len(self.learning_curves[config_id]),
+                "required_points": required_points,
+                "predicted_final": None, "confidence": 0.0,
+            }
             return False
 
         predicted_final, confidence = self._predict_final_performance(
@@ -96,7 +113,18 @@ class HyperBandES(HyperBand):
             self.learning_curves[config_id]
         )
 
-        if predicted_final is None or confidence < self.confidence_threshold:
+        if predicted_final is None:
+            self._last_decision = {
+                "decision": "keep", "reason": "prediction_unavailable",
+                "predicted_final": None, "confidence": confidence,
+            }
+            return False
+        if confidence < self.confidence_threshold:
+            self._last_decision = {
+                "decision": "keep", "reason": "low_confidence",
+                "predicted_final": float(predicted_final),
+                "confidence": float(confidence),
+            }
             return False
 
         all_results = []
@@ -105,6 +133,11 @@ class HyperBandES(HyperBand):
                 all_results.append(curve[-1][1])
 
         if not all_results:
+            self._last_decision = {
+                "decision": "keep", "reason": "no_peer_result",
+                "predicted_final": float(predicted_final),
+                "confidence": float(confidence),
+            }
             return False
 
         if self.reverse_sort:
@@ -123,20 +156,71 @@ class HyperBandES(HyperBand):
                 f"current_best={current_best:.4f}"
             )
 
+        self._last_decision = {
+            "decision": "discard" if should_stop else "keep",
+            "reason": "predicted_below_peer" if should_stop else "prediction_competitive",
+            "predicted_final": float(predicted_final),
+            "confidence": float(confidence),
+            "current_best": float(current_best),
+        }
+
         return should_stop
+
+    @staticmethod
+    def _recommendation_budget(rec, fallback):
+        """Resolve the explicit resource budget carried by a recommendation."""
+        epoch_keys = {"num_epochs", "epochs", "n_epochs", "max_epochs", "epoch"}
+        budgets = []
+
+        def walk(value):
+            if not isinstance(value, dict):
+                return
+            for key, child in value.items():
+                if key.split(".")[-1] in epoch_keys and isinstance(child, (int, float)):
+                    budgets.append(int(child))
+                walk(child)
+
+        walk(rec.specs)
+        return max(budgets, default=int(fallback))
+
+    def on_recommendation_result(self, rec, history):
+        """Observe authoritative rung metrics as soon as the controller records them."""
+        if rec.status not in (JobStates.success, JobStates.done):
+            return
+        observation_id = f"{rec.id}:{rec.job_id or rec.last_modified}"
+        if observation_id in self.observed_results:
+            return
+        self.observed_results.add(observation_id)
+
+        budget = self._recommendation_budget(rec, self.epoch_number)
+        self._should_early_stop(rec.id, rec.result, budget)
+        decision = dict(self._last_decision or {
+            "decision": "keep", "reason": "no_decision",
+        })
+        decision.update({
+            "config_id": rec.id,
+            "job_id": rec.job_id,
+            "epoch": budget,
+            "metric": float(rec.result),
+        })
+        self.early_stop_decisions.append(decision)
+        logger.info(
+            "HyperBandES decision config %s at epoch %s: %s (%s)",
+            rec.id, budget, decision["decision"], decision["reason"],
+        )
 
     def generate_recommendations(self, history):
         """Generates recommendations with predictive early stopping"""
         recommendations = super().generate_recommendations(history)
-
-        for rec in history:
-            if rec.status == JobStates.running and rec.result != 0.0:
-                current_epoch = self.epoch_number
-                if self._should_early_stop(rec.id, rec.result, current_epoch):
-                    logger.info(f"Triggering early stop for config {rec.id}")
-                    rec.update_status(JobStates.failure)
-
-        return recommendations
+        filtered = []
+        for rec in recommendations:
+            rec_id = getattr(rec, "id", None)
+            if rec_id in self.early_stopped_configs:
+                logger.info("HyperBandES discard config %s before next rung", rec_id)
+                continue
+            filtered.append(rec)
+        self.last_launched_count = len(filtered)
+        return filtered
 
     @staticmethod
     def load_state(context, state_store, network, parameters, max_epochs, reduction_factor, epoch_multiplier,
@@ -166,9 +250,14 @@ class HyperBandES(HyperBand):
         brain.epoch_number = json_loaded["epoch_number"]
 
         if "learning_curves" in json_loaded:
-            brain.learning_curves = json_loaded["learning_curves"]
+            brain.learning_curves = {
+                int(config_id): curve
+                for config_id, curve in json_loaded["learning_curves"].items()
+            }
         if "early_stopped_configs" in json_loaded:
             brain.early_stopped_configs = set(json_loaded["early_stopped_configs"])
+        brain.observed_results = set(json_loaded.get("observed_results", []))
+        brain.early_stop_decisions = json_loaded.get("early_stop_decisions", [])
 
         return brain
 
@@ -177,7 +266,12 @@ class HyperBandES(HyperBand):
         super().save_state()
 
         state_dict = self.state_store.get_brain_info(self.context.id)
-        state_dict["learning_curves"] = self.learning_curves
+        state_dict["learning_curves"] = {
+            str(config_id): curve
+            for config_id, curve in self.learning_curves.items()
+        }
         state_dict["early_stopped_configs"] = list(self.early_stopped_configs)
+        state_dict["observed_results"] = list(self.observed_results)
+        state_dict["early_stop_decisions"] = self.early_stop_decisions
 
         self.state_store.save_brain_info(self.context.id, state_dict)

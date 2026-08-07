@@ -460,6 +460,10 @@ class AutoML:
         """
         return self._controller.get_status()
 
+    def get_algorithm_state(self):
+        """Return the persisted brain state for algorithm decision evidence."""
+        return self._state_store.get_brain_info(self._context.id) or {}
+
     def is_complete(self):
         """Check if the optimization is done."""
         return self._controller.is_complete()
