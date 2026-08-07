@@ -1,0 +1,517 @@
+{
+  "schema_version": 1,
+  "study_id": "dino_one_factor_latency_sensitivity_20260728_v1",
+  "status": "preregistered_not_launched",
+  "created_at_utc": "2026-07-28T00:00:00Z",
+  "purpose": "Determine which currently compatible DINO architectural controls have reproducible latency effects while retaining at least 98 percent of the matched-seed reference accuracy.",
+  "feeds_final_selection": false,
+  "manual_selection_permitted": false,
+  "scope": {
+    "model_family": "DINO ResNet50",
+    "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "other_models_permitted": false,
+    "other_datasets_permitted": false
+  },
+  "source_contract": {
+    "tao_automl": {
+      "path": "/localhome/local-rarunachalam/tao-automl",
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "83d9d7ecc783724f674cb954f9fbb6c91ea8b0eb",
+      "commit_policy": "required_ancestor"
+    },
+    "tao_sdk": {
+      "path": "/localhome/local-rarunachalam/tao-sdk",
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "3d3e1adc1849493d29dc926cb99492417e3a9250"
+    },
+    "tao_skills": {
+      "path": "/localhome/local-rarunachalam/tao-skills-external",
+      "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "commit": "18f831c7c83b424861a60353fb735dd80efcfded"
+    },
+    "tao_701_source": {
+      "path": "/localhome/local-rarunachalam/tao-pytorch",
+      "tag": "7.0.1",
+      "annotated_tag_object": "ec477bbcb71a750edb57e9de31f6fde1b447c3b0",
+      "dereferenced_commit": "1ac00f8e9c511591e6e1cfb048c1bad9101b3d32"
+    },
+    "dino_train_skill": {
+      "skill_path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/SKILL.md",
+      "skill_info_path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/references/skill_info.yaml",
+      "skill_info_sha256": "124c40e8842c2a4050ecdb9e1ed77c17e1059782326d2ead7b25fa605fac3fa0",
+      "train_template_path": "/localhome/local-rarunachalam/tao-skills-external/skills/models/tao-train-dino/references/spec_template_train.yaml",
+      "train_template_sha256": "6dad54a29776758687284c3c3e5894bce08e06a1be82e7437d941c6a4933f372",
+      "action": "train",
+      "command": "dino train -e {config_path}",
+      "config_format": "yaml"
+    }
+  },
+  "runtime_contract": {
+    "container_image_uri": "nvcr.io/nvidia/tao/tao-toolkit:7.0.1-pyt",
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+    "sqsh_sha256": "88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e",
+    "pretrained_model_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+    "pretrained_model_sha256": "7a391fb84a18714b60258becdb512594ec54faff5dccbf17ca53c5d902137512",
+    "secrets_env_path": "/localhome/local-rarunachalam/.tao/config.env",
+    "slurm": {
+      "partition": "polar3",
+      "account": "edgeai_tao-ptm_image-foundation-model-clip",
+      "num_nodes": 1,
+      "gpu_count_per_node": 8,
+      "required_gpu_model": "NVIDIA A100-SXM4-80GB",
+      "required_gpu_memory_bytes": 85174583296,
+      "required_compute_capability": "8.0",
+      "submission_path": "tao_sdk.platforms.slurm.SlurmSDK.create_job"
+    },
+    "software": {
+      "precision": "fp32",
+      "distributed_strategy": "ddp",
+      "torch": "2.11.0",
+      "cuda": "13.2",
+      "cudnn": 92000,
+      "tf32": false
+    }
+  },
+  "dataset_contract": {
+    "source_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "staged_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco",
+    "train_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+    "train_annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+    "train_annotation_sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+    "validation_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+    "validation_annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+    "validation_annotation_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+    "num_classes": 5,
+    "eval_class_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "split_policy": "The same frozen train and validation paths are used for every seed and profile."
+  },
+  "reference": {
+    "origin": {
+      "candidate_id": "seed_271828_rec_5",
+      "selection_provenance": "phase-1 AutoML accuracy-mode winner; not manually selected for this study",
+      "historical_map50_informational_only": 0.6359897329231639
+    },
+    "profile_id": "reference",
+    "model": {
+      "backbone": "resnet_50",
+      "num_queries": 594,
+      "num_feature_levels": 4,
+      "cls_loss_coef": 2.0,
+      "bbox_loss_coef": 5.0,
+      "giou_loss_coef": 2.0,
+      "num_select": 300,
+      "interm_loss_coef": 1.0,
+      "no_interm_box_loss": false,
+      "pre_norm": false,
+      "two_stage_type": "standard",
+      "decoder_sa_type": "sa",
+      "embed_init_tgt": true,
+      "fix_refpoints_hw": -1,
+      "pe_temperatureH": 20,
+      "pe_temperatureW": 20,
+      "return_interm_indices": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "use_dn": true,
+      "dn_number": 100,
+      "dn_box_noise_scale": 1.0,
+      "dn_label_noise_ratio": 0.5,
+      "focal_alpha": 0.25,
+      "clip_max_norm": 0.1,
+      "nheads": 8,
+      "dropout_ratio": 0.0,
+      "hidden_dim": 256,
+      "enc_layers": 6,
+      "dec_layers": 6,
+      "dim_feedforward": 2048,
+      "dec_n_points": 4,
+      "enc_n_points": 4,
+      "aux_loss": true,
+      "dilation": false,
+      "train_backbone": true,
+      "loss_types": [
+        "labels",
+        "boxes"
+      ],
+      "backbone_names": [
+        "backbone.0"
+      ],
+      "linear_proj_names": [
+        "reference_points",
+        "sampling_offsets"
+      ],
+      "distillation_loss_coef": 1.0,
+      "pretrained_backbone_path": ""
+    },
+    "optimizer": {
+      "lr": 0.00045,
+      "weight_decay": 0.00026967723799334445
+    }
+  },
+  "design": {
+    "type": "preregistered_one_factor_at_a_time_matched_seed",
+    "seeds": [
+      1234,
+      271828,
+      314159
+    ],
+    "profile_order": "reference first, then axis names in manifest order, then numeric levels in ascending order; observed results never affect order",
+    "duplicate_policy": "The reference value on each axis is represented only by the single shared reference profile.",
+    "expected_unique_profiles": 14,
+    "expected_training_effective_profiles_per_seed": 11,
+    "expected_training_jobs": 33,
+    "expected_evaluation_profiles": 42,
+    "postprocess_only_profiles_reuse_matched_reference_checkpoint": true,
+    "axes": [
+      {
+        "path": "model.num_queries",
+        "reference": 594,
+        "levels": [
+          300,
+          450,
+          594,
+          750,
+          900
+        ],
+        "execution": "train_evaluate_benchmark",
+        "compatibility_constraint": "model.num_queries >= model.num_select"
+      },
+      {
+        "path": "model.enc_layers",
+        "reference": 6,
+        "levels": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "execution": "train_evaluate_benchmark"
+      },
+      {
+        "path": "model.dec_layers",
+        "reference": 6,
+        "levels": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "execution": "train_evaluate_benchmark"
+      },
+      {
+        "path": "model.num_select",
+        "reference": 300,
+        "levels": [
+          50,
+          100,
+          200,
+          300
+        ],
+        "execution": "evaluate_benchmark_from_reference_checkpoint",
+        "compatibility_constraint": "model.num_select <= model.num_queries"
+      }
+    ]
+  },
+  "controlled_constants": {
+    "train_epochs": 10,
+    "checkpoint_interval_epochs": 10,
+    "validation_interval_epochs": 1,
+    "train_batch_size_per_gpu": 4,
+    "train_num_gpus": 8,
+    "train_num_nodes": 1,
+    "train_precision": "fp32",
+    "train_distributed_strategy": "ddp",
+    "activation_checkpoint": false,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
+    "wandb_enabled": false,
+    "optimizer": "AdamW",
+    "lr": 0.00045,
+    "weight_decay": 0.00026967723799334445,
+    "lr_backbone": 2e-05,
+    "lr_linear_proj_mult": 0.1,
+    "lr_scheduler": "MultiStep",
+    "augmentation_source": "unmodified pinned DINO train skill template",
+    "evaluation_primary_metric": "mAP50",
+    "latency_batch_size_per_gpu": 1
+  },
+  "latency_protocol": {
+    "matched_unit": "For each seed and non-reference profile, benchmark the profile and that seed's reference on the same eight-GPU allocation.",
+    "fixed_preprocessed_inputs": {
+      "nested_tensor_shape": [
+        1,
+        4,
+        800,
+        1333
+      ],
+      "rgb_shape": [
+        1,
+        3,
+        800,
+        1333
+      ],
+      "mask_shape": [
+        1,
+        1,
+        800,
+        1333
+      ]
+    },
+    "warmup_iterations": 50,
+    "timed_iterations": 100,
+    "repeated_rounds": 5,
+    "preloaded_batches": 16,
+    "synchronization": "CUDA synchronize around each sample plus NCCL barriers around candidate and round boundaries",
+    "timed_scope": "model forward plus DINO GPU postprocess",
+    "excluded_scope": [
+      "checkpoint load",
+      "disk IO",
+      "decode resize normalize",
+      "host to device transfer",
+      "COCO accumulation",
+      "distributed gather"
+    ],
+    "primary_estimator": "median of device-round medians",
+    "tail_estimator": "pooled p95",
+    "dispersion": [
+      "robust_cv",
+      "round_median_range",
+      "device_median_range",
+      "bootstrap_95_percent_ci"
+    ],
+    "benchmark_seed": 20260727,
+    "bootstrap_seed": 424242,
+    "bootstrap_resamples": 5000,
+    "tf32": false,
+    "precision": "fp32",
+    "runtime_rejection": "Reject any allocation with a hardware, software, input-shape, precision, synchronization, warmup, iteration, round, or timing-scope mismatch."
+  },
+  "noise_floor": {
+    "historical_allocation_noise_floor_ms": 0.73553775,
+    "recalibration": {
+      "reference_repeats_per_seed": 3,
+      "independent_eight_gpu_allocations": true,
+      "within_seed_range_ms": "max(reference allocation medians) - min(reference allocation medians)",
+      "recalibrated_baseline_ms": "max of the three within-seed ranges",
+      "effective_noise_floor_ms": "max(0.73553775, recalibrated_baseline_ms)"
+    },
+    "claim_rule": "A matched median latency effect is practically meaningful only when its absolute value is strictly greater than the effective noise floor."
+  },
+  "promotion_gates": {
+    "unit": "axis level, matched across all three seeds",
+    "required_success": "3 of 3 seeds must train or reuse the declared checkpoint, evaluate, and produce finite valid latency measurements.",
+    "accuracy_retention_fraction": 0.98,
+    "per_seed_accuracy_rule": "candidate_mAP50(seed) >= 0.98 * reference_mAP50(the same seed)",
+    "accuracy_aggregation": "All three matched-seed accuracy rules must pass; cross-seed reference substitution is prohibited.",
+    "latency_effect_ms": "candidate matched median latency - same-seed reference matched median latency",
+    "direction_reproducibility": "At least 2 of 3 per-seed latency effects must be negative.",
+    "magnitude_rule": "The median of the three matched latency effects must be less than negative effective_noise_floor_ms.",
+    "promotion_rule": "Promote a non-reference level to a later AutoML search only if every success and accuracy gate passes, direction reproducibility passes, and the magnitude rule passes.",
+    "no_fallback": "If no level passes, report no promotable level for that axis.",
+    "selection_effect": "Promotion only changes a future search-space proposal; this study never selects, replaces, or reranks a final AutoML winner."
+  },
+  "excluded_axes": [
+    {
+      "paths": [
+        "model.backbone"
+      ],
+      "reason": "Only ResNet50 is compatible in the frozen TAO 7.0.1 runtime; GCViT is unsupported and both FAN PTMs have legacy projection incompatibilities."
+    },
+    {
+      "paths": [
+        "model.hidden_dim",
+        "model.nheads",
+        "model.dim_feedforward",
+        "model.enc_n_points",
+        "model.dec_n_points"
+      ],
+      "reason": "These alter pretrained tensor shapes and are not a compatible one-factor search with the pinned PTM."
+    },
+    {
+      "paths": [
+        "model.num_feature_levels",
+        "model.return_interm_indices"
+      ],
+      "reason": "These are coupled and return_interm_indices is not AutoML-searchable in the frozen schema."
+    },
+    {
+      "paths": [
+        "model.two_stage_type",
+        "model.decoder_sa_type",
+        "model.pre_norm",
+        "model.dilation"
+      ],
+      "reason": "These change major architecture semantics and are outside the compatible latency-sensitivity screen."
+    },
+    {
+      "paths": [
+        "dataset.augmentation.test_random_resize",
+        "dataset.augmentation.random_resize_max_size",
+        "inference_resolution",
+        "evaluation_resolution"
+      ],
+      "reason": "Resolution changes the deployment profile and is held constant rather than treated as an architecture axis."
+    },
+    {
+      "paths": [
+        "train.optim.lr",
+        "train.optim.weight_decay",
+        "train.optim.lr_backbone",
+        "train.optim.lr_scheduler",
+        "train.activation_checkpoint",
+        "train.precision",
+        "dataset.batch_size",
+        "dataset.workers",
+        "model.train_backbone",
+        "model.loss_types",
+        "model.focal_alpha",
+        "model.use_dn",
+        "model.dn_number",
+        "model.dropout_ratio"
+      ],
+      "reason": "Training-only, accuracy, or protocol controls are frozen and are not claimed as request-latency axes."
+    }
+  ],
+  "digest_contract": {
+    "canonicalization": "UTF-8 JSON with sort_keys=true, separators comma and colon, ensure_ascii=false, allow_nan=false",
+    "required_plan_fields": [
+      "resolved_model_spec",
+      "resolved_model_spec_sha256",
+      "resolved_train_spec_sha256",
+      "profile_id",
+      "seed",
+      "execution"
+    ],
+    "frozen_profile_digests": {
+      "dec_layers_3": {
+        "resolved_model_spec_sha256": "bc18216f670d96963ab795be8d6b845f576f4eed17a2482516da91d27eb6248d",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "e56cad8bd4f65f0c3d7dd949f98782cd05e74b55bd85df3a9365d15ce0d000ee",
+          "271828": "dd9ad8b6bf57d6540c3aa3708cf7eff72d81fed5ff2b746c908abbf0a9983575",
+          "314159": "7f30b5a7ba9417f4227fa398d26ab21a951706f2b3c1675ecb1c10211c3ca85e"
+        }
+      },
+      "dec_layers_4": {
+        "resolved_model_spec_sha256": "692163fef0659f3290de32ae11ad40eb1f240918d7150dd0729fbb854784697b",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "7069e1192ce96027b54fbf8a33fabb0b348761f65e3c986ed28a835ed515116f",
+          "271828": "8083c0ae3cd3367eb8750c165eaef017b67d8177d0641750f6eb3ba2e30a69da",
+          "314159": "384d88fde267df67c0bb8412cf258578135aea030bff5c751af47bfb073e05ca"
+        }
+      },
+      "dec_layers_5": {
+        "resolved_model_spec_sha256": "b63176fa2e9a0d15975ef02b4efb7c5f656e966b8845dafdb83c5c449f7813c3",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "bbfca3646cc5792a1d10150a7523004b4bb011c251158f42990f104651189488",
+          "271828": "6115a78e0166f7ed8678ec7272737d2f3deefa6e873ebb976dd554e1893e4713",
+          "314159": "5ed894447f762a7991c0412255c4e9ac694bd52c02e81d8e85e75cb8b249c793"
+        }
+      },
+      "enc_layers_3": {
+        "resolved_model_spec_sha256": "74a22dd7f11ebd8094bb5709593fe01c5e1b23855b4f2f0dac6e108778061c8c",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "9462683bdbb74d5199deef976ce24a5f37cfb99d57014b66d7b5b3a7b91276b7",
+          "271828": "307792c1bd4845190d30fb3c806d6f59bb191ba8b5ea9400093a78585faadba7",
+          "314159": "19fb193264a05332fa6950dff3c020f55a38df914f0fc6419454da8c619ffc20"
+        }
+      },
+      "enc_layers_4": {
+        "resolved_model_spec_sha256": "faae5224d2e046b16b8b4056b2cb1f0ab1479df018280e4289da931548fae65b",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "a8b9e2765bf0d1754158c5fe77107a9e57313fa7adff1cc8b69383e60129e157",
+          "271828": "61599ea0e721565c6c672530fca6a5aa78776373933ce131d82688076e58892c",
+          "314159": "f9ab49bd76c1558e7c7ad9adcd83083bfcf14ccb1d0e4d8faf95f9de95d5ec8d"
+        }
+      },
+      "enc_layers_5": {
+        "resolved_model_spec_sha256": "11ac970859a0d9ad49b07ad42ac852740557fa23bdf23f814648151e5f4f108a",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "47fc8dab41b0adc46bc889b2ec0985519ae83662b175e4ca0837710e1e5e7d04",
+          "271828": "9d36d4931b11eb02f8d51ef24f22912cb991e90ffc421ba494751f22a7504b93",
+          "314159": "655ed917d6c9c506dc3b5648e3e01ee4b06040de7bc0d43fc594d06430e8ebfc"
+        }
+      },
+      "num_queries_300": {
+        "resolved_model_spec_sha256": "ca88418e617dbf0daaa56d956f62aa28a7df36015eee15ce8a871700c11e2f5c",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "547e5d043b07573084f63c6018666b100a30c9eff07046528c3a819eb51839d7",
+          "271828": "62f8467ed9260f60f4f80e1a57d75201079ecdab1a1f4b633aaacb32eae3fba3",
+          "314159": "31d53325b69eef79efe8d3d2f90358bdd12446aff6f5a457237d35d7e465d3cb"
+        }
+      },
+      "num_queries_450": {
+        "resolved_model_spec_sha256": "a1040b33698f494d5f38989c722641492aaa13b0239f3d8c961281787c682db5",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "36d43d4649d6ebbed522ad5eee377008159fae525689f731fc020a720af88e3a",
+          "271828": "19b886f294ad5c21879b8e61f66caef473817400d8ecc627f9821a2636acb6f8",
+          "314159": "c45d595934d6e45cf9c08855948eda551e7c43404f02d533c5e24d3d19ac466d"
+        }
+      },
+      "num_queries_750": {
+        "resolved_model_spec_sha256": "c1ba3dfc15d54a383809e7d4eeb563fb297a51207fccd3cb8259429875e18c63",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "c00152b68d22cc367cdf3f137ef1895b23cc64cac60dcc077517fbe856a2ba71",
+          "271828": "05bb818b2e43c42ed490eb32d0251437ca5aa3084bce119f17b06338276f8c19",
+          "314159": "b22e9b5c2e381a696a2de682a7530e858da3924dce860414bcf0e453043218ff"
+        }
+      },
+      "num_queries_900": {
+        "resolved_model_spec_sha256": "7166648c62b0c9f44a7ff3e33a7c826e090e2b4b684cf5502daf206f9165eaef",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "62c8bc9ca1fe8686dab7cdb3f78c9fe7338e6bfef4039209b8badd74ec3cc2f6",
+          "271828": "3d031a80233b22dd76b1ef7ba74d59ddc641a3b71ebb1808ceb563374fa66f01",
+          "314159": "176f8642ece6f5afa80cd62fa39ba2b56ca40f75dafc8d9024164717223047d7"
+        }
+      },
+      "num_select_100": {
+        "resolved_model_spec_sha256": "6ac401af96ca871e73419c1c422a8f0ea1191b6d611d82b1db87eba8cf501866",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "3e695751863fb1a0556cc6a36e2d16eb7dd2efb0ad0609813340579564c2a49d",
+          "271828": "18c357027f48fd918df5f21e53495e8a5fba62b52f8524a96e2d9218b69f7062",
+          "314159": "867ad1b88b43029628fb3fb07cfbf17a5b1a367e8537aa22afc5d902cd94b1db"
+        }
+      },
+      "num_select_200": {
+        "resolved_model_spec_sha256": "bf2065ba3566148c461816d6be97224d2e14d1fd19521fde1f4da980051c8f56",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "b1c06b0b583882e93d9348364cbb9666ec03db6f0e8a35b7f9b0b82bc79fa8b7",
+          "271828": "db721387535ad79540607839cd55a32085bc57f87a683f6fa346fcb145d7f4b1",
+          "314159": "9bf0790db3b5f153b8b35ac4343a4c683543f3867ef4a8d7afe76eb4b6ff6819"
+        }
+      },
+      "num_select_50": {
+        "resolved_model_spec_sha256": "79779adaa241b7ef68fa348259fbd6d1d09a9016102500aa16cfa7c5d091ce1d",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "bd7e5bdd8f60282701fe6a0b13fe3c2ade79550eff35cc7276eb2958a5ee066c",
+          "271828": "2eba927e09a3f31ed66874a239c4968066441b6baa8a74ea7f4706c4af04d79e",
+          "314159": "74a8b6e6a45df6ad3aa0fc7c296583ca9590591299502aa07988cc35edc25f88"
+        }
+      },
+      "reference": {
+        "resolved_model_spec_sha256": "91497df28e34298db1a878323920542dd8683d4b4e0ddf1bcd0181bf4b4ff4b0",
+        "resolved_train_spec_sha256_by_seed": {
+          "1234": "a1bd84c83cc72400674e4e9eb729a20a78f7c37e3bc87ffb9154477d5b0ba623",
+          "271828": "185c710a3aa646b88a7a8294a468f201616deef87ffc7a2fca8660b1c43c357f",
+          "314159": "8700a16ea38b49d7bf2595e5adc44f996c822c32936e672ad12d5ca6ed4c48af"
+        }
+      }
+    }
+  },
+  "submission_policy": {
+    "default": "dry_run",
+    "submission_requires_flag": "--submit-training",
+    "concurrent_submission": "All 33 independent eight-GPU training jobs may be queued concurrently only after exact acknowledgement.",
+    "required_acknowledgement": "USER_AUTHORIZED_CONCURRENT_8GPU_SLURM_DINO_ONE_FACTOR_20260728",
+    "partial_or_result_ordered_submission_permitted": false,
+    "automatic_wait_or_promotion": false,
+    "submission_performed_at_preregistration": false
+  }
+}

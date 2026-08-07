@@ -1,0 +1,3209 @@
+{
+  "aggregate": {
+    "all_jobs_used_identical_inputs": true,
+    "independent_job_count": 3,
+    "input_identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+    "median_latency_ms": {
+      "coefficient_of_variation": 0.0024104822612970823,
+      "count": 3,
+      "maximum": 79.62417775,
+      "mean": 79.40082683333333,
+      "median": 79.42156525,
+      "minimum": 79.15673749999999,
+      "population_standard_deviation": 0.19139428461407137,
+      "range": 0.4674402500000099
+    },
+    "original_selection_measurement_median_ms": 79.89227525,
+    "p95_latency_ms": {
+      "coefficient_of_variation": 0.0033338763814511623,
+      "count": 3,
+      "maximum": 80.1542135,
+      "mean": 79.80421965,
+      "median": 79.74883894999999,
+      "minimum": 79.50960649999999,
+      "population_standard_deviation": 0.26605740303127573,
+      "range": 0.6446070000000077
+    },
+    "repeat_delta_from_original_ms": [
+      -0.735537750000006,
+      -0.47070999999999685,
+      -0.2680974999999961
+    ]
+  },
+  "benchmark_script_sha256": "6d62e1d64c7e8a49c495d51d89ad86f299195c743f4ec472dc4b5624d2f4a8fd",
+  "completed_at": "2026-07-28T00:12:19Z",
+  "completed_repeat_count": 3,
+  "feeds_selection": false,
+  "gpu_count_per_repeat": 8,
+  "input_identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+  "mode_selection_snapshot": {
+    "accuracy": {
+      "distinct_compromise": null,
+      "fallback_used": false,
+      "reason": "Highest valid accuracy; accuracy-equivalent ties use lower stabilized latency then canonical configuration hash.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_5"
+    },
+    "latency": {
+      "distinct_compromise": null,
+      "fallback_used": false,
+      "reason": "Lowest stabilized latency among candidates satisfying the accuracy-winner-relative constraint; statistically equivalent latencies use higher accuracy then canonical configuration hash.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_5"
+    },
+    "multi_objective": {
+      "distinct_compromise": false,
+      "fallback_used": true,
+      "reason": "No distinct Pareto compromise exists in the evaluated search space. The deterministic augmented-Chebyshev fallback selected an extreme point.",
+      "status": "selected",
+      "winner_id": "seed_271828_rec_5"
+    }
+  },
+  "purpose": "Independent-allocation latency repeatability validation for the already algorithm-selected unique winner.",
+  "repeat_count_requested": 3,
+  "repeats": [
+    {
+      "benchmark": {
+        "benchmark_inputs": {
+          "batch_count": 16,
+          "batches": [
+            {
+              "batch_index": 0,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000246.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "f3227f245fbe24b6877f08ced97f57f324114db961e026d7e9ea32ade9f92fdf",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 1,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001170.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "7b3c1e73beb7861543df3a05191689c5d6a0e0fa71deddad6178b6e2d8e7e54a",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 2,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001602.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "64b4f8b62f844d3ed4c1b480b0f3bd0e43aa874ddd4956fce5838b9043fd0cbf",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 3,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000291.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "9cdbf2431e6ed1c8b850056d21b1c0f65aac4c36fbbe6ea33b0a30e6201a5cfb",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 4,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001372.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "ae83c7f7c313efe9c2f12e8d49f31dc0f478ce8fe7b6ba64b3fdc39d16195e6c",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 5,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000078.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "5c097f17d61d40c46aaceb267684be018145d60c9edc610623cac1c2be3b3ce9",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 6,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001548.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "81a6d10f00079e9994cf312647cf832ca3681077af96d48e25226e39fff58864",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 7,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000681.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "8767c4f1342c3c5c8b2cb0a01421cbb4b9ef51e91f8ae1a8c3cee03043f47fd8",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 8,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000865.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "718ed70836d36cc51f069aef3dfab8bacc9d5d18e154a385b200bea2139049b8",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 9,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000454.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "2f48d10e9ad083647307774318d56d3a98a30c194177fa8c524c790ee7aa8b4e",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 10,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000482.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "57ab54ecc288143fd1cb5c7305b849a11fd05f497c25a3c2c9f78866c4530d41",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 11,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000864.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "78af881f4e0f6c0fb5eec39491c30bf905289080c112411e9d72c6003161cf14",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 12,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000858.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "14772896e97c095ec61bd4b1fb58d7dd1c26141b0ae12d9e26d4d2de85443ca9",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 13,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001213.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "e04a4fa2e11e747263274575f7fed100d8ebcf7ea15c187f7d0ff6df5ad9c709",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 14,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000643.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "25e66d83ad462abd0d9d9b03c453dbf09b73ffbeac07b0cba67d570ea8d7944c",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 15,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001398.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "c635e9d270eff7d8fac894bc7945c92c8422e0b4bcc62c968e23139863fb81ff",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            }
+          ],
+          "example_count": 16,
+          "identity_definition": "sha256(canonical JSON of batch order, image names, original sizes, tensor/mask shapes+dtypes, and exact preprocessed tensor/mask hashes)",
+          "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+          "schema_version": 1
+        },
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "c5e5ca6d-fe96-4e99-8f70-9210b60543e5",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-b7c3a44c-e224-5b17-78f4-484198585415, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 102.85, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-1d7ab140-d4af-fb20-b521-b8f77223fba6, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 104.26, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-91bf611e-001a-c2be-5499-23ba21635881, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 52, 1410, 1593, 212.05, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-da576fb9-c1d8-8b56-c0c1-61dfd65d3fff, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 104.54, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-7976b961-43da-5a57-b824-ab4f4d4e8daa, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 116.90, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-05057e77-f7b9-cfd6-2158-f760b9169c81, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 101.14, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-37e47f7c-d10e-d6d1-1bbf-e7f0f8d16c9c, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 52, 1410, 1593, 105.75, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-e5439acc-ba3f-190c-7311-62b276e0df64, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 148.59, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "rank_input_identities": [
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 0
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 1
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 2
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 3
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 4
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 5
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 6
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 7
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/c5e5ca6d-fe96-4e99-8f70-9210b60543e5/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/c5e5ca6d-fe96-4e99-8f70-9210b60543e5",
+        "slurm_job_id": "30931806",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0021293544342954923,
+          "bootstrap_ci_width_ms": 0.16855274999998926,
+          "bootstrap_median_ci_ms": [
+            79.03559375,
+            79.2041465
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.005995427742332012,
+          "device_median_range_ms": 0.4745784999999927,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.27225424999998893,
+          "is_valid": true,
+          "mad_ms": 0.13713099999998946,
+          "median_ms": 79.15673749999999,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.259672
+            ],
+            [
+              "1",
+              79.440983
+            ],
+            [
+              "2",
+              79.2007005
+            ],
+            [
+              "3",
+              79.158345
+            ],
+            [
+              "4",
+              78.96686
+            ],
+            [
+              "5",
+              78.96640450000001
+            ],
+            [
+              "6",
+              78.972785
+            ],
+            [
+              "7",
+              79.15967950000001
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.1427735000000041
+            ],
+            [
+              "1",
+              0.0837164999999942
+            ],
+            [
+              "2",
+              0.10927750000000458
+            ],
+            [
+              "3",
+              0.22235050000000456
+            ],
+            [
+              "4",
+              -0.058236500000006686
+            ],
+            [
+              "5",
+              0.09223699999999724
+            ],
+            [
+              "6",
+              0.0692460000000068
+            ],
+            [
+              "7",
+              0.11992250000000126
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.1427735000000041
+            ],
+            [
+              "1",
+              0.09480800000000045
+            ],
+            [
+              "2",
+              0.10927750000000458
+            ],
+            [
+              "3",
+              0.22235050000000456
+            ],
+            [
+              "4",
+              0.1025680000000051
+            ],
+            [
+              "5",
+              0.0967874999999907
+            ],
+            [
+              "6",
+              0.09243800000000135
+            ],
+            [
+              "7",
+              0.1265474999999867
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.07479275
+            ],
+            [
+              1,
+              79.14600925
+            ],
+            [
+              2,
+              79.15628749999999
+            ],
+            [
+              3,
+              79.224989
+            ],
+            [
+              4,
+              79.24592925
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "raw_sample_count_total": 4000,
+          "robust_cv": 0.00256845376680645,
+          "round_drift_fraction": 0.0021619953702614754,
+          "round_drift_ms": 0.1711365000000029,
+          "round_median_range_fraction": 0.0021619953702614754,
+          "round_median_range_ms": 0.1711365000000029,
+          "samples_per_device": 500,
+          "synchronized_median_ms": 79.46552299999999,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 79.77748055,
+          "tail_latency_ms": 79.50960649999999,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "completed_at": "2026-07-28T00:07:32Z",
+      "metrics": {
+        "latency_bootstrap_ci_width_ms": 0.16855274999998926,
+        "latency_ci95_high": 79.2041465,
+        "latency_ci95_low": 79.03559375,
+        "latency_device_range_fraction": 0.005995427742332012,
+        "latency_iqr_ms": 0.27225424999998893,
+        "latency_mad_ms": 0.13713099999998946,
+        "latency_ms": 79.15673749999999,
+        "latency_p95_ms": 79.50960649999999,
+        "latency_robust_cv": 0.00256845376680645,
+        "latency_round_drift_fraction": 0.0021619953702614754,
+        "latency_synchronized_median_ms": 79.46552299999999,
+        "latency_synchronized_p95_ms": 79.77748055
+      },
+      "repeat_index": 0
+    },
+    {
+      "benchmark": {
+        "benchmark_inputs": {
+          "batch_count": 16,
+          "batches": [
+            {
+              "batch_index": 0,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000246.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "f3227f245fbe24b6877f08ced97f57f324114db961e026d7e9ea32ade9f92fdf",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 1,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001170.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "7b3c1e73beb7861543df3a05191689c5d6a0e0fa71deddad6178b6e2d8e7e54a",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 2,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001602.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "64b4f8b62f844d3ed4c1b480b0f3bd0e43aa874ddd4956fce5838b9043fd0cbf",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 3,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000291.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "9cdbf2431e6ed1c8b850056d21b1c0f65aac4c36fbbe6ea33b0a30e6201a5cfb",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 4,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001372.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "ae83c7f7c313efe9c2f12e8d49f31dc0f478ce8fe7b6ba64b3fdc39d16195e6c",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 5,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000078.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "5c097f17d61d40c46aaceb267684be018145d60c9edc610623cac1c2be3b3ce9",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 6,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001548.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "81a6d10f00079e9994cf312647cf832ca3681077af96d48e25226e39fff58864",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 7,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000681.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "8767c4f1342c3c5c8b2cb0a01421cbb4b9ef51e91f8ae1a8c3cee03043f47fd8",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 8,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000865.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "718ed70836d36cc51f069aef3dfab8bacc9d5d18e154a385b200bea2139049b8",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 9,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000454.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "2f48d10e9ad083647307774318d56d3a98a30c194177fa8c524c790ee7aa8b4e",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 10,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000482.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "57ab54ecc288143fd1cb5c7305b849a11fd05f497c25a3c2c9f78866c4530d41",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 11,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000864.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "78af881f4e0f6c0fb5eec39491c30bf905289080c112411e9d72c6003161cf14",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 12,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000858.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "14772896e97c095ec61bd4b1fb58d7dd1c26141b0ae12d9e26d4d2de85443ca9",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 13,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001213.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "e04a4fa2e11e747263274575f7fed100d8ebcf7ea15c187f7d0ff6df5ad9c709",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 14,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000643.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "25e66d83ad462abd0d9d9b03c453dbf09b73ffbeac07b0cba67d570ea8d7944c",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 15,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001398.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "c635e9d270eff7d8fac894bc7945c92c8422e0b4bcc62c968e23139863fb81ff",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            }
+          ],
+          "example_count": 16,
+          "identity_definition": "sha256(canonical JSON of batch order, image names, original sizes, tensor/mask shapes+dtypes, and exact preprocessed tensor/mask hashes)",
+          "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+          "schema_version": 1
+        },
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "10450946-9dc2-4dcb-9a6c-c0addd7261bf",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-b7c3a44c-e224-5b17-78f4-484198585415, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 106.13, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-1d7ab140-d4af-fb20-b521-b8f77223fba6, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 244.75, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-91bf611e-001a-c2be-5499-23ba21635881, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 125.32, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-da576fb9-c1d8-8b56-c0c1-61dfd65d3fff, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 109.92, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-7976b961-43da-5a57-b824-ab4f4d4e8daa, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 124.10, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-05057e77-f7b9-cfd6-2158-f760b9169c81, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 127.00, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-37e47f7c-d10e-d6d1-1bbf-e7f0f8d16c9c, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 55, 1410, 1593, 221.61, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-e5439acc-ba3f-190c-7311-62b276e0df64, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 59, 1410, 1593, 338.47, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "rank_input_identities": [
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 0
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 1
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 2
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 3
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 4
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 5
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 6
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 7
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/10450946-9dc2-4dcb-9a6c-c0addd7261bf/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/10450946-9dc2-4dcb-9a6c-c0addd7261bf",
+        "slurm_job_id": "30932032",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0011037273028310186,
+          "bootstrap_ci_width_ms": 0.08765975000000026,
+          "bootstrap_median_ci_ms": [
+            79.39657725,
+            79.48423700000001
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.004472387302893159,
+          "device_median_range_ms": 0.3552040000000005,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.20037849999998514,
+          "is_valid": true,
+          "mad_ms": 0.0935374999999965,
+          "median_ms": 79.42156525,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.6901225
+            ],
+            [
+              "1",
+              79.5698
+            ],
+            [
+              "2",
+              79.39153999999999
+            ],
+            [
+              "3",
+              79.449386
+            ],
+            [
+              "4",
+              79.3349185
+            ],
+            [
+              "5",
+              79.40289949999999
+            ],
+            [
+              "6",
+              79.34931900000001
+            ],
+            [
+              "7",
+              79.41992049999999
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.06589149999999222
+            ],
+            [
+              "1",
+              0.06167650000000435
+            ],
+            [
+              "2",
+              0.08094700000000898
+            ],
+            [
+              "3",
+              0.1625190000000032
+            ],
+            [
+              "4",
+              0.0807165000000083
+            ],
+            [
+              "5",
+              -0.14397449999998457
+            ],
+            [
+              "6",
+              0.06224549999998885
+            ],
+            [
+              "7",
+              0.009589000000005399
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.08806749999999397
+            ],
+            [
+              "1",
+              0.06497699999999895
+            ],
+            [
+              "2",
+              0.08094700000000898
+            ],
+            [
+              "3",
+              0.2567264999999992
+            ],
+            [
+              "4",
+              0.10466750000000502
+            ],
+            [
+              "5",
+              0.1521189999999848
+            ],
+            [
+              "6",
+              0.06224549999998885
+            ],
+            [
+              "7",
+              0.09326199999999574
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.40045549999999
+            ],
+            [
+              1,
+              79.46836474999999
+            ],
+            [
+              2,
+              79.39312475
+            ],
+            [
+              3,
+              79.41305475
+            ],
+            [
+              4,
+              79.441426
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "raw_sample_count_total": 4000,
+          "robust_cv": 0.0017461088441592357,
+          "round_drift_fraction": 0.0005158611501932651,
+          "round_drift_ms": 0.040970500000014454,
+          "round_median_range_fraction": 0.0009473497501989078,
+          "round_median_range_ms": 0.07523999999999376,
+          "samples_per_device": 500,
+          "synchronized_median_ms": 79.696743,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.00519555,
+          "tail_latency_ms": 79.74883894999999,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "completed_at": "2026-07-28T00:09:48Z",
+      "metrics": {
+        "latency_bootstrap_ci_width_ms": 0.08765975000000026,
+        "latency_ci95_high": 79.48423700000001,
+        "latency_ci95_low": 79.39657725,
+        "latency_device_range_fraction": 0.004472387302893159,
+        "latency_iqr_ms": 0.20037849999998514,
+        "latency_mad_ms": 0.0935374999999965,
+        "latency_ms": 79.42156525,
+        "latency_p95_ms": 79.74883894999999,
+        "latency_robust_cv": 0.0017461088441592357,
+        "latency_round_drift_fraction": 0.0005158611501932651,
+        "latency_synchronized_median_ms": 79.696743,
+        "latency_synchronized_p95_ms": 80.00519555
+      },
+      "repeat_index": 1
+    },
+    {
+      "benchmark": {
+        "benchmark_inputs": {
+          "batch_count": 16,
+          "batches": [
+            {
+              "batch_index": 0,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000246.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "f3227f245fbe24b6877f08ced97f57f324114db961e026d7e9ea32ade9f92fdf",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 1,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001170.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "7b3c1e73beb7861543df3a05191689c5d6a0e0fa71deddad6178b6e2d8e7e54a",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 2,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001602.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "64b4f8b62f844d3ed4c1b480b0f3bd0e43aa874ddd4956fce5838b9043fd0cbf",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 3,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000291.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "9cdbf2431e6ed1c8b850056d21b1c0f65aac4c36fbbe6ea33b0a30e6201a5cfb",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 4,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001372.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "ae83c7f7c313efe9c2f12e8d49f31dc0f478ce8fe7b6ba64b3fdc39d16195e6c",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 5,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000078.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "5c097f17d61d40c46aaceb267684be018145d60c9edc610623cac1c2be3b3ce9",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 6,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001548.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "81a6d10f00079e9994cf312647cf832ca3681077af96d48e25226e39fff58864",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 7,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000681.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "8767c4f1342c3c5c8b2cb0a01421cbb4b9ef51e91f8ae1a8c3cee03043f47fd8",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 8,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000865.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "718ed70836d36cc51f069aef3dfab8bacc9d5d18e154a385b200bea2139049b8",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 9,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000454.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "2f48d10e9ad083647307774318d56d3a98a30c194177fa8c524c790ee7aa8b4e",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 10,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000482.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "57ab54ecc288143fd1cb5c7305b849a11fd05f497c25a3c2c9f78866c4530d41",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 11,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000864.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "78af881f4e0f6c0fb5eec39491c30bf905289080c112411e9d72c6003161cf14",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 12,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000858.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "14772896e97c095ec61bd4b1fb58d7dd1c26141b0ae12d9e26d4d2de85443ca9",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 13,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001213.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "e04a4fa2e11e747263274575f7fed100d8ebcf7ea15c187f7d0ff6df5ad9c709",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 14,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/000643.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "25e66d83ad462abd0d9d9b03c453dbf09b73ffbeac07b0cba67d570ea8d7944c",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            },
+            {
+              "batch_index": 15,
+              "batch_size": 1,
+              "image_names": [
+                "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images/001398.jpg"
+              ],
+              "image_tensor_shape": [
+                1,
+                3,
+                800,
+                1333
+              ],
+              "model_input": {
+                "dtype": "torch.float32",
+                "sha256": "c635e9d270eff7d8fac894bc7945c92c8422e0b4bcc62c968e23139863fb81ff",
+                "shape": [
+                  1,
+                  4,
+                  800,
+                  1333
+                ]
+              },
+              "original_sizes": [
+                [
+                  720,
+                  1280
+                ]
+              ],
+              "padding_mask": {
+                "channel_index": 3,
+                "dtype": "torch.float32",
+                "sha256": "fa8f70a00871467ed93461ebb8265c8b5e3ab1652b976ae76243d67b59044e29",
+                "shape": [
+                  1,
+                  1,
+                  800,
+                  1333
+                ]
+              }
+            }
+          ],
+          "example_count": 16,
+          "identity_definition": "sha256(canonical JSON of batch order, image names, original sizes, tensor/mask shapes+dtypes, and exact preprocessed tensor/mask hashes)",
+          "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+          "schema_version": 1
+        },
+        "hardware_contract": {
+          "compute_capability": "8.0",
+          "cuda": "13.2",
+          "cudnn": 92000,
+          "gpu_name": "NVIDIA A100-SXM4-80GB",
+          "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+          "torch": "2.11.0",
+          "total_memory_bytes": 85174583296,
+          "world_size": 8
+        },
+        "job_id": "ccdcfc05-2893-48bb-9640-610c859098ea",
+        "rank_hardware": [
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-b7c3a44c-e224-5b17-78f4-484198585415, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 142.96, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 0,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-1d7ab140-d4af-fb20-b521-b8f77223fba6, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 56, 1410, 1593, 236.06, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 1,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-91bf611e-001a-c2be-5499-23ba21635881, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 53, 1410, 1593, 102.73, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 2,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-da576fb9-c1d8-8b56-c0c1-61dfd65d3fff, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 58, 1410, 1593, 218.89, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 3,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-7976b961-43da-5a57-b824-ab4f4d4e8daa, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 273.70, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 4,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-05057e77-f7b9-cfd6-2158-f760b9169c81, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 57, 1410, 1593, 104.71, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 5,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-37e47f7c-d10e-d6d1-1bbf-e7f0f8d16c9c, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 54, 1410, 1593, 104.65, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 6,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          },
+          {
+            "hardware": {
+              "compute_capability": "8.0",
+              "gpu_name": "NVIDIA A100-SXM4-80GB",
+              "hostname": "batch-block7-00843",
+              "nvidia_smi": "GPU-e5439acc-ba3f-190c-7311-62b276e0df64, NVIDIA A100-SXM4-80GB, 535.129.03, P0, 61, 1410, 1593, 235.58, 400.00",
+              "total_memory_bytes": 85174583296
+            },
+            "rank": 7,
+            "runtime": {
+              "cuda": "13.2",
+              "cudnn": 92000,
+              "python": "3.12.3",
+              "torch": "2.11.0"
+            }
+          }
+        ],
+        "rank_input_identities": [
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 0
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 1
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 2
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 3
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 4
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 5
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 6
+          },
+          {
+            "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08",
+            "rank": 7
+          }
+        ],
+        "raw_samples_dir": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/ccdcfc05-2893-48bb-9640-610c859098ea/latency",
+        "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/ccdcfc05-2893-48bb-9640-610c859098ea",
+        "slurm_job_id": "30932183",
+        "statistics": {
+          "bootstrap_ci_width_fraction": 0.0011724767857965153,
+          "bootstrap_ci_width_ms": 0.09335750000001042,
+          "bootstrap_median_ci_ms": [
+            79.58802399999999,
+            79.6813815
+          ],
+          "device_ids": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ],
+          "device_median_range_fraction": 0.009233432868950345,
+          "device_median_range_ms": 0.7352044999999947,
+          "device_round_cluster_count": 40,
+          "invalid_reasons": [],
+          "iqr_ms": 0.2508969999999948,
+          "is_valid": true,
+          "mad_ms": 0.11278575000000046,
+          "median_ms": 79.62417775,
+          "per_device_median_ms": [
+            [
+              "0",
+              79.776594
+            ],
+            [
+              "1",
+              80.1189275
+            ],
+            [
+              "2",
+              79.57817299999999
+            ],
+            [
+              "3",
+              79.587334
+            ],
+            [
+              "4",
+              79.569054
+            ],
+            [
+              "5",
+              79.758639
+            ],
+            [
+              "6",
+              79.383723
+            ],
+            [
+              "7",
+              79.610514
+            ]
+          ],
+          "per_device_round_drift_ms": [
+            [
+              "0",
+              0.20289549999998258
+            ],
+            [
+              "1",
+              0.062231499999995776
+            ],
+            [
+              "2",
+              0.1195174999999864
+            ],
+            [
+              "3",
+              0.07888700000000881
+            ],
+            [
+              "4",
+              0.0935465000000022
+            ],
+            [
+              "5",
+              0.1725800000000106
+            ],
+            [
+              "6",
+              0.1059824999999961
+            ],
+            [
+              "7",
+              0.09504249999999104
+            ]
+          ],
+          "per_device_round_range_ms": [
+            [
+              "0",
+              0.20289549999998258
+            ],
+            [
+              "1",
+              0.062231499999995776
+            ],
+            [
+              "2",
+              0.1195174999999864
+            ],
+            [
+              "3",
+              0.10023250000000417
+            ],
+            [
+              "4",
+              0.09393199999999524
+            ],
+            [
+              "5",
+              0.17702000000001306
+            ],
+            [
+              "6",
+              0.1059824999999961
+            ],
+            [
+              "7",
+              0.10286200000000179
+            ]
+          ],
+          "per_device_sample_count": 4000,
+          "per_round_median_ms": [
+            [
+              0,
+              79.561666
+            ],
+            [
+              1,
+              79.59558425
+            ],
+            [
+              2,
+              79.59830149999999
+            ],
+            [
+              3,
+              79.66439025
+            ],
+            [
+              4,
+              79.66117574999998
+            ]
+          ],
+          "protocol": {
+            "bootstrap_confidence_level": 0.95,
+            "bootstrap_resamples": 5000,
+            "bootstrap_seed": 424242,
+            "expected_devices": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "repeated_rounds": 5,
+            "tail_percentile": 95.0,
+            "timed_iterations": 100,
+            "validity_thresholds": {
+              "max_absolute_round_drift_fraction": 0.05,
+              "max_bootstrap_ci_width_fraction": 0.03,
+              "max_device_median_range_fraction": 0.05,
+              "max_robust_cv": 0.1,
+              "max_round_median_range_fraction": 0.05
+            },
+            "warmup_iterations": 50
+          },
+          "raw_sample_count_total": 4000,
+          "robust_cv": 0.002100067563335066,
+          "round_drift_fraction": 0.0012497428898093899,
+          "round_drift_ms": 0.09950974999998152,
+          "round_median_range_fraction": 0.0012901137933571227,
+          "round_median_range_ms": 0.1027242499999943,
+          "samples_per_device": 500,
+          "synchronized_median_ms": 80.1229675,
+          "synchronized_sample_count": 500,
+          "synchronized_tail_latency_ms": 80.4488227,
+          "tail_latency_ms": 80.1542135,
+          "tail_percentile": 95.0
+        },
+        "status": "Complete"
+      },
+      "completed_at": "2026-07-28T00:12:19Z",
+      "metrics": {
+        "latency_bootstrap_ci_width_ms": 0.09335750000001042,
+        "latency_ci95_high": 79.6813815,
+        "latency_ci95_low": 79.58802399999999,
+        "latency_device_range_fraction": 0.009233432868950345,
+        "latency_iqr_ms": 0.2508969999999948,
+        "latency_mad_ms": 0.11278575000000046,
+        "latency_ms": 79.62417775,
+        "latency_p95_ms": 80.1542135,
+        "latency_robust_cv": 0.002100067563335066,
+        "latency_round_drift_fraction": 0.0012497428898093899,
+        "latency_synchronized_median_ms": 80.1229675,
+        "latency_synchronized_p95_ms": 80.4488227
+      },
+      "repeat_index": 2
+    }
+  ],
+  "schema_version": 1,
+  "selected_candidate": {
+    "candidate_id": "seed_271828_rec_5",
+    "checkpoint": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/768b852a-aa1d-42c0-b0ec-586f5ceca222/results_dir/train/model_epoch_009_step_00440.pth",
+    "mAP50": 0.6359897329231639,
+    "num_queries": 594,
+    "original_latency_metrics": {
+      "latency_bootstrap_ci_width_ms": 0.16753824999999267,
+      "latency_ci95_high": 79.98804975,
+      "latency_ci95_low": 79.82051150000001,
+      "latency_device_range_fraction": 0.004086202314034202,
+      "latency_iqr_ms": 0.2600092500000102,
+      "latency_mad_ms": 0.13106925000000302,
+      "latency_ms": 79.89227525,
+      "latency_p95_ms": 80.21695199999999,
+      "latency_robust_cv": 0.0024323161337178774,
+      "latency_round_drift_fraction": 0.0016403150315838035,
+      "latency_synchronized_median_ms": 80.13429199999999,
+      "latency_synchronized_p95_ms": 80.49796345
+    },
+    "specs": {
+      "model.num_queries": 594,
+      "train.optim.lr": 0.00045,
+      "train.optim.weight_decay": 0.00026967723799334445
+    }
+  },
+  "selection_source": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_review_20260727/combined_selection.json",
+  "selection_source_sha256": "794c038c9506b805b57c7812355ec173e5ea0275b21587befaf8c91a78cbe2f7",
+  "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+  "started_at": "2026-07-28T00:04:56Z",
+  "status": "complete",
+  "validation_only": true
+}

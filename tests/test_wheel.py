@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Comprehensive test for the nvidia-tao-automl wheel."""
 
+import subprocess
+import sys
 import tempfile
 import threading
-import subprocess
 
 import pytest
 
@@ -217,6 +218,7 @@ def test_controller_multi_objective_score_and_pareto_front():
             "multi_objective": True,
             "latency_metric": "latency",
             "latency_scale": 100,
+            "accuracy_retention_fraction": 0.98,
         })
         ctrl = Controller(
             brain=MockBrain(4),
@@ -239,17 +241,31 @@ def test_controller_multi_objective_score_and_pareto_front():
             ctrl.report_result(rec.id, values)
 
         best = ctrl.get_best()
-        assert best.id == 1
-        assert best.primary_metric_value() == pytest.approx(0.88)
-        assert best.objective_score == pytest.approx(0.78)
+        assert best.id == 0
+        assert best.primary_metric_value() == pytest.approx(0.90)
+        assert best.objective_score == pytest.approx(-0.2500005)
 
         status = ctrl.get_status()
         assert status["progress"]["pareto_front_size"] == 3
         assert {item["rec_id"] for item in status["pareto_front"]} == {0, 1, 2}
         assert status["best"]["objective_values"] == {
-            "accuracy": 0.88,
-            "latency": 10.0,
+            "accuracy": 0.90,
+            "latency": 20.0,
         }
+        assert status["selection_analysis"]["selections"]["multi_objective"][
+            "winner_id"
+        ] == "0"
+        assert status["selection_analysis"]["selections"]["latency"][
+            "winner_id"
+        ] == "2"
+        candidate_audit = {
+            item["candidate_id"]: item
+            for item in status["selection_analysis"]["candidates"]
+        }
+        assert candidate_audit["0"]["latency_accuracy_feasible"] is False
+        assert candidate_audit["0"]["multi_objective_accuracy_feasible"] is True
+        assert candidate_audit["1"]["latency_accuracy_feasible"] is False
+        assert candidate_audit["1"]["multi_objective_accuracy_feasible"] is True
 
         loaded = Controller.load_state(
             brain=MockBrain(4),
@@ -261,12 +277,67 @@ def test_controller_multi_objective_score_and_pareto_front():
             objective_config=objective_config,
         )
         loaded_best = loaded.get_best()
-        assert loaded_best.id == 1
-        assert loaded_best.objective_score == pytest.approx(0.78)
+        assert loaded_best.id == 0
+        assert loaded_best.objective_score == pytest.approx(-0.2500005)
         assert loaded_best.objective_values == {
-            "accuracy": 0.88,
-            "latency": 10.0,
+            "accuracy": 0.90,
+            "latency": 20.0,
         }
+
+
+def test_controller_get_best_routes_active_latency_mode_selection():
+    from tao_automl.controller.controller import Controller
+    from tao_automl.objectives import parse_objective_config
+    from tao_automl.state.state_store import StateStore
+    from tao_automl.types import AutoMLContext
+
+    with tempfile.TemporaryDirectory() as d:
+        objective_config = parse_objective_config({
+            "objectives": [
+                {"metric": "accuracy", "direction": "maximize"},
+                {"metric": "latency", "direction": "minimize"},
+            ],
+            "selection_mode": "latency",
+            "latency_accuracy_retention": 0.90,
+            "multi_objective_min_accuracy": None,
+            "latency_tolerance": 0.0,
+        })
+        ctrl = Controller(
+            brain=MockBrain(3),
+            context=AutoMLContext(
+                id="latency-mode-routing",
+                network="dino",
+                metric="accuracy",
+            ),
+            state_store=StateStore(d),
+            settings=type(
+                "P",
+                (),
+                {"automl_max_recommendations": 3},
+            )(),
+            metric="accuracy",
+            algorithm="bayesian",
+            objective_config=objective_config,
+        )
+
+        # The three Pareto points deliberately have distinct accuracy,
+        # latency, and normalized-compromise winners.
+        for values in (
+            {"accuracy": 0.90, "latency": 30.0},
+            {"accuracy": 0.82, "latency": 10.0},
+            {"accuracy": 0.87, "latency": 20.0},
+        ):
+            rec = ctrl.next_recommendation()[0]
+            ctrl.report_result(rec.id, values)
+
+        best = ctrl.get_best()
+        analysis = ctrl._last_selection_analysis
+        assert best.id == 1
+        assert analysis.config.mode == "latency"
+        assert analysis.accuracy.winner_id == "0"
+        assert analysis.latency.winner_id == "1"
+        assert analysis.multi_objective.winner_id == "2"
+        assert analysis.winner().id == 1
 
 
 def test_controller_accepts_resume_recommendations():
@@ -725,6 +796,10 @@ def test_version():
 
 
 def test_pip_show():
-    r = subprocess.run(["pip", "show", "nvidia-tao-automl"], capture_output=True, text=True)
+    r = subprocess.run(
+        [sys.executable, "-m", "pip", "show", "nvidia-tao-automl"],
+        capture_output=True,
+        text=True,
+    )
     assert r.returncode == 0
     assert "0.1.0" in r.stdout

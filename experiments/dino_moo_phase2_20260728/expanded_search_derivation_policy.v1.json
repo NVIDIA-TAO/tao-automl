@@ -1,0 +1,583 @@
+{
+  "schema_version": 1,
+  "policy_id": "dino_expanded_search_derivation_20260728_v1",
+  "policy_revision": 3,
+  "status": "amended_after_v1_preselection_runtime_failure_before_v2_launch",
+  "created_at_utc": "2026-07-28T00:00:00Z",
+  "amendment": {
+    "reason": "Preserve the failed v1 pre-selection runtime and generate a clean v2 manifest whose only operational change is strict parsing of finite numeric metrics emitted as JSON-number strings.",
+    "original_derivation_rule_changed": false,
+    "search_domains_changed": false,
+    "selection_rule_changed": false,
+    "expanded_manifest_existed_at_amendment": true,
+    "expanded_job_launched_at_amendment": true,
+    "v1_valid_objective_observation_count": 0,
+    "v1_selection_performed": false,
+    "v1_runtime_reuse_permitted": false
+  },
+  "scope": {
+    "model_family": "DINO ResNet50",
+    "dataset_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "other_models_permitted": false,
+    "other_datasets_permitted": false
+  },
+  "manual_override_permitted": false,
+  "result_dependent_policy_changes_permitted": false,
+  "purpose": "Deterministically derive the expanded shared DINO AutoML search space from complete, immutable, direction-agnostic latency-sensitivity evidence without inspecting winner desirability.",
+  "output_contract": {
+    "filename": "expanded_search_manifest.v2.json",
+    "overwrite_permitted": false,
+    "status": "preregistered_ready_to_launch",
+    "canonicalization": "UTF-8 JSON with sort_keys=true, separators comma and colon, ensure_ascii=false, allow_nan=false",
+    "manifest_digest": "SHA256 of the canonical manifest before adding manifest_sha256",
+    "write_condition": "Write only after the complete sensitivity result and every frozen source artifact passes validation."
+  },
+  "sensitivity_evidence_contract": {
+    "result_schema_version": 1,
+    "result_path": "sensitivity_latency_analysis.v2.json",
+    "result_sha256": "33aea1c13ece0ce632587abd16ed6020ecc88c63220f89891a5f30183322eaea",
+    "result_report_sha256": "40a8bccb6e43b8238c2cf6b47eaf3253e735d82fd160212d12915b3137a3fa79",
+    "manifest_id": "dino_sensitivity_latency_20260728_v2",
+    "required_status": "complete",
+    "required_blockers": [],
+    "required_flags": {
+      "feeds_final_selection": false,
+      "winner_selected": false,
+      "manual_promotion_permitted": false
+    },
+    "decision_collection": "latency_effect_decisions",
+    "qualification_field": "latency_effect_qualified",
+    "support_field": "support_validity_repeatability_gate",
+    "accuracy_annotation_field": "latency_mode_98pct_suitable",
+    "accuracy_annotation_role": "Audit annotation for constrained latency mode only; ignored for architecture-axis derivation and shared multi-objective eligibility.",
+    "noise_floor_path": "noise_floor.effective_noise_floor_ms",
+    "noise_floor_role": "Imported exactly as latency_tolerance for all three selections in the expanded archive.",
+    "source_manifest": {
+      "path": "sensitivity_latency_manifest.v2.json",
+      "sha256": "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655",
+      "required_schema_version": 1,
+      "required_status": "preregistered_not_launched",
+      "supersedes": {
+        "manifest_id": "dino_sensitivity_latency_20260728_v1",
+        "manifest_sha256": "c569f858f4513139292d7189ab5e57f897b8794fdbe5b2dcafc45b0efcd663aa",
+        "disposition": "preflight_failed_no_latency_measurements"
+      },
+      "one_factor_manifest_path": "one_factor_sensitivity_manifest.v1.json",
+      "one_factor_manifest_sha256": "ee65fd9a09d7cacc40f88a0b95b07af3fd0560d8496407447344b310bb5eaa44",
+      "checkpoint_artifact_path": "sensitivity_training_checkpoints.v1.json",
+      "checkpoint_artifact_id": "dino_sensitivity_training_checkpoints_20260728_v1",
+      "checkpoint_artifact_sha256": "20188a8858a9329ce4b861730ad3b0b2f6185389c8af1b02ad29284e5ed1b012",
+      "accuracy_artifact_path": "sensitivity_training_accuracy.v1.json",
+      "accuracy_artifact_id": "dino_sensitivity_training_accuracy_20260728_v1"
+    },
+    "analysis_erratum": {
+      "path": "sensitivity_latency_analysis_erratum.v1.json",
+      "sha256": "8e19287bf2ffd674f62b21cdaf11e000b0eae1ed8af9d0ada1238491588993f2",
+      "schema_version": 1,
+      "erratum_id": "dino_sensitivity_latency_analysis_erratum_20260728_v1",
+      "status": "approved_analysis_only",
+      "scope": "aggregation_validation_evidence_access_and_descendant_commit_only",
+      "reason_code": "allocation_torch_version_used_full_string_instead_of_declared_base_release",
+      "required_flags": {
+        "measurement_generation_unchanged": true,
+        "qualification_policy_unchanged": true,
+        "objective_values_altered": false,
+        "winner_selected": false,
+        "feeds_final_selection": false,
+        "manual_promotion_permitted": false
+      },
+      "measurement_contract": {
+        "manifest_id": "dino_sensitivity_latency_20260728_v2",
+        "manifest_path": "sensitivity_latency_manifest.v2.json",
+        "manifest_sha256": "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655",
+        "submission_ledger_path": "runtime/sensitivity_latency_v2/block_submissions.json",
+        "submission_ledger_sha256": "b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54",
+        "launch_automl_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "launch_automl_commit": "cb62ef447704b95980b17aa82604992564b4e71f"
+      },
+      "source_files": {
+        "original_aggregator_path": "sensitivity_latency_aggregate.py",
+        "original_aggregator_sha256": "5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967",
+        "corrected_aggregator_path": "sensitivity_latency_aggregate_erratum.py",
+        "corrected_aggregator_sha256": "9209e748093e0555fe5cba339327a8216744ec9ca6b9dae276c7041703a409c6",
+        "validation_test_path": "test_sensitivity_latency_analysis_erratum.py",
+        "validation_test_sha256": "e9bfe695b0142e8a944d412fa78a2235e8bd960c5c5ad0320ddd006e20460f59"
+      },
+      "contract_fingerprints": {
+        "measurement_contract_sha256": "b45ca6efb1ea623524c1a7db4af1d98994e8f6b9cc7df847ca2119d8af5aed23",
+        "source_pins_sha256": "56ed0724d476c865652f9f916346ade0080bd3dc8434bb4e774b44986a5e956b",
+        "unchanged_policy_pins_sha256": "22656d80fa343dbec1547b0de8acbee63a3cb2d2f5de14a68e7c2bb4358bfb2c",
+        "correction_sha256": "df70c2f1d2d2c53bfa025a6739f1f2ac0720f3192023bedc4ad689d2e89e59c0",
+        "evidence_acquisition_policy_sha256": "77958eeb9c400715aae98d1b0cfd28bae241c44182d9a5d029688217fee82558",
+        "sdk_state_inspection_policy_sha256": "84dea8b0f9cc9b95f6ece50aed7d85c8f1294b12250f5dd5f5b89a2415b3bc58",
+        "analysis_commit_correction_sha256": "c61c656a21a7887a1cb20cc2c56c73a37be5a739a90326e8b091d1313026eb53",
+        "analysis_guards_sha256": "baf32a81afc3e187d41d9d247b2f2fa196863725499f674a45c180c89a3ebb3d"
+      },
+      "unchanged_policy_pins": {
+        "measurement_policy_sha256": "3a158b7018a298b2bd7fb7d3340f066d11e1720f1eb0c383e493c98d973c2918",
+        "qualification_policy_sha256": "f64e2e472ffa1487ce3a56cd5c5e13ab6b61dadbdcfd037cc88901069cc0f962"
+      },
+      "correction": {
+        "field": "allocation.hardware.runtime.torch",
+        "old_comparison": "full_string_exact",
+        "new_comparison": "major_minor_patch",
+        "declared_by": "measurement_manifest.runtime_contract.torch_version_match",
+        "raw_runtime_string_preserved": true,
+        "measurement_values_recomputed": false
+      },
+      "result_binding": {
+        "result_field": "analysis_erratum",
+        "require_exact_erratum_identity": true,
+        "require_exact_measurement_manifest_and_submission_ledger": true,
+        "require_exact_original_and_corrected_aggregator_hashes": true,
+        "require_exact_policy_and_acquisition_fingerprints": true,
+        "objective_values_altered_must_be_false": true
+      }
+    }
+  },
+  "runtime_supersession": {
+    "erratum_path": "expanded_search_runtime_erratum.v1.json",
+    "erratum_sha256": "a89b5816b45e1df9c6286c25ccbe8314daee53843decc4400882ec33f10ffa17",
+    "erratum_internal_sha256": "b61196e5b76153fa71f4e73c58e4bc6f58eeba1f8fed3783482ba8c3156e5954",
+    "erratum_id": "dino_expanded_search_runtime_erratum_20260728_v1",
+    "erratum_status": "approved_preselection_runtime_failure_audit",
+    "source_manifest": {
+      "path": "expanded_search_manifest.v1.json",
+      "manifest_id": "dino_expanded_search_20260728_v1",
+      "whole_file_sha256": "57e331686b8896989263a39f72edb69543fc58833f20a1e6e698c31f34d2e8be",
+      "internal_manifest_sha256": "39fb50997a39ff4bfaa8036cd6222127f3ce8dda25a704ac188eab4dd6b75b82"
+    },
+    "source_runtime_path": "runtime/expanded_search",
+    "source_runtime_status": "failed_preselection_superseded_preserved_read_only",
+    "source_runtime_resume_permitted": false,
+    "source_runtime_reuse_permitted": false,
+    "valid_objective_observation_count": 0,
+    "selection_performed": false,
+    "target_manifest": {
+      "filename": "expanded_search_manifest.v2.json",
+      "manifest_id": "dino_expanded_search_20260728_v2",
+      "runtime_path": "runtime/expanded_search_v2",
+      "overwrite_permitted": false
+    },
+    "only_permitted_changes": [
+      "manifest identity and supersession metadata",
+      "derivation policy, manifest generator, and corrected runner provenance SHA256 values",
+      "strict finite numeric metric parser contract",
+      "new runtime path",
+      "manifest-bound fresh and resume runtime-state provenance guard"
+    ],
+    "strict_metric_parser": {
+      "function": "parse_finite_numeric_metric",
+      "accept_native_int_or_float": true,
+      "accept_strict_json_number_string": true,
+      "reject_bool": true,
+      "reject_empty_or_whitespace": true,
+      "reject_nan_or_infinity": true,
+      "reject_junk": true,
+      "finite_result_required": true
+    },
+    "search_space_changed": false,
+    "search_algorithm_changed": false,
+    "search_seeds_changed": false,
+    "training_seed_changed": false,
+    "candidate_budget_changed": false,
+    "training_budget_changed": false,
+    "selection_configuration_changed": false,
+    "latency_protocol_changed": false,
+    "dataset_changed": false,
+    "runtime_hardware_changed": false
+  },
+  "architecture_axis_policy": {
+    "inclusion_rule": "Include an axis if and only if at least one non-reference level has support_validity_repeatability_gate=true and latency_effect_qualified=true.",
+    "direction_rule": "Qualification is direction-agnostic: reliably faster and reliably slower non-reference levels both establish that the axis materially changes inference latency.",
+    "domain_rule": "When an axis qualifies, include its entire preregistered supported domain, never only the qualified levels and never a qualified-value hull.",
+    "no_axis_rule": "If no architecture axis qualifies, fail closed without writing an expanded-search manifest.",
+    "accuracy_independence_rule": "Do not use latency_mode_98pct_suitable, same-seed 98 percent accuracy retention, mAP50, or any accuracy gate to include or exclude an architecture axis.",
+    "axis_order": [
+      "model.num_queries",
+      "model.enc_layers",
+      "model.dec_layers",
+      "model.num_select"
+    ],
+    "axes": [
+      {
+        "path": "model.num_queries",
+        "reference": 594,
+        "preregistered_levels": [
+          300,
+          450,
+          594,
+          750,
+          900
+        ],
+        "non_reference_profile_ids": {
+          "300": "num_queries_300",
+          "450": "num_queries_450",
+          "750": "num_queries_750",
+          "900": "num_queries_900"
+        },
+        "search_domain": {
+          "representation": "integer_range",
+          "valid_min": 300,
+          "valid_max": 900
+        },
+        "compatibility_constraint": "model.num_queries >= model.num_select"
+      },
+      {
+        "path": "model.enc_layers",
+        "reference": 6,
+        "preregistered_levels": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "non_reference_profile_ids": {
+          "3": "enc_layers_3",
+          "4": "enc_layers_4",
+          "5": "enc_layers_5"
+        },
+        "search_domain": {
+          "representation": "ordered_integer_levels",
+          "valid_options": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "valid_min": 3,
+          "valid_max": 6
+        }
+      },
+      {
+        "path": "model.dec_layers",
+        "reference": 6,
+        "preregistered_levels": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "non_reference_profile_ids": {
+          "3": "dec_layers_3",
+          "4": "dec_layers_4",
+          "5": "dec_layers_5"
+        },
+        "search_domain": {
+          "representation": "ordered_integer_levels",
+          "valid_options": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "valid_min": 3,
+          "valid_max": 6
+        }
+      },
+      {
+        "path": "model.num_select",
+        "reference": 300,
+        "preregistered_levels": [
+          50,
+          100,
+          200,
+          300
+        ],
+        "non_reference_profile_ids": {
+          "50": "num_select_50",
+          "100": "num_select_100",
+          "200": "num_select_200"
+        },
+        "search_domain": {
+          "representation": "ordered_integer_levels",
+          "valid_options": [
+            50,
+            100,
+            200,
+            300
+          ]
+        },
+        "compatibility_constraint": "model.num_select <= model.num_queries"
+      }
+    ]
+  },
+  "always_included_training_parameters": [
+    {
+      "path": "train.optim.lr",
+      "search_domain": {
+        "representation": "continuous",
+        "valid_min": 1e-05,
+        "valid_max": 0.0005
+      },
+      "role": "training parameter that influences accuracy"
+    },
+    {
+      "path": "train.optim.weight_decay",
+      "search_domain": {
+        "representation": "continuous",
+        "valid_min": 1e-05,
+        "valid_max": 0.001
+      },
+      "role": "training parameter that influences accuracy"
+    }
+  ],
+  "search_design": {
+    "algorithm": "bayesian",
+    "search_seeds": [
+      314159,
+      271828,
+      161803
+    ],
+    "training_seed": 1234,
+    "recommendations_per_seed": 20,
+    "total_candidate_budget": 60,
+    "budget_rule": "Exactly 20 recommendations for each of the three frozen search seeds regardless of how many architecture axes qualify.",
+    "subarchive_execution": "sequential Bayesian recommendations within each seed",
+    "shared_archive": "The union of all valid measured candidates from all three seeded subarchives is supplied unchanged to accuracy, latency, and multi-objective selection.",
+    "candidate_generation_mode_independence": true,
+    "manual_candidate_injection_permitted": false,
+    "result_ordered_search_changes_permitted": false
+  },
+  "selection_contract": {
+    "accuracy_metric": "mAP50",
+    "latency_metric": "latency_ms",
+    "accuracy_mode": {
+      "objective": "maximize mAP50 over every valid candidate",
+      "accuracy_tolerance": 1e-12,
+      "tie_break": "lower stable latency, then deterministic candidate key"
+    },
+    "latency_mode": {
+      "objective": "minimize stable latency among candidates satisfying the accuracy-winner-relative retention constraint",
+      "latency_accuracy_retention": {
+        "type": "relative",
+        "retained_fraction": 0.98,
+        "reference": "accuracy_winner"
+      },
+      "no_feasible_candidate": "report explicitly; do not use an unrelated fallback"
+    },
+    "multi_objective_mode": {
+      "multi_objective_min_accuracy": null,
+      "eligibility": "all valid candidates",
+      "pareto_filter": "rank_zero_only",
+      "objective_normalization": "pareto_front_relative",
+      "selector": "normalized_augmented_chebyshev",
+      "weights": {
+        "accuracy_regret": 1.0,
+        "latency_regret": 1.0
+      },
+      "augmentation_rho": 1e-06,
+      "selection_score_tolerance": 1e-12,
+      "tie_break": "lower max normalized regret, then lower sum normalized regret, then higher accuracy, then lower latency, then deterministic candidate key",
+      "distinct_compromise_rule": "Report whether the algorithm-selected point is a tolerance-distinct intermediate or an extreme; never force a middle point."
+    },
+    "latency_tolerance": {
+      "source": "sensitivity_result.noise_floor.effective_noise_floor_ms",
+      "import": "exact",
+      "result_dependent_weight_or_threshold_changes_permitted": false
+    },
+    "failed_or_nonfinite_candidate_policy": "exclude before ranking",
+    "dominated_multi_objective_winner_permitted": false,
+    "manual_winner_override_permitted": false
+  },
+  "post_front_matched_validation": {
+    "status": "preregistered_before_expanded_search_results",
+    "purpose": "Measure allocation-stable relative latency for every algorithmic global Pareto-front candidate without changing the frozen selection.",
+    "candidate_set": {
+      "source": "expanded_combined_selection.json produced by tao_automl.selection.analyze_archive over the complete shared archive",
+      "rule": "Include every valid candidate whose global pareto_rank is exactly zero, regardless of mode winner status, candidate ID, parameter values, or expected desirability.",
+      "canonical_order": "ascending UTF-8 candidate_id",
+      "manual_addition_or_removal_permitted": false,
+      "selection_time_objective_replacement_permitted": false,
+      "empty_front_policy": "block with an integrity error",
+      "missing_checkpoint_policy": "report blocked; never substitute or manually promote another candidate"
+    },
+    "allocation_design": {
+      "allocation_count": 6,
+      "nodes_per_allocation": 1,
+      "gpus_per_node": 8,
+      "hardware_and_runtime_identity": "exactly the expanded-search frozen runtime identity",
+      "matching": "Every allocation benchmarks every global rank-zero candidate exactly once on the same node; candidate-pair differences are matched within allocation.",
+      "independence": "six distinct TAO SDK jobs and SLURM allocations",
+      "execution": "candidates run sequentially within each allocation using their exact retained checkpoint and resolved model mapping",
+      "incomplete_allocation_policy": "Exclude the entire allocation and rerun the complete front under a new TAO job ID; never combine a partial block."
+    },
+    "ordering": {
+      "algorithm": "balanced_williams_rows_v1",
+      "base_row": "For n canonical candidates, form index order [0,1,n-1,2,n-2,3,n-3,...] without duplicates until all n indices appear.",
+      "design_rows": "Create n modulo-addition rotations of the base row. If n is odd, append the reversal of each rotation, giving 2n design rows.",
+      "selected_rows": "Let R be the design-row count. Allocation k in [0,5] uses design row floor(k*R/6).",
+      "determinism": "Candidate IDs, n, allocation index, and this formula are the only ordering inputs; observed objectives and measurements are forbidden inputs.",
+      "audit": "Record canonical candidate IDs, every design-row index used, all six candidate orders, position counts, immediate ordered-adjacency counts, and a canonical schedule SHA256."
+    },
+    "latency_protocol": {
+      "source": "frozen_identity.latency_protocol",
+      "warmup_iterations": 50,
+      "timed_iterations_per_round": 100,
+      "repeated_rounds": 5,
+      "gpu_count": 8,
+      "raw_samples_per_candidate_allocation": 4000,
+      "same_input_digest_required": true,
+      "same_batch_size_precision_timed_scope_and_synchronization_required": true,
+      "invalid_measurement_policy": "invalidate the complete allocation block"
+    },
+    "paired_analysis": {
+      "comparison_set": "all unordered pairs of global rank-zero candidates",
+      "pairing_unit": "allocation",
+      "endpoints": [
+        "median_ms",
+        "p95_ms"
+      ],
+      "estimator": "median of the six allocation-level paired differences, first candidate minus second candidate",
+      "bootstrap": "paired percentile bootstrap resampling the six allocation-level differences with replacement",
+      "bootstrap_resamples": 10000,
+      "bootstrap_confidence_level": 0.95,
+      "bootstrap_seed": 20260728,
+      "practical_tolerance_source": "selection.latency_tolerance.value_ms imported exactly from sensitivity_result.noise_floor.effective_noise_floor_ms",
+      "practical_tolerance_changes_permitted": false,
+      "stable_difference_rule": "Claim a relative latency direction only when the paired 95 percent CI lies wholly below negative practical tolerance or wholly above positive practical tolerance.",
+      "equivalence_rule": "Report practical equivalence when the complete paired 95 percent CI lies within the plus-or-minus practical tolerance band; otherwise report uncertainty.",
+      "allocation_variability_must_be_reported": true
+    },
+    "selection_isolation": {
+      "measurements_feed_reselection": false,
+      "winner_reselection_permitted": false,
+      "original_selection_time_measurements_replaced": false,
+      "algorithm_selected_candidate_overridden": false,
+      "allowed_use": "stability analysis and hypothesis verdict only"
+    }
+  },
+  "frozen_identity": {
+    "source_repositories": {
+      "tao_automl": {
+        "path": "/localhome/local-rarunachalam/tao-automl",
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "selection_core_commit": "83d9d7ecc783724f674cb954f9fbb6c91ea8b0eb",
+        "commit_policy": "required_ancestor"
+      },
+      "tao_sdk": {
+        "path": "/localhome/local-rarunachalam/tao-sdk",
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "commit": "3d3e1adc1849493d29dc926cb99492417e3a9250"
+      },
+      "tao_skills": {
+        "path": "/localhome/local-rarunachalam/tao-skills-external",
+        "branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+        "commit": "18f831c7c83b424861a60353fb735dd80efcfded"
+      }
+    },
+    "runtime": {
+      "container_image_uri": "nvcr.io/nvidia/tao/tao-toolkit:7.0.1-pyt",
+      "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+      "sqsh_sha256": "88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e",
+      "pretrained_model_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/pretrained_dino_coco/dino_resnet_50_trainable_v1.0/dino_resnet50_ep12.pth",
+      "pretrained_model_sha256": "7a391fb84a18714b60258becdb512594ec54faff5dccbf17ca53c5d902137512",
+      "secrets_env_path": "/localhome/local-rarunachalam/.tao/config.env",
+      "partition": "polar3",
+      "account": "edgeai_tao-ptm_image-foundation-model-clip",
+      "num_nodes": 1,
+      "gpu_count_per_node": 8,
+      "required_gpu_model": "NVIDIA A100-SXM4-80GB",
+      "required_gpu_memory_bytes": 85174583296,
+      "required_compute_capability": "8.0",
+      "precision": "fp32",
+      "distributed_strategy": "ddp",
+      "tf32": false,
+      "torch": "2.11.0",
+      "cuda": "13.2",
+      "cudnn": 92000
+    },
+    "dataset": {
+      "source_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+      "staged_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco",
+      "train_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images",
+      "train_annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+      "train_annotation_sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+      "validation_image_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images",
+      "validation_annotation": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+      "validation_annotation_sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+      "num_classes": 5,
+      "eval_class_ids": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "training_controls": {
+      "train_epochs": 10,
+      "checkpoint_interval_epochs": 10,
+      "validation_interval_epochs": 1,
+      "batch_size_per_gpu": 4,
+      "global_batch_size": 32,
+      "num_gpus": 8,
+      "num_nodes": 1,
+      "activation_checkpoint": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "wandb_enabled": false,
+      "optimizer": "AdamW",
+      "lr_backbone": 2e-05,
+      "lr_linear_proj_mult": 0.1,
+      "lr_scheduler": "MultiStep",
+      "augmentation_source": "unmodified pinned DINO train skill template"
+    },
+    "accuracy_evaluation": {
+      "metric": "mAP50",
+      "batch_size_per_gpu": 4,
+      "precision": "fp32",
+      "test_random_resize": 800,
+      "random_resize_max_size": 1333,
+      "fixed_padding": true,
+      "gpu_count": 8
+    },
+    "latency_protocol": {
+      "warmup_iterations": 50,
+      "timed_iterations": 100,
+      "repeated_rounds": 5,
+      "preloaded_batches": 16,
+      "batch_size_per_gpu": 1,
+      "fixed_preprocessed_shapes": {
+        "model_input": [
+          1,
+          4,
+          800,
+          1333
+        ],
+        "image_tensor": [
+          1,
+          3,
+          800,
+          1333
+        ],
+        "padding_mask": [
+          1,
+          1,
+          800,
+          1333
+        ]
+      },
+      "precision": "fp32",
+      "tf32": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "benchmark_seed": 20260727,
+      "warmup_and_timing_scope": "model_forward_plus_dino_gpu_postprocess",
+      "synchronization": "cuda_sync_each_sample_and_nccl_barrier",
+      "tail_percentile": 95,
+      "bootstrap_resamples": 5000,
+      "bootstrap_confidence_level": 0.95,
+      "bootstrap_seed": 424242,
+      "primary_estimator": "median of device-round medians",
+      "excluded_scope": [
+        "checkpoint_load",
+        "disk IO",
+        "decode resize normalize",
+        "host to device transfer",
+        "COCO accumulation",
+        "distributed gather"
+      ],
+      "raw_samples_per_candidate": 4000
+    }
+  }
+}

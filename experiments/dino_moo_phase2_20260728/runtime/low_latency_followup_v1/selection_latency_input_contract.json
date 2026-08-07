@@ -1,0 +1,24 @@
+{
+  "batch_count": 16,
+  "fixed_preprocessed_shapes": {
+    "image_tensor": [
+      1,
+      3,
+      800,
+      1333
+    ],
+    "model_input": [
+      1,
+      4,
+      800,
+      1333
+    ],
+    "padding_mask": [
+      1,
+      1,
+      800,
+      1333
+    ]
+  },
+  "identity_sha256": "1b43c34913bff097054d6a76cdd7dd0a02546dd07db8adce50d40a8986774d08"
+}

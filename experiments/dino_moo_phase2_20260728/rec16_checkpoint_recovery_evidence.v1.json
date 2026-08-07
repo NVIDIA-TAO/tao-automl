@@ -1,0 +1,219 @@
+{
+  "candidate_id": "seed_271828_rec_16",
+  "evidence_id": "dino_rec16_checkpoint_recovery_20260728_v1",
+  "evidence_sha256": "01715fecc26c3f2b5085650f3bd17f62a502dfc6a85560f11cfa968d08ac9456",
+  "frozen_at_utc": "2026-07-28T19:36:31Z",
+  "historical_checkpoint": {
+    "checkpoint": {
+      "epoch": 9,
+      "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/92d8f699-a780-4229-94ba-3520806d75da/results_dir/train/model_epoch_009_step_00440.pth",
+      "sha256": "4b5ff50181ff919a2796cdd54027fff92eb57c908701a34408d29136d5565b4d",
+      "size_bytes": 506687042
+    },
+    "entrypoint": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/entrypoints/job_92d8f699-a780-4229-94ba-3520806d75da.sh",
+      "sha256": "051c0fa574a1f7ad2b50560a0ae49f25f0518f748252fdded8bfe01e540ec206",
+      "size_bytes": 80111
+    },
+    "historical_identity_preserved": true,
+    "node": "batch-block7-02877",
+    "remote_checkpoint_status": "missing",
+    "remote_specs": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/specs/92d8f699-a780-4229-94ba-3520806d75da.json",
+      "sha256": "c3d57e77529b4e2eda38e05e808f5bf3a7add15720ca883ff7a1211cce261b78",
+      "size_bytes": 1595
+    },
+    "replacement_of_historical_bytes_permitted": false,
+    "sbatch": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/sbatch/job_92d8f699-a780-4229-94ba-3520806d75da.sbatch",
+      "sha256": "cb4faa856fcbbf9b8e1a0d57a1e7117b2210e42af1c5bbcedb5cf6e9bef19e95",
+      "size_bytes": 2410
+    },
+    "slurm_job_id": "30972522",
+    "tao_job_id": "92d8f699-a780-4229-94ba-3520806d75da"
+  },
+  "recovery_attempts": [
+    {
+      "checkpoint": {
+        "epoch": 9,
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/7b585a7b-a291-4473-8bda-8e2b542e3982/results_dir/train/model_epoch_009_step_00440.pth",
+        "sha256": "931bc787eb7b9b1752bd7613558a2e0f1d26ae7cc5a983d8f4333ef59abbd304",
+        "size_bytes": 506687042
+      },
+      "checkpoint_origin": "exact_config_retrain",
+      "command_sha256": "78174949b50d9a4cf619725a04f844e5f190bf4565716ea1eff2770ec21dd257",
+      "end_time_utc": "2026-07-28T12:12:57Z",
+      "entrypoint": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/entrypoints/job_7b585a7b-a291-4473-8bda-8e2b542e3982.sh",
+        "sha256": "a66517b2791ebb292eb159a18c70f74577b7c32e7ace31fbe4762e37aa608496",
+        "size_bytes": 80111
+      },
+      "exact_config": true,
+      "exit_code": "0:0",
+      "historical_checkpoint_sha256_match": false,
+      "model_spec_sha256": "bc18216f670d96963ab795be8d6b845f576f4eed17a2482516da91d27eb6248d",
+      "node": "batch-block7-00556",
+      "remote_specs": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/specs/7b585a7b-a291-4473-8bda-8e2b542e3982.json",
+        "sha256": "67625dc5d52e8866ac498f6867e8821bfd1d52078922dae88c0fd2f621fcf4fa",
+        "size_bytes": 1595
+      },
+      "sbatch": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/sbatch/job_7b585a7b-a291-4473-8bda-8e2b542e3982.sbatch",
+        "sha256": "d9ce7b7b86f51eb6c99e6cbcc04de2baf5e0a3c306335dad8eab89ae21091c31",
+        "size_bytes": 2410
+      },
+      "slurm_job_id": "31002892",
+      "start_time_utc": "2026-07-28T12:06:21Z",
+      "state": "COMPLETED",
+      "submission_index": 0,
+      "submit_time_utc": "2026-07-28T12:06:17Z",
+      "tao_job_id": "7b585a7b-a291-4473-8bda-8e2b542e3982",
+      "train_spec_sha256": "6f04eab6794cbf8bd707a966ab85b149d7bc24ea4ae238025bb6f3193fca9bf1"
+    },
+    {
+      "checkpoint": {
+        "epoch": 9,
+        "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/1dd7f4ab-843d-4425-8e41-248386ac9a6b/results_dir/train/model_epoch_009_step_00440.pth",
+        "sha256": "eed8e5f05ec24dd1d62ee4e68ed9c44194f32c24180764c1e0285f76b0d53a35",
+        "size_bytes": 506687042
+      },
+      "checkpoint_origin": "exact_config_retrain",
+      "command_sha256": "78174949b50d9a4cf619725a04f844e5f190bf4565716ea1eff2770ec21dd257",
+      "end_time_utc": "2026-07-28T12:13:39Z",
+      "entrypoint": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/entrypoints/job_1dd7f4ab-843d-4425-8e41-248386ac9a6b.sh",
+        "sha256": "a66517b2791ebb292eb159a18c70f74577b7c32e7ace31fbe4762e37aa608496",
+        "size_bytes": 80111
+      },
+      "exact_config": true,
+      "exit_code": "0:0",
+      "historical_checkpoint_sha256_match": false,
+      "model_spec_sha256": "bc18216f670d96963ab795be8d6b845f576f4eed17a2482516da91d27eb6248d",
+      "node": "batch-block7-02873",
+      "remote_specs": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/specs/1dd7f4ab-843d-4425-8e41-248386ac9a6b.json",
+        "sha256": "53d2f8894506ec7a2ad6538e1d03ffe48b7492ac6bd4fb438ce62ec93d603a2a",
+        "size_bytes": 1595
+      },
+      "sbatch": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/sbatch/job_1dd7f4ab-843d-4425-8e41-248386ac9a6b.sbatch",
+        "sha256": "4314698b217717d9f61ac35f81ff7df2f6aa137b4aa8bc28156e7c575c5fb299",
+        "size_bytes": 2410
+      },
+      "slurm_job_id": "31002901",
+      "start_time_utc": "2026-07-28T12:07:07Z",
+      "state": "COMPLETED",
+      "submission_index": 1,
+      "submit_time_utc": "2026-07-28T12:07:04Z",
+      "tao_job_id": "1dd7f4ab-843d-4425-8e41-248386ac9a6b",
+      "train_spec_sha256": "6f04eab6794cbf8bd707a966ab85b149d7bc24ea4ae238025bb6f3193fca9bf1"
+    }
+  ],
+  "schema_version": 1,
+  "selected_recovery": {
+    "byte_identical_to_historical": false,
+    "checkpoint": {
+      "epoch": 9,
+      "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/7b585a7b-a291-4473-8bda-8e2b542e3982/results_dir/train/model_epoch_009_step_00440.pth",
+      "sha256": "931bc787eb7b9b1752bd7613558a2e0f1d26ae7cc5a983d8f4333ef59abbd304",
+      "size_bytes": 506687042
+    },
+    "checkpoint_origin": "exact_config_retrain",
+    "configuration_exact_not_byte_identical": true,
+    "exact_config": true,
+    "historical_checkpoint_sha256_match": false,
+    "policy_key": "earliest_submitted_exact_config_recovery_v1",
+    "slurm_job_id": "31002892",
+    "submission_index": 0,
+    "tao_job_id": "7b585a7b-a291-4473-8bda-8e2b542e3982",
+    "validation_only": true
+  },
+  "selection_isolation": {
+    "algorithm_selected_candidate_overridden": false,
+    "measurements_feed_reselection": false,
+    "measurements_feed_selection": false,
+    "selection_time_objectives_replaced": false,
+    "selector_invoked_on_matched_measurements": false
+  },
+  "selection_policy": {
+    "ascending": true,
+    "checkpoint_hash_used": false,
+    "checkpoint_size_used": false,
+    "eligible_attempt_predicate": "exact_config is true and state is COMPLETED and exit_code is 0:0",
+    "objective_value_used": false,
+    "policy_key": "earliest_submitted_exact_config_recovery_v1",
+    "selected_submission_index": 0,
+    "sort_key": [
+      "submit_time_utc",
+      "numeric_slurm_job_id",
+      "tao_job_id"
+    ],
+    "value_independent": true
+  },
+  "source_identity": {
+    "candidate_record_sha256": "7b7b7f05beafe5fde34b86e0a3f3e21a48a04e38ddfb46a7ad435e25d2a0760c",
+    "candidate_specs": {
+      "model.dec_layers": 3,
+      "model.enc_layers": 6,
+      "train.optim.lr": 0.0003007572504594793,
+      "train.optim.weight_decay": 1.1000000000000001e-05
+    },
+    "command_sha256": "78174949b50d9a4cf619725a04f844e5f190bf4565716ea1eff2770ec21dd257",
+    "completed_recovery_launcher": {
+      "git_commit": "782821bac5214a45869ba60e7f3ea169e83fa95d",
+      "path": "experiments/dino_moo_phase2_20260728/rec16_checkpoint_recovery.py",
+      "sha256": "e28698627dec1b35a74094deb3e97a3c80cdb5ff47e818f002f5cf2deccc355f"
+    },
+    "expanded_manifest": {
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/expanded_search_manifest.v2.json",
+      "sha256": "9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a"
+    },
+    "model_spec_sha256": "bc18216f670d96963ab795be8d6b845f576f4eed17a2482516da91d27eb6248d",
+    "seed_archive": {
+      "internal_sha256": "eedaa0a37e49cfa86e54be15a56352e4891044856ad5db782f6a4eed464dfb36",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/expanded_search_v2/seed_271828/seed_archive.v1.json",
+      "whole_file_sha256": "a42a989ea27940ea9ae481212a75216c7f23f01602b0c260b6750c9fdb709c9e"
+    },
+    "supplementary_recovery_launcher": {
+      "git_commit": "b8dffa1490bbfed88723ef0a5158c94525b6aa60",
+      "path": "experiments/dino_moo_phase2_20260728/rec16_checkpoint_recovery.py",
+      "sha256": "86ecbe1dea1df3ae3a5dbd40a9c4a141b5cbca96ca0bc819d7549cd926ec0349"
+    },
+    "train_spec_sha256": "6f04eab6794cbf8bd707a966ab85b149d7bc24ea4ae238025bb6f3193fca9bf1",
+    "training_seed": 1234
+  },
+  "status": "complete",
+  "supplementary_exact_node_replay": {
+    "entrypoint": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/entrypoints/job_bc087e0c-e006-4a31-aa7b-228cb7340dbe.sh",
+      "sha256": "a66517b2791ebb292eb159a18c70f74577b7c32e7ace31fbe4762e37aa608496",
+      "size_bytes": 80111
+    },
+    "exact_config": true,
+    "expected_node": "batch-block7-02877",
+    "included_in_selection_policy": false,
+    "non_gating": true,
+    "pending_reason": "(Priority)",
+    "remote_specs": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/specs/bc087e0c-e006-4a31-aa7b-228cb7340dbe.json",
+      "sha256": "32bc9f42c2a349b1e24362f0209ef8fe9be3d5dff182448950f5b770dea220b1",
+      "size_bytes": 1595
+    },
+    "sbatch": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/sbatch/job_bc087e0c-e006-4a31-aa7b-228cb7340dbe.sbatch",
+      "sha256": "316344ac58bf2c633caee5fc0bd20af5a7dc3b97538b50b4a2ce2a1c0b8bb59d",
+      "size_bytes": 2448
+    },
+    "selected_recovery_can_change": false,
+    "slurm_job_id": "31003516",
+    "source": {
+      "git_commit": "b8dffa1490bbfed88723ef0a5158c94525b6aa60",
+      "path": "experiments/dino_moo_phase2_20260728/rec16_checkpoint_recovery.py",
+      "sha256": "86ecbe1dea1df3ae3a5dbd40a9c4a141b5cbca96ca0bc819d7549cd926ec0349"
+    },
+    "state": "PENDING",
+    "submit_time_utc": "2026-07-28T12:23:26Z",
+    "tao_job_id": "bc087e0c-e006-4a31-aa7b-228cb7340dbe"
+  }
+}

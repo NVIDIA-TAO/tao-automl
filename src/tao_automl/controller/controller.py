@@ -86,6 +86,7 @@ class Controller:
         self.history = []  # list of Recommendation objects
         self._next_id = 0
         self._checkpoint_window = 0
+        self._last_selection_analysis = None
 
         # WandB integration (optional)
         self._wandb_config = wandb_config or {}
@@ -215,6 +216,7 @@ class Controller:
             rec.update_status(rec_status)
             if best_epoch is not None:
                 rec.best_epoch_number = best_epoch
+            self._refresh_archive_scores()
 
             # Persist brain and controller state (under lock)
             self.brain.save_state()
@@ -243,9 +245,24 @@ class Controller:
         if self.algorithm in _MULTI_FIDELITY_ALGORITHMS:
             completed = self._largest_budget_candidates(completed)
 
+        if self.objective_config.has_archive_selector:
+            analysis = self.objective_config.analyze_archive(completed)
+            self._last_selection_analysis = analysis
+            return analysis.winner()
+
         if self.objective_config.score_direction == "minimize":
-            return min(completed, key=lambda r: r.result)
-        return max(completed, key=lambda r: r.result)
+            best_value = min(r.result for r in completed)
+            tied = [
+                r for r in completed
+                if r.result == best_value
+            ]
+        else:
+            best_value = max(r.result for r in completed)
+            tied = [
+                r for r in completed
+                if r.result == best_value
+            ]
+        return min(tied, key=self._stable_recommendation_key)
 
     def get_progress(self):
         """Return a progress summary dict.
@@ -269,6 +286,7 @@ class Controller:
             "best_objective_score": best.objective_score if best else None,
             "best_rec_id": best.id if best else None,
             "algorithm": self.algorithm,
+            "random_seed": getattr(self.brain, "random_seed", None),
             "objectives": self.objective_config.to_dict(),
             "pareto_front_size": len(pareto_front),
         }
@@ -374,6 +392,8 @@ class Controller:
         selector = (
             min if self.objective_config.score_direction == "minimize" else max
         )
+        if self.objective_config.has_archive_selector:
+            return self.objective_config.analyze_archive(candidates).winner()
         return selector(candidates, key=lambda rec: rec.result)
 
     def get_status(self):
@@ -386,9 +406,15 @@ class Controller:
         progress = self.get_progress()
         best = self.get_best()
 
+        analysis = self._selection_analysis()
+        audit_by_id = (
+            {item.candidate_id: item for item in analysis.audits}
+            if analysis is not None
+            else {}
+        )
         recs = []
         for r in self.history:
-            recs.append({
+            rec_data = {
                 "rec_id": r.id,
                 "specs": r.specs,
                 "job_id": r.job_id,
@@ -400,7 +426,11 @@ class Controller:
                 "adjustments": getattr(r, "adjustments", []),
                 "created_on": r.created_on,
                 "last_modified": r.last_modified,
-            })
+            }
+            audit = audit_by_id.get(str(r.id))
+            if audit is not None:
+                rec_data["selection_audit"] = audit.to_dict()
+            recs.append(rec_data)
 
         active = [r.id for r in self.history if r.status in (JobStates.pending, JobStates.started, JobStates.running)]
 
@@ -415,6 +445,7 @@ class Controller:
             },
             "recommendations": recs,
             "pareto_front": self._serialize_pareto_front(),
+            "selection_analysis": analysis.to_dict() if analysis else None,
             "active_rec_ids": active,
         }
 
@@ -659,6 +690,7 @@ class Controller:
             "Loaded controller state: %d recommendations, next_id=%d",
             len(controller.history), controller._next_id,
         )
+        controller._refresh_archive_scores()
         return controller
 
     # ------------------------------------------------------------------
@@ -714,10 +746,28 @@ class Controller:
         ]
         if not self.objective_config.is_multi_objective:
             return completed
+        if self.objective_config.has_archive_selector:
+            if self.algorithm in _MULTI_FIDELITY_ALGORITHMS:
+                completed = self._largest_budget_candidates(completed)
+            analysis = self.objective_config.analyze_archive(completed)
+            self._last_selection_analysis = analysis
+            return [
+                audit.candidate
+                for audit in analysis.audits
+                if audit.valid
+                and audit.multi_objective_accuracy_feasible
+                and audit.feasible_pareto_rank == 0
+            ]
         return self.objective_config.pareto_front(completed)
 
     def _serialize_pareto_front(self):
         """Return JSON-safe Pareto-front records."""
+        analysis = self._selection_analysis()
+        audit_by_id = (
+            {item.candidate_id: item for item in analysis.audits}
+            if analysis is not None
+            else {}
+        )
         return [
             {
                 "rec_id": rec.id,
@@ -725,9 +775,73 @@ class Controller:
                 "metric_value": rec.primary_metric_value(),
                 "objective_score": rec.objective_score,
                 "objective_values": dict(rec.objective_values),
+                "selection_audit": (
+                    audit_by_id[str(rec.id)].to_dict()
+                    if str(rec.id) in audit_by_id
+                    else None
+                ),
             }
             for rec in self.get_pareto_front()
         ]
+
+    @staticmethod
+    def _stable_recommendation_key(rec):
+        """Return an enumeration-order-independent final tie-break key."""
+        from tao_automl.selection import canonical_spec_fingerprint
+
+        return canonical_spec_fingerprint(rec.specs), str(rec.id)
+
+    def _selection_candidates(self):
+        completed = [
+            rec for rec in self.history
+            if rec.status in (JobStates.success, JobStates.done)
+        ]
+        if (
+            completed
+            and self.algorithm in _MULTI_FIDELITY_ALGORITHMS
+        ):
+            completed = self._largest_budget_candidates(completed)
+        return completed
+
+    def _selection_analysis(self):
+        if not self.objective_config.has_archive_selector:
+            return None
+        completed = self._selection_candidates()
+        if not completed:
+            return None
+        analysis = self.objective_config.analyze_archive(completed)
+        self._last_selection_analysis = analysis
+        return analysis
+
+    def _refresh_archive_scores(self):
+        """Refresh normalized acquisition utilities after an archive update."""
+        if not self.objective_config.has_archive_selector:
+            return
+        completed = [
+            rec for rec in self.history
+            if rec.status in (JobStates.success, JobStates.done)
+        ]
+        if not completed:
+            return
+
+        # Compare like resource budgets for multi-fidelity promotion decisions.
+        groups = {}
+        for rec in completed:
+            budget = (
+                self._recommendation_budget(rec)
+                if self.algorithm in _MULTI_FIDELITY_ALGORITHMS
+                else None
+            )
+            groups.setdefault(budget, []).append(rec)
+        for candidates in groups.values():
+            analysis = self.objective_config.analyze_archive(candidates)
+            for audit in analysis.audits:
+                if not audit.valid or audit.acquisition_score is None:
+                    continue
+                rec = audit.candidate
+                rec.objective_score = float(audit.acquisition_score)
+                rec.result = float(audit.acquisition_score)
+        self._last_selection_analysis = self._selection_analysis()
 
     def _estimate_total(self):
         """Estimate total number of recommendations for progress reporting."""

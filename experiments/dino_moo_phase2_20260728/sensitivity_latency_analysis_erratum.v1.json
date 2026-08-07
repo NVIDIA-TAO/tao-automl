@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "erratum_id": "dino_sensitivity_latency_analysis_erratum_20260728_v1",
+  "status": "approved_analysis_only",
+  "scope": "aggregation_validation_evidence_access_and_descendant_commit_only",
+  "reason_code": "allocation_torch_version_used_full_string_instead_of_declared_base_release",
+  "reason_codes": [
+    "allocation_torch_version_used_full_string_instead_of_declared_base_release",
+    "analysis_head_descends_from_immutable_launch_commit",
+    "remote_results_not_locally_mounted",
+    "unwatched_sdk_jobs_have_no_sidecar_and_stale_pending_rows"
+  ],
+  "reason": "The immutable v2 measurement contract declares torch_version_match=major_minor_patch and both the block preflight and rank-record validator apply that policy. The original analysis aggregator instead compared allocation.hardware.runtime.torch as a full string to required_torch=2.11.0, incorrectly rejecting the valid NVIDIA build string after measurements completed. The immutable ledger records launch commit cb62ef447704b95980b17aa82604992564b4e71f, while analysis runs from a later commit on the same branch containing only descendant analysis work; all manifest-pinned measurement source hashes remain exact. The remote /lustre/fs11 results filesystem is not mounted on the analysis host, requiring an exact read-only evidence snapshot. The launcher submitted jobs without hooks, so SlurmSDK never called JobMonitor.watch or wrote slurm_state.json and the durable rows remained Pending. The analysis inspector therefore treats the JSON sidecar as optional and accepts a stale nonterminal durable status only behind exact immutable job/runtime/artifact identity plus sacct COMPLETED with exit 0:0.",
+  "measurement_generation_unchanged": true,
+  "qualification_policy_unchanged": true,
+  "objective_values_altered": false,
+  "winner_selected": false,
+  "feeds_final_selection": false,
+  "manual_promotion_permitted": false,
+  "measurement_contract": {
+    "manifest_id": "dino_sensitivity_latency_20260728_v2",
+    "manifest_path": "sensitivity_latency_manifest.v2.json",
+    "manifest_sha256": "aedc117414b2691c1a70b73fa4e9e0ac123cb4d20dfd9d25dfe2d4aa490d7655",
+    "submission_ledger_path": "runtime/sensitivity_latency_v2/block_submissions.json",
+    "submission_ledger_sha256": "b1c170c0d4697463d171cbeca3e4adcbd34cc1cb7429c236f48b58c46c3b6d54",
+    "launch_automl_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+    "launch_automl_commit": "cb62ef447704b95980b17aa82604992564b4e71f"
+  },
+  "source_pins": {
+    "measurement_generation": {
+      "launcher": "42d92d39d7ea2e957e46b2399760f26331633b2e8f2463984933f0eab99b7afd",
+      "block_runner": "1130028f541f0f43960a16080df2b289c98b433f492758aae5350137be6b7ae5",
+      "common": "3deb544e28208e44629cd2fa2ab319391e2c06721a40fee0ff22c155d3621e5c",
+      "original_aggregator": "5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967",
+      "latency_stats": "20829b2fd0ed23f13a5369cd9666b86f0694face03abbdb015c1a308ff16de4d"
+    },
+    "original_aggregator_sha256": "5f5aebd4274c746ec9674f28f978af5d228d98c6ba0af8d76cff8b1742dab967",
+    "corrected_aggregator_sha256": "9209e748093e0555fe5cba339327a8216744ec9ca6b9dae276c7041703a409c6"
+  },
+  "unchanged_policy_pins": {
+    "measurement_policy_sha256": "3a158b7018a298b2bd7fb7d3340f066d11e1720f1eb0c383e493c98d973c2918",
+    "qualification_policy_sha256": "f64e2e472ffa1487ce3a56cd5c5e13ab6b61dadbdcfd037cc88901069cc0f962"
+  },
+  "correction": {
+    "field": "allocation.hardware.runtime.torch",
+    "old_comparison": "full_string_exact",
+    "new_comparison": "major_minor_patch",
+    "declared_by": "measurement_manifest.runtime_contract.torch_version_match",
+    "raw_runtime_string_preserved": true,
+    "measurement_values_recomputed": false
+  },
+  "evidence_acquisition_policy": {
+    "mode": "read_only_remote_exact_inventory_snapshot",
+    "remote_transport": "ssh_batch_mode_plus_rsync_files_from",
+    "remote_results_anchor": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results",
+    "local_snapshot_parent": "runtime/sensitivity_latency_v2",
+    "path_derivation": "trusted ledger SDK job root plus regenerated allocation plan; no discovery globbing",
+    "expected_allocation_result_count": 9,
+    "expected_rank_result_count": 1008,
+    "expected_file_count": 1017,
+    "remote_file_type": "regular_non_symlink",
+    "remote_hash_stability": "lstat_identity_equal_before_and_after_hash",
+    "digest_algorithm": "sha256",
+    "transfer_scope": "missing_expected_files_only",
+    "existing_file_policy": "accept_only_when_remote_and_local_sha256_match",
+    "overwrite_policy": "forbidden",
+    "extra_file_policy": "reject",
+    "missing_file_policy": "reject_after_transfer",
+    "duplicate_path_policy": "reject",
+    "embedded_remote_path_policy": "validate_without_rewriting",
+    "remote_write_permitted": false
+  },
+  "analysis_commit_correction": {
+    "launch_identity_source": "immutable_submission_ledger.source_checks",
+    "analysis_identity_source": "git_HEAD_and_current_validated_source_checks",
+    "branch_policy": "exact_same_branch",
+    "commit_policy": "launch_commit_is_ancestor_of_analysis_commit",
+    "measurement_source_hash_policy": "exact_immutable_manifest_values",
+    "command_plan_policy": "regenerate_current_and_reconcile_against_immutable_ledger",
+    "source_hash_weakening_permitted": false
+  },
+  "sdk_state_inspection_policy": {
+    "mode": "read_only_durable_sqlite_plus_terminal_sacct",
+    "json_sidecar_role": "optional_non_authoritative_monitor_cache",
+    "database_access": "sqlite_uri_mode_ro_query_only",
+    "database_snapshot_required_stable": true,
+    "required_database_job_set": "exact_immutable_ledger_tao_job_ids",
+    "accepted_durable_statuses": [
+      "Complete",
+      "Pending",
+      "Running",
+      "Paused"
+    ],
+    "stale_nonterminal_acceptance_gate": "exact_job_runtime_artifact_identity_and_sacct_COMPLETED_0_0",
+    "rejected_durable_statuses": [
+      "Error",
+      "Canceled",
+      "Canceling",
+      "Unknown"
+    ],
+    "scheduler_evidence": "exact_pinned_partition_account_one_node_eight_gpu",
+    "sdk_database_mutation_permitted": false,
+    "sdk_monitor_or_retry_permitted": false
+  },
+  "analysis_guards": {
+    "regenerate_execution_plans_and_command_hashes": true,
+    "validate_measurement_generation_source_identities": true,
+    "validate_immutable_submission_ledger": true,
+    "validate_launch_commit_and_branch_from_immutable_ledger": true,
+    "require_launch_commit_ancestor_of_analysis_head": true,
+    "pass_launch_source_checks_to_original_ledger_reconciler": true,
+    "inspect_sdk_database_read_only_without_monitor": true,
+    "accept_stale_nonterminal_only_with_exact_terminal_scheduler_gate": true,
+    "reject_terminal_error_canceled_unknown_or_identity_drift": true,
+    "validate_raw_result_and_rank_file_digests": true,
+    "derive_remote_paths_without_discovery_globs": true,
+    "require_remote_local_sha256_equality": true,
+    "reject_snapshot_overwrite_extras_missing_and_duplicates": true,
+    "reuse_original_sample_aggregation": true,
+    "reuse_original_qualification_analysis": true,
+    "allow_measurement_rewrite": false,
+    "allow_objective_override": false
+  }
+}

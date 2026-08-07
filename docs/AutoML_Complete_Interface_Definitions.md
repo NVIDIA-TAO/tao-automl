@@ -575,6 +575,18 @@ The `settings` dict passed to `AutoML(settings=...)`:
 |-----|------|---------|---------|
 | `algorithm` | str | **required** | All — selects brain type |
 | `metric` | str | `"loss"` | All — "loss" → lower is better |
+| `objectives` | list[dict] | unset | Explicit objectives. A two-objective maximize-accuracy/minimize-latency list enables constrained Pareto archive selection. |
+| `selection_mode` | str | `"multi_objective"` | Two-objective archives — one of `accuracy`, `latency`, or `multi_objective`. |
+| `latency_accuracy_retention` | number or dict | relative 0.98 | Latency mode only — accuracy-winner-relative retained fraction (`relative`) or maximum degradation (`absolute`). A number is relative shorthand. |
+| `multi_objective_min_accuracy` | number or dict | unset | Multi-objective mode only — optional eligibility floor. A number is an absolute metric floor; a dict accepts `{"type": "absolute", "value": floor}` or `{"type": "relative", "value": fraction, "reference": "accuracy_winner"}`. Unset means no accuracy floor. |
+| `accuracy_constraint` | dict | unset | Deprecated compatibility alias for `latency_accuracy_retention`; it never constrains the multi-objective front. |
+| `objective_normalization` | str | `"pareto_front"` | Two-objective archives — front-relative regret normalization. |
+| `augmentation_rho` | float | `1e-6` | Multi-objective final selection — strictly positive augmented-Chebyshev tie term. |
+| `accuracy_tolerance` | float | `1e-12` | Accuracy-mode equivalence and the strict-improvement threshold in Pareto comparisons; it never makes lower accuracy "no worse." |
+| `latency_tolerance` | float | `0.0` | Hard inclusive boundary around latency mode's raw-minimum anchor. In Pareto comparisons, confidence-interval overlap can withhold a latency-only strict claim, but it never widens the latency cohort or makes a slower median "no worse." |
+| `selection_score_tolerance` | float | `1e-12` | Multi-objective compromise-score equivalence. |
+| `random_seed` | int | stable session-derived | Candidate-generation RNG; explicit values are recorded and reproducible across processes. |
+| `require_eval_fn_success` | bool | true for two-objective archives | Fail the candidate when required benchmark evaluation raises or omits a metric; disables fallback to progress-log metrics. |
 | `automl_max_recommendations` | int | 20 | Bayesian, BFBO |
 | `automl_max_epochs` | int | 27 | Hyperband, BOHB, ASHA, DEHB |
 | `automl_reduction_factor` | int | 3 | Hyperband, BOHB, ASHA, DEHB |
@@ -593,6 +605,33 @@ The `settings` dict passed to `AutoML(settings=...)`:
 | `automl_checkpoint_retention_strategy` | string | `"auto"` | Training jobs when `automl_delete_intermediate_ckpt=true` — bounds checkpoint files inside each retained job. `auto` uses `best` when the merged spec exposes `train.checkpointer`, otherwise `terminal`. `best` enables top-1 checkpointing with the trainer-declared monitor/mode (falling back to the AutoML objective) and requests replacement of periodic saves; it requires a trainer whose `train.checkpointer` contract honors `replace_periodic`, so use `terminal` with older additive-only checkpointers. `terminal` sets the epoch checkpoint interval to the recommendation's effective `train.num_epochs`, preserving ASHA/Hyperband rung budgets. Allowed values: `auto`, `best`, `terminal`. Ignored when intermediate-checkpoint deletion is disabled. |
 | `session_id` | str | auto | All — override session ID |
 | `experiment_id` | str | auto | All — override experiment ID |
+
+The repository-wide latency retention default remains `0.98`. Product profiles
+that permit a larger accuracy reduction must opt in explicitly. The DINO
+latency validation profile uses:
+
+```python
+automl_settings = {
+    "selection_mode": "latency",
+    "latency_accuracy_retention": {
+        "type": "relative",
+        "retained_fraction": 0.90,
+        "reference": "accuracy_winner",
+    },
+    # Independent: latency retention never becomes a multi-objective floor.
+    "multi_objective_min_accuracy": None,
+}
+```
+
+This means `minimum_accuracy = 0.90 * accuracy_mode_winner_accuracy`; it does
+not subtract ten percentage points from the accuracy metric. Relative retention
+must be finite and satisfy `0 < retained_fraction <= 1`. The complete checked-in
+profile is
+[`dino_latency_90_policy_profile.v1.json`](../experiments/dino_moo_phase2_20260728/dino_latency_90_policy_profile.v1.json).
+Unknown retention-map keys, selector settings without a resolvable
+maximize-accuracy/minimize-latency objective pair, and explicitly named
+metrics absent from `objectives` are rejected rather than silently defaulted
+or routed through legacy scalarization.
 
 ---
 
