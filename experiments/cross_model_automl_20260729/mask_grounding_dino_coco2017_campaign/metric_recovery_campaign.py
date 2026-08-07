@@ -42,7 +42,7 @@ DEFAULT_OUTPUT_ROOT = Path(
     "mask_grounding_dino_coco2017_ptm_qualification_v5"
 )
 DEFAULT_CONTRACT = DEFAULT_OUTPUT_ROOT / "qualification.v5.json"
-DEFAULT_REPOSITORY = Path("/localhome/local-rarunachalam/tao-automl")
+DEFAULT_REPOSITORY = HERE.parents[2]
 DEFAULT_TAO_PYTORCH = Path(
     "/localhome/local-rarunachalam/.tao/worktrees/"
     "tao-pytorch-mask-grounding-dino-coco-evaluator"

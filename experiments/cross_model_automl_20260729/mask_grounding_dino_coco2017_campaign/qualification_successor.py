@@ -33,13 +33,14 @@ DEFAULT_OUTPUT = Path(
     "mask_grounding_dino_coco2017_ptm_qualification_v3/"
     "qualification.v3.json"
 )
-DEFAULT_REPOSITORY = Path("/localhome/local-rarunachalam/tao-automl")
+DEFAULT_REPOSITORY = HERE.parents[2]
 DEFAULT_SDK = Path(
-    "/localhome/local-rarunachalam/.tao/worktrees/"
-    "tao-sdk-bounded-self-requeue"
+    "/localhome/local-rarunachalam/.tao/github-worktrees/"
+    "tao-sdks-98c1144"
 )
 DEFAULT_SKILLS = Path(
-    "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0"
+    "/localhome/local-rarunachalam/.tao/github-worktrees/"
+    "tao-skill-bank-2e9c1b2"
 )
 DEFAULT_EVIDENCE = Path(
     "/localhome/local-rarunachalam/.tao/artifacts/"

@@ -45,6 +45,23 @@ if not DATASET_STAGE_MANIFEST.is_file():
     )
 
 
+def test_default_repository_is_the_active_checkout_with_latency_sources():
+    repository = Path(__file__).resolve().parents[3]
+    assert manifest_generator.DEFAULT_REPOSITORY == repository
+    assert (repository / "src/tao_automl/latency_stats.py").is_file()
+    assert (repository / "src/tao_automl/latency_benchmark.py").is_file()
+
+
+def test_latency_payload_is_packaged_from_the_sealed_active_checkout(
+    contract,
+):
+    descriptor = {"schema_version": 1, "frozen_test_input": True}
+    command, evidence = run_campaign._payload_command(contract, descriptor)
+    assert "tao_automl/latency_stats.py" in command
+    assert "tao_automl/latency_benchmark.py" in command
+    assert evidence["input_sha256"] == canonical_sha256(descriptor)
+
+
 @lru_cache(maxsize=1)
 def _dataset_cached() -> dict:
     return manifest_generator.dataset_record(

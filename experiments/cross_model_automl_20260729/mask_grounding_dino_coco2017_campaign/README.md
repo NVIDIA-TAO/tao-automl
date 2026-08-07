@@ -222,7 +222,7 @@ After an operator has independently established an SSHFS mount of the remote
 `/lustre` root, run the data-only PTM stage locally (not as a SLURM job):
 
 ```bash
-cd /localhome/local-rarunachalam/tao-automl
+cd /localhome/local-rarunachalam/github-tao/tao-automl
 export PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PATH
 export PYTHONPATH=$PWD:$PWD/src
 
@@ -245,7 +245,7 @@ The CLI records zero model, smoke, mini-step, GPU, and SLURM executions in its
 secret-free summary. After this stage and a wheel from a clean reviewed commit:
 
 ```bash
-cd /localhome/local-rarunachalam/tao-automl
+cd /localhome/local-rarunachalam/github-tao/tao-automl
 export PATH=/localhome/local-rarunachalam/.tao/venvs/dino-multiobjective-py314/bin:$PATH
 
 # Direct full qualification used the already sealed v2 contract: four

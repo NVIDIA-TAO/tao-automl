@@ -20,19 +20,23 @@ from . import campaign_contract
 
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_REPOSITORY = Path("/localhome/local-rarunachalam/tao-automl")
+# Resolve the active checkout instead of retaining a workstation-specific
+# path.  Campaign contracts persist this resolved path and later use it to
+# package the common latency implementation, so a stale checkout path turns a
+# successful train/evaluate workflow into an objective-measurement failure.
+DEFAULT_REPOSITORY = HERE.parents[2]
 DEFAULT_WHEEL = Path(
     "/localhome/local-rarunachalam/.tao/artifacts/"
     "cross_model_automl_20260729/wheels/35972c1/"
     "nvidia_tao_automl-0.1.0-py3-none-any.whl"
 )
 DEFAULT_SDK = Path(
-    "/localhome/local-rarunachalam/.tao/worktrees/"
-    "tao-sdk-bounded-self-requeue"
+    "/localhome/local-rarunachalam/.tao/github-worktrees/"
+    "tao-sdks-98c1144"
 )
 DEFAULT_SKILLS = Path(
-    "/localhome/local-rarunachalam/.tao/worktrees/"
-    "tao-skills-release-7.1.0"
+    "/localhome/local-rarunachalam/.tao/github-worktrees/"
+    "tao-skill-bank-2e9c1b2"
 )
 DEFAULT_DATASET_MANIFEST = Path(
     "/localhome/local-rarunachalam/.tao/datasets/"
