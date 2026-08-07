@@ -1516,7 +1516,7 @@ def _immutable_recommendation_record(
         "candidate_fingerprint": fingerprint,
         "recommendation_audit": audit,
         "agent_intervention_flags": {
-            name: False for name in campaign_contract.AGENT_FLAGS
+            name: False for name in campaign_contract.PARETO_AGENT_FLAGS
         },
     }
 
@@ -1915,7 +1915,7 @@ def _run_mode(
                 ).get("audit_sha256"),
                 "agent_intervention_flags": {
                     name: False
-                    for name in campaign_contract.AGENT_FLAGS
+                    for name in campaign_contract.PARETO_AGENT_FLAGS
                 },
             },
         )

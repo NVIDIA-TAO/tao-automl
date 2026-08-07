@@ -52,6 +52,24 @@ def test_default_repository_is_the_active_checkout_with_latency_sources():
     assert (repository / "src/tao_automl/latency_benchmark.py").is_file()
 
 
+def test_pareto_rerun_freezes_the_complete_agent_isolation_contract():
+    assert campaign_contract.PARETO_AGENT_FLAGS == (
+        "agent_selected_candidate",
+        "agent_overrode_winner",
+        "agent_injected_candidate",
+        "agent_removed_candidate_to_change_winner",
+        "agent_changed_objective_weights_after_results",
+        "agent_changed_accuracy_retention_after_results",
+        "agent_changed_multi_objective_policy_after_results",
+        "agent_changed_search_space_after_results",
+        "agent_changed_seed_after_results",
+        "agent_replaced_measurement",
+        "agent_modified_metric_to_favor_candidate",
+        "agent_increased_budget_for_preferred_candidate",
+        "agent_reordered_candidates_to_affect_ties",
+    )
+
+
 def test_latency_payload_is_packaged_from_the_sealed_active_checkout(
     contract,
 ):

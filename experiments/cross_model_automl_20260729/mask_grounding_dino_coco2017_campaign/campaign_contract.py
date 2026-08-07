@@ -33,6 +33,25 @@ AGENT_FLAGS = (
     "agent_changed_ptm_after_results",
     "agent_overrode_winner",
 )
+# The qualification records above predate the cross-model Pareto audit and
+# retain their original schema.  Fresh Pareto-validation campaigns record the
+# stricter isolation contract requested for affected reruns without rewriting
+# the immutable qualification evidence.
+PARETO_AGENT_FLAGS = (
+    "agent_selected_candidate",
+    "agent_overrode_winner",
+    "agent_injected_candidate",
+    "agent_removed_candidate_to_change_winner",
+    "agent_changed_objective_weights_after_results",
+    "agent_changed_accuracy_retention_after_results",
+    "agent_changed_multi_objective_policy_after_results",
+    "agent_changed_search_space_after_results",
+    "agent_changed_seed_after_results",
+    "agent_replaced_measurement",
+    "agent_modified_metric_to_favor_candidate",
+    "agent_increased_budget_for_preferred_candidate",
+    "agent_reordered_candidates_to_affect_ties",
+)
 SELECTION_FLAGS = (
     "selector_invoked_on_matched_measurements",
     "selection_time_objectives_replaced",
@@ -851,7 +870,9 @@ def build_preregistered_contract(
             }
             for mode in MODES
         ],
-        "agent_intervention_flags": {name: False for name in AGENT_FLAGS},
+        "agent_intervention_flags": {
+            name: False for name in PARETO_AGENT_FLAGS
+        },
         "selection_isolation_flags": {
             name: False for name in SELECTION_FLAGS
         },
@@ -1272,7 +1293,7 @@ def validate_contract(document: Mapping[str, Any]) -> dict[str, Any]:
     selection_flags = value.get("selection_isolation_flags")
     if (
         not isinstance(agent_flags, Mapping)
-        or set(agent_flags) != set(AGENT_FLAGS)
+        or set(agent_flags) != set(PARETO_AGENT_FLAGS)
         or any(item is not False for item in agent_flags.values())
     ):
         raise CampaignContractError(
@@ -1292,6 +1313,7 @@ def validate_contract(document: Mapping[str, Any]) -> dict[str, Any]:
 
 __all__ = [
     "AGENT_FLAGS",
+    "PARETO_AGENT_FLAGS",
     "CampaignContractError",
     "FROZEN_BATCH_SIZE_PER_REPLICA",
     "FROZEN_ACTIVATION_CHECKPOINT",
