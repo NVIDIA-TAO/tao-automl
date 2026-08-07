@@ -35,6 +35,14 @@ import uuid
 
 from tao_automl.formatting import format_result  # noqa: F401  (public API)
 from tao_automl.objectives import parse_objective_config
+from tao_automl.gepa_autoprompter import (
+    AutoPrompterResult,
+    GEPAutoPrompter,
+    GEPAReflectionLM,
+    RoutedTAOActionBatchRunner,
+    TAOActionBatchRunner,
+    TAOGEPAAdapter,
+)
 from tao_automl.types import AutoMLContext, JobStates
 
 logger = logging.getLogger(__name__)
@@ -410,7 +418,9 @@ class AutoML:
         """
         return self._controller.next_recommendation()
 
-    def report_result(self, rec_id, metric_value, best_epoch=None, status="success"):
+    def report_result(
+        self, rec_id, metric_value, best_epoch=None, status="success", feedback=None
+    ):
         """Report a training result back.
 
         Args:
@@ -419,8 +429,11 @@ class AutoML:
                 metric values for multi-objective sessions.
             best_epoch: Best epoch number (optional).
             status: ``"success"`` or ``"failure"``.
+            feedback: Optional JSON-safe diagnostic details for reflective brains.
         """
-        self._controller.report_result(rec_id, metric_value, best_epoch, status)
+        self._controller.report_result(
+            rec_id, metric_value, best_epoch, status, feedback
+        )
 
     def get_best(self):
         """Get the best Recommendation so far, or None."""

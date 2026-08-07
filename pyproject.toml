@@ -37,11 +37,14 @@ virtualenv = ["nvidia-tao-sdk[toml] @ git+https://github.com/NVIDIA-TAO/tao-sdks
 llm = [
     "openai>=1.0",
 ]
+autoprompter = [
+    "gepa @ git+https://github.com/gepa-ai/gepa@d750388c99a455f48aa3f3fcf4a6a28650f6dc38",
+]
 wandb = [
     "wandb>=0.15",
 ]
 all = [
-    "nvidia-tao-automl[lepton,slurm,kubernetes,docker,brev,virtualenv,llm,wandb]",
+    "nvidia-tao-automl[lepton,slurm,kubernetes,docker,brev,virtualenv,llm,autoprompter,wandb]",
 ]
 dev = [
     "nvidia-tao-automl[all]",
