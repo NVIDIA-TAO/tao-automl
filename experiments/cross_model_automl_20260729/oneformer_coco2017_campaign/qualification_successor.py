@@ -34,8 +34,8 @@ DEFAULT_PREDECESSOR_COMPLETION = Path(
 )
 DEFAULT_REPOSITORY = Path("/localhome/local-rarunachalam/tao-automl")
 DEFAULT_SDK = Path(
-    "/localhome/local-rarunachalam/.tao/worktrees/"
-    "tao-sdk-bounded-self-requeue"
+    "/localhome/local-rarunachalam/.tao/github-worktrees/"
+    "tao-sdks-98c1144"
 )
 DEFAULT_SKILLS = Path(
     "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0"

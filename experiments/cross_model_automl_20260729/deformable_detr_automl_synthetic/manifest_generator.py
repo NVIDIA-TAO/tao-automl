@@ -51,7 +51,7 @@ SKILL_DIR = Path(
     "tao-skills-release-7.1.0/skills/models/tao-train-deformable-detr"
 )
 SDK_DIR = Path(
-    "/localhome/local-rarunachalam/.tao/worktrees/tao-sdk-slurm-a2e50d0"
+    "/localhome/local-rarunachalam/.tao/github-worktrees/tao-sdks-a2e50d0"
 )
 SQSH_PATH = (
     "/lustre/fsw/portfolios/edgeai/users/rarunachalam/"

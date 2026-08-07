@@ -25,8 +25,8 @@ DATASET_MANIFEST = DATASET_DIR / "manifest.v1.json"
 DATASET_INTEGRITY = DATASET_DIR / "integrity.v1.json"
 DEFAULT_OUTPUT = HERE / "campaign.v1.json"
 SDK_DIR = Path(
-    "/localhome/local-rarunachalam/.tao/worktrees/"
-    "tao-sdk-slurm-a2e50d0"
+    "/localhome/local-rarunachalam/.tao/github-worktrees/"
+    "tao-sdks-a2e50d0"
 )
 SDK_COMMIT = "a2e50d0930c3e3785b4b39fa8c3da88b39ff89e5"
 

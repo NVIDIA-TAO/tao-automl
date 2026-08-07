@@ -27,8 +27,8 @@ DEFAULT_WHEEL = Path(
     "nvidia_tao_automl-0.1.0-py3-none-any.whl"
 )
 DEFAULT_SDK = Path(
-    "/localhome/local-rarunachalam/.tao/worktrees/"
-    "tao-sdk-bounded-self-requeue"
+    "/localhome/local-rarunachalam/.tao/github-worktrees/"
+    "tao-sdks-98c1144"
 )
 DEFAULT_SKILLS = Path(
     "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0"
