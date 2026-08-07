@@ -1,0 +1,115 @@
+{
+  "artifact_root": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729",
+  "models": [
+    {
+      "dataset": "tao_od_synthetic_full_dino_coco",
+      "kind": "mode_results",
+      "model": "dino",
+      "paths": {
+        "accuracy": {
+          "path": "dino_campaign/a050805/runtime/accuracy/result.json",
+          "sha256": "1d21cf2639e405fe0b2becd4ceeb7e5d48f70fc497d54769061171125245ed3d"
+        },
+        "latency": {
+          "path": "dino_campaign/a050805/runtime/latency/result.json",
+          "sha256": "8ff57cfd9ffd9e3098e19429c55ba28e6711f0efb8f197f3ddaf53cd7bbad76b"
+        },
+        "multi_objective": {
+          "path": "dino_campaign/a050805/runtime/multi_objective/result.json",
+          "sha256": "e508821ede3ee99bab3a9a23eb6d0c2bb848b86b116196802842b73a54d39e88"
+        }
+      }
+    },
+    {
+      "dataset": "tao_od_synthetic_full_dino_coco",
+      "kind": "completion",
+      "model": "deformable_detr",
+      "path": "deformable_detr_automl_synthetic_structured_config_fix_v1/completion.json",
+      "sha256": "e09db94e8222d783d89b1fdb586a3dcae902a38a68fa78181d756e6677b1fe45"
+    },
+    {
+      "dataset": "tao_od_synthetic_full_dino_coco",
+      "kind": "mode_results",
+      "model": "rtdetr",
+      "paths": {
+        "accuracy": {
+          "path": "rtdetr_three_mode_synthetic_nonfinite_signature_fix_v1/accuracy/result.json",
+          "sha256": "8e8c2f0e57ac5019aae0ebf43a2bf2b72d596019232bf30e39065fb37b647f0d"
+        },
+        "latency": {
+          "path": "rtdetr_three_mode_synthetic_nonfinite_signature_fix_v1/latency/result.json",
+          "sha256": "42efb7d68ac8862f8877142e89f16e027bcb7e566b57da07be97dc70d0f0bf52"
+        },
+        "multi_objective": {
+          "path": "rtdetr_three_mode_synthetic_nonfinite_signature_fix_v1/multi_objective/result.json",
+          "sha256": "fa11e81365181d345647edfb4f34004b120289f3401b005a210fbfb5c83f5ce4"
+        }
+      }
+    },
+    {
+      "dataset": "tao_od_synthetic_grounding_projection",
+      "kind": "completion",
+      "model": "grounding_dino",
+      "path": "grounding_dino_three_mode_pilot_v1/completion.json",
+      "sha256": "81c963a8dca3b90ccd2fdb48228688a01867b083a9c131278e2534b366141a52"
+    },
+    {
+      "dataset": "voc2012_semantic_segmentation",
+      "kind": "mode_results",
+      "model": "segformer",
+      "paths": {
+        "accuracy": {
+          "path": "segformer_voc2012_three_mode_v9/accuracy/result.json",
+          "sha256": "ba3ddaa203959529e5e30b5b137274b972611aeff3aaa438c8f1ace2254040da"
+        },
+        "latency": {
+          "path": "segformer_voc2012_three_mode_v9/latency/result.json",
+          "sha256": "77dd0b06632e68d3e0f1eec60526898a22de9e8e670e78438b9094be002edfd2"
+        },
+        "multi_objective": {
+          "path": "segformer_voc2012_three_mode_v9/multi_objective/result.json",
+          "sha256": "b3ce00cf2927fbe23ef0d6bf1d4dd283457ac1ce467b5d62a707ab9bbb1be083"
+        }
+      }
+    },
+    {
+      "dataset": "coco2017_instance_segmentation",
+      "kind": "mode_results",
+      "model": "mask2former",
+      "paths": {
+        "accuracy": {
+          "path": "mask2former_coco2017_three_mode_v5/accuracy/result.json",
+          "sha256": "45afc2b690a4ae5b5389580dde02105d8e4a25d37d972cdcaa29e2e52ac960c6"
+        },
+        "latency": {
+          "path": "mask2former_coco2017_three_mode_v5/latency/result.json",
+          "sha256": "411dbf859df2f428e6a3f267fdc6f09eb773dfd6843d956c5d6abe969207744b"
+        },
+        "multi_objective": {
+          "path": "mask2former_coco2017_three_mode_v5/multi_objective/result.json",
+          "sha256": "1def6362015f1cb0f8aa1bcb7fc97b3352020e9b91ff440eb4fdd007da2908eb"
+        }
+      }
+    },
+    {
+      "dataset": "coco2017_panoptic_segmentation",
+      "kind": "mode_results",
+      "model": "oneformer",
+      "paths": {
+        "accuracy": {
+          "path": "oneformer_coco2017_three_mode_v7/accuracy/result.json",
+          "sha256": "a62d285c3564ce706a9133ae37c973ea3d8a0bf882722aff8eb22d6eb57027cb"
+        },
+        "latency": {
+          "path": "oneformer_coco2017_three_mode_v7/latency/result.json",
+          "sha256": "8db86ccb2ecd5250cae3008e5db75069a7d364aadc3f1bf20149536daa2a94e0"
+        },
+        "multi_objective": {
+          "path": "oneformer_coco2017_three_mode_v7/multi_objective/result.json",
+          "sha256": "b4f496a00dbac575dd2eb59e38c36982a6ea6949f278ff42544556a189ba36f7"
+        }
+      }
+    }
+  ],
+  "schema_version": 1
+}
