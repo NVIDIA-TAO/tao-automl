@@ -85,3 +85,19 @@ def test_any_selector_invariant_failure_is_a_failure():
         }
     }
     assert pareto_outlier_audit._classify(modes, result)[0] == "FAIL_SELECTOR"
+
+
+def test_higher_accuracy_in_an_independent_archive_is_search_coverage_failure():
+    modes = {
+        "accuracy": _mode("a", 0.8, 30.0),
+        "latency": _mode("l", 0.81, 20.0),
+        "multi_objective": _mode("m", 0.75, 25.0),
+    }
+    result = {
+        "selection_analysis": {
+            "algorithm": {"configuration": {"latency_tolerance": 0.5}}
+        }
+    }
+    assert pareto_outlier_audit._classify(
+        modes, result, pooled_accuracy_invariant=False
+    )[0] == "FAIL_SEARCH_OR_ARCHIVE"

@@ -211,7 +211,12 @@ def _mode_audit(result: Mapping[str, Any], mode: str) -> dict[str, Any]:
     }
 
 
-def _classify(mode_audits: Mapping[str, Mapping[str, Any]], result: Mapping[str, Any]) -> tuple[str, bool]:
+def _classify(
+    mode_audits: Mapping[str, Mapping[str, Any]],
+    result: Mapping[str, Any],
+    *,
+    pooled_accuracy_invariant: bool = True,
+) -> tuple[str, bool]:
     accuracy = mode_audits["accuracy"]
     latency = mode_audits["latency"]
     multi = mode_audits["multi_objective"]
@@ -233,6 +238,12 @@ def _classify(mode_audits: Mapping[str, Mapping[str, Any]], result: Mapping[str,
         for item in mode_audits.values()
     ):
         return "FAIL_SELECTOR", middle
+    if not pooled_accuracy_invariant:
+        # The accuracy selector is correct for the evidence it saw, but an
+        # independently generated mode archive contains a higher valid task
+        # metric.  This is a search/archive coverage outcome, not a selector
+        # direction or tie-breaking failure.
+        return "FAIL_SEARCH_OR_ARCHIVE", middle
     if multi["candidate_fingerprint"] in {
         accuracy["candidate_fingerprint"],
         latency["candidate_fingerprint"],
@@ -248,6 +259,126 @@ def _classify(mode_audits: Mapping[str, Mapping[str, Any]], result: Mapping[str,
     return "INCONCLUSIVE", middle
 
 
+def _valid_candidates(result: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [
+        dict(item)
+        for item in result["selection_analysis"]["candidates"]
+        if item["valid"]
+    ]
+
+
+def _cross_archive_accuracy_audit(
+    results: Mapping[str, Mapping[str, Any]],
+    accuracy_mode: Mapping[str, Any],
+) -> dict[str, Any]:
+    config = results["accuracy"]["selection_analysis"]["algorithm"][
+        "configuration"
+    ]
+    observed = [
+        {
+            "mode": mode,
+            "candidate_id": str(item["candidate_id"]),
+            "fingerprint": item["fingerprint"],
+            "accuracy": item["accuracy"],
+            "latency_ms": item["latency"],
+        }
+        for mode, result in results.items()
+        for item in _valid_candidates(result)
+    ]
+    maximum = max(item["accuracy"] for item in observed)
+    winner_accuracy = float(accuracy_mode["accuracy"])
+    winner_fingerprint = str(accuracy_mode["candidate_fingerprint"])
+    higher = [
+        item
+        for item in observed
+        if item["accuracy"]
+        > winner_accuracy + config["accuracy_tolerance"]
+    ]
+    higher_distinct = [
+        item for item in higher if item["fingerprint"] != winner_fingerprint
+    ]
+    return {
+        "invariant": not higher,
+        "distinct_fingerprint_invariant": not higher_distinct,
+        "independent_retraining_variation_only": bool(higher)
+        and not higher_distinct,
+        "observed_valid_candidate_count": len(observed),
+        "maximum_observed_accuracy": maximum,
+        "selected_accuracy": winner_accuracy,
+        "higher_observations": sorted(
+            higher,
+            key=lambda item: (
+                -item["accuracy"],
+                item["fingerprint"],
+                item["candidate_id"],
+            ),
+        ),
+        "higher_distinct_fingerprint_observations": sorted(
+            higher_distinct,
+            key=lambda item: (
+                -item["accuracy"],
+                item["fingerprint"],
+                item["candidate_id"],
+            ),
+        ),
+        "interpretation": (
+            "accuracy winner is the maximum valid task metric across all "
+            "three independently generated archives"
+            if not higher
+            else (
+                "the same selected specification produced a slightly higher "
+                "metric in an independent retraining; direction is "
+                "noise-limited without matched accuracy validation"
+                if not higher_distinct
+                else "accuracy selector is correct within its archive, but "
+                "an independent mode job discovered a higher valid task "
+                "metric from a different specification"
+            )
+        ),
+    }
+
+
+def _multi_objective_front(result: Mapping[str, Any]) -> list[dict[str, Any]]:
+    front = []
+    for item in _valid_candidates(result):
+        if (
+            item["multi_objective_accuracy_feasible"]
+            and item["multi_objective_pareto_rank"] == 0
+        ):
+            front.append(
+                {
+                    "candidate_id": str(item["candidate_id"]),
+                    "fingerprint": item["fingerprint"],
+                    "accuracy": item["accuracy"],
+                    "latency_ms": item["latency"],
+                    "normalized_accuracy_regret": item[
+                        "normalized_accuracy_objective"
+                    ],
+                    "normalized_latency_regret": item[
+                        "normalized_latency_objective"
+                    ],
+                    "compromise_score": item[
+                        "multi_objective_compromise_score"
+                    ],
+                    "dominated_by": list(
+                        item["multi_objective_dominated_by"]
+                    ),
+                    "tie_breaking_values": item["tie_breaking_values"][
+                        "multi_objective_mode"
+                    ],
+                }
+            )
+    return sorted(
+        front,
+        key=lambda item: (
+            -item["accuracy"],
+            item["latency_ms"],
+            item["fingerprint"],
+            item["candidate_id"],
+        ),
+    )
+
+
 def build_audit(source_path: Path, artifact_root: Path | None = None) -> dict[str, Any]:
     source = json.loads(source_path.read_text(encoding="utf-8"))
     root = (artifact_root or Path(source["artifact_root"])).resolve()
@@ -257,18 +388,32 @@ def build_audit(source_path: Path, artifact_root: Path | None = None) -> dict[st
         modes = {
             mode: _mode_audit(results[mode], mode) for mode in MODES
         }
+        cross_accuracy = _cross_archive_accuracy_audit(
+            results, modes["accuracy"]
+        )
         classification, middle = _classify(
-            modes, results["multi_objective"]
+            modes,
+            results["multi_objective"],
+            pooled_accuracy_invariant=cross_accuracy[
+                "distinct_fingerprint_invariant"
+            ],
         )
         models.append(
             {
                 "model": record["model"],
                 "dataset": record["dataset"],
                 "modes": modes,
-                "accuracy_invariant": modes["accuracy"]["invariant"],
+                "accuracy_invariant": cross_accuracy["invariant"],
+                "accuracy_invariant_within_accuracy_archive": modes[
+                    "accuracy"
+                ]["invariant"],
+                "cross_archive_accuracy_audit": cross_accuracy,
                 "latency_invariant": modes["latency"]["invariant"],
                 "pareto_invariant": modes["multi_objective"]["invariant"],
                 "middle_ground_invariant": middle,
+                "multi_objective_rank_zero_front": _multi_objective_front(
+                    results["multi_objective"]
+                ),
                 "preliminary_classification": classification,
             }
         )
