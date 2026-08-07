@@ -151,6 +151,7 @@ def _winner(result: Mapping[str, Any], mode: str) -> dict[str, Any]:
 def _mode_audit(result: Mapping[str, Any], mode: str) -> dict[str, Any]:
     analysis = result["selection_analysis"]
     config = analysis["algorithm"]["configuration"]
+    selection = analysis["selections"][mode]
     valid = [item for item in analysis["candidates"] if item["valid"]]
     winner = _winner(result, mode)
     persisted_id = str(analysis["selections"][mode]["winner_id"])
@@ -196,6 +197,50 @@ def _mode_audit(result: Mapping[str, Any], mode: str) -> dict[str, Any]:
             and winner["multi_objective_compromise_score"]
             <= best_score + config["score_tolerance"]
         )
+    details: dict[str, Any] = {}
+    if mode == "accuracy":
+        details = {
+            "maximum_valid_accuracy": max(
+                item["accuracy"] for item in valid
+            ),
+        }
+    elif mode == "latency":
+        feasible = [
+            item for item in valid if item["latency_accuracy_feasible"]
+        ]
+        details = {
+            "accuracy_reference_candidate_id": analysis["algorithm"][
+                "latency_accuracy_reference_candidate_id"
+            ],
+            "accuracy_reference_value": analysis["algorithm"][
+                "latency_accuracy_reference_value"
+            ],
+            "accuracy_threshold": analysis["algorithm"][
+                "latency_accuracy_threshold"
+            ],
+            "feasible_candidate_ids": sorted(
+                str(item["candidate_id"]) for item in feasible
+            ),
+            "raw_minimum_latency_ms": min(
+                item["latency"] for item in feasible
+            ),
+            "equivalent_fastest_candidate_ids": list(
+                selection["latency_tied_candidate_ids"]
+            ),
+        }
+    else:
+        details = {
+            "multi_objective_min_accuracy": config[
+                "multi_objective_min_accuracy"
+            ],
+            "normalization_bounds": analysis["algorithm"][
+                "normalization_bounds"
+            ],
+            "objective_weights": analysis["algorithm"][
+                "objective_weights"
+            ],
+            "augmentation_rho": config["augmentation_rho"],
+        }
     return {
         "winner_id": persisted_id,
         "candidate_fingerprint": winner["fingerprint"],
@@ -208,6 +253,8 @@ def _mode_audit(result: Mapping[str, Any], mode: str) -> dict[str, Any]:
         "replay_matches": replay_id == persisted_id,
         "order_invariant": order_ids == {persisted_id},
         "selection_reason": analysis["selections"][mode]["reason"],
+        "configuration": config,
+        "details": details,
     }
 
 
