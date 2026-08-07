@@ -101,3 +101,19 @@ def test_higher_accuracy_in_an_independent_archive_is_search_coverage_failure():
     assert pareto_outlier_audit._classify(
         modes, result, pooled_accuracy_invariant=False
     )[0] == "FAIL_SEARCH_OR_ARCHIVE"
+
+
+def test_cross_archive_geometry_does_not_rewrite_independent_selection():
+    modes = {
+        "accuracy": _mode("a", 0.8, 30.0),
+        "latency": _mode("l", 0.7, 10.0),
+        "multi_objective": _mode("m", 0.75, 20.0),
+    }
+    result = {
+        "selection_analysis": {
+            "algorithm": {"configuration": {"latency_tolerance": 0.5}}
+        }
+    }
+    assert pareto_outlier_audit._classify(modes, result)[0] == (
+        "PASS_EXPECTED_COMPROMISE"
+    )

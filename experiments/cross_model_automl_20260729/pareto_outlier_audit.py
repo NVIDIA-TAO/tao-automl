@@ -426,6 +426,89 @@ def _multi_objective_front(result: Mapping[str, Any]) -> list[dict[str, Any]]:
     )
 
 
+def _cross_archive_pareto_audit(
+    results: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Rank the immutable union without confusing it with live selection.
+
+    Candidate IDs are prefixed by mode because each independent controller
+    starts numbering at zero.  The MOO job's frozen winner remains unchanged;
+    this replay only answers whether evidence acquired by another mode would
+    dominate it under the exact production objective directions and
+    tolerances.
+    """
+    moo_result = results["multi_objective"]
+    persisted = moo_result["selection_analysis"]
+    config = _selection_config(persisted["algorithm"]["configuration"])
+    weights = persisted["algorithm"]["objective_weights"]
+    candidates = [
+        SimpleNamespace(
+            id=f"{mode}:{item['rec_id']}",
+            specs=item.get("specs", {}),
+            status=item["status"],
+            objective_values=item.get("objective_values", {}),
+        )
+        for mode, result in results.items()
+        for item in result["history"]
+    ]
+    analysis = analyze_archive(
+        candidates,
+        config,
+        accuracy_weight=weights[config.accuracy_metric],
+        latency_weight=weights[config.latency_metric],
+    ).to_dict()
+    frozen_winner_id = str(
+        persisted["selections"]["multi_objective"]["winner_id"]
+    )
+    pooled_winner_id = f"multi_objective:{frozen_winner_id}"
+    by_id = {
+        str(item["candidate_id"]): item for item in analysis["candidates"]
+    }
+    winner = by_id[pooled_winner_id]
+    front = [
+        {
+            "candidate_id": str(item["candidate_id"]),
+            "fingerprint": item["fingerprint"],
+            "accuracy": item["accuracy"],
+            "latency_ms": item["latency"],
+        }
+        for item in analysis["candidates"]
+        if item["valid"]
+        and item["multi_objective_accuracy_feasible"]
+        and item["multi_objective_pareto_rank"] == 0
+    ]
+    return {
+        "interpretation": (
+            "read-only union geometry; the independent production MOO "
+            "winner and all source measurements remain unchanged"
+        ),
+        "candidate_count": len(candidates),
+        "valid_candidate_count": sum(
+            bool(item["valid"]) for item in analysis["candidates"]
+        ),
+        "frozen_multi_objective_winner_id": pooled_winner_id,
+        "frozen_multi_objective_winner_global_pareto_rank": winner[
+            "multi_objective_pareto_rank"
+        ],
+        "frozen_multi_objective_winner_globally_nondominated": (
+            winner["multi_objective_pareto_rank"] == 0
+            and not winner["multi_objective_dominated_by"]
+        ),
+        "frozen_multi_objective_winner_dominated_by": list(
+            winner["multi_objective_dominated_by"]
+        ),
+        "rank_zero_front": sorted(
+            front,
+            key=lambda item: (
+                -item["accuracy"],
+                item["latency_ms"],
+                item["fingerprint"],
+                item["candidate_id"],
+            ),
+        ),
+    }
+
+
 def build_audit(source_path: Path, artifact_root: Path | None = None) -> dict[str, Any]:
     source = json.loads(source_path.read_text(encoding="utf-8"))
     root = (artifact_root or Path(source["artifact_root"])).resolve()
@@ -438,6 +521,7 @@ def build_audit(source_path: Path, artifact_root: Path | None = None) -> dict[st
         cross_accuracy = _cross_archive_accuracy_audit(
             results, modes["accuracy"]
         )
+        cross_pareto = _cross_archive_pareto_audit(results)
         classification, middle = _classify(
             modes,
             results["multi_objective"],
@@ -455,6 +539,7 @@ def build_audit(source_path: Path, artifact_root: Path | None = None) -> dict[st
                     "accuracy"
                 ]["invariant"],
                 "cross_archive_accuracy_audit": cross_accuracy,
+                "cross_archive_pareto_audit": cross_pareto,
                 "latency_invariant": modes["latency"]["invariant"],
                 "pareto_invariant": modes["multi_objective"]["invariant"],
                 "middle_ground_invariant": middle,
