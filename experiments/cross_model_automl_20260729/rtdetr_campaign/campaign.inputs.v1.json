@@ -2,7 +2,7 @@
   "campaign_id": "rtdetr-synthetic-coco-four-ptm-qualification-20260730",
   "source": {
     "commit": "253489c58c30ee59404b680bd0fc8d1b581b0eec",
-    "repository": "/localhome/local-rarunachalam/tao-automl"
+    "repository": "/localhome/local-rarunachalam/.tao/github-worktrees/tao-automl-legacy-baebfe0"
   },
   "runtime": {
     "account": "edgeai_tao-ptm_image-foundation-model-clip",
@@ -10,7 +10,7 @@
     "container_mounts": "/lustre",
     "image_reference": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
     "partition": "polar3",
-    "sdk_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-sdk-slurm-a2e50d0",
+  "sdk_dir": "/localhome/local-rarunachalam/.tao/github-worktrees/tao-sdks-a2e50d0",
     "sdk_revision": "a2e50d0930c3e3785b4b39fa8c3da88b39ff89e5",
     "skill_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-rtdetr",
     "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",

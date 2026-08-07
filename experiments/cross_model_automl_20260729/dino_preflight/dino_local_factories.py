@@ -138,7 +138,10 @@ def build_reviewed_runtime_image_contract() -> DINORuntimeImageContract:
             "skill_contract_drift",
             "authoritative release/7.1 DINO skill image changed",
         )
-    source_root = Path("/localhome/local-rarunachalam/tao-pytorch")
+    source_root = Path(
+        "/localhome/local-rarunachalam/.tao/github-worktrees/"
+        "tao-pytorch-2fbd1f1"
+    )
     source_revision = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=source_root,

@@ -40,12 +40,12 @@
     "training_seed": 1234
   },
   "source": {
-    "repository": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino"
+    "repository": "/localhome/local-rarunachalam/.tao/github-worktrees/tao-automl-legacy-baebfe0"
   },
   "tao_dataservices": {
     "coco_to_contiguous_sha256": "3e06c65928945087b8c827a5c1ec3d7c5aa8a927e683d885702abc3a66722249",
     "coco_to_odvg_sha256": "beb9079f23c4e56947a56949c3716ca094ef2896c5ebcffddc72326932556cbe",
-    "repository": "/localhome/local-rarunachalam/tao-dataservices",
+    "repository": "/localhome/local-rarunachalam/.tao/github-worktrees/tao-data-services-dcea3a3",
     "revision": "dcea3a39bd3e4709e2325e4b61a4f179efebde4c"
   }
 }
