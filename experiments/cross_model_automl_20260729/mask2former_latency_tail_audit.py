@@ -196,6 +196,12 @@ def analyze_trace_set(
     by_device: dict[str, list[float]] = {}
     device_round_medians: dict[str, list[float]] = {}
     by_position: list[list[float]] = [[] for _ in batches]
+    by_position_round: list[list[list[float]]] = [
+        [[] for _ in range(rounds)] for _ in batches
+    ]
+    by_position_device: list[dict[str, list[float]]] = [
+        {} for _ in batches
+    ]
     for record in records:
         samples = record.get("samples_ms")
         if (
@@ -219,7 +225,12 @@ def analyze_trace_set(
                 by_round[round_index].append(value)
                 by_device[device_key].append(value)
                 linear_index = round_index * iterations + iteration
-                by_position[linear_index % len(batches)].append(value)
+                position = linear_index % len(batches)
+                by_position[position].append(value)
+                by_position_round[position][round_index].append(value)
+                by_position_device[position].setdefault(device_key, []).append(
+                    value
+                )
     if len(all_samples) != 4000:
         raise ValueError(f"expected 4,000 timed samples in {trace_dir}")
 
@@ -254,11 +265,27 @@ def analyze_trace_set(
 
     position_rows = []
     for index, values in enumerate(by_position):
+        round_medians = [
+            statistics.median(round_values)
+            for round_values in by_position_round[index]
+        ]
+        device_medians = {
+            device: statistics.median(device_values)
+            for device, device_values in sorted(
+                by_position_device[index].items()
+            )
+        }
         row = {
             "input_position": index,
             "model_input_shape": batches[index]["model_input_shape"],
             "sample_count": len(values),
             **_sample_summary(values),
+            "per_round_median_ms": round_medians,
+            "round_median_range_ms": max(round_medians) - min(round_medians),
+            "per_device_median_ms": device_medians,
+            "device_median_range_ms": (
+                max(device_medians.values()) - min(device_medians.values())
+            ),
         }
         position_rows.append(row)
     position_medians = [row["median_ms"] for row in position_rows]
@@ -287,6 +314,26 @@ def analyze_trace_set(
             "input_evidence_sha256": next(iter(input_hashes)),
             "hardware_sha256": next(iter(hardware_hashes)),
             "runtime_sha256": next(iter(runtime_hashes)),
+            "hostnames": sorted(
+                {
+                    record.get("rank_runtime_evidence", {}).get("hostname")
+                    for record in records
+                }
+            ),
+            "gpu_names": sorted(
+                {
+                    record.get("rank_runtime_evidence", {}).get("gpu_name")
+                    for record in records
+                }
+            ),
+            "compute_capabilities": sorted(
+                {
+                    record.get("rank_runtime_evidence", {}).get(
+                        "compute_capability"
+                    )
+                    for record in records
+                }
+            ),
             "record_file_sha256": {
                 path.name: file_sha256(path) for path in paths
             },

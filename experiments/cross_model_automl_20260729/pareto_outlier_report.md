@@ -162,7 +162,7 @@ The trace audit is:
 
 ```text
 /localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_validation/mask2former_latency_tail_audit.json
-sha256 4b1529ec602274710795b17bad218c61708493e156f161a9f513f4bd346656dc
+sha256 876bf4c121ce3b7cd863e613f165e5b2b3bc92be44679bd77a1463e1bee43929
 ```
 
 The apparent cross-archive accuracy violation is the same fingerprint trained
