@@ -114,6 +114,14 @@ two fingerprints without changing any frozen selection-time value. It is
 gated on successful MGDINO v11 completion and all validation measurements are
 isolated from selection and reselection.
 
+```text
+matched validation contract:
+/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_validation/grounding_dino/matched_accuracy_v1/contract.json
+file sha256 857e829751924456f842ab915f60da17866abeb72fe33efead72c0b13db52e4c
+canonical contract sha256 b4e44109cdace0603b5bf46ab4dd3ab51d664762d2996157093133376d51406e
+implementation commit 5cb07807c747e2d4cb5e02541d958cae949393e3
+```
+
 The acquisition audit is:
 
 ```text
