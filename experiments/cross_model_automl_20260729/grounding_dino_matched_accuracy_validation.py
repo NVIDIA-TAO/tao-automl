@@ -158,7 +158,9 @@ def build_contract(
             "candidate_key": key,
             "candidate_id": candidate["candidate_id"],
             "candidate_fingerprint": candidate["candidate_fingerprint"],
-            "checkpoint_id": candidate["checkpoint_id"],
+            "checkpoint_id": (
+                candidate.get("checkpoint_id") or summary["checkpoint_id"]
+            ),
             "selection_time_mAP50": candidate["objective_values"]["mAP50"],
             "spec_sha256": canonical_sha256(candidate["specs"]),
             "candidate_evidence_path": str(path),
