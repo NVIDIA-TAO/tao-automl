@@ -626,7 +626,10 @@ def launch(
         _persist_state(state_path, state)
     sdk = SlurmSDK(
         poll_interval=10,
-        state_file=runtime_root / "slurm_state.db",
+        # The SDK accepts a JSON-style logical state path and resolves the
+        # durable SQLite sidecar to ``slurm_state.db``.  Passing an already
+        # suffixed database name would incorrectly create ``.db.db``.
+        state_file=runtime_root / "slurm_state.json",
     )
     _submit_training_jobs(sdk, contract, manifest, state, state_path)
     _complete_cells(
