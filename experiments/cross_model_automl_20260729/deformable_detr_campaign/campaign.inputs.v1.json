@@ -1,0 +1,60 @@
+{
+  "campaign_id": "deformable-detr-voc2007-ptm-qualification-20260730",
+  "source": {
+    "commit": "5c45bb6d60d43b53311207cc3aec3d37791d5ffd",
+    "repository": "/localhome/local-rarunachalam/tao-automl"
+  },
+  "runtime": {
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "base_results_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+    "container_mounts": "/lustre",
+    "image_reference": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
+    "partition": "polar3",
+    "sdk_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-sdk-slurm-3d3e1ad",
+    "sdk_revision": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+    "skill_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-deformable-detr",
+    "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "sqsh_size_bytes": 28860358656,
+    "tao_version": "7.1.0-rc-245"
+  },
+  "dataset": {
+    "image_count": 9963,
+    "image_total_bytes": 875453699,
+    "image_tree_algorithm": "sha256_of_sorted_sha256sum_basename_lines",
+    "image_tree_sha256": "9ad37484afcf88a65378ae7de15cf3993f28ccd3895d8aaa496533a8b4b4b0b5",
+    "integrity_path": "/localhome/local-rarunachalam/.tao/datasets/cross_model_automl_20260729/voc2007/prepared/integrity.v1.json",
+    "integrity_sha256": "cc9b9d450a15358ee8033ea8f8aa9a2fb305b060a133e491b3c5205abb20ec39",
+    "manifest_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/datasets/voc2007/manifest.v1.json",
+    "manifest_sha256": "e5bbc132c3f3ab47afefa6c355f970e8c8c092f5d8acc1418e3d7157b8981214",
+    "slurm_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/pascal_voc_2007_full_detection",
+    "train_annotation_sha256": "fbb0c5e68745eba2ab8e849a17e4eb874a38db891aff731cab3948ed7bf2b6e7",
+    "train_annotation_size_bytes": 2312852,
+    "validation_annotation_sha256": "e984d6481ec999735876b3b608c3e8fa3e61b390e7dae4ee7bc84f8f9d4b95f2",
+    "validation_annotation_size_bytes": 2308053
+  },
+  "qualification": {
+    "checkpoint_interval": 10,
+    "evaluation_batch_size_per_gpu": 4,
+    "precision": "fp32",
+    "seed": 1234,
+    "train_batch_size_per_gpu": 4,
+    "training_epochs": 10,
+    "validation_interval": 1
+  },
+  "ptm_runtime": {
+    "deformable_detr.coco.gcvit_tiny.trainable.v1.0": {
+      "artifact_sha256": "519937c15c6282a9628a8abb616d0f14f1363ea4992048c9357e8ae2f7fb29ba",
+      "artifact_size_bytes": 497618156,
+      "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/deformable_detr.coco.gcvit_tiny.trainable.v1.0/11a033f1a93956c2141c0bd8/dd_gcvit_tiny_ep50.pth",
+      "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/deformable_detr/deformable_detr.coco.gcvit_tiny.trainable.v1.0/dd_gcvit_tiny_ep50.pth"
+    },
+    "deformable_detr.coco.resnet50.trainable.v1.0": {
+      "artifact_sha256": "ddb80bd87fe5882c7b86e6402d9a7b91be874505330140b0d19a42b095fa7b3f",
+      "artifact_size_bytes": 492568963,
+      "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/deformable_detr.coco.resnet50.trainable.v1.0/6d3254e5124ecaed540750b3/dd_resnet50_ep50.pth",
+      "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/deformable_detr/deformable_detr.coco.resnet50.trainable.v1.0/dd_resnet50_ep50.pth"
+    }
+  }
+}

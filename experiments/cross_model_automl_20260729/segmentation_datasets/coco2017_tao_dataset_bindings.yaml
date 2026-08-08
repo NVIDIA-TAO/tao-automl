@@ -1,0 +1,40 @@
+# Data-contract fragments only. Model execution was not part of staging.
+
+oneformer:
+  dataset:
+    train:
+      images: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/images/train2017
+      annotations: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/annotations/panoptic_train2017.json
+      panoptic: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/annotations/panoptic_train2017
+    val:
+      images: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/images/val2017
+      annotations: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/annotations/panoptic_val2017.json
+      panoptic: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/annotations/panoptic_val2017
+    label_map: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/tao/label_map_panoptic.json
+    contiguous_id: true
+
+mask2former:
+  task_scope: instance_segmentation
+  dataset:
+    train:
+      type: coco
+      img_dir: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/images/train2017
+      instance_json: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/annotations/instances_train2017.json
+    val:
+      type: coco
+      img_dir: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/images/val2017
+      instance_json: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/annotations/instances_val2017.json
+    label_map: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/tao/label_map_instance.json
+    contiguous_id: true
+
+mask_grounding_dino:
+  task_scope: category_prompted_grounded_instance_segmentation
+  dataset:
+    train_data_sources:
+      - image_dir: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/images/train2017
+        json_file: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/tao/mask_grounding_dino/train/instances_train2017_odvg.jsonl
+        label_map: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/tao/mask_grounding_dino/train/instances_train2017_odvg_labelmap.json
+    val_data_sources:
+      image_dir: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/images/val2017
+      json_file: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/annotations/instances_val2017.json
+      data_type: OD

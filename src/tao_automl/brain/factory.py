@@ -16,8 +16,27 @@ from tao_automl.brain.hyperband_es import HyperBandES
 from tao_automl.brain.llm_brain import LLMBrain
 from tao_automl.brain.hybrid_controller import HybridBrain
 from tao_automl.brain.autoresearch_controller import AutoresearchBrain
+from tao_automl.brain.algorithm_capabilities import (
+    build_algorithm_capability_registry,
+)
+from tao_automl.objectives import implicit_direction
 
 logger = logging.getLogger(__name__)
+
+
+_BRAIN_IMPLEMENTATIONS = {
+    "bayesian": Bayesian,
+    "bfbo": BFBO,
+    "hyperband": HyperBand,
+    "bohb": BOHB,
+    "asha": ASHA,
+    "pbt": PBT,
+    "dehb": DEHB,
+    "hyperband_es": HyperBandES,
+    "llm": LLMBrain,
+    "hybrid": HybridBrain,
+    "autoresearch": AutoresearchBrain,
+}
 
 
 def _as_bool(value: Any) -> bool:
@@ -44,6 +63,19 @@ class AlgorithmType:
     LLM = ("llm",)
     HYBRID = ("hybrid",)
     AUTORESEARCH = ("autoresearch",)
+
+    @classmethod
+    def canonical_aliases(cls) -> dict[str, tuple[str, ...]]:
+        """Return canonical algorithms and aliases declared by the factory."""
+        definitions = {}
+        for name, aliases in vars(cls).items():
+            if not name.isupper() or not isinstance(aliases, tuple):
+                continue
+            canonical = str(aliases[0]).strip().lower()
+            definitions[canonical] = tuple(
+                str(alias).strip().lower() for alias in aliases
+            )
+        return definitions
 
 
 @dataclass
@@ -139,6 +171,48 @@ class AlgorithmParams:
 class BrainFactory:
     """Factory class for creating AutoML brain instances"""
 
+    _objective_capability_registry = None
+
+    @classmethod
+    def algorithm_definitions(cls) -> dict[str, dict[str, Any]]:
+        """Return the algorithms implemented by this factory."""
+        aliases = AlgorithmType.canonical_aliases()
+        if set(aliases) != set(_BRAIN_IMPLEMENTATIONS):
+            raise RuntimeError(
+                "BrainFactory aliases and implementation classes are "
+                "inconsistent"
+            )
+        return {
+            algorithm: {
+                "aliases": algorithm_aliases,
+                "implementation": _BRAIN_IMPLEMENTATIONS[
+                    algorithm
+                ].__name__,
+            }
+            for algorithm, algorithm_aliases in aliases.items()
+        }
+
+    @classmethod
+    def objective_capabilities(cls):
+        """Return the fail-closed objective-search capability registry."""
+        if cls._objective_capability_registry is None:
+            cls._objective_capability_registry = (
+                build_algorithm_capability_registry(
+                    cls.algorithm_definitions()
+                )
+            )
+        return cls._objective_capability_registry
+
+    @classmethod
+    def objective_capability_matrix(cls) -> dict[str, Any]:
+        """Return the JSON-safe algorithm/objective compatibility matrix."""
+        return cls.objective_capabilities().to_dict()
+
+    @classmethod
+    def objective_capability_matrix_json(cls, *, indent: int = 2) -> str:
+        """Return the compatibility matrix as deterministic JSON."""
+        return cls.objective_capabilities().to_json(indent=indent)
+
     @staticmethod
     def create_brain(
         algorithm: str,
@@ -148,7 +222,9 @@ class BrainFactory:
         parameters: Any,
         params: AlgorithmParams,
         metric: str = "loss",
-        resume: bool = False
+        resume: bool = False,
+        objective_config=None,
+        acquisition_settings=None,
     ):
         """Create brain instance based on algorithm type
 
@@ -161,8 +237,34 @@ class BrainFactory:
             params: AlgorithmParams with algorithm-specific settings
             metric: Metric to optimize (e.g., 'loss', 'val_accuracy', 'mIoU')
             resume: Whether to resume from previous state
+            objective_config: Parsed raw-objective and final-selection policy.
+            acquisition_settings: Optional mode-aware Bayesian settings.
         """
-        algo_lower = algorithm.lower()
+        algo_lower = str(algorithm).strip().lower()
+        (
+            algorithm_capability,
+            objective_mode_capability,
+        ) = BrainFactory.objective_capabilities().validate(
+            algo_lower,
+            objective_config,
+        )
+        if (
+            acquisition_settings is not None
+            and algorithm_capability.algorithm != "bayesian"
+        ):
+            raise ValueError(
+                "objective_acquisition settings are supported only by the "
+                "native Bayesian objective-aware search path; algorithm "
+                f"{algorithm_capability.algorithm!r} would ignore them"
+            )
+        if objective_mode_capability.support_level == "scalarized_fallback":
+            logger.warning(
+                "AutoML algorithm %s uses a scalarized objective fallback for "
+                "mode %s; it does not model the raw objectives independently",
+                algorithm_capability.algorithm,
+                objective_mode_capability.mode,
+            )
+        metric_direction = implicit_direction(metric)
 
         if algo_lower in AlgorithmType.HYPERBAND:
             brain_class = HyperBand
@@ -182,7 +284,11 @@ class BrainFactory:
                 "context": context,
                 "state_store": state_store,
                 "network": network,
-                "parameters": parameters
+                "parameters": parameters,
+                "metric": metric,
+                "direction": metric_direction,
+                "objective_config": objective_config,
+                "acquisition_settings": acquisition_settings,
             }
         elif algo_lower in AlgorithmType.BOHB:
             brain_class = BOHB
@@ -205,7 +311,9 @@ class BrainFactory:
                 "context": context,
                 "state_store": state_store,
                 "network": network,
-                "parameters": parameters
+                "parameters": parameters,
+                "metric": metric,
+                "direction": metric_direction,
             }
         elif algo_lower in AlgorithmType.ASHA:
             brain_class = ASHA
@@ -302,5 +410,12 @@ class BrainFactory:
 
         # Create brain instance (load_state for resume, new instance otherwise)
         if resume:
-            return brain_class.load_state(**kwargs)
-        return brain_class(**kwargs)
+            brain = brain_class.load_state(**kwargs)
+        else:
+            brain = brain_class(**kwargs)
+        if hasattr(brain, "__dict__"):
+            brain.algorithm_capability = algorithm_capability.to_dict()
+            brain.objective_mode_capability = (
+                objective_mode_capability.to_dict()
+            )
+        return brain

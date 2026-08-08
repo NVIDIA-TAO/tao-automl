@@ -1,0 +1,14 @@
+model:
+  backbone: gc_vit_tiny
+  train_backbone: true
+  num_feature_levels: 4
+  return_interm_indices:
+    - 0
+    - 1
+    - 2
+    - 3
+  enc_layers: 6
+  dec_layers: 6
+  num_queries: 900
+  dropout_ratio: 0.0
+  dim_feedforward: 2048

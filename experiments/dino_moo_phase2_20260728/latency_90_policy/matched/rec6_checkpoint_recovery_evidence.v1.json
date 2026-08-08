@@ -1,0 +1,90 @@
+{
+  "algorithm_selected_candidate_overridden": false,
+  "architecture_proxy_used": false,
+  "artifact_integrity": {
+    "canonical_payload_sha256": "de528df5b0d93df7fdd22575f244bb3dd767762ea71303951f0a403d14b0400b",
+    "hash_algorithm": "sha256",
+    "hash_excludes": [
+      "artifact_integrity"
+    ]
+  },
+  "campaign_id": "dino_latency_90pct_matched_20260728_v1",
+  "candidate_id": "seed_271828_rec_6",
+  "candidate_table_record_sha256": "caff9ec134ab0a2a6a7e12b4011e2da99ab466fb1467b7f4d0525895675198e2",
+  "checkpoint_identity": {
+    "byte_identical_checkpoint_assumed": false,
+    "configuration_exact_not_byte_identity": true,
+    "epoch": 9,
+    "historical_sha256_match": false,
+    "retained_for_matched_validation": true,
+    "size_bytes": 475869698
+  },
+  "evidence_id": "dino_latency_90_checkpoint_recovery_20260728_v1",
+  "exact_candidate_configuration_preserved": true,
+  "frozen_at_utc": "2026-07-29T00:23:08Z",
+  "historical_checkpoint": {
+    "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/ce213919-8b61-4d86-b82f-c439ce0823d2/results_dir/train/model_epoch_009_step_00440.pth",
+    "sha256": "0338c35be50bbad6189d38e8f9007856a60e87a0861c8a6ff5d0bf85cd6df6c5"
+  },
+  "manual_candidate_substitution_used": false,
+  "measurements_feed_reselection": false,
+  "measurements_feed_selection": false,
+  "rec_id": 6,
+  "recovered_checkpoint": {
+    "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/1c8a5f67-ff12-4f5b-a4ab-fcae3714c92f/results_dir/train/model_epoch_009_step_00440.pth",
+    "sha256": "5f259679d61db1a85bbbec0625cb71367f2be2660ab4d09fe416e97d2717f6f0"
+  },
+  "recovery_provenance": {
+    "end_time_utc": "2026-07-29T00:20:53Z",
+    "entrypoint": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/entrypoints/job_1c8a5f67-ff12-4f5b-a4ab-fcae3714c92f.sh",
+      "sha256": "b0edb631a03e5f5aad765d51fea70469ffd7617328f956aa583f5cdbf67b6f43",
+      "size_bytes": 80094
+    },
+    "node": "batch-block7-01780",
+    "preregistration": {
+      "identity": "dino_rec6_validation_only_checkpoint_recovery_20260728_v1",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/rec6_checkpoint_recovery_preregistration.v1.json",
+      "sha256": "05802e9d0d6e49c2885e2e2e73f01cb053b50d294d8ca284507fb888e2c95f4d"
+    },
+    "reconstructed_command_sha256": "f2ea97f16b473cf1aa094e7523c6b3445f7ae5444489ca19052be8c6ca66f65b",
+    "reconstructed_model_spec_sha256": "2891ae9dbb6097c1da53ce68201359f7da7992d30515ab815c89f906cdce21b1",
+    "reconstructed_train_spec_sha256": "0ce980ef6e6f793ab3a3aaac27957bc6daee4ab7b8269958036cd900d3dd9092",
+    "remote_specs": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/specs/1c8a5f67-ff12-4f5b-a4ab-fcae3714c92f.json",
+      "sha256": "5fc4566af9f14ca71c98eff730f8cd5a78c7acd037d9b72e3c3270204aae0819",
+      "size_bytes": 1595
+    },
+    "result_root": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/1c8a5f67-ff12-4f5b-a4ab-fcae3714c92f",
+    "sbatch": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/sbatch/job_1c8a5f67-ff12-4f5b-a4ab-fcae3714c92f.sbatch",
+      "sha256": "82c69c9a2989887b0c298b7471a64a668e7b29600313878d3c5bebb154e680ae",
+      "size_bytes": 2410
+    },
+    "sdk_status": "Complete",
+    "slurm_exit_code": "0:0",
+    "slurm_job_id": "31021375",
+    "slurm_state": "COMPLETED",
+    "source_candidate_table_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03",
+    "source_manifest_sha256": "9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a",
+    "source_seed_archive_sha256": "a42a989ea27940ea9ae481212a75216c7f23f01602b0c260b6750c9fdb709c9e",
+    "start_time_utc": "2026-07-29T00:14:48Z",
+    "submit_time_utc": "2026-07-29T00:09:50Z",
+    "tao_job_id": "1c8a5f67-ff12-4f5b-a4ab-fcae3714c92f"
+  },
+  "resolved_model_spec_sha256": "2891ae9dbb6097c1da53ce68201359f7da7992d30515ab815c89f906cdce21b1",
+  "result_driven_parameter_change_used": false,
+  "schema_version": 1,
+  "search_seed": 271828,
+  "selection_isolation": {
+    "algorithm_selected_candidate_overridden": false,
+    "frozen_archive_mutated": false,
+    "measurements_feed_reselection": false,
+    "measurements_feed_selection": false,
+    "selection_time_objectives_replaced": false,
+    "selector_invoked_on_recovered_measurements": false
+  },
+  "specs_sha256": "1366f23682c5c495b65ee6132cd883f2891a5c8b0e278605ec372301b11319df",
+  "status": "identity_preserving_recovery_complete",
+  "training_seed": 1234
+}

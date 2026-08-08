@@ -1,0 +1,19 @@
+# Path-free architecture projection of TAO OneFormer's official
+# spec_its_dinat.yaml.
+model:
+  backbone:
+    name: D2DiNAT
+    dinat:
+      embed_dim: 192
+      mlp_ratio: 2.0
+      depths: [3, 4, 18, 5]
+      num_heads: [6, 12, 24, 48]
+      kernel_size: 7
+      drop_path_rate: 0.3
+      dilations:
+        - [1, 20, 1]
+        - [1, 5, 1, 10]
+        - [1, 2, 1, 3, 1, 4, 1, 5, 1, 2, 1, 3, 1, 4, 1, 5, 1, 5]
+        - [1, 2, 1, 2, 1]
+  one_former:
+    num_object_queries: 150

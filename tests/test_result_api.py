@@ -203,8 +203,9 @@ def test_run_docstring_schema_matches_result(tmp_path, monkeypatch):
         "objective_values", "adjustments",
     }
     assert set(result["history"][0].keys()) == {
-        "rec_id", "metric", "objective_score", "objective_values",
-        "status", "failure_reason", "adjustments",
+        "rec_id", "specs", "job_id", "metric", "objective_score",
+        "objective_values", "status", "failure_reason", "adjustments",
+        "selection_audit",
     }
     for key in ("enabled", "metric_name", "metric_value", "status",
                 "comparison_to_best"):

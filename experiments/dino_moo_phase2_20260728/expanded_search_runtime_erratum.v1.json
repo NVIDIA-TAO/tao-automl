@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "erratum_id": "dino_expanded_search_runtime_erratum_20260728_v1",
+  "status": "approved_preselection_runtime_failure_audit",
+  "audited_at_utc": "2026-07-28T04:12:04Z",
+  "scope": "expanded_search_v1_runtime_only",
+  "reason_code": "tao_status_json_finite_decimal_metric_encoded_as_string",
+  "failure": {
+    "code_path": "expanded_search_runner.read_status_map50",
+    "old_behavior": "Passed kpi.test_mAP50 directly to finite_number, which intentionally accepts only native int or float values.",
+    "observed_encoding": "Strict finite decimal JSON strings emitted by TAO evaluate status.json.",
+    "exception": "ContractError: evaluation mAP50 must be a finite number",
+    "candidate_measurement_disposition": "failure",
+    "training_artifact_disposition": "deleted_by_failed_AutoML_job_cleanup",
+    "failure_is_preselection": true
+  },
+  "v1_disposition": {
+    "manifest_path": "expanded_search_manifest.v1.json",
+    "manifest_sha256": "57e331686b8896989263a39f72edb69543fc58833f20a1e6e698c31f34d2e8be",
+    "internal_manifest_sha256": "39fb50997a39ff4bfaa8036cd6222127f3ce8dda25a704ac188eab4dd6b75b82",
+    "runtime_path": "runtime/expanded_search",
+    "status": "failed_preselection_superseded_preserved_read_only",
+    "resume_permitted": false,
+    "runtime_reuse_permitted": false,
+    "candidate_artifact_reuse_permitted": false,
+    "objective_observation_reuse_permitted": false,
+    "selection_performed": false
+  },
+  "failed_candidates": [
+    {
+      "candidate_id": "seed_161803_rec_0",
+      "search_seed": 161803,
+      "train_tao_job_id": "959f0fe6-d0c9-48d9-a0d8-aac26ebd485a",
+      "train_slurm_job_id": "30950521",
+      "evaluation_tao_job_id": "04792472-d79e-4eaf-917c-f332c3c9d487",
+      "evaluation_slurm_job_id": "30951491",
+      "evaluation_status": "Complete",
+      "raw_test_mAP50": "0.499933605841208",
+      "raw_test_mAP": "0.2119498392262566",
+      "status_json_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/04792472-d79e-4eaf-917c-f332c3c9d487/results_dir/evaluate/status.json",
+      "status_json_sha256": "8fa3a749c4999423e9bee15f3fbd1cd837515e93a9f0cf73c085a93ebb400faf",
+      "automl_result_status": "failure",
+      "automl_result_metric": null,
+      "checkpoint_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/959f0fe6-d0c9-48d9-a0d8-aac26ebd485a/results_dir/train/model_epoch_009_step_00440.pth",
+      "checkpoint_sha256_before_cleanup": "85571846ba8df9479ac1a710369880931cd1c9c9825d39950e3c6c5a6ff490eb",
+      "checkpoint_status_at_audit": "missing",
+      "latency_measurement_started": false
+    },
+    {
+      "candidate_id": "seed_271828_rec_0",
+      "search_seed": 271828,
+      "train_tao_job_id": "b3933f47-fa9b-405b-aa0b-2555dec8ced7",
+      "train_slurm_job_id": "30950520",
+      "evaluation_tao_job_id": "f50e5737-3a93-4937-8c6a-e39fcf56ec66",
+      "evaluation_slurm_job_id": "30951528",
+      "evaluation_status": "Complete",
+      "raw_test_mAP50": "0.5175292656942001",
+      "raw_test_mAP": "0.3032167356201111",
+      "status_json_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/f50e5737-3a93-4937-8c6a-e39fcf56ec66/results_dir/evaluate/status.json",
+      "status_json_sha256": "070237fe94f85c715f5495d4a938ce71778fd299b4711b7c8f6091929595c66f",
+      "automl_result_status": "failure",
+      "automl_result_metric": null,
+      "checkpoint_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/b3933f47-fa9b-405b-aa0b-2555dec8ced7/results_dir/train/model_epoch_009_step_00440.pth",
+      "checkpoint_sha256_before_cleanup": "f24d8c0b17a3ae8a126cd8f11c85a595e87c29ca808c1bde6cf880828a8be087",
+      "checkpoint_status_at_audit": "missing",
+      "latency_measurement_started": false
+    },
+    {
+      "candidate_id": "seed_314159_rec_0",
+      "search_seed": 314159,
+      "train_tao_job_id": "7be04920-5c71-43b1-bdf4-d29c00d56405",
+      "train_slurm_job_id": "30950522",
+      "evaluation_tao_job_id": "aec669db-9c32-4e5a-b3b0-4db023d3b62c",
+      "evaluation_slurm_job_id": "30951502",
+      "evaluation_status": "Complete",
+      "raw_test_mAP50": "0.5728509799562066",
+      "raw_test_mAP": "0.3209560889160118",
+      "status_json_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/aec669db-9c32-4e5a-b3b0-4db023d3b62c/results_dir/evaluate/status.json",
+      "status_json_sha256": "1adcf675a0513b7d13eec87447c0deb66225ffc65cfd088b2614d07e66f41c05",
+      "automl_result_status": "failure",
+      "automl_result_metric": null,
+      "checkpoint_path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/7be04920-5c71-43b1-bdf4-d29c00d56405/results_dir/train/model_epoch_009_step_00440.pth",
+      "checkpoint_sha256_before_cleanup": "dca4cb790ff6067ac1565ccbccb52915ea35814cb4cfedd9a48ef80e2a5a5d97",
+      "checkpoint_status_at_audit": "missing",
+      "latency_measurement_started": false
+    }
+  ],
+  "bayesian_state_audit": {
+    "valid_objective_observation_count": 0,
+    "all_seed_brain_y_arrays_empty": true,
+    "failed_result_metrics_all_null": true,
+    "failure_placeholder_values_are_not_brain_observations": true,
+    "complete_seed_archive_count": 0,
+    "combined_selection_artifact_exists": false,
+    "selection_invoked": false,
+    "seed_states": [
+      {
+        "search_seed": 161803,
+        "brain_x_count": 1,
+        "brain_y_count": 0,
+        "brain_sha256": "4592d869640d2f99c3792bcf8f389d877c3849f82ff3341eaea3d43a4bd4b5aa",
+        "controller_sha256": "2cfc463e262690d6bfcd470c334977bd4906fff620263c7c9667777ecc16e18d"
+      },
+      {
+        "search_seed": 271828,
+        "brain_x_count": 1,
+        "brain_y_count": 0,
+        "brain_sha256": "b938a64d68ee12ef097bdd3b95c3bbb95283142620cf1036516e324a51e5ab58",
+        "controller_sha256": "f007cdf09304b3370542e96e6df34c58ca668cca10cb172aca13e284fb771024"
+      },
+      {
+        "search_seed": 314159,
+        "brain_x_count": 1,
+        "brain_y_count": 0,
+        "brain_sha256": "3094664b19efcd4d288c5bcf4c618d2e902f292406775a8a1458441441f72394",
+        "controller_sha256": "03128bb47c84814432d6bcf14c25685fad41a9ce94208c046cbe430a47d35c2e"
+      }
+    ],
+    "conclusion": "No valid accuracy or latency objective observation entered any Bayesian y array, and no production selection was possible."
+  },
+  "local_evidence": {
+    "seed_process_status_sha256": "e9828355deff98dda9d5808857572226e1b3ac42cc5622ecffa34a744f11287d",
+    "seeds": {
+      "161803": {
+        "candidate_evaluations_sha256": "5f46b5c906b126bfb92151ceece966a400700f8f6b971339ebb74c8b05f918ab",
+        "events_sha256": "769970581f860ef55bc72866a068301d46e186b110459fb26fb961fa6785f66f",
+        "result_sha256": "77891bb923cbff85fe7ba78aba45b690728a83e111ff0fddb8af7a78a2bc8124",
+        "artifact_jobs_sha256": "53312586999b8eb223bd0697cd0a2f79945534e6f08f1dae11d2b8124f652aca"
+      },
+      "271828": {
+        "candidate_evaluations_sha256": "cb0cfa0a7c832f728d51630fde93204d8a6e87744f97ddd20dfa771e02dd1835",
+        "events_sha256": "fe044be2e3cc6df8c8ce80a7e239b4dbcb5a2c14b32a749d46df6507c3412717",
+        "result_sha256": "ac78f80ebf57918aa093fb83de0f9129a88fece91cef9ff411d1b5180f4a4bd2",
+        "artifact_jobs_sha256": "f810b1a9d0991f2a0b8112e7fb734459b34d0dd7b3be378db29a4a7d525a5b44"
+      },
+      "314159": {
+        "candidate_evaluations_sha256": "a6d7ba549b02f28d770f52d8c22991d318da5b910d92839367e9b54385ce9f4b",
+        "events_sha256": "4b375d0f7e805d523984b1295a037d7f65488366f74fba162235d8a43d44ea5c",
+        "result_sha256": "a46585ab10c8ab749b6d431b49880df4061c1702354a6c4eb12999cde86added",
+        "artifact_jobs_sha256": "5244baf2ea3bcabf5e1df877771cc107f5bc2ba9e00e72c35fe38fd00c8ee056"
+      }
+    }
+  },
+  "correction_contract": {
+    "parser": {
+      "name": "parse_finite_numeric_metric",
+      "accepted_native_types": [
+        "int",
+        "float"
+      ],
+      "accepted_string_grammar": "RFC 8259 JSON number without surrounding whitespace",
+      "rejected": [
+        "bool",
+        "empty_string",
+        "surrounding_whitespace",
+        "NaN",
+        "Infinity",
+        "nonfinite_native_float",
+        "junk_suffix_or_prefix",
+        "non_numeric_type"
+      ],
+      "finite_result_required": true
+    },
+    "search_space_changed": false,
+    "search_algorithm_changed": false,
+    "search_seeds_changed": false,
+    "training_seed_changed": false,
+    "candidate_budget_changed": false,
+    "training_budget_changed": false,
+    "selection_configuration_changed": false,
+    "latency_protocol_changed": false,
+    "dataset_changed": false,
+    "runtime_hardware_changed": false
+  },
+  "v2_contract": {
+    "manifest_id": "dino_expanded_search_20260728_v2",
+    "manifest_filename": "expanded_search_manifest.v2.json",
+    "runtime_path": "runtime/expanded_search_v2",
+    "supersedes_manifest_id": "dino_expanded_search_20260728_v1",
+    "supersedes_manifest_sha256": "57e331686b8896989263a39f72edb69543fc58833f20a1e6e698c31f34d2e8be",
+    "supersedes_runtime_path": "runtime/expanded_search",
+    "superseded_runtime_reuse_permitted": false,
+    "identical_contract_except": [
+      "manifest identity and supersession metadata",
+      "derivation policy, manifest generator, and corrected runner provenance SHA256 values",
+      "strict numeric metric parser contract",
+      "new runtime path",
+      "manifest-bound fresh and resume runtime-state provenance guard"
+    ],
+    "launch_before_corrected_runner_is_committed_permitted": false
+  },
+  "audit_sha256": "b61196e5b76153fa71f4e73c58e4bc6f58eeba1f8fed3783482ba8c3156e5954"
+}

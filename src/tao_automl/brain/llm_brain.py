@@ -12,6 +12,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
 from tao_automl.brain.base import AutoMLAlgorithmBase
+from tao_automl.objectives import implicit_direction
 from tao_automl.brain.llm_client import LLMClient
 from tao_automl.brain.prompts.llm_brain_prompts import (
     build_recommendation_with_reasoning_prompt,
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def _metric_is_minimized(metric: str) -> bool:
-    return "loss" in (metric or "").lower()
+    return implicit_direction(metric) == "minimize"
 
 
 class LLMBrain(AutoMLAlgorithmBase):

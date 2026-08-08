@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 """HyperBand with Early Stopping (Learning Curve Prediction) AutoML algorithm modules"""
+import copy
 import numpy as np
 import logging
 from scipy.optimize import curve_fit
@@ -152,18 +153,42 @@ class HyperBandES(HyperBand):
                 metric=metric,
             )
 
+        stored_signature = json_loaded.get("hyperband_es_signature")
+        requested_signature = {
+            "min_epochs_for_prediction": int(min_early_stop_epochs),
+            "confidence_threshold": float(early_stop_threshold),
+        }
+        if (
+            stored_signature is not None
+            and stored_signature != requested_signature
+        ):
+            raise ValueError(
+                "Cannot resume HyperBandES with different early-stopping "
+                "configuration"
+            )
+        loaded_metric = json_loaded.get("metric", metric)
         brain = HyperBandES(
             context, state_store, network, parameters, max_epochs,
             reduction_factor, epoch_multiplier,
             early_stop_threshold=early_stop_threshold,
             min_early_stop_epochs=min_early_stop_epochs,
-            metric=metric,
+            metric=loaded_metric,
         )
         brain.bracket = json_loaded["bracket"]
         brain.sh_iter = json_loaded["sh_iter"]
         brain.expt_iter = json_loaded["expt_iter"]
         brain.complete = json_loaded["complete"]
         brain.epoch_number = json_loaded["epoch_number"]
+        brain.last_launched_count = json_loaded.get("last_launched_count", 0)
+        brain.ni = copy.deepcopy(json_loaded.get("ni", brain.ni))
+        brain.ri = copy.deepcopy(json_loaded.get("ri", brain.ri))
+        brain._restored_experiments_considered_ids = [
+            int(identifier)
+            for identifier in json_loaded.get(
+                "experiments_considered_ids",
+                [],
+            )
+        ]
 
         if "learning_curves" in json_loaded:
             brain.learning_curves = json_loaded["learning_curves"]
@@ -176,8 +201,17 @@ class HyperBandES(HyperBand):
         """Save the HyperBandES algorithm related variables to brain metadata"""
         super().save_state()
 
-        state_dict = self.state_store.get_brain_info(self.context.id)
+        read_for_update = getattr(
+            self.state_store,
+            "get_brain_info_for_update",
+            self.state_store.get_brain_info,
+        )
+        state_dict = read_for_update(self.context.id)
         state_dict["learning_curves"] = self.learning_curves
         state_dict["early_stopped_configs"] = list(self.early_stopped_configs)
+        state_dict["hyperband_es_signature"] = {
+            "min_epochs_for_prediction": self.min_epochs_for_prediction,
+            "confidence_threshold": self.confidence_threshold,
+        }
 
         self.state_store.save_brain_info(self.context.id, state_dict)

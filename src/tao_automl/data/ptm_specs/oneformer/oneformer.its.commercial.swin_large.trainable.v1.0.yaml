@@ -1,0 +1,24 @@
+# Path-free architecture projection of TAO OneFormer's official
+# spec_its_swin.yaml.
+model:
+  backbone:
+    name: D2SwinTransformer
+    swin:
+      embed_dim: 192
+      depths: [2, 2, 18, 2]
+      num_heads: [6, 12, 24, 48]
+      window_size: 7
+      mlp_ratio: 4.0
+      patch_size: 4
+      patch_norm: true
+      ape: false
+      pretrain_img_size: 384
+      qkv_bias: true
+      attn_drop_rate: 0.0
+      drop_rate: 0.0
+      drop_path_rate: 0.3
+      out_features: [res2, res3, res4, res5]
+      out_indices: [0, 1, 2, 3]
+      use_checkpoint: false
+  one_former:
+    num_object_queries: 150

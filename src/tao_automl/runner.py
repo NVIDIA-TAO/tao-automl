@@ -38,6 +38,7 @@ import argparse
 import copy
 import difflib
 import functools
+import hashlib
 import json
 import logging
 import math
@@ -45,12 +46,14 @@ import os
 import re
 import signal
 import sys
+import tempfile
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlsplit
 
 import numpy as np
 import yaml
@@ -63,6 +66,76 @@ from tao_sdk.checkpoints import (
 from tao_automl.utils.spec_utils import resolve_schema_leaf
 
 logger = logging.getLogger(__name__)
+
+
+def _workspace_identity_component(value: Any, *, field_name: str) -> str:
+    """Encode one explicit campaign identity as a deterministic safe path part."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"automl_settings.{field_name} must be a non-empty string")
+    normalized = value.strip()
+    readable = re.sub(r"[^A-Za-z0-9._-]+", "-", normalized).strip("._-")
+    readable = (readable or field_name)[:48]
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:12]
+    return f"{readable}-{digest}"
+
+
+def _prepare_run_workspace(
+    workspace_path: str,
+    *,
+    automl_settings: dict[str, Any],
+    resume: bool,
+) -> str:
+    """Create or resolve one isolated runner workspace.
+
+    A preregistered campaign/job pair maps to a deterministic directory.
+    Fresh execution owns that identity exclusively; an existing path requires
+    explicit resume. Ad-hoc execution uses ``mkdtemp`` so two jobs started in
+    the same second can never cross-load one another's ``.automl`` state.
+    """
+    base = Path(workspace_path)
+    campaign_id = automl_settings.get("campaign_id")
+    job_id = automl_settings.get("job_id")
+    if (campaign_id is None) != (job_id is None):
+        raise ValueError(
+            "automl_settings.campaign_id and automl_settings.job_id must be "
+            "provided together"
+        )
+
+    if campaign_id is not None:
+        campaign_part = _workspace_identity_component(
+            campaign_id,
+            field_name="campaign_id",
+        )
+        job_part = _workspace_identity_component(job_id, field_name="job_id")
+        campaign_dir = base / f"campaign_{campaign_part}"
+        target = campaign_dir / f"job_{job_part}"
+        if resume:
+            if not target.is_dir():
+                raise FileNotFoundError(
+                    "Cannot resume AutoML campaign job: deterministic workspace "
+                    f"does not exist at {target}"
+                )
+            return str(target)
+        campaign_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            target.mkdir()
+        except FileExistsError as exc:
+            raise FileExistsError(
+                "AutoML campaign job workspace already exists at "
+                f"{target}; use resume=True or a new job_id"
+            ) from exc
+        return str(target)
+
+    if resume:
+        if not base.is_dir():
+            raise FileNotFoundError(
+                f"Cannot resume AutoML: workspace does not exist at {base}"
+            )
+        return str(base)
+
+    base.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    return tempfile.mkdtemp(prefix=f"run_{timestamp}_", dir=str(base))
 
 
 # ---------------------------------------------------------------------------
@@ -285,6 +358,290 @@ _DEFER_ARTIFACT_PRUNING_ALGORITHMS = frozenset({
     "hybrid",
 })
 _CHECKPOINT_RETENTION_STRATEGIES = frozenset({"auto", "best", "terminal"})
+_PTM_RUNTIME_MANIFEST_FILENAME = "ptm_runtime_manifest.json"
+_SECRET_FIELD_NAMES = frozenset({
+    "api_key",
+    "apikey",
+    "access_key",
+    "secret_key",
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "access_token",
+    "refresh_token",
+    "session_token",
+    "auth_token",
+    "bearer_token",
+    "authorization",
+    "credentials",
+    "private_key",
+    "ngc_api_key",
+    "aws_access_key_id",
+    "aws_secret_access_key",
+    "aws_session_token",
+})
+
+
+def _ptm_runtime_mode(objective_config: Any) -> str:
+    """Resolve the mode bound into a PTM runtime inventory."""
+    selection = getattr(objective_config, "selection_config", None)
+    mode = getattr(selection, "mode", None)
+    if mode not in {"accuracy", "latency", "multi_objective"}:
+        raise ValueError(
+            "PTM-aware runtime requires archive selection with mode "
+            "'accuracy', 'latency', or 'multi_objective'"
+        )
+    if not getattr(objective_config, "is_multi_objective", False):
+        raise ValueError(
+            "PTM-aware objective search requires both raw accuracy and "
+            "latency objectives"
+        )
+    return mode
+
+
+def _validate_ptm_runtime_inventory(
+    *,
+    enabled: bool | None,
+    inventory: Any,
+    objective_config: Any,
+    network_arch: str,
+    algorithm: Any,
+) -> tuple[bool, Any]:
+    """Validate the live PTM trust boundary before any evaluation or launch."""
+    if enabled is not None and not isinstance(enabled, bool):
+        raise TypeError("ptm_aware_runtime must be a boolean when provided")
+    if enabled is False and inventory is not None:
+        raise ValueError(
+            "resolved_ptm_inventory was provided while ptm_aware_runtime is false"
+        )
+    active = enabled is True or inventory is not None
+    if not active:
+        return False, None
+    if inventory is None:
+        raise ValueError(
+            "ptm_aware_runtime requires a live typed resolved_ptm_inventory"
+        )
+
+    # Import lazily so the legacy runner does not acquire a PTM-registry
+    # dependency or accept a JSON replay as an executable trust object.
+    from tao_automl.ptm_runtime import ResolvedPTMRuntimeInventory
+    from tao_automl.recommendation_audit import canonical_audit_sha256
+
+    if not isinstance(inventory, ResolvedPTMRuntimeInventory):
+        raise TypeError(
+            "resolved_ptm_inventory must be a live "
+            "ResolvedPTMRuntimeInventory; serialized reports are audit-only"
+        )
+    inventory.validate()
+
+    normalized_algorithm = str(algorithm or "").strip().lower()
+    if inventory.algorithm != normalized_algorithm:
+        raise ValueError(
+            "Resolved PTM inventory algorithm does not match automl_settings"
+        )
+    if inventory.model != network_arch:
+        raise ValueError(
+            f"Resolved PTM inventory model {inventory.model!r} does not match "
+            f"runner model {network_arch!r}"
+        )
+    mode = _ptm_runtime_mode(objective_config)
+    if inventory.mode != mode:
+        raise ValueError(
+            "Resolved PTM inventory mode does not match objective selection mode"
+        )
+    objective_sha256 = canonical_audit_sha256(objective_config.to_dict())
+    if inventory.objective_config_sha256 != objective_sha256:
+        raise ValueError(
+            "Objective configuration changed after PTM inventory resolution"
+        )
+
+    if mode in {"latency", "multi_objective"}:
+        if inventory.ptm_policy != "all":
+            raise ValueError(
+                f"{mode} PTM-aware runtime requires ptm_policy='all'"
+            )
+        prepared_ids = tuple(sorted(
+            item.checkpoint_id for item in inventory.report.prepared
+        ))
+        if inventory.checkpoint_ids != prepared_ids:
+            raise ValueError(
+                f"{mode} PTM-aware runtime requires the complete prepared "
+                "checkpoint inventory"
+            )
+    return True, inventory
+
+
+def _iter_override_bindings(
+    value: Any,
+    prefix: str = "",
+) -> list[tuple[str, Any]]:
+    """Flatten only caller-owned override leaves into dotted/indexed paths."""
+    if isinstance(value, dict):
+        if not value and prefix:
+            return [(prefix, {})]
+        bindings = []
+        for key, item in value.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            bindings.extend(_iter_override_bindings(item, path))
+        return bindings
+    if isinstance(value, list):
+        if not value and prefix:
+            return [(prefix, [])]
+        bindings = []
+        for index, item in enumerate(value):
+            bindings.extend(
+                _iter_override_bindings(item, f"{prefix}[{index}]")
+            )
+        return bindings
+    return [(prefix, value)]
+
+
+def _paths_overlap(left: str, right: str) -> bool:
+    """Return whether two dotted/indexed paths overlap structurally."""
+    return (
+        left == right
+        or left.startswith(f"{right}.")
+        or left.startswith(f"{right}[")
+        or right.startswith(f"{left}.")
+        or right.startswith(f"{left}[")
+    )
+
+
+def _validate_ptm_runner_bindings(
+    *,
+    inventory: Any,
+    spec_overrides: dict[str, Any] | None,
+    data_source_bindings: dict[str, Any],
+) -> None:
+    """Prove runner-applied values were included before inventory freezing."""
+    override_bindings = _iter_override_bindings(spec_overrides or {})
+    for arm in inventory.arms:
+        checkpoint_target = arm.checkpoint_target
+        conflicting = sorted(
+            path
+            for path, _ in override_bindings
+            if _paths_overlap(path, checkpoint_target)
+        )
+        if conflicting:
+            raise ValueError(
+                "PTM-aware runtime exclusively owns checkpoint target "
+                f"{checkpoint_target!r}; remove spec override(s): "
+                + ", ".join(conflicting)
+            )
+        for path, expected in override_bindings:
+            actual = _get_dotted_value(arm.effective_base_spec, path)
+            if actual != expected:
+                raise ValueError(
+                    f"spec_overrides value for {path!r} was not frozen into "
+                    f"PTM arm {arm.checkpoint_id!r}; resolve a new typed "
+                    "inventory after applying all user overrides"
+                )
+        for path, expected in sorted(data_source_bindings.items()):
+            actual = _get_dotted_value(arm.effective_base_spec, path)
+            if actual != expected:
+                raise ValueError(
+                    f"Runner dataset binding {path!r} was not frozen into "
+                    f"PTM arm {arm.checkpoint_id!r}; resolve the inventory "
+                    "with the same dataset inputs before execution"
+                )
+
+
+def _assert_secret_free_manifest(value: Any, path: str = "manifest") -> None:
+    """Reject secret-bearing data before persisting a runtime manifest."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            normalized = re.sub(r"[^a-z0-9]+", "_", str(key).lower()).strip("_")
+            if (
+                normalized in _SECRET_FIELD_NAMES
+                or normalized.endswith("_password")
+                or normalized.endswith("_secret")
+                or normalized.endswith("_private_key")
+            ):
+                raise ValueError(
+                    f"PTM runtime manifest contains secret-bearing field "
+                    f"{path}.{key}; secrets must remain outside audit artifacts"
+                )
+            _assert_secret_free_manifest(item, f"{path}.{key}")
+        return
+    if isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            _assert_secret_free_manifest(item, f"{path}[{index}]")
+        return
+    if not isinstance(value, str):
+        return
+    lowered = value.strip().lower()
+    if lowered.startswith("bearer ") or "-----begin " in lowered and "private key-----" in lowered:
+        raise ValueError(
+            f"PTM runtime manifest contains secret material at {path}"
+        )
+    parsed = urlsplit(value)
+    if parsed.scheme and parsed.netloc:
+        if parsed.username is not None or parsed.password is not None:
+            raise ValueError(
+                f"PTM runtime manifest contains URL credentials at {path}"
+            )
+        for key, _ in parse_qsl(parsed.query, keep_blank_values=True):
+            normalized = re.sub(
+                r"[^a-z0-9]+", "_", key.lower()
+            ).strip("_")
+            if normalized in _SECRET_FIELD_NAMES or normalized in {
+                "x_amz_credential",
+                "x_amz_signature",
+                "x_amz_security_token",
+            }:
+                raise ValueError(
+                    f"PTM runtime manifest contains signed URL data at {path}"
+                )
+
+
+def _persist_ptm_runtime_manifest(
+    *,
+    automl: Any,
+    workspace_path: str,
+    resume: bool,
+) -> tuple[dict[str, Any], str, str]:
+    """Verify and atomically persist the controller's unhashed manifest."""
+    from tao_automl.recommendation_audit import canonical_audit_sha256
+
+    manifest = getattr(automl, "ptm_runtime_manifest", None)
+    manifest_sha256 = getattr(automl, "ptm_runtime_manifest_sha256", None)
+    if not isinstance(manifest, dict):
+        raise RuntimeError(
+            "PTM-aware AutoML did not expose a runtime manifest"
+        )
+    if not isinstance(manifest_sha256, str) or not manifest_sha256:
+        raise RuntimeError(
+            "PTM-aware AutoML did not expose a runtime manifest hash"
+        )
+    if canonical_audit_sha256(manifest) != manifest_sha256:
+        raise RuntimeError("PTM runtime manifest integrity verification failed")
+    _assert_secret_free_manifest(manifest)
+    record_path = Path(workspace_path) / _PTM_RUNTIME_MANIFEST_FILENAME
+    record = {
+        "manifest": manifest,
+        "manifest_sha256": manifest_sha256,
+    }
+    if record_path.exists():
+        try:
+            existing = json.loads(record_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"Existing PTM runtime manifest is unreadable: {record_path}"
+            ) from exc
+        if existing != record:
+            raise RuntimeError(
+                "PTM runtime manifest conflicts with the persisted workspace "
+                "record; refusing to overwrite runtime provenance"
+            )
+    elif resume:
+        raise RuntimeError(
+            "PTM-aware resume requires the persisted runtime manifest at "
+            f"{record_path}"
+        )
+    else:
+        _atomic_write_json(record_path, record)
+    return copy.deepcopy(manifest), manifest_sha256, str(record_path)
 
 
 def _bool_setting(value: Any) -> bool:
@@ -1049,7 +1406,10 @@ def _metric_payload_from_values(
     missing = [name for name in metric_names if name not in values]
     if missing:
         return None
-    return {name: values[name] for name in metric_names}
+    # Preserve flat finite diagnostics returned alongside the declared
+    # objectives (for example latency p95, dispersion, and confidence bounds).
+    # ObjectiveConfig decides which keys participate in optimization.
+    return dict(values)
 
 
 def _metric_payload_primary(payload, metric_name: str):
@@ -1322,6 +1682,10 @@ class MetricExtractorError(RuntimeError):
     not to stdout — in which case the right fix is to pass ``eval_fn=`` with
     a status.json reader).
     """
+
+
+class NoFeasibleCandidateError(RuntimeError):
+    """Raised when a constrained mode has no candidate under its own policy."""
 
 
 # Spec keys we treat as per-job output directories. When a user hardcodes
@@ -1885,6 +2249,81 @@ def _first_present_key(source: dict, keys) -> tuple[str | None, int | None]:
     return None, None
 
 
+def _resolve_base_checkpoint_target(
+    skill_ctx: SkillContext,
+    *,
+    explicit_target: str | None = None,
+) -> str:
+    """Resolve one unambiguous PTM spec path from checked-in skill metadata."""
+    action_inputs = skill_ctx.action_cfg.get("inputs") or {}
+    if not isinstance(action_inputs, dict):
+        action_inputs = {}
+    declared_inputs = set(action_inputs)
+
+    if explicit_target is not None:
+        if not isinstance(explicit_target, str) or not explicit_target.strip():
+            raise ValueError("base_checkpoint_target must be a non-empty string")
+        target = explicit_target.strip()
+        if target not in declared_inputs:
+            raise ValueError(
+                f"base_checkpoint_target {target!r} is not a declared "
+                f"{skill_ctx.action!r} input"
+            )
+        return target
+
+    spec_params = skill_ctx.skill_info.get("spec_params") or {}
+    action_params = spec_params.get(skill_ctx.action) or {}
+    candidates = sorted(
+        key
+        for key, role in action_params.items()
+        if role == "ptm_if_no_resume_model" and key in declared_inputs
+    )
+    conventional = "train.pretrained_model_path"
+    if conventional in candidates:
+        return conventional
+    if len(candidates) == 1:
+        return candidates[0]
+    if not candidates:
+        raise ValueError(
+            f"Skill {skill_ctx.skill_dir.name!r} does not declare a "
+            "ptm_if_no_resume_model input for this action"
+        )
+    raise ValueError(
+        "Multiple pretrained-checkpoint inputs are declared; pass "
+        "base_checkpoint_target explicitly. Candidates: "
+        + ", ".join(candidates)
+    )
+
+
+def _inject_base_checkpoint(
+    base_specs: dict[str, Any],
+    *,
+    skill_ctx: SkillContext,
+    base_checkpoint: str,
+    base_checkpoint_target: str | None,
+    spec_overrides: dict[str, Any] | None,
+) -> tuple[dict[str, Any], str | None]:
+    """Inject the user PTM without silently losing a conflicting override."""
+    if base_checkpoint in (None, ""):
+        return base_specs, None
+    if not isinstance(base_checkpoint, str) or not base_checkpoint.strip():
+        raise ValueError("base_checkpoint must be a non-empty string")
+    checkpoint = base_checkpoint.strip()
+    target = _resolve_base_checkpoint_target(
+        skill_ctx,
+        explicit_target=base_checkpoint_target,
+    )
+    explicit_override = _get_dotted_value(spec_overrides or {}, target)
+    if explicit_override not in (None, "", checkpoint):
+        raise ValueError(
+            f"base_checkpoint conflicts with spec_overrides[{target!r}]; "
+            "configure the checkpoint in exactly one place"
+        )
+    updated = copy.deepcopy(base_specs)
+    _set_dotted_value(updated, target, checkpoint)
+    return updated, target
+
+
 def _append_adjustment(rec, adjustment: dict[str, Any]) -> None:
     adjustments = getattr(rec, "adjustments", None)
     if adjustments is None:
@@ -1980,6 +2419,33 @@ def _classify_failure(logs: str) -> str | None:
     return None
 
 
+def _platform_failure_is_retriable(sdk: Any, job_id: str) -> bool:
+    """Return whether the execution backend owns retry for this failure.
+
+    Some execution SDKs, notably SLURM, classify infrastructure failures from
+    the job logs and resubmit the same durable job identity after the scheduler
+    reaches a terminal state.  AutoML must not cancel that writer merely
+    because the same retryable text becomes visible slightly before the
+    scheduler reports ``FAILED``.
+    """
+    analyze = getattr(sdk, "get_failure_analysis", None)
+    if not callable(analyze):
+        return False
+    try:
+        analysis = analyze(job_id)
+    except Exception as exc:
+        logger.warning(
+            "Could not obtain platform failure analysis for job %s: %s",
+            job_id,
+            exc,
+        )
+        return False
+    return (
+        isinstance(analysis, dict)
+        and analysis.get("retriable") is True
+    )
+
+
 def _compare_to_baseline(
     baseline_metric: float | None,
     best_metric: float | None,
@@ -2008,6 +2474,10 @@ def _compare_to_baseline(
 # key argument, which the source scan cannot see — keep them listed.
 KNOWN_AUTOML_SETTINGS = frozenset({
     "algorithm",
+    "accuracy_constraint",
+    "accuracy_metric",
+    "accuracy_retention_fraction",
+    "accuracy_tolerance",
     "allow_unsafe_effective_batch",
     "api_key",
     "automl_checkpoint_retention_strategy",
@@ -2031,9 +2501,12 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "automl_range_override",
     "automl_reduction_factor",
     "automl_top_n_percent",
+    "augmentation_rho",
     "base_url",
     "baseline_metric",
     "baseline_record_path",
+    "calibration_points",
+    "campaign_id",
     "direction",
     "enable_llm_range_narrowing",
     "epoch_multiplier",
@@ -2044,10 +2517,15 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "final_evaluation_record_path",
     "hybrid_enable_llm_range_narrowing",
     "include_latency",
+    "job_id",
+    "latency_accuracy_retention",
+    "latency_ci_high_metric",
+    "latency_ci_low_metric",
     "latency_direction",
     "latency_metric",
     "latency_objective",
     "latency_scale",
+    "latency_tolerance",
     "latency_weight",
     "llm_api_key",
     "llm_endpoint",
@@ -2057,14 +2535,24 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "metric",
     "metric_scale",
     "metric_weight",
+    "max_accuracy_degradation",
     "model",
     "multi_objective",
+    "multi_objective_min_accuracy",
+    "objective_acquisition",
+    "objective_normalization",
     "objectives",
+    "random_seed",
+    "require_eval_fn_success",
     "research_program",
     "reuse_best_metric_for_final_evaluation",
     "run_baseline",
     "run_final_evaluation",
     "session_id",
+    "seed",
+    "selection_mode",
+    "selection_score_tolerance",
+    "xi",
     # The effective-batch safety check accepts any sample-count spelling in
     # automl_settings (variable-mediated lookup, invisible to the scan).
 }) | frozenset(_SAMPLE_COUNT_KEYS)
@@ -3034,7 +3522,8 @@ class AutoMLRunner:
 
     @_managed_runner_run
     def run(self, train_dataset_uri="", eval_dataset_uri="",
-            base_checkpoint="", workspace_id=None, image=None,
+            base_checkpoint="", base_checkpoint_target=None,
+            workspace_id=None, image=None,
             automl_settings=None,
             automl_hyperparameters=None, custom_param_ranges=None,
             workspace_path="./automl_workspace",
@@ -3044,6 +3533,7 @@ class AutoMLRunner:
             baseline_fn=None,
             final_eval_fn=None,
             on_recommendation=None, on_result=None, execution=None,
+            ptm_aware_runtime=None, resolved_ptm_inventory=None,
             **platform_kwargs) -> dict:
         """Run a full AutoML optimization loop.
 
@@ -3051,15 +3541,25 @@ class AutoMLRunner:
             train_dataset_uri: Training dataset URI (e.g. "s3://bucket/data").
             eval_dataset_uri: Eval dataset URI (optional).
             base_checkpoint: Pretrained checkpoint URI (optional).
+            base_checkpoint_target: Optional dotted train-spec path for
+                ``base_checkpoint``. Normally resolved from the skill's
+                ``ptm_if_no_resume_model`` declaration; required when that
+                declaration is ambiguous.
             workspace_id: Workspace ID (default: from SDK).
             image: Docker image override. Default: from skill_info.yaml's
                 ``container_image`` (resolved via tao_sdk.versions).
                 Invalid for ``python_script`` execution, which runs through
                 the virtual environment SDK without a container.
-            automl_settings: Algorithm config (see AlgorithmParams).
+            automl_settings: Algorithm config (see AlgorithmParams). Supplying
+                both ``campaign_id`` and ``job_id`` gives this run a
+                deterministic isolated workspace identity; neither may be
+                supplied alone.
             automl_hyperparameters: Param names to search, or None for schema defaults.
             custom_param_ranges: Per-param range overrides.
-            workspace_path: Local path for AutoML state persistence.
+            workspace_path: Local path for AutoML state persistence. Fresh
+                ad-hoc runs create a collision-safe unique child. When
+                ``campaign_id``/``job_id`` are configured, this is the base
+                directory used to derive the deterministic campaign/job child.
             spec_overrides: Dict of spec overrides applied to base specs before
                 AutoML starts. Dotted keys supported (e.g.
                 {"train.epoch": 5, "policy.model_max_length": 40960}).
@@ -3068,6 +3568,15 @@ class AutoMLRunner:
                 overrides ``actions.<action>.execution`` from skill metadata.
                 Example: ``{"type": "python_script", "script":
                 "scripts/train.py", "args": ["--config", "{config_path}"]}``.
+            ptm_aware_runtime: Enable repository-owned, PTM-aware search.
+                A live ``ResolvedPTMRuntimeInventory`` is mandatory when true.
+                Providing ``resolved_ptm_inventory`` also enables the path
+                unless this argument is explicitly false.
+            resolved_ptm_inventory: Live typed inventory returned by
+                ``resolve_ptm_runtime_inventory`` after checkpoint preflight.
+                It is passed unchanged to ``AutoML``. Serialized inventory or
+                preflight reports are audit artifacts and are never restored
+                into executable runtime state.
             **platform_kwargs: Forwarded to ``sdk.create_job(...)``. Pass
                 whichever kwargs your platform SDK accepts (Lepton:
                 ``dedicated_node_group``, ``resource_shape``, ``num_nodes``;
@@ -3166,14 +3675,26 @@ class AutoMLRunner:
               (final_eval_fn raised), ``unavailable``, ``skipped``,
               ``not_run``.
             - ``history``: list of per-recommendation dicts with ``rec_id``,
-              ``metric``, ``objective_score``, ``objective_values``,
-              ``status``, ``failure_reason``, ``adjustments``
+              ``specs``, ``job_id``, ``metric``, ``objective_score``,
+              ``objective_values``, ``status``, ``failure_reason``,
+              ``adjustments``, ``selection_audit``
             - ``pareto_front``: present for multi-objective sessions only
         """
         from tao_automl import AutoML
 
         automl_settings = automl_settings or {"algorithm": "bayesian", "metric": "loss"}
         automl_settings = _validate_automl_settings(automl_settings)
+        objective_config = parse_objective_config(automl_settings)
+        network_arch = self.skill_ctx.network_arch
+        ptm_runtime_enabled, resolved_ptm_inventory = (
+            _validate_ptm_runtime_inventory(
+                enabled=ptm_aware_runtime,
+                inventory=resolved_ptm_inventory,
+                objective_config=objective_config,
+                network_arch=network_arch,
+                algorithm=automl_settings.get("algorithm"),
+            )
+        )
         self._delete_intermediate_ckpt = _bool_setting(
             automl_settings.get("automl_delete_intermediate_ckpt", True)
         )
@@ -3184,16 +3705,21 @@ class AutoMLRunner:
         self._automl = None
         if self._delete_intermediate_ckpt:
             self._validate_artifact_retention_config(platform_kwargs)
-        objective_config = parse_objective_config(automl_settings)
         self._retain_pareto_front = objective_config.is_multi_objective
+        self._require_eval_fn_success = bool(
+            automl_settings.get(
+                "require_eval_fn_success",
+                objective_config.has_archive_selector,
+            )
+        )
         objective_names = objective_config.metric_names
         workspace_id = workspace_id or getattr(self._sdk, "_workspace_id", "")
-        network_arch = self.skill_ctx.network_arch
 
-        if not resume:
-            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-            workspace_path = os.path.join(workspace_path, f"run_{ts}")
-        os.makedirs(workspace_path, exist_ok=True)
+        workspace_path = _prepare_run_workspace(
+            workspace_path,
+            automl_settings=automl_settings,
+            resume=resume,
+        )
         self._workspace_path = workspace_path
         if resume:
             self._terminal_job_ids.update(_load_artifact_jobs(workspace_path))
@@ -3253,6 +3779,14 @@ class AutoMLRunner:
         # Inject dataset URIs declared by the skill's data_sources config.
         # Generic over any skill: maps spec keys to train/eval URIs using the
         # skill's own rules (source, path template, path_from_format).
+        data_source_rules = (
+            self.skill_ctx.skill_info.get("data_sources", {})
+            .get(self.skill_ctx.action, {})
+        )
+        data_source_before = {
+            path: copy.deepcopy(_get_dotted_value(base_specs, path))
+            for path in data_source_rules
+        }
         self._apply_data_sources(
             skill_info=self.skill_ctx.skill_info, specs=base_specs,
             action=self.skill_ctx.action,
@@ -3260,6 +3794,38 @@ class AutoMLRunner:
             eval_dataset_uri=eval_dataset_uri,
             data_format=data_format,
         )
+        data_source_bindings = {
+            path: copy.deepcopy(_get_dotted_value(base_specs, path))
+            for path, previous in data_source_before.items()
+            if _get_dotted_value(base_specs, path) != previous
+        }
+
+        # The legacy runner accepted base_checkpoint but never injected it
+        # into the action spec, so a caller could believe a PTM was active
+        # while training from another/default initialization. Resolve the
+        # skill-owned input contract before any launch and reject conflicting
+        # user representations.
+        if ptm_runtime_enabled and (
+            base_checkpoint not in (None, "")
+            or base_checkpoint_target is not None
+        ):
+            raise ValueError(
+                "PTM-aware runtime exclusively owns checkpoint identity; "
+                "resolve user/default PTM policy into resolved_ptm_inventory "
+                "instead of passing base_checkpoint or base_checkpoint_target"
+            )
+        base_specs, resolved_base_checkpoint_target = _inject_base_checkpoint(
+            base_specs,
+            skill_ctx=self.skill_ctx,
+            base_checkpoint=base_checkpoint,
+            base_checkpoint_target=base_checkpoint_target,
+            spec_overrides=spec_overrides,
+        )
+        if resolved_base_checkpoint_target is not None:
+            logger.info(
+                "Resolved base checkpoint to spec input %s",
+                resolved_base_checkpoint_target,
+            )
 
         # --- fix #2: validate spec_overrides + automl_hyperparameters
         #              against the schema before anything expensive runs.
@@ -3270,6 +3836,12 @@ class AutoMLRunner:
                 allow_unknown=resolved_execution is None,
             )
             base_specs = self._merge_specs(base_specs, spec_overrides)
+        if ptm_runtime_enabled:
+            _validate_ptm_runner_bindings(
+                inventory=resolved_ptm_inventory,
+                spec_overrides=spec_overrides,
+                data_source_bindings=data_source_bindings,
+            )
         if automl_hyperparameters:
             _validate_keys_against_schema(
                 list(automl_hyperparameters), base_specs, "automl_hyperparameter",
@@ -3290,6 +3862,42 @@ class AutoMLRunner:
         # original scale.
         metric_name = objective_config.primary_metric
         _effective_dir = objective_config.primary_direction
+
+        automl_kwargs = {
+            "workspace": workspace_path,
+            "network": network_arch,
+            "train_specs": base_specs,
+            "settings": automl_settings,
+            "automl_hyperparameters": automl_hyperparameters,
+            "custom_param_ranges": custom_param_ranges,
+            "action": self.skill_ctx.action,
+            "search_schema": self.skill_ctx.schema,
+            "resume": resume,
+        }
+        automl = None
+        ptm_runtime_record = None
+        if ptm_runtime_enabled:
+            # Construct the controller before any baseline callback. Its PTM
+            # builder revalidates the live preflight artifacts and inventory,
+            # so an invalid PTM trust object cannot launch even a baseline job.
+            automl = AutoML(
+                **automl_kwargs,
+                resolved_ptm_inventory=resolved_ptm_inventory,
+            )
+            (
+                runtime_manifest,
+                runtime_manifest_sha256,
+                runtime_manifest_path,
+            ) = _persist_ptm_runtime_manifest(
+                automl=automl,
+                workspace_path=workspace_path,
+                resume=resume,
+            )
+            ptm_runtime_record = {
+                "manifest": runtime_manifest,
+                "manifest_sha256": runtime_manifest_sha256,
+                "record_path": runtime_manifest_path,
+            }
 
         baseline = {
             "enabled": bool(automl_settings.get("run_baseline", True)),
@@ -3340,15 +3948,10 @@ class AutoMLRunner:
         if baseline_record_path:
             baseline.setdefault("record_path", baseline_record_path)
 
-        automl = AutoML(
-            workspace=workspace_path, network=network_arch,
-            train_specs=base_specs, settings=automl_settings,
-            automl_hyperparameters=automl_hyperparameters,
-            custom_param_ranges=custom_param_ranges,
-            action=self.skill_ctx.action,
-            search_schema=self.skill_ctx.schema,
-            resume=resume,
-        )
+        if automl is None:
+            # Keep the legacy direct execution path byte-for-byte compatible
+            # at the AutoML boundary: do not pass a new optional keyword.
+            automl = AutoML(**automl_kwargs)
         self._automl = automl
         logger.info("Starting AutoML loop: network=%s, algorithm=%s, "
                     "metric=%s, direction=%s",
@@ -3600,6 +4203,28 @@ class AutoMLRunner:
         progress = automl.get_progress()
         history = automl.get_history()
         if best is None:
+            get_status = getattr(automl, "get_status", None)
+            status_for_failure = get_status() if callable(get_status) else {}
+            selection_analysis = (
+                status_for_failure.get("selection_analysis") or {}
+            )
+            selected_mode = (
+                selection_analysis.get("algorithm", {})
+                .get("configuration", {})
+                .get("mode")
+            )
+            selected_status = (
+                selection_analysis.get("selections", {})
+                .get(selected_mode, {})
+            )
+            if (
+                selected_status.get("status")
+                in {
+                    "no_accuracy_feasible_candidates",
+                    "no_multi_objective_accuracy_feasible_candidates",
+                }
+            ):
+                raise NoFeasibleCandidateError(selected_status.get("reason"))
             failed = [r.id for r in history if r.status == "failure"]
             raise RuntimeError(
                 "AutoML finished without a successful recommendation; "
@@ -3673,6 +4298,12 @@ class AutoMLRunner:
         # parent checkpoints must survive a later resume.
         self._prune_intermediate_artifacts(automl, completed=search_complete)
 
+        get_status = getattr(automl, "get_status", None)
+        status_snapshot = get_status() if callable(get_status) else {}
+        audit_by_id = {
+            item.get("rec_id"): item.get("selection_audit")
+            for item in status_snapshot.get("recommendations", [])
+        }
         result = {
             "best": {
                 "rec_id": best.id if best else None,
@@ -3688,12 +4319,15 @@ class AutoMLRunner:
             "history": [
                 {
                     "rec_id": r.id,
+                    "specs": r.specs,
+                    "job_id": r.job_id,
                     "metric": _recommendation_primary_metric(r, metric_name),
                     "objective_score": getattr(r, "objective_score", None),
                     "objective_values": _recommendation_objective_values(r),
                     "status": r.status,
                     "failure_reason": getattr(r, "failure_reason", None),
                     "adjustments": getattr(r, "adjustments", []),
+                    "selection_audit": audit_by_id.get(r.id),
                 }
                 for r in history
             ],
@@ -3704,7 +4338,10 @@ class AutoMLRunner:
             _effective_dir,
         )
         if objective_config.is_multi_objective:
-            result["pareto_front"] = automl.get_status().get("pareto_front", [])
+            result["pareto_front"] = status_snapshot.get("pareto_front", [])
+            result["selection_analysis"] = status_snapshot.get("selection_analysis")
+        if ptm_runtime_record is not None:
+            result["ptm_runtime"] = ptm_runtime_record
         logger.info(
             "AutoML %s: %d recommendations, best metric=%.6f (rec %s)",
             "complete" if search_complete else "stopped before controller completion",
@@ -3921,7 +4558,21 @@ class AutoMLRunner:
                                         rec.id,
                                         _format_metric_payload(primary_metric),
                                     )
-                    if es:
+                    if es == "FAIL" and _platform_failure_is_retriable(
+                        self._sdk, job.id
+                    ):
+                        # The backend must observe the scheduler's terminal
+                        # state to perform its bounded retry.  Canceling here
+                        # would convert a retryable infrastructure incident
+                        # into an AutoML candidate failure.
+                        cached_exec_status = None
+                        logger.warning(
+                            "Rec %d: job %s has a retryable platform failure; "
+                            "deferring cancellation to preserve backend retry",
+                            rec.id,
+                            job.id,
+                        )
+                    elif es:
                         cached_exec_status = es
                         if es == "FAIL":
                             logger.warning(
@@ -4015,9 +4666,27 @@ class AutoMLRunner:
                     eval_fn(rec, job.id), "eval_fn"
                 )
             except Exception as ex:
-                logger.warning("eval_fn raised for rec %d: %s; falling back "
-                                "to log-extracted metric", rec.id, ex)
+                if getattr(self, "_require_eval_fn_success", False):
+                    rec.failure_reason = f"required_eval_fn_failed:{ex}"
+                    logger.warning(
+                        "Required eval_fn raised for rec %d: %s",
+                        rec.id,
+                        ex,
+                    )
+                    return None, "failure"
+                logger.warning(
+                    "eval_fn raised for rec %d: %s; falling back to "
+                    "log-extracted metric",
+                    rec.id,
+                    ex,
+                )
                 eval_metric = None
+            if (
+                eval_metric is None
+                and getattr(self, "_require_eval_fn_success", False)
+            ):
+                rec.failure_reason = "required_eval_fn_missing_metric"
+                return None, "metric_missing"
             if eval_metric is not None:
                 if isinstance(eval_metric, dict):
                     metric_values.update({
@@ -4262,7 +4931,18 @@ class AutoMLRunner:
                                             )
                                         ),
                                     )
-                    if es:
+                    if es == "FAIL" and _platform_failure_is_retriable(
+                        self._sdk, job_id
+                    ):
+                        cached_exec_status = None
+                        logger.warning(
+                            "Resume: rec %d job %s has a retryable platform "
+                            "failure; deferring cancellation to preserve "
+                            "backend retry",
+                            rec_id,
+                            job_id,
+                        )
+                    elif es:
                         cached_exec_status = es
                         if es == "FAIL":
                             logger.warning(
@@ -4352,8 +5032,13 @@ class AutoMLRunner:
                 try:
                     em = _callback_metric_payload(eval_fn(rec, job_id), "eval_fn")
                 except Exception as ex:
-                    logger.warning("eval_fn raised during resume for rec %d: %s",
-                                    rec_id, ex)
+                    logger.warning(
+                        "eval_fn raised during resume for rec %d: %s",
+                        rec_id,
+                        ex,
+                    )
+                    if getattr(self, "_require_eval_fn_success", False):
+                        rec.failure_reason = f"required_eval_fn_failed:{ex}"
                     em = None
                 if em is not None:
                     if isinstance(em, dict):
@@ -4364,7 +5049,16 @@ class AutoMLRunner:
                     else:
                         metric_values[metric_name] = float(em)
                     eval_metric_used = True
-            if not eval_metric_used:
+            if (
+                not eval_metric_used
+                and getattr(self, "_require_eval_fn_success", False)
+            ):
+                rec.failure_reason = (
+                    rec.failure_reason or "required_eval_fn_missing_metric"
+                )
+                metric_value = None
+                report_status = "failure"
+            elif not eval_metric_used:
                 local_metrics = {}
                 for index, name in enumerate(metric_names):
                     local_metric = _extract_metric_from_local_results(
@@ -4381,10 +5075,15 @@ class AutoMLRunner:
                         "Resume: rec %d using local status metric(s)=%s",
                         rec_id, _format_metric_payload(local_metrics),
                     )
-            metric_value = _metric_payload_from_values(
-                metric_values, metric_name, metric_names
-            )
-            report_status = "success" if metric_value is not None else "failure"
+            if eval_metric_used or not getattr(
+                self,
+                "_require_eval_fn_success",
+                False,
+            ):
+                metric_value = _metric_payload_from_values(
+                    metric_values, metric_name, metric_names
+                )
+                report_status = "success" if metric_value is not None else "failure"
 
         self._finalize_terminal_job(
             automl=automl,
@@ -4744,6 +5443,7 @@ def run_automl_plan(plan: dict, platform: str) -> dict:
         train_dataset_uri=params["train_dataset_uri"],
         eval_dataset_uri=params.get("eval_dataset_uri", ""),
         base_checkpoint=params.get("base_checkpoint", ""),
+        base_checkpoint_target=params.get("base_checkpoint_target"),
         workspace_id=params.get("workspace_id"),
         image=params.get("image"),
         automl_settings=automl_settings,

@@ -1,0 +1,196 @@
+{
+  "archives": [
+    {
+      "checksums": [
+        {
+          "algorithm": "md5",
+          "source": {
+            "provider": "PyTorch TorchVision",
+            "url": "https://github.com/pytorch/vision/blob/01dfa8ea81972bb74b52dc01e6a1b43b26b62020/torchvision/datasets/voc.py",
+            "version": "git:01dfa8ea81972bb74b52dc01e6a1b43b26b62020"
+          },
+          "value": "c52e279531787c972589f7e41ab4ae64"
+        }
+      ],
+      "expected_size_bytes": null,
+      "filename": "VOCtrainval_06-Nov-2007.tar",
+      "official_download_page": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/index.html",
+      "role": "trainval",
+      "sha256_status": "not_published_by_the_official_source_or_pinned_checksum_source",
+      "url": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar"
+    },
+    {
+      "checksums": [
+        {
+          "algorithm": "md5",
+          "source": {
+            "provider": "PyTorch TorchVision",
+            "url": "https://github.com/pytorch/vision/blob/01dfa8ea81972bb74b52dc01e6a1b43b26b62020/torchvision/datasets/voc.py",
+            "version": "git:01dfa8ea81972bb74b52dc01e6a1b43b26b62020"
+          },
+          "value": "b6e924de25625d8de591ea690078ad9f"
+        }
+      ],
+      "expected_size_bytes": null,
+      "filename": "VOCtest_06-Nov-2007.tar",
+      "official_download_page": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/index.html",
+      "role": "test",
+      "sha256_status": "not_published_by_the_official_source_or_pinned_checksum_source",
+      "url": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar"
+    }
+  ],
+  "categories": [
+    "aeroplane",
+    "bicycle",
+    "bird",
+    "boat",
+    "bottle",
+    "bus",
+    "car",
+    "cat",
+    "chair",
+    "cow",
+    "diningtable",
+    "dog",
+    "horse",
+    "motorbike",
+    "person",
+    "pottedplant",
+    "sheep",
+    "sofa",
+    "train",
+    "tvmonitor"
+  ],
+  "conversion_contract": {
+    "annotation_id_order": "ascending VOC image identifier, then XML object order",
+    "bbox": {
+      "coco_format": "[x_min_zero_based, y_min_zero_based, width, height]",
+      "formula": {
+        "height": "ymax - ymin + 1",
+        "width": "xmax - xmin + 1",
+        "x": "xmin - 1",
+        "y": "ymin - 1"
+      },
+      "source_format": "one-based inclusive VOC xmin,ymin,xmax,ymax",
+      "source_values_preserved_in": "annotation.voc_bbox"
+    },
+    "category_ids": "one-based manifest category order",
+    "difficult": {
+      "coco_iscrowd": 0,
+      "policy": "preserve as annotation.difficult; never reinterpret as COCO crowd",
+      "source_values": [
+        0,
+        1
+      ]
+    },
+    "image_id": "base-10 integer value of the six-digit VOC image identifier",
+    "output_annotations": {
+      "train": "coco/annotations/instances_train2007.json",
+      "test": "coco/annotations/instances_test2007.json",
+      "trainval": "coco/annotations/instances_trainval2007.json",
+      "val": "coco/annotations/instances_val2007.json"
+    },
+    "output_image_root": "VOCdevkit/VOC2007/JPEGImages"
+  },
+  "created_on": "2026-07-29",
+  "dataset_id": "pascal_voc_2007_full_detection",
+  "dataset_version": "2007-11-06",
+  "expected_counts": {
+    "combined": {
+      "images": 9963,
+      "objects_non_difficult": 24640,
+      "objects_total": null
+    },
+    "test": {
+      "count_derivation": "official combined total minus official trainval total",
+      "images": 4952,
+      "objects_non_difficult": 12032,
+      "objects_total": null
+    },
+    "train": {
+      "images": 2501,
+      "objects_non_difficult": 6301,
+      "objects_total": null
+    },
+    "trainval": {
+      "category_objects_non_difficult": {
+        "aeroplane": 306,
+        "bicycle": 353,
+        "bird": 486,
+        "boat": 290,
+        "bottle": 505,
+        "bus": 229,
+        "car": 1250,
+        "cat": 376,
+        "chair": 798,
+        "cow": 259,
+        "diningtable": 215,
+        "dog": 510,
+        "horse": 362,
+        "motorbike": 339,
+        "person": 4690,
+        "pottedplant": 514,
+        "sheep": 257,
+        "sofa": 248,
+        "train": 297,
+        "tvmonitor": 324
+      },
+      "images": 5011,
+      "objects_non_difficult": 12608,
+      "objects_total": null
+    },
+    "val": {
+      "images": 2510,
+      "objects_non_difficult": 6307,
+      "objects_total": null
+    }
+  },
+  "frozen": true,
+  "license_and_terms": {
+    "citation_required": true,
+    "citation_url": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/index.html#citation",
+    "dataset_wide_spdx_license": null,
+    "database_rights_url": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/index.html#database-rights",
+    "flickr_terms_url": "https://www.flickr.com/help/terms",
+    "license_status": "source_image_rights_vary_manual_review_required",
+    "preparation_requires_explicit_terms_acknowledgement": true,
+    "redistribution_permission": "not_asserted_by_this_manifest",
+    "test_set_policy": "test annotations are retained for one-time reporting and validation only; never use test observations for AutoML recommendation, tuning, threshold changes, or winner selection",
+    "usage_notice": "VOC2007 contains Flickr-sourced images. Users must review and comply with the VOC database-rights notice, source-image terms, and organizational legal policy before downloading or using the data."
+  },
+  "models": [
+    "dino",
+    "deformable_detr",
+    "rtdetr"
+  ],
+  "official_metadata": {
+    "dataset_page": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/index.html",
+    "development_kit_documentation": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/htmldoc/",
+    "statistics_page": "https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/dbstats.html"
+  },
+  "schema_version": 1,
+  "scope": {
+    "annotation_type": "VOC XML bounding boxes converted to COCO detection JSON",
+    "excluded_tasks": [
+      "classification",
+      "grounding",
+      "instance_segmentation",
+      "panoptic_segmentation",
+      "semantic_segmentation"
+    ],
+    "primary_metric_contract": "COCO bbox AP/AP50 on converted annotations",
+    "task": "object_detection"
+  },
+  "security_limits": {
+    "maximum_archive_members": 100000,
+    "maximum_member_bytes": 104857600,
+    "maximum_total_uncompressed_bytes": 2147483648,
+    "maximum_xml_bytes": 2097152
+  },
+  "source_identity": {
+    "checksum_note": "Oxford publishes the archive URLs but no SHA-256 values on the cited dataset page. The commit-pinned TorchVision VOC loader publishes the two MD5 archive identities. The preparer verifies those published identities and records computed SHA-256 values without presenting them as publisher-provided checksums.",
+    "count_note": "Published object statistics count non-difficult evaluation objects. Total XML object counts, including difficult objects, are deliberately not invented; the preparer derives and records them while proving source-to-output preservation.",
+    "publisher": "PASCAL Visual Object Classes / University of Oxford Visual Geometry Group",
+    "release": "annotated VOC2007 trainval and test archives dated 2007-11-06"
+  }
+}

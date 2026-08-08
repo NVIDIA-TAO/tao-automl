@@ -1,0 +1,131 @@
+{
+  "candidate_id": "seed_271828_rec_6",
+  "historical_checkpoint": {
+    "epoch": 9,
+    "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/ce213919-8b61-4d86-b82f-c439ce0823d2/results_dir/train/model_epoch_009_step_00440.pth",
+    "sha256": "0338c35be50bbad6189d38e8f9007856a60e87a0861c8a6ff5d0bf85cd6df6c5",
+    "size_bytes": 475869698,
+    "storage_observation": "missing_before_preregistration"
+  },
+  "historical_training_provenance": {
+    "ended_at_utc": "2026-07-27T23:51:16Z",
+    "entrypoint": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/entrypoints/job_ce213919-8b61-4d86-b82f-c439ce0823d2.sh",
+      "sha256": "6318078504570a86357acca55b77ff558e9eb3c36e02bd44e20be8e9908baef2",
+      "size_bytes": 80094
+    },
+    "node": "batch-block7-01453",
+    "remote_specs": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/specs/ce213919-8b61-4d86-b82f-c439ce0823d2.json",
+      "sha256": "f603823798ed0c78f153bd8f5ae6292882bc4109af9c47b24b64d89c965dc01d",
+      "size_bytes": 1595
+    },
+    "sbatch": {
+      "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/sbatch/job_ce213919-8b61-4d86-b82f-c439ce0823d2.sbatch",
+      "sha256": "bbf5027c9a6c3f75ff3866b15e92774f1b4a6030264d49e9f2cc85f3233e3ad2",
+      "size_bytes": 2410
+    },
+    "slurm_job_id": "30959893",
+    "started_at_utc": "2026-07-27T23:45:17Z",
+    "submitted_at_utc": "2026-07-27T23:44:38Z",
+    "tao_job_id": "ce213919-8b61-4d86-b82f-c439ce0823d2"
+  },
+  "launch_contract": {
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "container_format": "sqsh",
+    "distributed_strategy": "ddp",
+    "gpu_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "gpus_per_node": 8,
+    "num_nodes": 1,
+    "partition": "polar3",
+    "precision": "fp32",
+    "route": "tao_sdk.platforms.slurm.SlurmSDK.create_job",
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvidia_tao_tao-toolkit_7.0.1-pyt.sqsh",
+    "sqsh_sha256": "88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e"
+  },
+  "preregistered_before_submission": true,
+  "preregistration_id": "dino_rec6_validation_only_checkpoint_recovery_20260728_v1",
+  "purpose": "Recover an exact-configuration checkpoint needed only for matched latency validation of the frozen 90%-retained-accuracy equivalent-fastest cohort.",
+  "reconstruction": {
+    "activation_checkpoint": false,
+    "candidate_record_sha256": "a0f2d4ce0927c07ef8119a5d62897fb11aadc6301431c90cf38ae65675252552",
+    "candidate_specs": {
+      "model.dec_layers": 3,
+      "model.enc_layers": 4,
+      "train.optim.lr": 0.000487310659095131,
+      "train.optim.weight_decay": 0.0009
+    },
+    "checkpoint_interval_epochs": 10,
+    "command_sha256": "f2ea97f16b473cf1aa094e7523c6b3445f7ae5444489ca19052be8c6ca66f65b",
+    "cudnn": {
+      "benchmark": false,
+      "deterministic": true
+    },
+    "model_spec_sha256": "2891ae9dbb6097c1da53ce68201359f7da7992d30515ab815c89f906cdce21b1",
+    "search_seed": 271828,
+    "train_epochs": 10,
+    "train_spec_sha256": "0ce980ef6e6f793ab3a3aaac27957bc6daee4ab7b8269958036cd900d3dd9092",
+    "training_seed": 1234
+  },
+  "retention_and_identity_policy": {
+    "accuracy_or_latency_equivalence_assumed": false,
+    "byte_identical_checkpoint_assumed": false,
+    "historical_archive_replacement_permitted": false,
+    "recovered_checkpoint_retained": true,
+    "recovered_checkpoint_separately_provenanced": true
+  },
+  "finalization_contract": {
+    "evidence_id": "dino_latency_90_checkpoint_recovery_20260728_v1",
+    "evidence_path": "latency_90_policy/matched/rec6_checkpoint_recovery_evidence.v1.json",
+    "matched_campaign_id": "dino_latency_90pct_matched_20260728_v1",
+    "required_gates": [
+      "SDK status Complete",
+      "SLURM state COMPLETED with exit 0:0",
+      "exactly one epoch-9 checkpoint",
+      "checkpoint SHA256 and byte size recorded",
+      "entrypoint, sbatch, and remote-spec SHA256 recorded",
+      "historical checkpoint remains missing",
+      "selection-isolation flags remain false"
+    ]
+  },
+  "schema_version": 1,
+  "selection_isolation": {
+    "algorithm_selected_candidate_overridden": false,
+    "frozen_archive_mutated": false,
+    "measurements_feed_reselection": false,
+    "measurements_feed_selection": false,
+    "selection_time_objectives_replaced": false,
+    "selector_invoked_on_recovered_measurements": false
+  },
+  "source_identities": {
+    "expanded_search_manifest": {
+      "path": "expanded_search_manifest.v2.json",
+      "sha256": "9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a"
+    },
+    "expanded_search_runner": {
+      "path": "expanded_search_runner.py",
+      "sha256": "0eb1948d4fb887b9c3fe938d60865ebb4ef86ae00d9ca80aa0d42b465a073073"
+    },
+    "seed_archive": {
+      "internal_archive_sha256": "eedaa0a37e49cfa86e54be15a56352e4891044856ad5db782f6a4eed464dfb36",
+      "path": "runtime/expanded_search_v2/seed_271828/seed_archive.v1.json",
+      "whole_file_sha256": "a42a989ea27940ea9ae481212a75216c7f23f01602b0c260b6750c9fdb709c9e"
+    }
+  },
+  "submission_policy": {
+    "duplicate_submission_prevention": "immutable local submission record",
+    "historical_checkpoint_missing_must_be_reverified": true,
+    "manual_candidate_injection": false,
+    "result_driven_configuration_changes": false,
+    "selector_invocation": false
+  }
+}

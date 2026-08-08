@@ -1,0 +1,4323 @@
+{
+  "schema_version": 1,
+  "registry_version": "1.5.0",
+  "models": {
+    "dino": {
+      "default_ptm": "dino.coco.resnet50.trainable.v1.0",
+      "checkpoints": [
+        {
+          "id": "dino.coco.resnet50.trainable.v1.0",
+          "status": "supported",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_dino_coco",
+            "version": "dino_resnet_50_trainable_v1.0",
+            "member": "dino_resnet50_ep12.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_resnet_50_trainable_v1.0#dino_resnet50_ep12.pth"
+          },
+          "sha256": "7a391fb84a18714b60258becdb512594ec54faff5dccbf17ca53c5d902137512",
+          "expected_size_bytes": 568767395,
+          "artifact_adapters": [
+            {
+              "id": "dino.tao71.metadata_wrapper.v1",
+              "adapter_type": "checkpoint_metadata_projection_v1",
+              "compatible_tao_versions": [
+                "==7.1.0"
+              ],
+              "recipe": {
+                "retain_top_level_keys": [
+                  "state_dict"
+                ],
+                "add_top_level_metadata": {
+                  "tao_model": "dino"
+                },
+                "tensor_container_key": "state_dict",
+                "require_exact_tensor_key_set": true,
+                "require_exact_tensor_values": true
+              },
+              "output": {
+                "member": "tao71_dino_resnet50_ep12.pth",
+                "expected_size_bytes": 195109331,
+                "sha256": "678064a0706ec778edb17583be78e9a138afac1c48832ba419b8c774ac7d5756"
+              },
+              "provenance": {
+                "source": "Pinned TAO 7.1 serializer qualification",
+                "evidence": "docs/cross_model_automl/dino_ptm_inventory.md"
+              }
+            }
+          ],
+          "compatible_tao_versions": [
+            "==7.0.1"
+          ],
+          "model_family": "dino",
+          "architecture": "dino",
+          "backbone": "resnet_50",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "spatial_policy": "TAO DINO dataset augmentation and padding"
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "resnet_50",
+              "train_backbone": true,
+              "num_feature_levels": 4,
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "dropout_ratio": 0.0,
+              "dim_feedforward": 2048
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/dino/dino.coco.resnet50.trainable.v1.0.yaml",
+            "sha256": "35334ee26ad716deed83bcae737f2dee832569b4deacb33fbff9883e9f8270c9",
+            "provenance": {
+              "source": "Official NGC nvidia/tao/pretrained_dino_coco model-card transfer-learning template",
+              "evidence": "experiments/dino_moo_phase2_20260728/phase2_validation_report.md"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          },
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.0.1",
+            "container_identity": "sha256:88ba75e3a8eb9524fc0dbf026f2ea5da2c68696ae8d918b0afde5e0384ca641e",
+            "evidence": "experiments/dino_moo_phase2_20260728/phase2_validation_report.md"
+          }
+        },
+        {
+          "id": "dino.coco.gcvit_tiny.trainable.v1.0",
+          "status": "unsupported",
+          "status_reason": "The completed TAO 7.0.1 validation recorded the GCViT backbone as unsupported, and static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. Requalification requires a different runtime.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_dino_coco",
+            "version": "dino_gc_vit_tiny_trainable_v1.0",
+            "member": "dino_gcvit_tiny0_ep12.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_gc_vit_tiny_trainable_v1.0#dino_gcvit_tiny0_ep12.pth"
+          },
+          "sha256": "6322af1a26eb025139bc7bfe32591e38fe2998c998e376bab7ca644261d2bfbe",
+          "expected_size_bytes": 577043347,
+          "model_family": "dino",
+          "architecture": "dino",
+          "backbone": "gc_vit_tiny",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "spatial_policy": "TAO DINO dataset augmentation and padding"
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "gc_vit_tiny",
+              "train_backbone": true,
+              "num_feature_levels": 4,
+              "return_interm_indices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "dropout_ratio": 0.0,
+              "dim_feedforward": 2048
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/dino/dino.coco.gcvit_tiny.trainable.v1.0.yaml",
+            "sha256": "e90725346e0ad21da63b531ab0ee6cd7f12175fab4a7f7981aeadc4ec3f84498",
+            "provenance": {
+              "source": "Official NGC nvidia/tao/pretrained_dino_coco model card plus TAO DINO backbone contract",
+              "evidence": "experiments/dino_moo_phase2_20260728/phase2_validation_report.md"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "dino.coco.fan_small.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "The original checkpoint was incompatible with the pinned TAO 7.0.1 loader. A declarative TAO 7.1 metadata projection and deterministic tensor-preservation evidence are registered, so this record is admitted only to explicit target-release qualification. Load and train/validation/inference mini-step evidence remain pending; it is not runtime eligible.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_dino_coco",
+            "version": "dino_fan_small_trainable_v1.0",
+            "member": "dino_fan_small_ep12.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_fan_small_trainable_v1.0#dino_fan_small_ep12.pth"
+          },
+          "sha256": "df3e4e07d411f3d61c882ee9e61d5cb7cef613d1e4748d75b9b86e3dd1c83185",
+          "expected_size_bytes": 580862106,
+          "artifact_adapters": [
+            {
+              "id": "dino.tao71.metadata_wrapper.v1",
+              "adapter_type": "checkpoint_metadata_projection_v1",
+              "compatible_tao_versions": [
+                "==7.1.0"
+              ],
+              "recipe": {
+                "retain_top_level_keys": [
+                  "state_dict"
+                ],
+                "add_top_level_metadata": {
+                  "tao_model": "dino"
+                },
+                "tensor_container_key": "state_dict",
+                "require_exact_tensor_key_set": true,
+                "require_exact_tensor_values": true
+              },
+              "output": {
+                "member": "tao71_dino_fan_small_ep12.pth",
+                "expected_size_bytes": 193716107,
+                "sha256": "0a9e5ebfba383bbba8084db72a595bac2be512742998a2b4c0168b4300f3b580"
+              },
+              "provenance": {
+                "source": "Pinned TAO 7.1 serializer qualification",
+                "evidence": "docs/cross_model_automl/dino_ptm_inventory.md"
+              }
+            }
+          ],
+          "model_family": "dino",
+          "architecture": "dino",
+          "backbone": "fan_small",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "spatial_policy": "TAO DINO dataset augmentation and padding"
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "fan_small",
+              "train_backbone": true,
+              "num_feature_levels": 4,
+              "return_interm_indices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "dropout_ratio": 0.0,
+              "dim_feedforward": 2048
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/dino/dino.coco.fan_small.trainable.v1.0.yaml",
+            "sha256": "0ee49339b12f477cf1b79ae0a38553e0b2aa550b14351329938583940397a1d5",
+            "provenance": {
+              "source": "Official NGC nvidia/tao/pretrained_dino_coco model card plus TAO DINO backbone contract",
+              "evidence": "experiments/dino_moo_phase2_20260728/phase2_validation_report.md"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "dino.coco.fan_large.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "The original checkpoint was incompatible with the pinned TAO 7.0.1 loader. A declarative TAO 7.1 metadata projection and deterministic tensor-preservation evidence are registered, so this record is admitted only to explicit target-release qualification. Load and train/validation/inference mini-step evidence remain pending; it is not runtime eligible.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_dino_coco",
+            "version": "dino_fan_large_trainable_v1.0",
+            "member": "dino_fan_large_imagenet22k_36ep.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_dino_coco:dino_fan_large_trainable_v1.0#dino_fan_large_imagenet22k_36ep.pth"
+          },
+          "sha256": "8e9f8d865a315a40d4854cc2846317a03ca1f87a40a9ddde6fa7631828f73cb8",
+          "expected_size_bytes": 1197490926,
+          "artifact_adapters": [
+            {
+              "id": "dino.tao71.metadata_wrapper.v1",
+              "adapter_type": "checkpoint_metadata_projection_v1",
+              "compatible_tao_versions": [
+                "==7.1.0"
+              ],
+              "recipe": {
+                "retain_top_level_keys": [
+                  "state_dict"
+                ],
+                "add_top_level_metadata": {
+                  "tao_model": "dino"
+                },
+                "tensor_container_key": "state_dict",
+                "require_exact_tensor_key_set": true,
+                "require_exact_tensor_values": true
+              },
+              "output": {
+                "member": "tao71_dino_fan_large_imagenet22k_36ep.pth",
+                "expected_size_bytes": 399422743,
+                "sha256": "149b670a4ca0cb701bdd32c69244593f2d6c699fd0d8b1851a9ad385434c7303"
+              },
+              "provenance": {
+                "source": "Pinned TAO 7.1 serializer qualification",
+                "evidence": "docs/cross_model_automl/dino_ptm_inventory.md"
+              }
+            }
+          ],
+          "model_family": "dino",
+          "architecture": "dino",
+          "backbone": "fan_large",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "spatial_policy": "TAO DINO dataset augmentation and padding",
+              "backbone_pretraining_resolution": 384
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "fan_large",
+              "train_backbone": true,
+              "num_feature_levels": 4,
+              "return_interm_indices": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "dropout_ratio": 0.0,
+              "dim_feedforward": 2048
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/dino/dino.coco.fan_large.trainable.v1.0.yaml",
+            "sha256": "731c8b0a140580199cfa043d1ea674bbec9cbb7a269335b847bad05244e41ae4",
+            "provenance": {
+              "source": "Official NGC nvidia/tao/pretrained_dino_coco model card plus TAO DINO backbone contract",
+              "evidence": "experiments/dino_moo_phase2_20260728/phase2_validation_report.md"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "dino.coco.nvdinov2_large.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC resource identity, member size, and checkpoint SHA-256 are recorded, but TAO-version compatibility, load smoke test, and the training/inference mini-step contract have not been verified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "dino_with_fm_backbone",
+            "version": "trainable_v1.0",
+            "member": "dino_nvdinov2_518_1536_coco_e36.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/dino_with_fm_backbone:trainable_v1.0#dino_nvdinov2_518_1536_coco_e36.pth"
+          },
+          "sha256": "013e8e6e6a0a913ac56cf1a581f9d1dd7abe6cb47a57664a21290d0f44866c78",
+          "expected_size_bytes": 4232490433,
+          "artifact_adapters": [
+            {
+              "id": "dino.tao71.metadata_wrapper.v1",
+              "adapter_type": "checkpoint_metadata_projection_v1",
+              "compatible_tao_versions": [
+                "==7.1.0"
+              ],
+              "recipe": {
+                "retain_top_level_keys": [
+                  "state_dict"
+                ],
+                "add_top_level_metadata": {
+                  "tao_model": "dino"
+                },
+                "tensor_container_key": "state_dict",
+                "require_exact_tensor_key_set": true,
+                "require_exact_tensor_values": true
+              },
+              "output": {
+                "member": "tao71_dino_nvdinov2_518_1536_coco_e36.pth",
+                "expected_size_bytes": 1410846731,
+                "sha256": "d7bacddff9393d5f37ecca67686467bce2cd77d95b26c6a01908a90dbc6b6333"
+              },
+              "provenance": {
+                "source": "Pinned TAO 7.1 serializer qualification",
+                "evidence": "docs/cross_model_automl/dino_ptm_inventory.md"
+              }
+            }
+          ],
+          "model_family": "dino",
+          "architecture": "dino_vit_adapter",
+          "backbone": "vit_large_nvdinov2",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 1536,
+            "width": 1536,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "fixed_random_crop": 1536,
+              "test_random_resize": 1536,
+              "random_resize_max_size": 1536,
+              "fixed_padding": true
+            }
+          },
+          "default_spec_overrides": {
+            "dataset": {
+              "augmentation": {
+                "fixed_random_crop": 1536,
+                "test_random_resize": 1536,
+                "random_resize_max_size": 1536,
+                "fixed_padding": true
+              }
+            },
+            "model": {
+              "backbone": "vit_large_nvdinov2",
+              "train_backbone": false,
+              "num_feature_levels": 4,
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "dropout_ratio": 0.0,
+              "dim_feedforward": 2048
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/dino/dino.coco.nvdinov2_large.trainable.v1.0.yaml",
+            "sha256": "cde09655633b228f8e89f79efd04f0f2182d573e18397c47fbd4e40d51907439",
+            "provenance": {
+              "source": "Official NGC NVDINOv2 architecture plus pinned TAO 7.1 checkpoint-shape qualification; the published transfer snippet's vit_large_dinov2 key is incompatible with the checkpoint SwiGLU dimensions",
+              "evidence": "docs/cross_model_automl/dino_ptm_inventory.md"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+      {
+        "id": "dino.backbone.imagenet.gcvit_large_imagenet22k_384",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "gcvit_large_imagenet22k_384",
+          "member": "gcvit_large_imagenet22k_384.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_large_imagenet22k_384#gcvit_large_imagenet22k_384.pth"
+        },
+        "expected_size_bytes": 864054197,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_large_384",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 384,
+          "width": 384,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_large_384",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.gcvit_large_imagenet22k_384.yaml",
+          "sha256": "f016208f74243f9fd541f3edfddb08962c32a80e1e6546e3a9e6e07527eb441d",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.gcvit_large_imagenet1k",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "gcvit_large_imagenet1k",
+          "member": "gcvit_large_imagenet1k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_large_imagenet1k#gcvit_large_imagenet1k.pth"
+        },
+        "expected_size_bytes": 814560029,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_large",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_large",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.gcvit_large_imagenet1k.yaml",
+          "sha256": "bb0b83d1af0e8e2482e0e9430852c23c7f8939b70413b2837e0267f95f9bcf97",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.gcvit_base_imagenet1k",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "gcvit_base_imagenet1k",
+          "member": "gcvit_base_imagenet1k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_base_imagenet1k#gcvit_base_imagenet1k.pth"
+        },
+        "expected_size_bytes": 367540965,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_base",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_base",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.gcvit_base_imagenet1k.yaml",
+          "sha256": "3a7972c2a76734befb28bcb9604b9ab6c52e15ccd1ffb34c4152ab63550571f3",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.gcvit_small_imagenet1k",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "gcvit_small_imagenet1k",
+          "member": "gcvit_small_imagenet1k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_small_imagenet1k#gcvit_small_imagenet1k.pth"
+        },
+        "expected_size_bytes": 210626653,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_small",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_small",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.gcvit_small_imagenet1k.yaml",
+          "sha256": "91ee50ab90467b6b03e5d3dbb98e9e7e514466fe67fdfd864982ebfa2a07db96",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.gcvit_tiny_imagenet1k",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "gcvit_tiny_imagenet1k",
+          "member": "gcvit_tiny_imagenet1k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_tiny_imagenet1k#gcvit_tiny_imagenet1k.pth"
+        },
+        "expected_size_bytes": 119124861,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_tiny",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_tiny",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.gcvit_tiny_imagenet1k.yaml",
+          "sha256": "e90725346e0ad21da63b531ab0ee6cd7f12175fab4a7f7981aeadc4ec3f84498",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.gcvit_xtiny_imagenet1k",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "gcvit_xtiny_imagenet1k",
+          "member": "gcvit_xtiny_imagenet1k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_xtiny_imagenet1k#gcvit_xtiny_imagenet1k.pth"
+        },
+        "expected_size_bytes": 82106937,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_xtiny",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_xtiny",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.gcvit_xtiny_imagenet1k.yaml",
+          "sha256": "8066209519d827972869ae56c6ed240c743877fa682208c1e12b744363dcd568",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.gcvit_xxtiny_imagenet1k",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "gcvit_xxtiny_imagenet1k",
+          "member": "gcvit_xxtiny_imagenet1k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:gcvit_xxtiny_imagenet1k#gcvit_xxtiny_imagenet1k.pth"
+        },
+        "expected_size_bytes": 50020581,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_xxtiny",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_xxtiny",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.gcvit_xxtiny_imagenet1k.yaml",
+          "sha256": "e75c800ddbc8e24034fab2fd0af6596cd98292359d5ea0ea2257d3aadfdbe7e9",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_tiny",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_tiny",
+          "member": "fan_hybrid_tiny.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_tiny#fan_hybrid_tiny.pth"
+        },
+        "expected_size_bytes": 30032227,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_tiny",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_tiny",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_tiny.yaml",
+          "sha256": "a0641392fcf96f91845a2afb5f95f9e6086e89f6f581dd8c835214f2a203105a",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_small",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_small",
+          "member": "fan_hybrid_small.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_small#fan_hybrid_small.pth"
+        },
+        "expected_size_bytes": 104729466,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_small",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_small",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_small.yaml",
+          "sha256": "0ee49339b12f477cf1b79ae0a38553e0b2aa550b14351329938583940397a1d5",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_large_in22k",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_large_in22k",
+          "member": "fan_hybrid_large_in22k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_large_in22k#fan_hybrid_large_in22k.pth"
+        },
+        "expected_size_bytes": 342977114,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_large",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_large",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_large_in22k.yaml",
+          "sha256": "731c8b0a140580199cfa043d1ea674bbec9cbb7a269335b847bad05244e41ae4",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_large_in22k_384",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_large_in22k_384",
+          "member": "fan_hybrid_large_in22k_384.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_large_in22k_384#fan_hybrid_large_in22k_384.pth"
+        },
+        "expected_size_bytes": 308027006,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_large",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 384,
+          "width": 384,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_large",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_large_in22k_384.yaml",
+          "sha256": "731c8b0a140580199cfa043d1ea674bbec9cbb7a269335b847bad05244e41ae4",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_large_in22k_1k",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_large_in22k_1k",
+          "member": "fan_hybrid_large_in22k_1k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_large_in22k_1k#fan_hybrid_large_in22k_1k.pth"
+        },
+        "expected_size_bytes": 308026197,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_large",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_large",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_large_in22k_1k.yaml",
+          "sha256": "731c8b0a140580199cfa043d1ea674bbec9cbb7a269335b847bad05244e41ae4",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_large_in22k_1k_384",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_large_in22k_1k_384",
+          "member": "fan_hybrid_large_in22k_1k_384.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_large_in22k_1k_384#fan_hybrid_large_in22k_1k_384.pth"
+        },
+        "expected_size_bytes": 308029433,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_large",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 384,
+          "width": 384,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_large",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_large_in22k_1k_384.yaml",
+          "sha256": "731c8b0a140580199cfa043d1ea674bbec9cbb7a269335b847bad05244e41ae4",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_base_in22k",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_base_in22k",
+          "member": "fan_hybrid_base_in22k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_base_in22k#fan_hybrid_base_in22k.pth"
+        },
+        "expected_size_bytes": 234955105,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_base",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_base",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_base_in22k.yaml",
+          "sha256": "703c160fbaafe7fe4b14af31ca92f296098c753e570e1b3745522ba0e2f59d33",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_base_in22k_1k",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_base_in22k_1k",
+          "member": "fan_hybrid_base_in22k_1k.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_base_in22k_1k#fan_hybrid_base_in22k_1k.pth"
+        },
+        "expected_size_bytes": 202329016,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_base",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_base",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_base_in22k_1k.yaml",
+          "sha256": "703c160fbaafe7fe4b14af31ca92f296098c753e570e1b3745522ba0e2f59d33",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.imagenet.fan_hybrid_base_in22k_1k_384",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_imagenet",
+          "version": "fan_hybrid_base_in22k_1k_384",
+          "member": "fan_hybrid_base_in22k_1k_384.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_imagenet:fan_hybrid_base_in22k_1k_384#fan_hybrid_base_in22k_1k_384.pth"
+        },
+        "expected_size_bytes": 202331436,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_base",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 384,
+          "width": 384,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_base",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.imagenet.fan_hybrid_base_in22k_1k_384.yaml",
+          "sha256": "703c160fbaafe7fe4b14af31ca92f296098c753e570e1b3745522ba0e2f59d33",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_imagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "CC-BY-NC-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the model license",
+            "Noncommercial use restriction"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.resnet50",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, qualification-observed member SHA-256 and size, runtime backbone, and checkpoint-specific sidecar are recorded. Train/validation/inference mini-steps and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "resnet50",
+          "member": "resnet50_nvimagenetv2.pth.tar",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:resnet50#resnet50_nvimagenetv2.pth.tar"
+        },
+        "expected_size_bytes": 307117121,
+        "sha256": "49b0df2b517a28760e17158c9ad78371c1f833d6ad257f117ff81356743060b7",
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "resnet_50",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "resnet_50",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.resnet50.yaml",
+          "sha256": "35334ee26ad716deed83bcae737f2dee832569b4deacb33fbff9883e9f8270c9",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.fan_large_hybrid_nvimagenet",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "fan_large_hybrid_nvimagenet",
+          "member": "fan_large_hybrid_nvimagenet.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:fan_large_hybrid_nvimagenet#fan_large_hybrid_nvimagenet.pth"
+        },
+        "expected_size_bytes": 308027815,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_large",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_large",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.fan_large_hybrid_nvimagenet.yaml",
+          "sha256": "731c8b0a140580199cfa043d1ea674bbec9cbb7a269335b847bad05244e41ae4",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.fan_small_hybrid_nvimagenet",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "fan_small_hybrid_nvimagenet",
+          "member": "fan_small_hybrid_nvimagenet.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:fan_small_hybrid_nvimagenet#fan_small_hybrid_nvimagenet.pth"
+        },
+        "expected_size_bytes": 104734139,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_small",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_small",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.fan_small_hybrid_nvimagenet.yaml",
+          "sha256": "0ee49339b12f477cf1b79ae0a38553e0b2aa550b14351329938583940397a1d5",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.fan_base_hybrid_nvimagenet",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "fan_base_hybrid_nvimagenet",
+          "member": "fan_base_hybrid_nvimagenet.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:fan_base_hybrid_nvimagenet#fan_base_hybrid_nvimagenet.pth"
+        },
+        "expected_size_bytes": 202330226,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_base",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_base",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.fan_base_hybrid_nvimagenet.yaml",
+          "sha256": "703c160fbaafe7fe4b14af31ca92f296098c753e570e1b3745522ba0e2f59d33",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.gcvit_base_nvimagenet",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "gcvit_base_nvimagenet",
+          "member": "gcvit_base_nvimagenet.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_base_nvimagenet#gcvit_base_nvimagenet.pth"
+        },
+        "expected_size_bytes": 367540965,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_base",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_base",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.gcvit_base_nvimagenet.yaml",
+          "sha256": "3a7972c2a76734befb28bcb9604b9ab6c52e15ccd1ffb34c4152ab63550571f3",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.gcvit_small_nvimagenet",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "gcvit_small_nvimagenet",
+          "member": "gcvit_small_nvimagenet.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_small_nvimagenet#gcvit_small_nvimagenet.pth"
+        },
+        "expected_size_bytes": 210626653,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_small",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_small",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.gcvit_small_nvimagenet.yaml",
+          "sha256": "91ee50ab90467b6b03e5d3dbb98e9e7e514466fe67fdfd864982ebfa2a07db96",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.gcvit_tiny_nvimagenet",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "gcvit_tiny_nvimagenet",
+          "member": "gcvit_tiny_nvimagenet.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_tiny_nvimagenet#gcvit_tiny_nvimagenet.pth"
+        },
+        "expected_size_bytes": 119124861,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_tiny",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_tiny",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.gcvit_tiny_nvimagenet.yaml",
+          "sha256": "e90725346e0ad21da63b531ab0ee6cd7f12175fab4a7f7981aeadc4ec3f84498",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.gcvit_xtiny_nvimagenet",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "gcvit_xtiny_nvimagenet",
+          "member": "gcvit_xtiny_nvimagenet.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_xtiny_nvimagenet#gcvit_xtiny_nvimagenet.pth"
+        },
+        "expected_size_bytes": 82106937,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_xtiny",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_xtiny",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.gcvit_xtiny_nvimagenet.yaml",
+          "sha256": "8066209519d827972869ae56c6ed240c743877fa682208c1e12b744363dcd568",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.gcvit_xxtiny_nvimagenet",
+        "status": "unsupported",
+        "status_reason": "Static inspection of the pinned TAO 7.1.0-rc-245 SQSH (sha256:0dfaf824025b69e66c0c239ec6e11e64f6b2eecdcd42b41f9226e14f1348568e) confirms that DINO backbone.py has no GCViT import, dictionary, or construction branch and falls through to NotImplementedError. Evidence: experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json. The official artifact remains catalogued for explicit requalification on a different runtime, but is not runtime eligible in the pinned release.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "gcvit_xxtiny_nvimagenet",
+          "member": "gcvit_xxtiny_nvimagenet.pth",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:gcvit_xxtiny_nvimagenet#gcvit_xxtiny_nvimagenet.pth"
+        },
+        "expected_size_bytes": 50020581,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "gc_vit_xxtiny",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "gc_vit_xxtiny",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.gcvit_xxtiny_nvimagenet.yaml",
+          "sha256": "e75c800ddbc8e24034fab2fd0af6596cd98292359d5ea0ea2257d3aadfdbe7e9",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      },
+      {
+        "id": "dino.backbone.nvimagenet.fan_hybrid_tiny_nvimagenet",
+        "status": "unverified",
+        "status_reason": "Official immutable NGC backbone identity, exact member size, runtime backbone, and checkpoint-specific sidecar are recorded. NGC publishes no checkpoint SHA-256 for this member; checkpoint load, train/validation/inference mini-steps, and save/reload remain pending. This is an explicit qualification candidate and is not runtime eligible.",
+        "source": {
+          "provider": "ngc",
+          "registry": "nvidia/tao",
+          "resource": "pretrained_dino_nvimagenet",
+          "version": "fan_hybrid_tiny_nvimagenet",
+          "member": "fan_hybrid_tiny_nvimagenetv2.pth.tar",
+          "official": true,
+          "immutable_identity": "ngc://nvidia/tao/pretrained_dino_nvimagenet:fan_hybrid_tiny_nvimagenet#fan_hybrid_tiny_nvimagenetv2.pth.tar"
+        },
+        "expected_size_bytes": 30046459,
+        "model_family": "dino",
+        "architecture": "dino_backbone",
+        "backbone": "fan_tiny",
+        "checkpoint_target": "model.pretrained_backbone_path",
+        "input_contract": {
+          "channels": 3,
+          "height": 224,
+          "width": 224,
+          "preprocessing": {
+            "color_space": "rgb",
+            "layout": "nchw",
+            "checkpoint_scope": "backbone_only",
+            "spatial_policy": "checkpoint pretraining resolution; downstream DINO input is experiment-defined"
+          }
+        },
+        "default_spec_overrides": {
+          "model": {
+            "backbone": "fan_tiny",
+            "train_backbone": true,
+            "num_feature_levels": 4,
+            "return_interm_indices": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "enc_layers": 6,
+            "dec_layers": 6,
+            "num_queries": 900,
+            "dropout_ratio": 0.0,
+            "dim_feedforward": 2048
+          }
+        },
+        "checkpoint_spec_file": {
+          "source": "repository",
+          "path": "data/ptm_specs/dino/dino.backbone.nvimagenet.fan_hybrid_tiny_nvimagenet.yaml",
+          "sha256": "a0641392fcf96f91845a2afb5f95f9e6086e89f6f581dd8c835214f2a203105a",
+          "provenance": {
+            "source": "Official NGC nvidia/tao/pretrained_dino_nvimagenet model-card transfer-learning template plus the TAO DINO backbone contract",
+            "evidence": "experiments/cross_model_automl_20260729/dino_ptm_inventory/source_inventory.v1.json"
+          }
+        },
+        "task_compatibility": [
+          "object_detection"
+        ],
+        "license": {
+          "name": "NVIDIA AI Enterprise Model EULA",
+          "url": "https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/",
+          "access_requirements": [
+            "NVIDIA NGC model access",
+            "Acceptance of the NVIDIA AI Enterprise Model EULA"
+          ]
+        },
+        "deprecation": {
+          "is_deprecated": false
+        }
+      }
+      ]
+    },
+    "deformable_detr": {
+      "default_ptm": null,
+      "checkpoints": [
+        {
+          "id": "deformable_detr.coco.resnet50.trainable.v1.0",
+          "status": "supported",
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.1.0-rc-245",
+            "container_identity": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch@sqsh-sha256:e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+            "evidence": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/deformable_detr_synthetic_qualification_20260730/completion.json#completion_sha256=8a52323a8aa4d7d3614dc3631af4c7962512266cc598f0b32f81ae62379011e9;manifest_sha256=59aa20e07b9a6dc28c9afece57a508add4627a4b7bcdf23bc07beeb0722aa9a9"
+          },
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_deformable_detr_coco",
+            "version": "ddetr_resnet_50_trainable_v1.0",
+            "member": "dd_resnet50_ep50.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_deformable_detr_coco:ddetr_resnet_50_trainable_v1.0#dd_resnet50_ep50.pth"
+          },
+          "sha256": "ddb80bd87fe5882c7b86e6402d9a7b91be874505330140b0d19a42b095fa7b3f",
+          "expected_size_bytes": 492568963,
+          "model_family": "deformable_detr",
+          "architecture": "deformable_detr",
+          "backbone": "resnet_50",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw"
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "resnet_50",
+              "train_backbone": true,
+              "num_feature_levels": 4,
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 300,
+              "with_box_refine": true,
+              "dropout_ratio": 0.3
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/deformable_detr/deformable_detr.coco.resnet50.trainable.v1.0.yaml",
+            "sha256": "2e367f386b267d27280b3ce87fcf3e333250dd4798fd871f3996b0f29131a414",
+            "provenance": {
+              "source": "Official NGC nvidia/tao/pretrained_deformable_detr_coco model-card transfer-learning template",
+              "evidence": "NGC API resource nvidia/tao/pretrained_deformable_detr_coco"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "deformable_detr.coco.gcvit_tiny.trainable.v1.0",
+          "status": "supported",
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.1.0-rc-245",
+            "container_identity": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch@sqsh-sha256:e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+            "evidence": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/deformable_detr_synthetic_qualification_20260730/completion.json#completion_sha256=8a52323a8aa4d7d3614dc3631af4c7962512266cc598f0b32f81ae62379011e9;manifest_sha256=59aa20e07b9a6dc28c9afece57a508add4627a4b7bcdf23bc07beeb0722aa9a9"
+          },
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_deformable_detr_coco",
+            "version": "ddetr_gc_vit_tiny_trainable_v1.0",
+            "member": "dd_gcvit_tiny_ep50.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_deformable_detr_coco:ddetr_gc_vit_tiny_trainable_v1.0#dd_gcvit_tiny_ep50.pth"
+          },
+          "sha256": "519937c15c6282a9628a8abb616d0f14f1363ea4992048c9357e8ae2f7fb29ba",
+          "expected_size_bytes": 497618156,
+          "model_family": "deformable_detr",
+          "architecture": "deformable_detr",
+          "backbone": "gc_vit_tiny",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw"
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "gc_vit_tiny"
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/deformable_detr/deformable_detr.coco.gcvit_tiny.trainable.v1.0.yaml",
+            "sha256": "fe56acdc04d404fa7e5ea8b41c4d0a1717f05b000ca9756200b518d18ebc23fc",
+            "provenance": {
+              "source": "Official NGC nvidia/tao/pretrained_deformable_detr_coco model card",
+              "evidence": "NGC API resource nvidia/tao/pretrained_deformable_detr_coco"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        }
+      ]
+    },
+    "rtdetr": {
+      "default_ptm": null,
+      "checkpoints": [
+        {
+          "id": "rtdetr.trafficcam.resnet50.trainable.v2.0",
+          "status": "supported",
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.1.0-rc-245",
+            "container_identity": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch@sqsh-sha256:e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+            "evidence": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/rtdetr_qualification_20260730/completion.resume.json#completion_sha256=4ad1eadda2ed006dad603f3392fff0aa598ca66f20d3840a869b0192178040e5;manifest_sha256=c99148024d56b579398596264e0383cbe9c4a7668b842d25f69459eb2ff8abd4"
+          },
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "trafficcamnet_transformer_lite",
+            "version": "trainable_resnet50_v2.0",
+            "member": "resnet50_trafficcamnet_rtdetr.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/trafficcamnet_transformer_lite:trainable_resnet50_v2.0#resnet50_trafficcamnet_rtdetr.pth"
+          },
+          "sha256": "9e21450a1eac2012ab713dc103e1655eb438a73a125e2f23b0a2ba8c0583ea6a",
+          "expected_size_bytes": 511956488,
+          "model_family": "rtdetr",
+          "architecture": "rtdetr",
+          "backbone": "resnet_50",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "preserve_aspect_ratio": false
+            }
+          },
+          "default_spec_overrides": {
+            "dataset": {
+              "augmentation": {
+                "train_spatial_size": [
+                  544,
+                  960
+                ],
+                "eval_spatial_size": [
+                  544,
+                  960
+                ],
+                "preserve_aspect_ratio": false
+              }
+            },
+            "model": {
+              "backbone": "resnet_50",
+              "train_backbone": true,
+              "num_queries": 300,
+              "num_select": 300,
+              "num_feature_levels": 3,
+              "return_interm_indices": [
+                1,
+                2,
+                3
+              ],
+              "feat_strides": [
+                8,
+                16,
+                32
+              ],
+              "feat_channels": [
+                256,
+                256,
+                256
+              ],
+              "use_encoder_idx": [
+                2
+              ],
+              "hidden_dim": 256,
+              "nheads": 8,
+              "dropout_ratio": 0.0,
+              "enc_layers": 1,
+              "dim_feedforward": 1024,
+              "dec_layers": 6
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/rtdetr/rtdetr.trafficcam.resnet50.trainable.v2.0.yaml",
+            "sha256": "9e749300b7f5aaf231745c7a925e1007949e86cd3c25beb4b973e2e6458fbf19",
+            "provenance": {
+              "source": "Curated path-free projection of the official NGC experiment.yaml",
+              "evidence": "trafficcamnet_transformer_lite:trainable_resnet50_v2.0#experiment.yaml sha256=c8f53ed3e4f9219eb7f89563ea4c2bb6f8716781c66440b03af3bfb58415f471"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "rtdetr.trafficcam.resnet18.trainable.v2.0",
+          "status": "supported",
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.1.0-rc-245",
+            "container_identity": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch@sqsh-sha256:e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+            "evidence": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/rtdetr_qualification_20260730/completion.resume.json#completion_sha256=4ad1eadda2ed006dad603f3392fff0aa598ca66f20d3840a869b0192178040e5;manifest_sha256=c99148024d56b579398596264e0383cbe9c4a7668b842d25f69459eb2ff8abd4"
+          },
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "trafficcamnet_transformer_lite",
+            "version": "trainable_resnet18_v2.0",
+            "member": "resnet18_trafficcamnet_rtdetr.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/trafficcamnet_transformer_lite:trainable_resnet18_v2.0#resnet18_trafficcamnet_rtdetr.pth"
+          },
+          "sha256": "f7db8cfc7b0e36bdd190cbfeebed91f71460cdb347553e0de401c06c7a9fc1dd",
+          "expected_size_bytes": 357560178,
+          "model_family": "rtdetr",
+          "architecture": "rtdetr",
+          "backbone": "resnet_18",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "preserve_aspect_ratio": false
+            }
+          },
+          "default_spec_overrides": {
+            "dataset": {
+              "augmentation": {
+                "train_spatial_size": [
+                  544,
+                  960
+                ],
+                "eval_spatial_size": [
+                  544,
+                  960
+                ],
+                "preserve_aspect_ratio": false
+              }
+            },
+            "model": {
+              "backbone": "resnet_18",
+              "train_backbone": true,
+              "load_teacher_enc_dec": true,
+              "num_queries": 300,
+              "num_select": 300,
+              "num_feature_levels": 3,
+              "return_interm_indices": [
+                1,
+                2,
+                3
+              ],
+              "feat_strides": [
+                8,
+                16,
+                32
+              ],
+              "feat_channels": [
+                256,
+                256,
+                256
+              ],
+              "use_encoder_idx": [
+                2
+              ],
+              "hidden_dim": 256,
+              "nheads": 8,
+              "dropout_ratio": 0.0,
+              "enc_layers": 1,
+              "dim_feedforward": 1024,
+              "dec_layers": 6
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/rtdetr/rtdetr.trafficcam.resnet18.trainable.v2.0.yaml",
+            "sha256": "ba3312a74238ddd06c4715f7e18bac93865262d6d01bfe362e2ed5364344359a",
+            "provenance": {
+              "source": "Curated path-free projection of the official NGC experiment.yaml",
+              "evidence": "trafficcamnet_transformer_lite:trainable_resnet18_v2.0#experiment.yaml sha256=4b5ff9f0f8c08e9adbac9c5e851afbee4abebeb642380059936f512d38adcfdc"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "rtdetr.warehouse.resnet50.trainable.v1.0.2",
+          "status": "supported",
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.1.0-rc-245",
+            "container_identity": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch@sqsh-sha256:e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+            "evidence": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/rtdetr_qualification_20260730/completion.resume.json#completion_sha256=4ad1eadda2ed006dad603f3392fff0aa598ca66f20d3840a869b0192178040e5;manifest_sha256=c99148024d56b579398596264e0383cbe9c4a7668b842d25f69459eb2ff8abd4"
+          },
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "rtdetr_2d_warehouse",
+            "version": "trainable_rn50_v1.0.2",
+            "member": "rtdetr_warehouse_v1.0.2.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/rtdetr_2d_warehouse:trainable_rn50_v1.0.2#rtdetr_warehouse_v1.0.2.pth"
+          },
+          "sha256": "745f42d0378f915f27c00baca86d788de995475af990aac370340c235bee6377",
+          "expected_size_bytes": 514392577,
+          "model_family": "rtdetr",
+          "architecture": "rtdetr",
+          "backbone": "resnet_50",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 640,
+            "width": 640,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "preserve_aspect_ratio": false
+            }
+          },
+          "default_spec_overrides": {
+            "dataset": {
+              "augmentation": {
+                "train_spatial_size": [
+                  640,
+                  640
+                ],
+                "eval_spatial_size": [
+                  640,
+                  640
+                ],
+                "preserve_aspect_ratio": false
+              }
+            },
+            "model": {
+              "backbone": "resnet_50",
+              "train_backbone": true,
+              "load_teacher_enc_dec": true,
+              "num_queries": 300,
+              "num_select": 300,
+              "num_feature_levels": 3,
+              "return_interm_indices": [
+                1,
+                2,
+                3
+              ],
+              "feat_strides": [
+                8,
+                16,
+                32
+              ],
+              "feat_channels": [
+                256,
+                256,
+                256
+              ],
+              "use_encoder_idx": [
+                2
+              ],
+              "hidden_dim": 256,
+              "nheads": 8,
+              "dropout_ratio": 0.0,
+              "enc_layers": 1,
+              "dim_feedforward": 1024,
+              "dec_layers": 6
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/rtdetr/rtdetr.warehouse.resnet50.trainable.v1.0.2.yaml",
+            "sha256": "7c4144e30fec5f2a65ea369e586fe4c1c37529c84d3ac53a883a25620a403406",
+            "provenance": {
+              "source": "Curated path-free projection of the official NGC experiment.yaml",
+              "evidence": "rtdetr_2d_warehouse:trainable_rn50_v1.0.2#experiment.yaml sha256=4c2e8d9962ab948b2e50415cfdab5dead7a535017601ea5c66997177e1334c82"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "rtdetr.warehouse.efficientvit_l2.trainable.v1.0",
+          "status": "supported",
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.1.0-rc-245",
+            "container_identity": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch@sqsh-sha256:e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+            "evidence": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/rtdetr_qualification_20260730/completion.resume.json#completion_sha256=4ad1eadda2ed006dad603f3392fff0aa598ca66f20d3840a869b0192178040e5;manifest_sha256=c99148024d56b579398596264e0383cbe9c4a7668b842d25f69459eb2ff8abd4"
+          },
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "rtdetr_2d_warehouse",
+            "version": "trainable_efficientvit_l2_v1.0",
+            "member": "rtdetr_warehouse_v1.0.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/rtdetr_2d_warehouse:trainable_efficientvit_l2_v1.0#rtdetr_warehouse_v1.0.pth"
+          },
+          "sha256": "18c21b12478855e11d7f6012a4386f515465bd47fc013ea452ee76ca3fd7ecdb",
+          "expected_size_bytes": 813085917,
+          "model_family": "rtdetr",
+          "architecture": "rtdetr",
+          "backbone": "efficientvit_l2",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "preserve_aspect_ratio": false
+            }
+          },
+          "default_spec_overrides": {
+            "dataset": {
+              "augmentation": {
+                "train_spatial_size": [
+                  544,
+                  960
+                ],
+                "eval_spatial_size": [
+                  544,
+                  960
+                ],
+                "preserve_aspect_ratio": false
+              }
+            },
+            "model": {
+              "backbone": "efficientvit_l2",
+              "train_backbone": true,
+              "load_teacher_enc_dec": false,
+              "num_queries": 300,
+              "num_select": 300,
+              "num_feature_levels": 3,
+              "return_interm_indices": [
+                1,
+                2,
+                3
+              ],
+              "feat_strides": [
+                8,
+                16,
+                32
+              ],
+              "feat_channels": [
+                256,
+                256,
+                256
+              ],
+              "use_encoder_idx": [
+                2
+              ],
+              "hidden_dim": 256,
+              "nheads": 8,
+              "dropout_ratio": 0.0,
+              "enc_layers": 1,
+              "dim_feedforward": 1024,
+              "dec_layers": 6
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/rtdetr/rtdetr.warehouse.efficientvit_l2.trainable.v1.0.yaml",
+            "sha256": "188c376977275b2e17a32b13d5ba54dc567058e3945aa32c67ecf2f3ea6027b3",
+            "provenance": {
+              "source": "Curated path-free projection of the official NGC experiment.yaml",
+              "evidence": "rtdetr_2d_warehouse:trainable_efficientvit_l2_v1.0#experiment.yaml sha256=2b5fe5173774d5f5749e89043a33c8a4f0b182c7899b00b1bbc7ac0482ea31c4"
+            }
+          },
+          "task_compatibility": [
+            "object_detection"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        }
+      ]
+    },
+    "grounding_dino": {
+      "default_ptm": null,
+      "checkpoints": [
+        {
+          "id": "grounding_dino.commercial.swin_tiny.trainable.v1.1",
+          "status": "supported",
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.1.0-rc-245",
+            "container_identity": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch@sqsh-sha256:e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+            "evidence": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_synthetic_integrated_successor_v1/qualification_completion.json#completion_sha256=172688d1af2479886c46f55fa148bf43a7487b517b2ea145c3359136100de698;file_sha256=d09b9940aaa98c4f1f5b24dd802546e6dad98b9cf34ff5ce1d8504c0652edb13;pilot_handoff_sha256=318d93fc04260650a67452eb00a710658744bf83fe3462115a9c320b12315ec8;pilot_handoff_file_sha256=82ee846b27b42bffeb559a88dcf18d353d72eea8cc1e9b0eae241725124807cf;contract_sha256=d8ddb091aa4b8f15c50660cb8394ec24073fe9fa27c102fd562d2037f6f1fee5"
+          },
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "grounding_dino",
+            "version": "grounding_dino_swin_tiny_commercial_trainable_v1.1",
+            "member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.1#grounding_dino_swin_tiny_commercial_trainable.pth"
+          },
+          "sha256": "8ea7e089e174e72a7fe57ff63cdba5e1e4994b159e41cf72122a7e0d841beaa6",
+          "expected_size_bytes": 2070860191,
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "model_family": "grounding_dino",
+          "architecture": "grounding_dino",
+          "backbone": "swin_tiny_224_1k",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "text_encoder": "bert_base",
+              "max_text_length": 256,
+              "tokenization_outside_deployment_graph": true
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "swin_tiny_224_1k",
+              "num_feature_levels": 4,
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "dropout_ratio": 0.0,
+              "dim_feedforward": 2048,
+              "log_scale": "auto",
+              "class_embed_bias": true
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.1.yaml",
+            "sha256": "49bc2090236277dd429df7f5b94733cdabc1e6cb785671fc24430de06d62427f",
+            "provenance": {
+              "source": "Curated path-free projection of the official NGC experiment.yaml",
+              "evidence": "grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.1#experiment.yaml sha256=b6c1f211cb8da80e4ae3e882b87358087befd6e69c097a12b909de52f447e4da"
+            }
+          },
+          "task_compatibility": [
+            "grounded_object_detection"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "grounding_dino.commercial.swin_tiny.trainable.v1.0",
+          "status": "supported",
+          "validation": {
+            "status": "validated",
+            "tao_version": "7.1.0-rc-245",
+            "container_identity": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch@sqsh-sha256:e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+            "evidence": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/grounding_dino_synthetic_integrated_successor_v1/qualification_completion.json#completion_sha256=172688d1af2479886c46f55fa148bf43a7487b517b2ea145c3359136100de698;file_sha256=d09b9940aaa98c4f1f5b24dd802546e6dad98b9cf34ff5ce1d8504c0652edb13;pilot_handoff_sha256=318d93fc04260650a67452eb00a710658744bf83fe3462115a9c320b12315ec8;pilot_handoff_file_sha256=82ee846b27b42bffeb559a88dcf18d353d72eea8cc1e9b0eae241725124807cf;contract_sha256=d8ddb091aa4b8f15c50660cb8394ec24073fe9fa27c102fd562d2037f6f1fee5"
+          },
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "grounding_dino",
+            "version": "grounding_dino_swin_tiny_commercial_trainable_v1.0",
+            "member": "grounding_dino_swin_tiny_commercial_trainable.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.0#grounding_dino_swin_tiny_commercial_trainable.pth"
+          },
+          "sha256": "20c3ea116d1b841063aa5efffdd386b3d85a1c35f2d702d3c95150ef1efead73",
+          "expected_size_bytes": 2070704394,
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "model_family": "grounding_dino",
+          "architecture": "grounding_dino",
+          "backbone": "swin_tiny_224_1k",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "text_encoder": "bert_base",
+              "max_text_length": 256,
+              "tokenization_outside_deployment_graph": true
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "swin_tiny_224_1k",
+              "num_feature_levels": 4,
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "dropout_ratio": 0.0,
+              "dim_feedforward": 2048,
+              "log_scale": "auto",
+              "class_embed_bias": true
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/grounding_dino/grounding_dino.commercial.swin_tiny.trainable.v1.0.yaml",
+            "sha256": "49bc2090236277dd429df7f5b94733cdabc1e6cb785671fc24430de06d62427f",
+            "provenance": {
+              "source": "Curated path-free projection of the official NGC experiment.yaml",
+              "evidence": "grounding_dino:grounding_dino_swin_tiny_commercial_trainable_v1.0#experiment.yaml sha256=b6c1f211cb8da80e4ae3e882b87358087befd6e69c097a12b909de52f447e4da"
+            }
+          },
+          "task_compatibility": [
+            "grounded_object_detection"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        }
+      ]
+    },
+    "mask2former": {
+      "default_ptm": null,
+      "checkpoints": [
+        {
+          "id": "mask2former.coco.swin_tiny.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC checkpoint and experiment-YAML identities, member size, minimum input contract, and license are recorded. NGC publishes no checkpoint checksum; the path-bearing official YAML was reduced to architecture-only defaults, and TAO compatibility plus load, training, validation, and inference mini-steps remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "mask2former",
+            "version": "mask2former_swint_trainable_v1.0",
+            "member": "mask2former_swint.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/mask2former:mask2former_swint_trainable_v1.0#mask2former_swint.pth"
+          },
+          "expected_size_bytes": 569716712,
+          "model_family": "mask2former",
+          "architecture": "mask2former",
+          "backbone": "swin_tiny",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": null,
+            "width": null,
+            "preprocessing": {
+              "color_space": "rgb",
+              "minimum_height": 32,
+              "minimum_width": 32
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "object_mask_threshold": 0.01,
+              "overlap_threshold": 0.8,
+              "mode": "instance",
+              "backbone": {
+                "type": "swin",
+                "swin": {
+                  "type": "tiny",
+                  "window_size": 7,
+                  "ape": false,
+                  "pretrain_img_size": 224
+                }
+              },
+              "mask_former": {
+                "num_object_queries": 100
+              },
+              "sem_seg_head": {
+                "norm": "GN",
+                "num_classes": 1
+              }
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/mask2former/mask2former.coco.swin_tiny.trainable.v1.0.yaml",
+            "sha256": "c1d4ce9a0b4a5e5d7b2bdf5f0904826f3dc5fb62181c71b503552ca967f14e31",
+            "provenance": {
+              "source": "Curated path-free projection of the official NGC experiment.yaml",
+              "evidence": "mask2former:mask2former_swint_trainable_v1.0#experiment.yaml sha256=f4216dd8e31ab5c13b81a022f3ea7f81011f078c7176fb017769550f7cfe2c53"
+            }
+          },
+          "task_compatibility": [
+            "instance_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        }
+      ]
+    },
+    "mask_grounding_dino": {
+      "default_ptm": null,
+      "checkpoints": [
+        {
+          "id": "mask_grounding_dino.commercial.swin_tiny.trainable.v2.1",
+          "status": "unverified",
+          "status_reason": "Official NGC checkpoint identity, SHA-256, size, model-card architecture, multimodal input contract, license, and repository-owned transfer defaults are recorded. Full TAO 7.1.0 checkpoint load, training, validation, standalone evaluation, and inference qualification remains required before runtime support.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "mask_grounding_dino",
+            "version": "mask_grounding_dino_swin_tiny_commercial_trainable_v2.1",
+            "member": "model_epoch_029_step_20642.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/mask_grounding_dino:mask_grounding_dino_swin_tiny_commercial_trainable_v2.1#model_epoch_029_step_20642.pth"
+          },
+          "sha256": "f9f9ef7a3d0b96e5653c5bd9d61b7c89a92a25c99cfad53e89d56472d830139b",
+          "expected_size_bytes": 2216696690,
+          "model_family": "mask_grounding_dino",
+          "architecture": "mask_grounding_dino",
+          "backbone": "swin_tiny_224_1k",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "text_encoder": "bert_base",
+              "max_text_length": 256
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "swin_tiny_224_1k",
+              "num_feature_levels": 4,
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "num_select": 300,
+              "hidden_dim": 256,
+              "dim_feedforward": 2048,
+              "has_mask": true,
+              "num_region_queries": 100,
+              "loss_types": [
+                "labels",
+                "boxes",
+                "masks"
+              ]
+            },
+            "dataset": {
+              "has_mask": true,
+              "max_labels": 80
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/mask_grounding_dino/mask_grounding_dino.commercial.swin_tiny.trainable.v2.1.yaml",
+            "sha256": "45cb80e9a424721ae74388db4825189e15e00211875f448b9d28a39d284f53b9",
+            "provenance": {
+              "source": "Official NGC Mask Grounding DINO model-card architecture and packaged TAO 7.1 Mask Grounding DINO schema defaults",
+              "evidence": "experiments/cross_model_automl_20260729/mask_grounding_dino_coco2017_campaign/preparation_report.md"
+            }
+          },
+          "task_compatibility": [
+            "grounded_instance_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "mask_grounding_dino.commercial.swin_tiny.trainable.v2.0",
+          "status": "unverified",
+          "status_reason": "Official NGC checkpoint identity, SHA-256, size, model-card architecture, multimodal input contract, license, and repository-owned transfer defaults are recorded. Full TAO 7.1.0 checkpoint load, training, validation, standalone evaluation, and inference qualification remains required before runtime support.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "mask_grounding_dino",
+            "version": "mask_grounding_dino_swin_tiny_commercial_trainable_v2.0",
+            "member": "model_epoch_005_step_09942.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/mask_grounding_dino:mask_grounding_dino_swin_tiny_commercial_trainable_v2.0#model_epoch_005_step_09942.pth"
+          },
+          "sha256": "aaa6894df881a8959723270c507f24054618cd5321b5b9de470d1f33c74af9a5",
+          "expected_size_bytes": 2216696690,
+          "model_family": "mask_grounding_dino",
+          "architecture": "mask_grounding_dino",
+          "backbone": "swin_tiny_224_1k",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "text_encoder": "bert_base",
+              "max_text_length": 256
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "swin_tiny_224_1k",
+              "num_feature_levels": 4,
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "num_select": 300,
+              "hidden_dim": 256,
+              "dim_feedforward": 2048,
+              "has_mask": true,
+              "num_region_queries": 100,
+              "loss_types": [
+                "labels",
+                "boxes",
+                "masks"
+              ]
+            },
+            "dataset": {
+              "has_mask": true,
+              "max_labels": 80
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/mask_grounding_dino/mask_grounding_dino.commercial.swin_tiny.trainable.v2.0.yaml",
+            "sha256": "17b6213267b83774af08dff5e79614c396707f2f81eca11e8ca29d9559375c92",
+            "provenance": {
+              "source": "Official NGC Mask Grounding DINO model-card architecture and packaged TAO 7.1 Mask Grounding DINO schema defaults",
+              "evidence": "experiments/cross_model_automl_20260729/mask_grounding_dino_coco2017_campaign/preparation_report.md"
+            }
+          },
+          "task_compatibility": [
+            "grounded_instance_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "mask_grounding_dino.commercial.swin_tiny.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC checkpoint identity, size, model-card architecture, multimodal input contract, license, and repository-owned transfer defaults are recorded. NGC publishes no checkpoint checksum for this older member; full TAO 7.1.0 artifact hashing, checkpoint load, training, validation, standalone evaluation, and inference qualification remains required before runtime support.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "mask_grounding_dino",
+            "version": "mask_grounding_dino_swin_tiny_commercial_trainable_v1.0",
+            "member": "model_epoch_049.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/mask_grounding_dino:mask_grounding_dino_swin_tiny_commercial_trainable_v1.0#model_epoch_049.pth"
+          },
+          "expected_size_bytes": 718739024,
+          "model_family": "mask_grounding_dino",
+          "architecture": "mask_grounding_dino",
+          "backbone": "swin_tiny_224_1k",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "text_encoder": "bert_base",
+              "max_text_length": 256
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "swin_tiny_224_1k",
+              "num_feature_levels": 4,
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "num_select": 300,
+              "hidden_dim": 256,
+              "dim_feedforward": 2048,
+              "has_mask": true,
+              "num_region_queries": 100,
+              "loss_types": [
+                "labels",
+                "boxes",
+                "masks"
+              ]
+            },
+            "dataset": {
+              "has_mask": true,
+              "max_labels": 80
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/mask_grounding_dino/mask_grounding_dino.commercial.swin_tiny.trainable.v1.0.yaml",
+            "sha256": "787d0f41c6368f63519c5549c3e5bb8ed219c20ea66111066c89a6db848cf20d",
+            "provenance": {
+              "source": "Official NGC Mask Grounding DINO model-card architecture and packaged TAO 7.1 Mask Grounding DINO schema defaults",
+              "evidence": "experiments/cross_model_automl_20260729/mask_grounding_dino_coco2017_campaign/preparation_report.md"
+            }
+          },
+          "task_compatibility": [
+            "grounded_instance_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model License",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "mask_grounding_dino.research.swin_tiny.trainable.v2.0",
+          "status": "unverified",
+          "status_reason": "Official NGC checkpoint identity, SHA-256, size, model-card architecture, multimodal input contract, noncommercial license, and repository-owned transfer defaults are recorded. Full TAO 7.1.0 checkpoint load, training, validation, standalone evaluation, and inference qualification remains required before runtime support.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_mask_grounding_dino_v2",
+            "version": "mask_grounding_dino_swin_tiny_research_trainable_v2.0",
+            "member": "model_epoch_021_step_35970.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_mask_grounding_dino_v2:mask_grounding_dino_swin_tiny_research_trainable_v2.0#model_epoch_021_step_35970.pth"
+          },
+          "sha256": "80d94e276468dcb003b701c77d3524ec2e99a2d44d1c4d32068f5ea5ee6cdf16",
+          "expected_size_bytes": 2216677507,
+          "model_family": "mask_grounding_dino",
+          "architecture": "mask_grounding_dino",
+          "backbone": "swin_tiny_224_1k",
+          "checkpoint_target": "train.pretrained_model_path",
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "input_contract": {
+            "channels": 3,
+            "height": 544,
+            "width": 960,
+            "preprocessing": {
+              "color_space": "rgb",
+              "layout": "nchw",
+              "text_encoder": "bert_base",
+              "max_text_length": 256
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": "swin_tiny_224_1k",
+              "num_feature_levels": 4,
+              "return_interm_indices": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "enc_layers": 6,
+              "dec_layers": 6,
+              "num_queries": 900,
+              "num_select": 300,
+              "hidden_dim": 256,
+              "dim_feedforward": 2048,
+              "has_mask": true,
+              "num_region_queries": 100,
+              "loss_types": [
+                "labels",
+                "boxes",
+                "masks"
+              ]
+            },
+            "dataset": {
+              "has_mask": true,
+              "max_labels": 80
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/mask_grounding_dino/mask_grounding_dino.research.swin_tiny.trainable.v2.0.yaml",
+            "sha256": "b2d1a2d8db8e0c0a31362a307eec7379807089ba51998e9beeb94d9381e527d4",
+            "provenance": {
+              "source": "Official NGC Mask Grounding DINO model-card architecture and packaged TAO 7.1 Mask Grounding DINO schema defaults",
+              "evidence": "experiments/cross_model_automl_20260729/mask_grounding_dino_coco2017_campaign/preparation_report.md"
+            }
+          },
+          "task_compatibility": [
+            "grounded_instance_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA One-Way Noncommercial License",
+            "url": "https://developer.download.nvidia.com/licenses/NVIDIA-OneWay-Noncommercial-License-22Mar2022.pdf",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the noncommercial model license"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        }
+      ]
+    },
+    "segformer": {
+      "default_ptm": null,
+      "checkpoints": [
+        {
+          "id": "segformer.cityscapes.fan_tiny_hybrid.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC identity, member size, Cityscapes input contract, backbone identity, and license are recorded. NGC publishes no checkpoint checksum or checkpoint-specific YAML; TAO compatibility and load, training, validation, and inference mini-steps remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_cityscapes",
+            "version": "trainable_fan_tiny_hybrid_v1.0",
+            "member": "cityscapes_fan_tiny_hybrid_224.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_cityscapes:trainable_fan_tiny_hybrid_v1.0#cityscapes_fan_tiny_hybrid_224.pth"
+          },
+          "expected_size_bytes": 123189663,
+          "model_family": "segformer",
+          "architecture": "segformer",
+          "backbone": "fan_tiny_8_p4_hybrid",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 1024,
+            "width": 1024,
+            "preprocessing": {
+              "color_space": "rgb",
+              "dynamic_input_supported_by_model_card": true
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          }
+        },
+        {
+          "id": "segformer.cityscapes.fan_small_hybrid.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC identity, member size, Cityscapes input contract, backbone identity, and license are recorded. NGC publishes no checkpoint checksum or checkpoint-specific YAML; TAO compatibility and load, training, validation, and inference mini-steps remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_cityscapes",
+            "version": "trainable_fan_small_hybrid_v1.0",
+            "member": "cityscapes_fan_small_hybrid_224.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_cityscapes:trainable_fan_small_hybrid_v1.0#cityscapes_fan_small_hybrid_224.pth"
+          },
+          "expected_size_bytes": 348336617,
+          "model_family": "segformer",
+          "architecture": "segformer",
+          "backbone": "fan_small_12_p4_hybrid",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 1024,
+            "width": 1024,
+            "preprocessing": {
+              "color_space": "rgb",
+              "dynamic_input_supported_by_model_card": true
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          }
+        },
+        {
+          "id": "segformer.cityscapes.fan_base_hybrid.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC identity, member size, Cityscapes input contract, backbone identity, and license are recorded. NGC publishes no checkpoint checksum or checkpoint-specific YAML; TAO compatibility and load, training, validation, and inference mini-steps remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_cityscapes",
+            "version": "trainable_fan_base_hybrid_v1.0",
+            "member": "cityscapes_fan_base_hybrid_224.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_cityscapes:trainable_fan_base_hybrid_v1.0#cityscapes_fan_base_hybrid_224.pth"
+          },
+          "expected_size_bytes": 654187968,
+          "model_family": "segformer",
+          "architecture": "segformer",
+          "backbone": "fan_base_16_p4_hybrid",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 1024,
+            "width": 1024,
+            "preprocessing": {
+              "color_space": "rgb",
+              "dynamic_input_supported_by_model_card": true
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          }
+        },
+        {
+          "id": "segformer.cityscapes.fan_large_hybrid.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC identity, member size, Cityscapes input contract, backbone identity, and license are recorded. NGC publishes no checkpoint checksum or checkpoint-specific YAML; TAO compatibility and load, training, validation, and inference mini-steps remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_cityscapes",
+            "version": "trainable_fan_large_hybrid_v1.0",
+            "member": "cityscapes_fan_large_hybrid_224.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_cityscapes:trainable_fan_large_hybrid_v1.0#cityscapes_fan_large_hybrid_224.pth"
+          },
+          "expected_size_bytes": 958222841,
+          "model_family": "segformer",
+          "architecture": "segformer",
+          "backbone": "fan_large_16_p4_hybrid",
+          "checkpoint_target": "train.pretrained_model_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 1024,
+            "width": 1024,
+            "preprocessing": {
+              "color_space": "rgb",
+              "dynamic_input_supported_by_model_card": true
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ],
+          "license": {
+            "name": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model license"
+            ]
+          }
+        },
+        {
+          "id": "segformer.imagenet.fan_tiny_hybrid",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_tiny",
+            "member": "fan_hybrid_tiny.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_tiny#fan_hybrid_tiny.pth"
+          },
+          "expected_size_bytes": 30032227,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_tiny_8_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 224,
+            "width": 224,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        },
+        {
+          "id": "segformer.imagenet.fan_small_hybrid",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_small",
+            "member": "fan_hybrid_small.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_small#fan_hybrid_small.pth"
+          },
+          "expected_size_bytes": 104729466,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_small_12_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 224,
+            "width": 224,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        },
+        {
+          "id": "segformer.imagenet22k.fan_base_hybrid",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_base_in22k",
+            "member": "fan_hybrid_base_in22k.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_base_in22k#fan_hybrid_base_in22k.pth"
+          },
+          "expected_size_bytes": 234955105,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_base_16_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 224,
+            "width": 224,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        },
+        {
+          "id": "segformer.imagenet22k.fan_base_hybrid.imagenet1k",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_base_in22k_1k",
+            "member": "fan_hybrid_base_in22k_1k.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_base_in22k_1k#fan_hybrid_base_in22k_1k.pth"
+          },
+          "expected_size_bytes": 202329016,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_base_16_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 224,
+            "width": 224,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        },
+        {
+          "id": "segformer.imagenet22k.fan_base_hybrid.imagenet1k.384",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_base_in22k_1k_384",
+            "member": "fan_hybrid_base_in22k_1k_384.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_base_in22k_1k_384#fan_hybrid_base_in22k_1k_384.pth"
+          },
+          "expected_size_bytes": 202331436,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_base_16_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 384,
+            "width": 384,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        },
+        {
+          "id": "segformer.imagenet22k.fan_large_hybrid",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_large_in22k",
+            "member": "fan_hybrid_large_in22k.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_large_in22k#fan_hybrid_large_in22k.pth"
+          },
+          "expected_size_bytes": 342977114,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_large_16_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 224,
+            "width": 224,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        },
+        {
+          "id": "segformer.imagenet22k.fan_large_hybrid.384",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_large_in22k_384",
+            "member": "fan_hybrid_large_in22k_384.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_large_in22k_384#fan_hybrid_large_in22k_384.pth"
+          },
+          "expected_size_bytes": 308027006,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_large_16_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 384,
+            "width": 384,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        },
+        {
+          "id": "segformer.imagenet22k.fan_large_hybrid.imagenet1k",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_large_in22k_1k",
+            "member": "fan_hybrid_large_in22k_1k.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_large_in22k_1k#fan_hybrid_large_in22k_1k.pth"
+          },
+          "expected_size_bytes": 308026197,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_large_16_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 224,
+            "width": 224,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        },
+        {
+          "id": "segformer.imagenet22k.fan_large_hybrid.imagenet1k.384",
+          "status": "unverified",
+          "status_reason": "Official immutable NGC backbone identity, member size, architecture, and pretraining resolution are recorded. NGC publishes no checksum or checkpoint-specific SegFormer YAML, and the model card contains inconsistent license sections; license normalization, TAO checkpoint-target compatibility, and all load/mini-step gates remain pending.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "pretrained_segformer_imagenet",
+            "version": "fan_hybrid_large_in22k_1k_384",
+            "member": "fan_hybrid_large_in22k_1k_384.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/pretrained_segformer_imagenet:fan_hybrid_large_in22k_1k_384#fan_hybrid_large_in22k_1k_384.pth"
+          },
+          "expected_size_bytes": 308029433,
+          "model_family": "segformer",
+          "architecture": "fan_hybrid_backbone",
+          "backbone": "fan_large_16_p4_hybrid",
+          "checkpoint_target": "model.backbone.pretrained_backbone_path",
+          "input_contract": {
+            "channels": 3,
+            "height": 384,
+            "width": 384,
+            "preprocessing": {
+              "color_space": "rgb",
+              "checkpoint_scope": "backbone_only"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation"
+          ]
+        }
+      ]
+    },
+    "oneformer": {
+      "default_ptm": null,
+      "checkpoints": [
+        {
+          "id": "oneformer.ade20k.research.swin_large.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official NGC checkpoint identity, SHA-256, size, universal-segmentation task contract, Swin-Large backbone identity, noncommercial license, and a repository-owned path-free projection of TAO's official ADE architecture spec are recorded. TAO 7.1 transfer loading and direct full-dataset training/evaluation remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "oneformer",
+            "version": "oneformer_ade_pretrained_research_trainable_v1.0",
+            "member": "model_epoch_003_step_02528.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/oneformer:oneformer_ade_pretrained_research_trainable_v1.0#model_epoch_003_step_02528.pth"
+          },
+          "sha256": "bd727f429eba64978afdf87fadb98a801a0574b45fe033faf3514b4045e561f4",
+          "expected_size_bytes": 2840732008,
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "model_family": "oneformer",
+          "architecture": "oneformer",
+          "backbone": "swin_large",
+          "checkpoint_target": "train.pretrained_model",
+          "input_contract": {
+            "channels": 3,
+            "height": null,
+            "width": null,
+            "preprocessing": {
+              "color_space": "rgb",
+              "task_prompt_required": true,
+              "supported_task_prompts": [
+                "semantic",
+                "instance",
+                "panoptic"
+              ]
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": {
+                "name": "D2SwinTransformer",
+                "swin": {
+                  "embed_dim": 192,
+                  "depths": [2, 2, 18, 2],
+                  "num_heads": [6, 12, 24, 48],
+                  "window_size": 12,
+                  "mlp_ratio": 4.0,
+                  "patch_size": 4,
+                  "patch_norm": true,
+                  "ape": false,
+                  "pretrain_img_size": 384,
+                  "qkv_bias": true,
+                  "attn_drop_rate": 0.0,
+                  "drop_rate": 0.0,
+                  "drop_path_rate": 0.3,
+                  "out_features": ["res2", "res3", "res4", "res5"],
+                  "out_indices": [0, 1, 2, 3],
+                  "use_checkpoint": false
+                }
+              },
+              "one_former": {
+                "num_object_queries": 250
+              }
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/oneformer/oneformer.ade20k.research.swin_large.trainable.v1.0.yaml",
+            "sha256": "da8997de338775ade30865ab3d500f1a968432a56ad979ac9302d90c742bf2ce",
+            "provenance": {
+              "source": "Path-free projection of TAO OneFormer's official spec_ade.yaml",
+              "evidence": "tao-pytorch:nvidia_tao_pytorch/cv/oneformer/experiment_specs/spec_ade.yaml"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation",
+            "instance_segmentation",
+            "panoptic_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA One-Way Noncommercial License with additional MIT terms",
+            "url": "https://developer.download.nvidia.com/licenses/NVIDIA-OneWay-Noncommercial-License-22Mar2022.pdf",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the noncommercial and additional model terms"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "oneformer.coco.research.swin_large.trainable",
+          "status": "unverified",
+          "status_reason": "Official NGC checkpoint identity, SHA-256, size, universal-segmentation task contract, Swin-Large backbone identity, noncommercial license, and a repository-owned path-free projection of TAO's official COCO architecture spec are recorded. TAO 7.1 transfer loading and direct full-dataset training/evaluation remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "oneformer",
+            "version": "oneformer_coco_pretrained_research",
+            "member": "oneformer_pretrained_research.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/oneformer:oneformer_coco_pretrained_research#oneformer_pretrained_research.pth"
+          },
+          "sha256": "1627287f51067e8511973b914d94b071414e16b4830ecd9efe5ad78b97207c6c",
+          "expected_size_bytes": 2840372264,
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "model_family": "oneformer",
+          "architecture": "oneformer",
+          "backbone": "swin_large",
+          "checkpoint_target": "train.pretrained_model",
+          "input_contract": {
+            "channels": 3,
+            "height": null,
+            "width": null,
+            "preprocessing": {
+              "color_space": "rgb",
+              "task_prompt_required": true,
+              "supported_task_prompts": [
+                "semantic",
+                "instance",
+                "panoptic"
+              ]
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": {
+                "name": "D2SwinTransformer",
+                "swin": {
+                  "embed_dim": 192,
+                  "depths": [2, 2, 18, 2],
+                  "num_heads": [6, 12, 24, 48],
+                  "window_size": 12,
+                  "mlp_ratio": 4.0,
+                  "patch_size": 4,
+                  "patch_norm": true,
+                  "ape": false,
+                  "pretrain_img_size": 384,
+                  "qkv_bias": true,
+                  "attn_drop_rate": 0.0,
+                  "drop_rate": 0.0,
+                  "drop_path_rate": 0.3,
+                  "out_features": ["res2", "res3", "res4", "res5"],
+                  "out_indices": [0, 1, 2, 3],
+                  "use_checkpoint": false
+                }
+              },
+              "one_former": {
+                "num_object_queries": 150
+              }
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/oneformer/oneformer.coco.research.swin_large.trainable.yaml",
+            "sha256": "5d85e7be1a37690151e05195153c2f5eacd8e2027bf6f401a8846244aef28f3d",
+            "provenance": {
+              "source": "Path-free projection of TAO OneFormer's official spec_coco.yaml",
+              "evidence": "tao-pytorch:nvidia_tao_pytorch/cv/oneformer/experiment_specs/spec_coco.yaml"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation",
+            "instance_segmentation",
+            "panoptic_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA One-Way Noncommercial License with additional MIT terms",
+            "url": "https://developer.download.nvidia.com/licenses/NVIDIA-OneWay-Noncommercial-License-22Mar2022.pdf",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the noncommercial and additional model terms"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "oneformer.its.commercial.dinat_large.trainable",
+          "status": "unverified",
+          "status_reason": "Official NGC checkpoint identity, SHA-256, size, universal-segmentation task contract, DiNAT-Large backbone identity, commercial license, and a repository-owned path-free projection of TAO's official DiNAT architecture spec are recorded. TAO 7.1 transfer loading and direct full-dataset training/evaluation remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "oneformer_its_pretrained_commercial",
+            "version": "oneformer_pretrained_commercial_dinat_its",
+            "member": "oneformer_pretrained_commercial_dinat_its.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/oneformer_its_pretrained_commercial:oneformer_pretrained_commercial_dinat_its#oneformer_pretrained_commercial_dinat_its.pth"
+          },
+          "sha256": "6bbaacc876c686bcbeca1d87fc096bd59c60b567ef361f0a42fb2dacd8c75e1c",
+          "expected_size_bytes": 2887215443,
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "model_family": "oneformer",
+          "architecture": "oneformer",
+          "backbone": "dinat_large",
+          "checkpoint_target": "train.pretrained_model",
+          "input_contract": {
+            "channels": 3,
+            "height": null,
+            "width": null,
+            "preprocessing": {
+              "color_space": "rgb",
+              "task_prompt_required": true,
+              "supported_task_prompts": [
+                "semantic",
+                "instance",
+                "panoptic"
+              ]
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": {
+                "name": "D2DiNAT",
+                "dinat": {
+                  "embed_dim": 192,
+                  "mlp_ratio": 2.0,
+                  "depths": [3, 4, 18, 5],
+                  "num_heads": [6, 12, 24, 48],
+                  "kernel_size": 7,
+                  "drop_path_rate": 0.3,
+                  "dilations": [
+                    [1, 20, 1],
+                    [1, 5, 1, 10],
+                    [1, 2, 1, 3, 1, 4, 1, 5, 1, 2, 1, 3, 1, 4, 1, 5, 1, 5],
+                    [1, 2, 1, 2, 1]
+                  ]
+                }
+              },
+              "one_former": {
+                "num_object_queries": 150
+              }
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/oneformer/oneformer.its.commercial.dinat_large.trainable.yaml",
+            "sha256": "362abebb68337d55b918d2a70fc91fa8f816640b6aae62ebd1cd9c5a24281211",
+            "provenance": {
+              "source": "Path-free projection of TAO OneFormer's official spec_its_dinat.yaml",
+              "evidence": "tao-pytorch:nvidia_tao_pytorch/cv/oneformer/experiment_specs/spec_its_dinat.yaml"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation",
+            "instance_segmentation",
+            "panoptic_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model Agreement",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-agreement/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model agreement"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        },
+        {
+          "id": "oneformer.its.commercial.swin_large.trainable.v1.0",
+          "status": "unverified",
+          "status_reason": "Official NGC checkpoint identity, SHA-256, size, universal-segmentation task contract, Swin-Large backbone identity, commercial license, and a repository-owned path-free projection of TAO's official ITS architecture spec are recorded. TAO 7.1 transfer loading and direct full-dataset training/evaluation remain unverified.",
+          "source": {
+            "provider": "ngc",
+            "registry": "nvidia/tao",
+            "resource": "oneformer_its_pretrained_commercial",
+            "version": "oneformer_its_swinl_commercial_trainable_v1.0",
+            "member": "its_miou=82.pth",
+            "official": true,
+            "immutable_identity": "ngc://nvidia/tao/oneformer_its_pretrained_commercial:oneformer_its_swinl_commercial_trainable_v1.0#its_miou=82.pth"
+          },
+          "sha256": "59a06b8e80fca90f5392bb9d3a4fdd51b45c6f06f617e6749949781fa0fa3443",
+          "expected_size_bytes": 2834018088,
+          "compatible_tao_versions": [
+            "==7.1.0"
+          ],
+          "model_family": "oneformer",
+          "architecture": "oneformer",
+          "backbone": "swin_large",
+          "checkpoint_target": "train.pretrained_model",
+          "input_contract": {
+            "channels": 3,
+            "height": null,
+            "width": null,
+            "preprocessing": {
+              "color_space": "rgb",
+              "task_prompt_required": true,
+              "supported_task_prompts": [
+                "semantic",
+                "instance",
+                "panoptic"
+              ]
+            }
+          },
+          "default_spec_overrides": {
+            "model": {
+              "backbone": {
+                "name": "D2SwinTransformer",
+                "swin": {
+                  "embed_dim": 192,
+                  "depths": [2, 2, 18, 2],
+                  "num_heads": [6, 12, 24, 48],
+                  "window_size": 7,
+                  "mlp_ratio": 4.0,
+                  "patch_size": 4,
+                  "patch_norm": true,
+                  "ape": false,
+                  "pretrain_img_size": 384,
+                  "qkv_bias": true,
+                  "attn_drop_rate": 0.0,
+                  "drop_rate": 0.0,
+                  "drop_path_rate": 0.3,
+                  "out_features": ["res2", "res3", "res4", "res5"],
+                  "out_indices": [0, 1, 2, 3],
+                  "use_checkpoint": false
+                }
+              },
+              "one_former": {
+                "num_object_queries": 150
+              }
+            }
+          },
+          "checkpoint_spec_file": {
+            "source": "repository",
+            "path": "data/ptm_specs/oneformer/oneformer.its.commercial.swin_large.trainable.v1.0.yaml",
+            "sha256": "444746e8c4b0a2f5ac3386e3945509272249b38c7993d498ec209ecb211ab851",
+            "provenance": {
+              "source": "Path-free projection of TAO OneFormer's official spec_its_swin.yaml",
+              "evidence": "tao-pytorch:nvidia_tao_pytorch/cv/oneformer/experiment_specs/spec_its_swin.yaml"
+            }
+          },
+          "task_compatibility": [
+            "semantic_segmentation",
+            "instance_segmentation",
+            "panoptic_segmentation"
+          ],
+          "license": {
+            "name": "NVIDIA Open Model Agreement",
+            "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-agreement/",
+            "access_requirements": [
+              "NVIDIA NGC model access",
+              "Acceptance of the model agreement"
+            ]
+          },
+          "deprecation": {
+            "is_deprecated": false
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+dataset:
+  augmentation:
+    fixed_random_crop: 1536
+    test_random_resize: 1536
+    random_resize_max_size: 1536
+    fixed_padding: true
+model:
+  backbone: vit_large_nvdinov2
+  train_backbone: false
+  num_feature_levels: 4
+  enc_layers: 6
+  dec_layers: 6
+  num_queries: 900
+  dropout_ratio: 0.0
+  dim_feedforward: 2048

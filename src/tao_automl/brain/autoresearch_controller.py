@@ -27,13 +27,14 @@ from tao_automl.brain.prompts.autoresearch_prompts import (
     build_keep_discard_prompt,
 )
 from tao_automl.types import JobStates
+from tao_automl.objectives import implicit_direction
 from tao_automl.utils.math_utils import get_valid_options
 
 logger = logging.getLogger(__name__)
 
 
 def _metric_is_minimized(metric: str) -> bool:
-    return "loss" in (metric or "").lower()
+    return implicit_direction(metric) == "minimize"
 
 
 def _finite_numeric_bound(bound: Any) -> Optional[float]:

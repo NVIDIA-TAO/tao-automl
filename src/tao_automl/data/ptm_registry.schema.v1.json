@@ -1,0 +1,557 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://developer.nvidia.com/tao/automl/ptm_registry.schema.v1.json",
+  "title": "NVIDIA TAO AutoML pretrained-model registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_version",
+    "models"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "registry_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "models": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/model"
+      }
+    }
+  },
+  "$defs": {
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_ptm",
+        "checkpoints"
+      ],
+      "properties": {
+        "default_ptm": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checkpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/checkpoint"
+          }
+        }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "status": {
+          "enum": [
+            "supported",
+            "unverified",
+            "unsupported",
+            "deprecated"
+          ]
+        },
+        "status_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_adapters": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/artifact_adapter"
+          }
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "expected_size_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "compatible_tao_versions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "model_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "architecture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "backbone": {
+          "type": "string",
+          "minLength": 1
+        },
+        "checkpoint_target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "input_contract": {
+          "$ref": "#/$defs/input_contract"
+        },
+        "default_spec_overrides": {
+          "type": "object"
+        },
+        "checkpoint_spec_file": {
+          "$ref": "#/$defs/checkpoint_spec_file"
+        },
+        "task_compatibility": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "license": {
+          "$ref": "#/$defs/license"
+        },
+        "deprecation": {
+          "$ref": "#/$defs/deprecation"
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "supported"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "source",
+              "expected_size_bytes",
+              "compatible_tao_versions",
+              "model_family",
+              "architecture",
+              "backbone",
+              "checkpoint_target",
+              "input_contract",
+              "default_spec_overrides",
+              "checkpoint_spec_file",
+              "task_compatibility",
+              "license",
+              "deprecation",
+              "validation"
+            ],
+            "anyOf": [
+              {
+                "required": [
+                  "sha256"
+                ]
+              },
+              {
+                "properties": {
+                  "source": {
+                    "required": [
+                      "immutable_identity"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "else": {
+            "required": [
+              "status_reason"
+            ]
+          }
+        }
+      ]
+    },
+    "artifact_adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "adapter_type",
+        "compatible_tao_versions",
+        "recipe",
+        "output",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "adapter_type": {
+          "const": "checkpoint_metadata_projection_v1"
+        },
+        "compatible_tao_versions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "recipe": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "retain_top_level_keys",
+            "add_top_level_metadata",
+            "tensor_container_key",
+            "require_exact_tensor_key_set",
+            "require_exact_tensor_values"
+          ],
+          "properties": {
+            "retain_top_level_keys": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "add_top_level_metadata": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "integer",
+                  "number",
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "tensor_container_key": {
+              "type": "string",
+              "minLength": 1
+            },
+            "require_exact_tensor_key_set": {
+              "const": true
+            },
+            "require_exact_tensor_values": {
+              "const": true
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "member",
+            "expected_size_bytes",
+            "sha256"
+          ],
+          "properties": {
+            "member": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expected_size_bytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "evidence"
+          ],
+          "properties": {
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "registry",
+        "resource",
+        "version",
+        "member",
+        "official"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "registry": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "enum": [
+              "latest",
+              "LATEST"
+            ]
+          }
+        },
+        "member": {
+          "type": "string",
+          "minLength": 1
+        },
+        "official": {
+          "const": true
+        },
+        "immutable_identity": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}$"
+    },
+    "input_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channels",
+        "height",
+        "width"
+      ],
+      "properties": {
+        "channels": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "width": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "preprocessing": {
+          "type": "object"
+        }
+      }
+    },
+    "checkpoint_spec_file": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "member",
+            "expected_size_bytes"
+          ],
+          "properties": {
+            "source": {
+              "oneOf": [
+                {
+                  "const": "checkpoint_source"
+                },
+                {
+                  "$ref": "#/$defs/source"
+                }
+              ]
+            },
+            "member": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expected_size_bytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "immutable_identity": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "anyOf": [
+            {
+              "required": [
+                "sha256"
+              ]
+            },
+            {
+              "required": [
+                "immutable_identity"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "path",
+            "sha256",
+            "provenance"
+          ],
+          "properties": {
+            "source": {
+              "const": "repository"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^data/(?!.*(?:^|/)\\.\\.(?:/|$)).+"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "source",
+                "evidence"
+              ],
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evidence": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "access_requirements"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string"
+        },
+        "access_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "deprecation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_deprecated"
+      ],
+      "properties": {
+        "is_deprecated": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "replacement_id": {
+          "type": "string"
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "tao_version",
+        "container_identity",
+        "evidence"
+      ],
+      "properties": {
+        "status": {
+          "const": "validated"
+        },
+        "tao_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "container_identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

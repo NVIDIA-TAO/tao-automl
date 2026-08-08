@@ -1,0 +1,77 @@
+{
+  "annotation_format": "COCO object detection",
+  "categories": [
+    {
+      "id": 1,
+      "name": "cone",
+      "supercategory": "cone"
+    },
+    {
+      "id": 2,
+      "name": "forklift",
+      "supercategory": "forklift"
+    },
+    {
+      "id": 3,
+      "name": "cart",
+      "supercategory": "cart"
+    },
+    {
+      "id": 4,
+      "name": "fire_extinguisher",
+      "supercategory": "fire_extinguisher"
+    }
+  ],
+  "dataset_id": "tao_od_synthetic_full_dino_coco",
+  "eval_class_ids": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "num_classes_with_background": 5,
+  "schema_version": 1,
+  "source": {
+    "original_uri": "s3://nvcf-storage-handling/data/tao_od_synthetic_full_dino_coco/",
+    "staged_lustre_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco"
+  },
+  "splits": {
+    "train": {
+      "annotation": {
+        "annotation_count": 8395,
+        "image_count": 1414,
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/annotations.json",
+        "sha256": "7401a1245dc0b691c40f9f53cf4f46f9b96a3e0bc3dcfd357de038074acc1994",
+        "size_bytes": 3070605
+      },
+      "images": {
+        "identity": {
+          "algorithm": "sha256_of_sorted_sha256sum_basename_lines",
+          "file_count": 1414,
+          "sha256": "8234aa9c82589690a721575fb60590df39f91e6a782fa0f1201c264e97f07b47",
+          "total_bytes": 112526760
+        },
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/train/images/images"
+      }
+    },
+    "validation": {
+      "annotation": {
+        "annotation_count": 2186,
+        "image_count": 353,
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/annotations.json",
+        "sha256": "9b715b689e9a17588805faad26ed94597886d28ac687438dcb778de433f997af",
+        "size_bytes": 307755
+      },
+      "images": {
+        "identity": {
+          "algorithm": "sha256_of_sorted_sha256sum_basename_lines",
+          "file_count": 353,
+          "sha256": "4a4edf90146f6928e213fc0b9e1d61dbdf7214915c68025617ec07617c8608eb",
+          "total_bytes": 28345111
+        },
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/val/images/images"
+      }
+    }
+  },
+  "task": "object_detection"
+}

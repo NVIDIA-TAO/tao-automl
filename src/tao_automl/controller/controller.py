@@ -8,10 +8,16 @@ and tracks results.  It does NOT launch jobs -- the caller does that.
 Optionally integrates with Weights & Biases (wandb) for experiment tracking.
 """
 
+import copy
 import logging
 import os
 
 from tao_automl.objectives import parse_objective_config
+from tao_automl.recommendation_audit import (
+    build_recommendation_audit,
+    validate_recommendation_audit,
+    visible_history_snapshot,
+)
 from tao_automl.types import Recommendation, ResumeRecommendation, JobStates
 from tao_automl.utils.value_utils import normalize_json_value
 
@@ -86,6 +92,7 @@ class Controller:
         self.history = []  # list of Recommendation objects
         self._next_id = 0
         self._checkpoint_window = 0
+        self._last_selection_analysis = None
 
         # WandB integration (optional)
         self._wandb_config = wandb_config or {}
@@ -99,6 +106,37 @@ class Controller:
     # Public API
     # ------------------------------------------------------------------
 
+    def _validate_state_transaction(self):
+        """Fail closed before mutating state after an interrupted write."""
+        validate = getattr(
+            self.state_store,
+            "validate_state_transaction",
+            None,
+        )
+        if callable(validate):
+            validate(self.context.id)
+
+    def _persist_compound_state(self, *, operation):
+        """Persist brain and controller as one committed state generation.
+
+        The component files remain individually atomic for compatibility with
+        legacy state stores. Production ``StateStore`` instances additionally
+        write a transaction record before the first component and commit it
+        only after both components are durable. An exception intentionally
+        leaves the record pending so resume cannot combine split generations.
+        """
+        begin = getattr(self.state_store, "begin_state_transaction", None)
+        commit = getattr(self.state_store, "commit_state_transaction", None)
+        if not callable(begin) or not callable(commit):
+            self.brain.save_state()
+            self.save_state()
+            return
+
+        generation = begin(self.context.id, operation=operation)
+        self.brain.save_state()
+        self.save_state()
+        commit(self.context.id, generation)
+
     def next_recommendation(self):
         """Get next hyperparameter recommendation(s) from the brain.
 
@@ -108,15 +146,67 @@ class Controller:
             to finish), or contain multiple entries for parallel algorithms
             like Hyperband.
         """
+        with self.state_store.lock():
+            return self._next_recommendation_locked()
+
+    def _next_recommendation_locked(self):
+        """Generate and durably persist one serialized decision window."""
+        self._validate_state_transaction()
+        # Capture issuance inputs before the brain mutates any internal state
+        # or parameter record while converting a normalized suggestion.
+        visible_history = visible_history_snapshot(self.history)
+        search_space = copy.deepcopy(getattr(self.brain, "parameters", []))
+        custom_ranges = copy.deepcopy(getattr(self.brain, "custom_ranges", {}))
         raw_recs = self.brain.generate_recommendations(self.history)
 
         if not raw_recs:
-            self.brain.save_state()
-            self.save_state()
+            self._persist_compound_state(operation="idle_recommendation_poll")
             return []
 
+        consume_audits = getattr(
+            self.brain,
+            "consume_last_recommendation_audits",
+            None,
+        )
+        if callable(consume_audits):
+            acquisition_audits = consume_audits()
+            if len(acquisition_audits) != len(raw_recs):
+                raise ValueError(
+                    "Brain recommendation audit count does not match emitted "
+                    f"recommendations: {len(acquisition_audits)} audit(s), "
+                    f"{len(raw_recs)} recommendation(s)"
+                )
+        else:
+            acquisition = copy.deepcopy(
+                getattr(
+                    self.brain,
+                    "acquisition_audit",
+                    {
+                        "method": type(self.brain).__name__,
+                        "mode": self.algorithm,
+                    },
+                )
+            )
+            acquisition_audits = [
+                copy.deepcopy(acquisition) for _ in raw_recs
+            ]
+        algorithm_capability = copy.deepcopy(
+            getattr(self.brain, "algorithm_capability", None)
+        )
+        objective_mode_capability = copy.deepcopy(
+            getattr(self.brain, "objective_mode_capability", None)
+        )
+        acquisition_audits = [
+            {
+                "proposal": copy.deepcopy(audit),
+                "algorithm_capability": algorithm_capability,
+                "objective_mode_capability": objective_mode_capability,
+            }
+            for audit in acquisition_audits
+        ]
+
         recommendations = []
-        for raw_rec in raw_recs:
+        for raw_rec, acquisition in zip(raw_recs, acquisition_audits):
             if not raw_rec:
                 continue
 
@@ -131,6 +221,18 @@ class Controller:
                         identifier=int(raw_rec.id),
                         specs=normalized_specs,
                         metric=self.metric,
+                    )
+                    rec.recommendation_audit = build_recommendation_audit(
+                        candidate_id=rec.id,
+                        specs=normalized_specs,
+                        algorithm=self.algorithm,
+                        search_seed=getattr(self.brain, "random_seed", None),
+                        search_space=search_space,
+                        custom_ranges=custom_ranges,
+                        objective_config=self.objective_config,
+                        visible_history=visible_history,
+                        acquisition=acquisition,
+                        is_resume_promotion=True,
                     )
                     self.history.append(rec)
                     self._next_id = max(self._next_id, rec.id + 1)
@@ -152,6 +254,17 @@ class Controller:
                 specs=spec_dict,
                 metric=self.metric,
             )
+            rec.recommendation_audit = build_recommendation_audit(
+                candidate_id=rec.id,
+                specs=spec_dict,
+                algorithm=self.algorithm,
+                search_seed=getattr(self.brain, "random_seed", None),
+                search_space=search_space,
+                custom_ranges=custom_ranges,
+                objective_config=self.objective_config,
+                visible_history=visible_history,
+                acquisition=acquisition,
+            )
             self.history.append(rec)
             recommendations.append(rec)
             self._next_id += 1
@@ -166,8 +279,14 @@ class Controller:
             for rec in recommendations:
                 rec.checkpoint_window = self._checkpoint_window
 
-        # Persist after generating new recommendations
-        self.save_state()
+        # Persist both halves of the issuance decision before returning it to
+        # the launcher.  The brain owns acquisition counters, RNG state, and
+        # normalized design points while the controller owns candidate IDs
+        # and the immutable issuance audit.  Persisting only the controller
+        # here makes a crash after submission but before report_result() lose
+        # the brain-side proposal state, so a resumed search can repeat or
+        # misassociate the outstanding recommendation.
+        self._persist_compound_state(operation="recommendation_issuance")
         return recommendations
 
     def report_result(self, rec_id, metric_value, best_epoch=None, status="success"):
@@ -184,6 +303,7 @@ class Controller:
             status: ``"success"`` or ``"failure"``.
         """
         with self.state_store.lock():
+            self._validate_state_transaction()
             rec = self._find_rec(rec_id)
             if rec is None:
                 logger.warning("report_result: recommendation %s not found", rec_id)
@@ -215,10 +335,10 @@ class Controller:
             rec.update_status(rec_status)
             if best_epoch is not None:
                 rec.best_epoch_number = best_epoch
+            self._refresh_archive_scores()
 
-            # Persist brain and controller state (under lock)
-            self.brain.save_state()
-            self.save_state()
+            # Persist brain and controller state (under lock).
+            self._persist_compound_state(operation="result_update")
 
         logger.info(
             "Reported result for rec %d: score=%.6f values=%s status=%s",
@@ -243,9 +363,24 @@ class Controller:
         if self.algorithm in _MULTI_FIDELITY_ALGORITHMS:
             completed = self._largest_budget_candidates(completed)
 
+        if self.objective_config.has_archive_selector:
+            analysis = self.objective_config.analyze_archive(completed)
+            self._last_selection_analysis = analysis
+            return analysis.winner()
+
         if self.objective_config.score_direction == "minimize":
-            return min(completed, key=lambda r: r.result)
-        return max(completed, key=lambda r: r.result)
+            best_value = min(r.result for r in completed)
+            tied = [
+                r for r in completed
+                if r.result == best_value
+            ]
+        else:
+            best_value = max(r.result for r in completed)
+            tied = [
+                r for r in completed
+                if r.result == best_value
+            ]
+        return min(tied, key=self._stable_recommendation_key)
 
     def get_progress(self):
         """Return a progress summary dict.
@@ -269,6 +404,7 @@ class Controller:
             "best_objective_score": best.objective_score if best else None,
             "best_rec_id": best.id if best else None,
             "algorithm": self.algorithm,
+            "random_seed": getattr(self.brain, "random_seed", None),
             "objectives": self.objective_config.to_dict(),
             "pareto_front_size": len(pareto_front),
         }
@@ -374,6 +510,8 @@ class Controller:
         selector = (
             min if self.objective_config.score_direction == "minimize" else max
         )
+        if self.objective_config.has_archive_selector:
+            return self.objective_config.analyze_archive(candidates).winner()
         return selector(candidates, key=lambda rec: rec.result)
 
     def get_status(self):
@@ -386,9 +524,15 @@ class Controller:
         progress = self.get_progress()
         best = self.get_best()
 
+        analysis = self._selection_analysis()
+        audit_by_id = (
+            {item.candidate_id: item for item in analysis.audits}
+            if analysis is not None
+            else {}
+        )
         recs = []
         for r in self.history:
-            recs.append({
+            rec_data = {
                 "rec_id": r.id,
                 "specs": r.specs,
                 "job_id": r.job_id,
@@ -398,9 +542,16 @@ class Controller:
                 "objective_values": dict(r.objective_values),
                 "failure_reason": getattr(r, "failure_reason", None),
                 "adjustments": getattr(r, "adjustments", []),
+                "recommendation_audit": copy.deepcopy(
+                    getattr(r, "recommendation_audit", {})
+                ),
                 "created_on": r.created_on,
                 "last_modified": r.last_modified,
-            })
+            }
+            audit = audit_by_id.get(str(r.id))
+            if audit is not None:
+                rec_data["selection_audit"] = audit.to_dict()
+            recs.append(rec_data)
 
         active = [r.id for r in self.history if r.status in (JobStates.pending, JobStates.started, JobStates.running)]
 
@@ -415,6 +566,7 @@ class Controller:
             },
             "recommendations": recs,
             "pareto_front": self._serialize_pareto_front(),
+            "selection_analysis": analysis.to_dict() if analysis else None,
             "active_rec_ids": active,
         }
 
@@ -606,6 +758,9 @@ class Controller:
 
         Returns a Controller instance with history restored from disk.
         """
+        validate = getattr(state_store, "validate_state_transaction", None)
+        if callable(validate):
+            validate(context.id)
         controller = cls(
             brain=brain,
             context=context,
@@ -644,6 +799,15 @@ class Controller:
                 rec.resume_from_step = rec_dict.get("resume_from_step")
                 rec.checkpoint_window = int(rec_dict.get("checkpoint_window", 0) or 0)
                 rec.early_stop_epoch = rec_dict.get("early_stop_epoch")
+                rec.failure_reason = rec_dict.get("failure_reason")
+                rec.adjustments = list(rec_dict.get("adjustments", []))
+                rec.recommendation_audit = copy.deepcopy(
+                    rec_dict.get("recommendation_audit", {})
+                )
+                if rec.recommendation_audit:
+                    validate_recommendation_audit(
+                        rec.recommendation_audit
+                    )
                 rec.created_on = rec_dict.get("created_on", "")
                 rec.last_modified = rec_dict.get("last_modified", "")
                 controller.history.append(rec)
@@ -659,6 +823,7 @@ class Controller:
             "Loaded controller state: %d recommendations, next_id=%d",
             len(controller.history), controller._next_id,
         )
+        controller._refresh_archive_scores()
         return controller
 
     # ------------------------------------------------------------------
@@ -714,10 +879,28 @@ class Controller:
         ]
         if not self.objective_config.is_multi_objective:
             return completed
+        if self.objective_config.has_archive_selector:
+            if self.algorithm in _MULTI_FIDELITY_ALGORITHMS:
+                completed = self._largest_budget_candidates(completed)
+            analysis = self.objective_config.analyze_archive(completed)
+            self._last_selection_analysis = analysis
+            return [
+                audit.candidate
+                for audit in analysis.audits
+                if audit.valid
+                and audit.multi_objective_accuracy_feasible
+                and audit.feasible_pareto_rank == 0
+            ]
         return self.objective_config.pareto_front(completed)
 
     def _serialize_pareto_front(self):
         """Return JSON-safe Pareto-front records."""
+        analysis = self._selection_analysis()
+        audit_by_id = (
+            {item.candidate_id: item for item in analysis.audits}
+            if analysis is not None
+            else {}
+        )
         return [
             {
                 "rec_id": rec.id,
@@ -725,9 +908,73 @@ class Controller:
                 "metric_value": rec.primary_metric_value(),
                 "objective_score": rec.objective_score,
                 "objective_values": dict(rec.objective_values),
+                "selection_audit": (
+                    audit_by_id[str(rec.id)].to_dict()
+                    if str(rec.id) in audit_by_id
+                    else None
+                ),
             }
             for rec in self.get_pareto_front()
         ]
+
+    @staticmethod
+    def _stable_recommendation_key(rec):
+        """Return an enumeration-order-independent final tie-break key."""
+        from tao_automl.selection import canonical_spec_fingerprint
+
+        return canonical_spec_fingerprint(rec.specs), str(rec.id)
+
+    def _selection_candidates(self):
+        completed = [
+            rec for rec in self.history
+            if rec.status in (JobStates.success, JobStates.done)
+        ]
+        if (
+            completed
+            and self.algorithm in _MULTI_FIDELITY_ALGORITHMS
+        ):
+            completed = self._largest_budget_candidates(completed)
+        return completed
+
+    def _selection_analysis(self):
+        if not self.objective_config.has_archive_selector:
+            return None
+        completed = self._selection_candidates()
+        if not completed:
+            return None
+        analysis = self.objective_config.analyze_archive(completed)
+        self._last_selection_analysis = analysis
+        return analysis
+
+    def _refresh_archive_scores(self):
+        """Refresh normalized acquisition utilities after an archive update."""
+        if not self.objective_config.has_archive_selector:
+            return
+        completed = [
+            rec for rec in self.history
+            if rec.status in (JobStates.success, JobStates.done)
+        ]
+        if not completed:
+            return
+
+        # Compare like resource budgets for multi-fidelity promotion decisions.
+        groups = {}
+        for rec in completed:
+            budget = (
+                self._recommendation_budget(rec)
+                if self.algorithm in _MULTI_FIDELITY_ALGORITHMS
+                else None
+            )
+            groups.setdefault(budget, []).append(rec)
+        for candidates in groups.values():
+            analysis = self.objective_config.analyze_archive(candidates)
+            for audit in analysis.audits:
+                if not audit.valid or audit.acquisition_score is None:
+                    continue
+                rec = audit.candidate
+                rec.objective_score = float(audit.acquisition_score)
+                rec.result = float(audit.acquisition_score)
+        self._last_selection_analysis = self._selection_analysis()
 
     def _estimate_total(self):
         """Estimate total number of recommendations for progress reporting."""
@@ -741,6 +988,11 @@ class Controller:
     @staticmethod
     def _serialize_rec(rec):
         """Convert a Recommendation to a JSON-safe dict."""
+        recommendation_audit = copy.deepcopy(
+            getattr(rec, "recommendation_audit", {})
+        )
+        if recommendation_audit:
+            validate_recommendation_audit(recommendation_audit)
         return {
             "id": rec.id,
             "specs": rec.specs,
@@ -758,6 +1010,7 @@ class Controller:
             "early_stop_epoch": rec.early_stop_epoch,
             "failure_reason": getattr(rec, "failure_reason", None),
             "adjustments": getattr(rec, "adjustments", []),
+            "recommendation_audit": recommendation_audit,
             "created_on": rec.created_on,
             "last_modified": rec.last_modified,
         }

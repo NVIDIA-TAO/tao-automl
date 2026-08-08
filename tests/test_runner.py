@@ -30,6 +30,87 @@ def test_corrupt_active_job_ledger_fails_closed(tmp_path):
         _load_active_jobs(str(tmp_path))
 
 
+def test_fresh_runner_workspaces_are_collision_safe_within_same_second(
+    tmp_path,
+):
+    from tao_automl.runner import _prepare_run_workspace
+
+    settings = {"algorithm": "bayesian", "metric": "accuracy"}
+    frozen_clock = MagicMock()
+    frozen_clock.now.return_value.strftime.return_value = "20260729_120000"
+    with patch("tao_automl.runner.datetime", frozen_clock):
+        first = _prepare_run_workspace(
+            str(tmp_path),
+            automl_settings=settings,
+            resume=False,
+        )
+        second = _prepare_run_workspace(
+            str(tmp_path),
+            automl_settings=settings,
+            resume=False,
+        )
+
+    assert first != second
+    assert Path(first).is_dir()
+    assert Path(second).is_dir()
+    assert Path(first).name.startswith("run_20260729_120000_")
+    assert Path(second).name.startswith("run_20260729_120000_")
+
+
+def test_explicit_campaign_job_workspace_is_deterministic_and_exclusive(
+    tmp_path,
+):
+    from tao_automl.runner import _prepare_run_workspace
+
+    settings = {
+        "campaign_id": "dino/objective-aware:v1",
+        "job_id": "latency+seed-271828",
+    }
+    created = _prepare_run_workspace(
+        str(tmp_path),
+        automl_settings=settings,
+        resume=False,
+    )
+    resumed = _prepare_run_workspace(
+        str(tmp_path),
+        automl_settings=settings,
+        resume=True,
+    )
+
+    assert resumed == created
+    assert Path(created).parent.name.startswith("campaign_dino-objective-aware-v1-")
+    assert Path(created).name.startswith("job_latency-seed-271828-")
+    with pytest.raises(FileExistsError, match="use resume=True"):
+        _prepare_run_workspace(
+            str(tmp_path),
+            automl_settings=settings,
+            resume=False,
+        )
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        {"campaign_id": "campaign-only"},
+        {"job_id": "job-only"},
+        {"campaign_id": "", "job_id": "job"},
+        {"campaign_id": "campaign", "job_id": False},
+    ],
+)
+def test_explicit_campaign_workspace_requires_complete_string_identity(
+    tmp_path,
+    settings,
+):
+    from tao_automl.runner import _prepare_run_workspace
+
+    with pytest.raises(ValueError):
+        _prepare_run_workspace(
+            str(tmp_path),
+            automl_settings=settings,
+            resume=False,
+        )
+
+
 # ---------------------------------------------------------------------------
 # SkillContext
 # ---------------------------------------------------------------------------
@@ -228,6 +309,94 @@ def test_skill_context_loads_skill_info_and_template(tmp_path):
     assert ctx.action_cfg["config_format"] == "yaml"
     assert ctx.default_specs["train"]["num_epochs"] == 12
     assert ctx.default_specs["dataset"]["num_classes"] == 80
+
+
+def _write_checkpoint_skill(tmp_path: Path, *, ambiguous: bool = False) -> Path:
+    skill_dir = tmp_path / "models" / "checkpoint-net"
+    refs = skill_dir / "references"
+    refs.mkdir(parents=True)
+    extra_input = (
+        "      model.pretrained_backbone_path:\n"
+        "        type: file\n"
+        "        optional: true\n"
+        if ambiguous
+        else ""
+    )
+    extra_role = (
+        "    model.pretrained_backbone_path: ptm_if_no_resume_model\n"
+        if ambiguous
+        else ""
+    )
+    (refs / "skill_info.yaml").write_text(
+        "network_arch: checkpoint-net\n"
+        "container_image: nvcr.io/nvidia/tao/fake:0.1\n"
+        "actions:\n"
+        "  train:\n"
+        "    command: fake train -e {config_path}\n"
+        "    config_format: yaml\n"
+        "    inputs:\n"
+        "      train.pretrained_model_path:\n"
+        "        type: file\n"
+        "        optional: true\n"
+        + extra_input
+        + "    outputs: {}\n"
+        "spec_params:\n"
+        "  train:\n"
+        "    train.pretrained_model_path: ptm_if_no_resume_model\n"
+        + extra_role,
+        encoding="utf-8",
+    )
+    (refs / "spec_template_train.yaml").write_text(
+        "train:\n  pretrained_model_path: ''\n",
+        encoding="utf-8",
+    )
+    return skill_dir
+
+
+def test_base_checkpoint_is_injected_into_skill_declared_target(tmp_path):
+    from tao_automl.runner import SkillContext, _inject_base_checkpoint
+
+    context = SkillContext(
+        skill_dir=_write_checkpoint_skill(tmp_path, ambiguous=True),
+        action="train",
+    )
+    merged, target = _inject_base_checkpoint(
+        context.default_specs,
+        skill_ctx=context,
+        base_checkpoint="/lustre/ptm/model.pth",
+        base_checkpoint_target=None,
+        spec_overrides=None,
+    )
+    assert target == "train.pretrained_model_path"
+    assert merged["train"]["pretrained_model_path"] == "/lustre/ptm/model.pth"
+    assert context.default_specs["train"]["pretrained_model_path"] == ""
+
+
+def test_base_checkpoint_rejects_conflict_and_invalid_explicit_target(tmp_path):
+    from tao_automl.runner import SkillContext, _inject_base_checkpoint
+
+    context = SkillContext(
+        skill_dir=_write_checkpoint_skill(tmp_path),
+        action="train",
+    )
+    with pytest.raises(ValueError, match="configure the checkpoint in exactly one"):
+        _inject_base_checkpoint(
+            context.default_specs,
+            skill_ctx=context,
+            base_checkpoint="/lustre/ptm/model.pth",
+            base_checkpoint_target=None,
+            spec_overrides={
+                "train": {"pretrained_model_path": "/lustre/ptm/other.pth"}
+            },
+        )
+    with pytest.raises(ValueError, match="is not a declared"):
+        _inject_base_checkpoint(
+            context.default_specs,
+            skill_ctx=context,
+            base_checkpoint="/lustre/ptm/model.pth",
+            base_checkpoint_target="model.unknown_checkpoint",
+            spec_overrides=None,
+        )
 
 
 def test_skill_context_action_container_image_overrides_model_image(tmp_path):
@@ -931,6 +1100,39 @@ def test_extract_metric_allows_val_prefix_for_sparse4d_map():
     from tao_automl.runner import _extract_metric_from_logs
     logs = "Calculating metrics...\nmAP: 0.0000\nNDS: 0.0000\nExecution status: PASS\n"
     assert _extract_metric_from_logs(logs, "val_mAP") == 0.0
+
+
+def test_extract_metric_reads_grounding_dino_validation_map50_only():
+    from tao_automl.runner import _extract_metric_from_logs
+
+    logs = "Validation mAP50 : 0.6175\nTest mAP50 : 0.9999\n"
+
+    assert _extract_metric_from_logs(logs, "val_mAP50") == pytest.approx(
+        0.6175
+    )
+    assert _extract_metric_from_logs("test_mAP50: 0.9999\n", "val_mAP50") is None
+
+
+def test_extract_metric_reads_grounding_dino_string_status_kpi(tmp_path):
+    from tao_automl.runner import _extract_metric_from_status_file
+
+    status_path = tmp_path / "status.json"
+    status_path.write_text(
+        json.dumps(
+            {
+                "message": "Eval metrics generated.",
+                "kpi": {"val_mAP50": "0.6175134981"},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert _extract_metric_from_status_file(
+        status_path,
+        "val_mAP50",
+    ) == pytest.approx(0.6175134981)
+    assert _extract_metric_from_status_file(status_path, "test_mAP50") is None
 
 
 def test_extract_metric_supports_signed_values_and_exact_aliases():
@@ -2309,6 +2511,69 @@ def test_run_one_job_cancels_hard_failure_and_recovers_remote_best_score(tmp_pat
     assert metric == pytest.approx(0.8927091135965706)
     assert status == "failure"
     fake_sdk.cancel_job.assert_called_once_with("job-hard")
+
+
+def test_run_one_job_preserves_backend_retry_for_infrastructure_failure(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    fake_sdk = MagicMock()
+    fake_sdk.create_job.return_value = MagicMock(
+        id="job-retryable", backend_job_id="be-retryable"
+    )
+    log_snapshots = iter(
+        (
+            "NVIDIA driver on your system is too old\n"
+            "torch.distributed.elastic.multiprocessing.errors."
+            "ChildFailedError\n",
+            "[cosmos] Validation rank 0: avg_loss=0.751, samples=6\n",
+        )
+    )
+    latest_logs = [
+        "NVIDIA driver on your system is too old\n"
+        "torch.distributed.elastic.multiprocessing.errors.ChildFailedError\n"
+    ]
+
+    def get_logs(_job_id, tail=None):
+        del tail
+        try:
+            latest_logs[0] = next(log_snapshots)
+        except StopIteration:
+            pass
+        return latest_logs[0]
+
+    fake_sdk.get_job_logs.side_effect = get_logs
+    fake_sdk.get_failure_analysis.return_value = {
+        "reason": "infrastructure_failure_pattern",
+        "retriable": True,
+    }
+    fake_sdk.get_job_status.side_effect = (
+        MagicMock(status="Pending"),
+        MagicMock(status="Complete"),
+    )
+
+    runner = AutoMLRunner(sdk=fake_sdk, skill_dir=skill_dir, action="train")
+    runner._poll_interval = 0
+    rec = MagicMock(id=11)
+
+    with patch(
+        "tao_sdk.script_runner.build_entrypoint",
+        return_value={"command": "BAKED_HEREDOC_COMMAND", "args_template": ""},
+    ):
+        metric, status = runner._run_one_job(
+            image="nvcr.io/test:1",
+            action_cfg=runner.skill_ctx.action_cfg,
+            specs={"train": {"num_epochs": 1}},
+            rec=rec,
+            metric_name="val/avg_loss",
+            workspace_path=str(tmp_path),
+            platform_kwargs={},
+        )
+
+    assert metric == pytest.approx(0.751)
+    assert status == "success"
+    assert fake_sdk.get_job_status.call_count == 2
+    fake_sdk.cancel_job.assert_not_called()
 
 
 def test_run_one_job_preserves_metric_when_slurm_reports_canceled(tmp_path):

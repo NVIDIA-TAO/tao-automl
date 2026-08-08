@@ -32,6 +32,7 @@ import json
 import logging
 import os
 import uuid
+from collections.abc import Mapping
 
 from tao_automl.formatting import format_result  # noqa: F401  (public API)
 from tao_automl.objectives import parse_objective_config
@@ -48,8 +49,9 @@ def query_status(workspace_path: str) -> dict:
 
     Args:
         workspace_path: Path to the AutoML workspace directory.
-            Since ``AutoMLRunner.run()`` appends a timestamped suffix
-            (e.g. ``run_20260423_183015``) to the base path, pass the
+            Since an ad-hoc ``AutoMLRunner.run()`` appends a timestamped,
+            collision-safe suffix (e.g. ``run_20260423_183015_ab12cd``) to the
+            base path, pass the
             full suffixed path here — or iterate over subdirectories
             of the base path.
 
@@ -95,6 +97,11 @@ def query_status(workspace_path: str) -> dict:
     controller_path = os.path.join(controller_dir, f"{experiment_id}.json")
     with open(controller_path) as f:
         recs = json.load(f)
+    from tao_automl.recommendation_audit import validate_recommendation_audit
+    for record in recs:
+        audit = record.get("recommendation_audit", {})
+        if audit:
+            validate_recommendation_audit(audit)
 
     best_rec_path = os.path.join(automl_dir, "best_rec", f"{experiment_id}.json")
     best_info = None
@@ -107,6 +114,32 @@ def query_status(workspace_path: str) -> dict:
     if os.path.exists(active_jobs_path):
         with open(active_jobs_path) as f:
             active_jobs = json.load(f)
+
+    ptm_runtime_path = os.path.join(
+        workspace_path,
+        "ptm_runtime_manifest.json",
+    )
+    ptm_runtime = None
+    if os.path.exists(ptm_runtime_path):
+        with open(ptm_runtime_path, encoding="utf-8") as f:
+            ptm_runtime = json.load(f)
+        if (
+            not isinstance(ptm_runtime, dict)
+            or set(ptm_runtime) != {"manifest", "manifest_sha256"}
+            or not isinstance(ptm_runtime.get("manifest"), dict)
+            or not isinstance(ptm_runtime.get("manifest_sha256"), str)
+        ):
+            raise ValueError(
+                "Persisted PTM runtime manifest has an invalid record shape"
+            )
+        from tao_automl.recommendation_audit import canonical_audit_sha256
+        if (
+            canonical_audit_sha256(ptm_runtime["manifest"])
+            != ptm_runtime["manifest_sha256"]
+        ):
+            raise ValueError(
+                "Persisted PTM runtime manifest failed integrity verification"
+            )
 
     terminal = {JobStates.success, JobStates.done, JobStates.failure, JobStates.error}
     completed = [r for r in recs if r.get("status") in terminal]
@@ -138,7 +171,7 @@ def query_status(workspace_path: str) -> dict:
             "objective_values": objective_values,
         }
 
-    return {
+    status = {
         "experiment_id": experiment_id,
         "progress": {
             "completed": len(completed),
@@ -163,6 +196,9 @@ def query_status(workspace_path: str) -> dict:
                 ),
                 "objective_score": r.get("objective_score", r.get("result")),
                 "objective_values": r.get("objective_values", {}),
+                "recommendation_audit": copy.deepcopy(
+                    r.get("recommendation_audit", {})
+                ),
                 "created_on": r.get("created_on"),
                 "last_modified": r.get("last_modified"),
             }
@@ -170,6 +206,9 @@ def query_status(workspace_path: str) -> dict:
         ],
         "active_jobs": active_jobs,
     }
+    if ptm_runtime is not None:
+        status["ptm_runtime"] = copy.deepcopy(ptm_runtime)
+    return status
 
 
 def _as_option_list(value):
@@ -208,6 +247,50 @@ def _sanitize_custom_param_ranges(custom_param_ranges, param_records):
             )
         range_cfg["valid_options"] = filtered or allowed
     return sanitized
+
+
+def _resolve_session_id(state_store, settings, *, resume):
+    """Resolve one persisted session for resume without guessing."""
+    requested = settings.get("session_id")
+    if requested is not None:
+        if not isinstance(requested, str) or not requested.strip():
+            raise ValueError("settings.session_id must be a non-empty string")
+        return requested.strip()
+    if not resume:
+        return uuid.uuid4().hex[:12]
+
+    persisted_ids = state_store.list_job_spec_ids()
+    if not persisted_ids:
+        raise ValueError(
+            "Cannot resume AutoML: the workspace contains no persisted session; "
+            "set resume=False to start a new run"
+        )
+    if len(persisted_ids) != 1:
+        raise ValueError(
+            "Cannot infer an AutoML resume session from a workspace containing "
+            f"{len(persisted_ids)} sessions; set settings.session_id explicitly"
+        )
+    return persisted_ids[0]
+
+
+def _resume_compatible_value(value):
+    """Return a canonical strict-JSON representation for identity checks."""
+    from tao_automl.recommendation_audit import audit_json_value
+
+    return audit_json_value(value)
+
+
+def _require_resume_match(*, label, persisted, requested):
+    """Fail before construction when a persisted input would be overwritten."""
+    if persisted is None:
+        raise ValueError(
+            f"Cannot resume AutoML: persisted {label} is missing or unreadable"
+        )
+    if _resume_compatible_value(persisted) != _resume_compatible_value(requested):
+        raise ValueError(
+            f"Cannot resume AutoML with different {label}; the persisted "
+            "workspace was left unchanged"
+        )
 
 
 class AutoML:
@@ -249,6 +332,7 @@ class AutoML:
         resume=False,
         wandb_config=None,
         search_schema=None,
+        resolved_ptm_inventory: "ResolvedPTMRuntimeInventory | None" = None,
     ):
         """
         Args:
@@ -279,6 +363,12 @@ class AutoML:
                 configuration module for ``network``. Supplying a schema lets
                 external model scripts define searchable parameters without a
                 corresponding ``tao_automl.config.<network>`` package.
+            resolved_ptm_inventory: Optional live, typed
+                :class:`tao_automl.ptm_runtime.ResolvedPTMRuntimeInventory`.
+                When supplied, AutoML derives a conditional search space from
+                every PTM-effective base spec and constructs the hierarchical
+                native-Bayesian runtime. This argument never performs
+                checkpoint resolution, download, or preflight.
         """
         # Lazy imports to avoid pulling in heavy deps (requests, omegaconf)
         # at package import time.
@@ -298,8 +388,13 @@ class AutoML:
         # 1. State store
         self._state_store = StateStore(workspace)
 
-        # 2. Context
-        session_id = settings.get("session_id", uuid.uuid4().hex[:12])
+        # 2. Context. A resume without an explicit identity is safe only when
+        # the workspace contains exactly one persisted session.
+        session_id = _resolve_session_id(
+            self._state_store,
+            settings,
+            resume=resume,
+        )
         self._context = AutoMLContext(
             id=session_id,
             network=network,
@@ -307,10 +402,20 @@ class AutoML:
             workspace_path=workspace,
             metric=metric,
             handler_id=settings.get("experiment_id", session_id),
+            random_seed=settings.get("random_seed", settings.get("seed")),
         )
 
-        # 3. Persist the training spec so the brain can read it
-        self._state_store.save_job_specs(self._context.id, train_specs)
+        # 3. Persist the training spec so the brain can read it. Resume checks
+        # compatibility before any write; otherwise a changed caller spec could
+        # overwrite the only evidence needed to reject an incompatible state.
+        if resume:
+            _require_resume_match(
+                label="training specification",
+                persisted=self._state_store.get_job_specs(self._context.id),
+                requested=train_specs,
+            )
+        else:
+            self._state_store.save_job_specs(self._context.id, train_specs)
 
         # 4. Generate search space
         if automl_hyperparameters is None:
@@ -318,55 +423,190 @@ class AutoML:
             # generate_hyperparams_to_search enables only schema-default params.
             automl_hyperparameters = []
 
-        param_records, param_names = generate_hyperparams_to_search(
-            network=network,
-            action=action,
-            train_specs=train_specs,
-            automl_hyperparameters=automl_hyperparameters,
-            schema=search_schema,
-        )
+        self._ptm_runtime_manifest = None
+        self._ptm_runtime_manifest_sha256 = None
 
-        # 5. Custom parameter ranges
-        if custom_param_ranges:
-            custom_param_ranges = _sanitize_custom_param_ranges(
-                custom_param_ranges,
-                param_records,
-            )
-            self._state_store.save_custom_param_ranges(
-                self._context.handler_id, custom_param_ranges
-            )
-
-        if not param_records or param_records == [{}]:
-            requested = sorted(set(automl_hyperparameters))
-            requested_detail = (
-                f" Requested parameters: {requested}." if requested else ""
-            )
-            message = (
-                f"No searchable parameters found for network {network!r}. Check "
-                "that the schema declares at least one supported parameter with "
-                "automl_enabled=true and that the parameter exists in train_specs."
-                f"{requested_detail}"
-            )
-            if search_schema is not None:
-                raise ValueError(message)
-            logger.warning(message)
-
-        # 6. Algorithm params
+        # 5. Algorithm params
         algo_params = AlgorithmParams.from_dict(settings)
 
-        # 7. Brain
-        brain = BrainFactory.create_brain(
-            algorithm=algorithm,
-            context=self._context,
-            state_store=self._state_store,
-            network=network,
-            parameters=param_records,
-            params=algo_params,
-            metric=brain_metric,
-            resume=resume,
-        )
+        if resolved_ptm_inventory is None:
+            # Existing direct BrainFactory path. Keep this path unchanged for
+            # callers that did not request repository-owned PTM search.
+            param_records, param_names = generate_hyperparams_to_search(
+                network=network,
+                action=action,
+                train_specs=train_specs,
+                automl_hyperparameters=automl_hyperparameters,
+                schema=search_schema,
+            )
 
-        # 8. Controller
+            if custom_param_ranges:
+                custom_param_ranges = _sanitize_custom_param_ranges(
+                    custom_param_ranges,
+                    param_records,
+                )
+                if resume:
+                    _require_resume_match(
+                        label="custom parameter ranges",
+                        persisted=self._state_store.get_custom_param_ranges(
+                            self._context.handler_id
+                        ),
+                        requested=custom_param_ranges,
+                    )
+                else:
+                    self._state_store.save_custom_param_ranges(
+                        self._context.handler_id, custom_param_ranges
+                    )
+
+            if not param_records or param_records == [{}]:
+                requested = sorted(set(automl_hyperparameters))
+                requested_detail = (
+                    f" Requested parameters: {requested}." if requested else ""
+                )
+                message = (
+                    f"No searchable parameters found for network {network!r}. "
+                    "Check that the schema declares at least one supported "
+                    "parameter with automl_enabled=true and that the parameter "
+                    f"exists in train_specs.{requested_detail}"
+                )
+                if search_schema is not None:
+                    raise ValueError(message)
+                logger.warning(message)
+
+            brain = BrainFactory.create_brain(
+                algorithm=algorithm,
+                context=self._context,
+                state_store=self._state_store,
+                network=network,
+                parameters=param_records,
+                params=algo_params,
+                metric=brain_metric,
+                resume=resume,
+                objective_config=objective_config,
+                acquisition_settings=settings.get("objective_acquisition"),
+            )
+        else:
+            from tao_automl.brain.base import _stable_context_seed
+            from tao_automl.ptm_runtime import (
+                ResolvedPTMRuntimeInventory,
+                build_hierarchical_ptm_runtime,
+                canonical_ptm_algorithm,
+            )
+            from tao_automl.recommendation_audit import canonical_audit_sha256
+
+            if not isinstance(
+                resolved_ptm_inventory,
+                ResolvedPTMRuntimeInventory,
+            ):
+                raise TypeError(
+                    "resolved_ptm_inventory must be a live typed "
+                    "ResolvedPTMRuntimeInventory"
+                )
+            resolved_ptm_inventory.validate()
+            normalized_algorithm = canonical_ptm_algorithm(algorithm)
+            if resolved_ptm_inventory.algorithm != normalized_algorithm:
+                raise ValueError(
+                    "Resolved PTM inventory algorithm does not match settings"
+                )
+            if resolved_ptm_inventory.model != network:
+                raise ValueError(
+                    f"Resolved PTM inventory model "
+                    f"{resolved_ptm_inventory.model!r} does not match AutoML "
+                    f"network {network!r}"
+                )
+            selection = objective_config.selection_config
+            if (
+                selection is None
+                or selection.mode != resolved_ptm_inventory.mode
+                or canonical_audit_sha256(objective_config.to_dict())
+                != resolved_ptm_inventory.objective_config_sha256
+            ):
+                raise ValueError(
+                    "Resolved PTM inventory objective configuration does not "
+                    "match AutoML settings"
+                )
+            if not resolved_ptm_inventory.arms:
+                raise ValueError(
+                    "Resolved PTM inventory contains no conditional arms"
+                )
+
+            conditional_parameters = {}
+            conditional_ranges = {}
+            union_parameter_names = set()
+            requested_ranges = custom_param_ranges or {}
+            if not isinstance(requested_ranges, Mapping):
+                raise TypeError("custom_param_ranges must be a mapping")
+            applied_range_names = set()
+            for arm in resolved_ptm_inventory.arms:
+                arm_records, arm_names = generate_hyperparams_to_search(
+                    network=network,
+                    action=action,
+                    train_specs=copy.deepcopy(arm.effective_base_spec),
+                    automl_hyperparameters=automl_hyperparameters,
+                    schema=copy.deepcopy(search_schema),
+                )
+                if not arm_records or arm_records == [{}] or not arm_names:
+                    raise ValueError(
+                        f"Resolved PTM arm {arm.checkpoint_id!r} has no "
+                        "searchable conditional parameters"
+                    )
+                arm_ranges = _sanitize_custom_param_ranges(
+                    requested_ranges,
+                    arm_records,
+                )
+                arm_name_set = set(arm_names)
+                # A global requested range may apply only to a subset of
+                # conditional PTM spaces. Each arm receives the same request,
+                # sanitized and restricted to parameters it actually owns.
+                arm_ranges = {
+                    name: copy.deepcopy(value)
+                    for name, value in arm_ranges.items()
+                    if name in arm_name_set
+                }
+                applied_range_names.update(arm_ranges)
+                conditional_parameters[arm.checkpoint_id] = arm_records
+                conditional_ranges[arm.checkpoint_id] = arm_ranges
+                union_parameter_names.update(arm_names)
+            unapplied_ranges = sorted(
+                set(requested_ranges) - applied_range_names
+            )
+            if unapplied_ranges:
+                raise ValueError(
+                    "custom_param_ranges contains parameter(s) absent from "
+                    "every resolved PTM conditional arm: "
+                    + ", ".join(unapplied_ranges)
+                )
+            param_names = sorted(union_parameter_names)
+            if not param_names:
+                raise ValueError(
+                    "Resolved PTM inventory produced an empty conditional "
+                    "parameter-name union"
+                )
+
+            runtime = build_hierarchical_ptm_runtime(
+                resolved_inventory=resolved_ptm_inventory,
+                objective_config=objective_config,
+                conditional_parameters=conditional_parameters,
+                conditional_ranges=conditional_ranges,
+                context=self._context,
+                state_store=self._state_store,
+                random_seed=_stable_context_seed(self._context),
+                acquisition_settings=settings.get("objective_acquisition"),
+                algorithm=normalized_algorithm,
+                resume=resume,
+            )
+            brain = runtime.brain
+            runtime_manifest = copy.deepcopy(dict(runtime.manifest))
+            if canonical_audit_sha256(runtime_manifest) != (
+                runtime.manifest_sha256
+            ):
+                raise ValueError(
+                    "Built PTM runtime manifest integrity verification failed"
+                )
+            self._ptm_runtime_manifest = runtime_manifest
+            self._ptm_runtime_manifest_sha256 = runtime.manifest_sha256
+
+        # 6. Controller
         if resume:
             self._controller = Controller.load_state(
                 brain=brain,
@@ -472,3 +712,13 @@ class AutoML:
     def wandb_group(self) -> str:
         """Return the WandB group name for child training runs to join."""
         return self._controller.wandb_group
+
+    @property
+    def ptm_runtime_manifest(self):
+        """Return a defensive copy of the immutable PTM runtime manifest."""
+        return copy.deepcopy(self._ptm_runtime_manifest)
+
+    @property
+    def ptm_runtime_manifest_sha256(self):
+        """Return the immutable PTM runtime manifest SHA-256, when enabled."""
+        return self._ptm_runtime_manifest_sha256

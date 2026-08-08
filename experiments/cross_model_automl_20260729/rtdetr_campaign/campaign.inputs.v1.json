@@ -1,0 +1,61 @@
+{
+  "campaign_id": "rtdetr-synthetic-coco-four-ptm-qualification-20260730",
+  "source": {
+    "commit": "253489c58c30ee59404b680bd0fc8d1b581b0eec",
+    "repository": "/localhome/local-rarunachalam/.tao/github-worktrees/tao-automl-legacy-baebfe0"
+  },
+  "runtime": {
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "base_results_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+    "container_mounts": "/lustre",
+    "image_reference": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
+    "partition": "polar3",
+  "sdk_dir": "/localhome/local-rarunachalam/.tao/github-worktrees/tao-sdks-a2e50d0",
+    "sdk_revision": "a2e50d0930c3e3785b4b39fa8c3da88b39ff89e5",
+    "skill_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-rtdetr",
+    "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "sqsh_size_bytes": 28860358656,
+    "tao_version": "7.1.0-rc-245"
+  },
+  "dataset": {
+    "manifest_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/datasets/tao_od_synthetic_full_dino_coco/manifest.v1.json",
+    "manifest_sha256": "020b6845c6429703169346d20d56c2801287acc11678385e3fcafe4f073e1d1c"
+  },
+  "qualification": {
+    "checkpoint_interval": 10,
+    "evaluation_batch_size_per_gpu": 4,
+    "precision": "fp32",
+    "seed": 1234,
+    "train_batch_size_per_gpu": 4,
+    "training_epochs": 10,
+    "validation_interval": 1
+  },
+  "ptm_runtime": {
+    "rtdetr.trafficcam.resnet50.trainable.v2.0": {
+      "artifact_sha256": "9e21450a1eac2012ab713dc103e1655eb438a73a125e2f23b0a2ba8c0583ea6a",
+      "artifact_size_bytes": 511956488,
+      "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/rtdetr.trafficcam.resnet50.trainable.v2.0/5b06b64110f2f40d38d9953f/resnet50_trafficcamnet_rtdetr.pth",
+      "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/rtdetr/rtdetr.trafficcam.resnet50.trainable.v2.0/resnet50_trafficcamnet_rtdetr.pth"
+    },
+    "rtdetr.trafficcam.resnet18.trainable.v2.0": {
+      "artifact_sha256": "f7db8cfc7b0e36bdd190cbfeebed91f71460cdb347553e0de401c06c7a9fc1dd",
+      "artifact_size_bytes": 357560178,
+      "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/rtdetr.trafficcam.resnet18.trainable.v2.0/dfa34dc90f6193e5f012d963/resnet18_trafficcamnet_rtdetr.pth",
+      "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/rtdetr/rtdetr.trafficcam.resnet18.trainable.v2.0/resnet18_trafficcamnet_rtdetr.pth"
+    },
+    "rtdetr.warehouse.resnet50.trainable.v1.0.2": {
+      "artifact_sha256": "745f42d0378f915f27c00baca86d788de995475af990aac370340c235bee6377",
+      "artifact_size_bytes": 514392577,
+      "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/rtdetr.warehouse.resnet50.trainable.v1.0.2/24cbd72747c1866f8cbaadba/rtdetr_warehouse_v1.0.2.pth",
+      "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/rtdetr/rtdetr.warehouse.resnet50.trainable.v1.0.2/rtdetr_warehouse_v1.0.2.pth"
+    },
+    "rtdetr.warehouse.efficientvit_l2.trainable.v1.0": {
+      "artifact_sha256": "18c21b12478855e11d7f6012a4386f515465bd47fc013ea452ee76ca3fd7ecdb",
+      "artifact_size_bytes": 813085917,
+      "local_source_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/ptm_downloads/rtdetr.warehouse.efficientvit_l2.trainable.v1.0/b3a31c2469a23adabacdae62/rtdetr_warehouse_v1.0.pth",
+      "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/rtdetr/rtdetr.warehouse.efficientvit_l2.trainable.v1.0/rtdetr_warehouse_v1.0.pth"
+    }
+  }
+}

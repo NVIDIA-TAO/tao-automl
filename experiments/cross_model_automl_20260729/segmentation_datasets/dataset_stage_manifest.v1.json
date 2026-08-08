@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-07-31T00:32:15Z",
+  "verification_completed_at_utc": "2026-07-31T00:52:32Z",
+  "scope": "segmentation_dataset_staging",
+  "repository_base_commit": "84a5eb3ae3c25928a986ed7e6bc9514b89dd8d46",
+  "execution_contract": {
+    "data_only": true,
+    "model_invoked": false,
+    "cpu_model_smoke_run": false,
+    "gpu_model_smoke_run": false,
+    "training_run": false,
+    "evaluation_run": false,
+    "latency_benchmark_run": false,
+    "slurm_job_submitted": false
+  },
+  "validation": {
+    "report_repository_path": "experiments/cross_model_automl_20260729/segmentation_datasets/segmentation_dataset_validation.v1.json",
+    "report_file_sha256": "87364d1f9a8c20497aac7a4d5b17e33a769bcec99be991b9ca2d52d4e45bd4d8",
+    "report_content_sha256": "9555580367a059a355b8ee9b0413271a9d9a47d4004e62bc878ca3e7bef61d47",
+    "deep_panoptic_pixel_check": true,
+    "voc2012_subreport_content_sha256": "815b5d01b625238b449c4bca828bf96107b367f0f4d5d8a31d2f97c6161a5de0",
+    "coco2017_subreport_content_sha256": "deced9d6766344fe6fc69cd9de3bcff2cba456a14b3391d07bcedb74c250909e",
+    "verifier_repository_path": "experiments/cross_model_automl_20260729/segmentation_datasets/verify_datasets.py",
+    "verifier_sha256": "b2e531a1c31873ec3a1c0b99db3b72724d61b13ccf0137c514c304631358d990"
+  },
+  "data_contract_artifacts": {
+    "voc2012_segformer_profile": {
+      "path": "experiments/cross_model_automl_20260729/segmentation_datasets/voc2012_segformer_dataset_profile.yaml",
+      "sha256": "614f89c8b52fd9b863f6d0178f408f1bf895553a3d28c7e880b12ac152511ccc"
+    },
+    "coco2017_tao_bindings": {
+      "path": "experiments/cross_model_automl_20260729/segmentation_datasets/coco2017_tao_dataset_bindings.yaml",
+      "sha256": "8eca7d4e31371c8b80039bad48d4edcf3e99b7ab9bcf7ba977c72ef2c0170f50"
+    }
+  },
+  "datasets": {
+    "voc2012": {
+      "dataset_id": "pascal_voc2012_segmentation_trainval",
+      "consumers": [
+        "segformer"
+      ],
+      "task": "semantic_segmentation",
+      "local_root": "/localhome/local-rarunachalam/.tao/datasets/cross_model_automl_20260729/voc2012_segmentation_full",
+      "lustre_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/voc2012_segmentation_v1",
+      "prepared_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/voc2012_segmentation_v1/prepared",
+      "layout": {
+        "train_images": "prepared/images/train",
+        "train_masks": "prepared/masks/train",
+        "val_images": "prepared/images/val",
+        "val_masks": "prepared/masks/val"
+      },
+      "splits": {
+        "train_pairs": 1464,
+        "val_pairs": 1449,
+        "train_val_disjoint": true
+      },
+      "label_contract": {
+        "num_model_classes": 21,
+        "valid_class_ids": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "ignore_id": 255,
+        "label_transform": "None"
+      },
+      "source_archive": {
+        "url": "https://thor.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar",
+        "size_bytes": 1999639040,
+        "sha256": "e14f763270cf193d0b5f74b169f44157a4b0c6efa708f4dd0ff78ee691763bcb",
+        "archive_integrity_passed": true
+      },
+      "file_manifest": {
+        "local_path": "/localhome/local-rarunachalam/.tao/datasets/cross_model_automl_20260729/manifests/voc2012_segmentation_v1.FILE_MANIFEST.sha256",
+        "lustre_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/voc2012_segmentation_v1/voc2012_segmentation_v1.FILE_MANIFEST.sha256",
+        "entries": 5827,
+        "sha256": "051ab20215b8e6976763ac82a3db20a68264759edef3d62fd0c8553c501123ff",
+        "remote_sha256sum_check": "passed",
+        "remote_file_set_check": "passed"
+      },
+      "remote_read_only": true,
+      "remote_writable_entries_after_lock": 0
+    },
+    "coco2017": {
+      "dataset_id": "coco2017_instance_panoptic",
+      "consumers": [
+        "oneformer",
+        "mask2former",
+        "mask_grounding_dino"
+      ],
+      "task_scope": {
+        "oneformer": "panoptic_segmentation",
+        "mask2former": "instance_segmentation",
+        "mask_grounding_dino": "category_prompted_grounded_instance_segmentation"
+      },
+      "local_root": "/localhome/local-rarunachalam/.tao/datasets/cross_model_automl_20260729/coco2017_full",
+      "lustre_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1",
+      "splits": {
+        "train_images": 118287,
+        "val_images": 5000,
+        "train_instance_annotations": 860001,
+        "val_instance_annotations": 36781,
+        "train_panoptic_pngs": 118287,
+        "val_panoptic_pngs": 5000,
+        "train_panoptic_segments": 1329984,
+        "val_panoptic_segments": 56728
+      },
+      "categories": {
+        "instance_things": 80,
+        "panoptic_total": 133
+      },
+      "source_archives": {
+        "annotations_trainval2017.zip": {
+          "url": "https://s3.amazonaws.com/images.cocodataset.org/annotations/annotations_trainval2017.zip",
+          "size_bytes": 252907541,
+          "sha256": "113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268"
+        },
+        "panoptic_annotations_trainval2017.zip": {
+          "url": "https://s3.amazonaws.com/images.cocodataset.org/annotations/panoptic_annotations_trainval2017.zip",
+          "size_bytes": 860725834,
+          "sha256": "c05f76d2129b6b561eb70efe16e7006df62f73fb92889132d373b9d90e31a370"
+        },
+        "train2017.zip": {
+          "url": "https://s3.amazonaws.com/images.cocodataset.org/zips/train2017.zip",
+          "size_bytes": 19336861798,
+          "sha256": "69a8bb58ea5f8f99d24875f21416de2e9ded3178e903f1f7603e283b9e06d929"
+        },
+        "val2017.zip": {
+          "url": "https://s3.amazonaws.com/images.cocodataset.org/zips/val2017.zip",
+          "size_bytes": 815585330,
+          "sha256": "4f7e2ccb2866ec5041993c9cf2a952bbed69647b115d0f74da7ce8f4bef82f05"
+        },
+        "all_archive_integrity_checks_passed": true
+      },
+      "tao_assets": {
+        "source_commit": "f8bc9a48aa7dfa976eb396c4158356484411ecce",
+        "panoptic_label_map": {
+          "path": "tao/label_map_panoptic.json",
+          "categories": 133,
+          "sha256": "4b28b3773f0f8e63d836dc20da77276633da72178453458b79e32be8e892ce56"
+        },
+        "instance_label_map": {
+          "path": "tao/label_map_instance.json",
+          "categories": 80,
+          "sha256": "67f15c4dd7d52aa73025da8307dec17e907f13db6d5d82332a670f73da68c306"
+        }
+      },
+      "odvg_projection": {
+        "converter_commit": "dcea3a39bd3e4709e2325e4b61a4f179efebde4c",
+        "official_function": "nvidia_tao_ds.annotations.conversion.coco_to_odvg.convert_coco_to_odvg",
+        "use_all_categories": false,
+        "source_images": 118287,
+        "projected_images": 117266,
+        "empty_source_images_excluded_by_official_converter": 1021,
+        "source_annotations": 860001,
+        "projected_annotations": 860001,
+        "masks_preserved_exactly": 860001,
+        "jsonl_sha256": "d5deb4f5cfe027786fb1ceb52632ad6d3ef027e95e434525ba715d6841fb2921",
+        "label_map_sha256": "02075d96f6bf06d061f9329b4775dc7c3bb5ac140c77bc5c0e465d305c46d6c1",
+        "repeat_conversion_byte_identical": true
+      },
+      "file_manifest": {
+        "local_path": "/localhome/local-rarunachalam/.tao/datasets/cross_model_automl_20260729/manifests/coco2017_instance_panoptic_v1.FILE_MANIFEST.sha256",
+        "lustre_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/coco2017_instance_panoptic_v1/coco2017_instance_panoptic_v1.FILE_MANIFEST.sha256",
+        "entries": 246593,
+        "sha256": "10566a60498de9998154f44a34445a488c9f030e09f2a7346d20a4a1c55f804e",
+        "remote_sha256sum_check": "passed",
+        "remote_file_set_check": "passed"
+      },
+      "remote_read_only": true,
+      "remote_writable_entries_after_lock": 0
+    }
+  },
+  "transfer_provenance": {
+    "local_authoritative_downloads_complete": true,
+    "voc_transport": "local-to-Lustre rsync followed by complete manifest verification",
+    "coco_transport": "local-to-Lustre transfer completed from the pre-existing same-user Lustre cache after its four source archives matched the locally frozen SHA256 values; every final byte is checked against the locally generated 246593-entry manifest",
+    "coco_server_side_cache_source": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/coco_2017_full",
+    "remote_bytes_verified_against_local_manifest": true
+  },
+  "remaining_model_side_gates": {
+    "segformer": "No model run; verify the 21-class plus ignore-255 profile in the pinned SQSH.",
+    "oneformer": "No model run; task-correct PQ emission remains unverified.",
+    "mask2former": "No model run; task-correct COCO mask AP emission remains unverified.",
+    "mask_grounding_dino": "No model run; staged data proves category-prompted OD masks only, not RefCOCOg phrase grounding."
+  }
+}

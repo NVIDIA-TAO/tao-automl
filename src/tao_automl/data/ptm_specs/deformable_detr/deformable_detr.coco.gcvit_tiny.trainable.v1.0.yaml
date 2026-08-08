@@ -1,0 +1,2 @@
+model:
+  backbone: gc_vit_tiny

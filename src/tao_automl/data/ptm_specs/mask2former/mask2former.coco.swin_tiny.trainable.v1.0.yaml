@@ -1,0 +1,16 @@
+model:
+  object_mask_threshold: 0.01
+  overlap_threshold: 0.8
+  mode: instance
+  backbone:
+    type: swin
+    swin:
+      type: tiny
+      window_size: 7
+      ape: false
+      pretrain_img_size: 224
+  mask_former:
+    num_object_queries: 100
+  sem_seg_head:
+    norm: GN
+    num_classes: 1

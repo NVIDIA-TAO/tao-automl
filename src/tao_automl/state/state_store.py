@@ -17,6 +17,7 @@ filesystem**.  It does NOT work on NFS — keep the workspace on local disk.
 """
 
 import fcntl
+import hashlib
 import json
 import logging
 import os
@@ -25,6 +26,8 @@ import threading
 from tao_automl.utils.value_utils import normalize_json_value
 
 logger = logging.getLogger(__name__)
+
+STATE_TRANSACTION_SCHEMA_VERSION = 1
 
 
 class _FileLock:
@@ -146,6 +149,178 @@ class StateStore:
                 finally:
                     fcntl.flock(lf, fcntl.LOCK_UN)
 
+    @staticmethod
+    def _canonical_sha256(data) -> str:
+        """Return a deterministic digest for one normalized JSON payload."""
+        normalized = normalize_json_value(data, path="persisted_state")
+        encoded = json.dumps(
+            normalized,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def _state_transaction_parts(self, job_id: str) -> tuple[str, str]:
+        return "state_transactions", f"{job_id}.json"
+
+    def _read_state_transaction(self, job_id: str):
+        parts = self._state_transaction_parts(job_id)
+        transaction = self._read_json(*parts)
+        if transaction is None and os.path.exists(self._path(*parts)):
+            raise RuntimeError(
+                "AutoML state transaction record is unreadable; refusing "
+                f"to resume workspace {job_id!r}"
+            )
+        return transaction
+
+    @staticmethod
+    def _validate_transaction_record(
+        transaction,
+        *,
+        job_id: str,
+        expected_status: str | None = None,
+    ) -> None:
+        if not isinstance(transaction, dict):
+            raise RuntimeError(
+                f"AutoML state transaction for {job_id!r} is not a mapping"
+            )
+        if transaction.get("schema_version") != STATE_TRANSACTION_SCHEMA_VERSION:
+            raise RuntimeError(
+                f"AutoML state transaction for {job_id!r} has an unsupported "
+                "schema version"
+            )
+        generation = transaction.get("generation")
+        if (
+            isinstance(generation, bool)
+            or not isinstance(generation, int)
+            or generation <= 0
+        ):
+            raise RuntimeError(
+                f"AutoML state transaction for {job_id!r} has an invalid "
+                "generation"
+            )
+        status = transaction.get("status")
+        if status not in {"pending", "committed"}:
+            raise RuntimeError(
+                f"AutoML state transaction for {job_id!r} has an invalid status"
+            )
+        if expected_status is not None and status != expected_status:
+            raise RuntimeError(
+                f"AutoML state transaction for {job_id!r} is {status!r}; "
+                f"expected {expected_status!r}"
+            )
+
+    def validate_state_transaction(self, job_id: str) -> None:
+        """Validate the last compound brain/controller persistence generation.
+
+        Workspaces created before this protocol have no transaction record and
+        remain readable. Once a record exists, resume fails closed if a process
+        stopped between component writes or either committed component changed
+        independently afterward.
+        """
+        transaction = self._read_state_transaction(job_id)
+        if transaction is None:
+            return
+        self._validate_transaction_record(transaction, job_id=job_id)
+        if transaction["status"] != "committed":
+            raise RuntimeError(
+                "Incomplete AutoML state transaction detected for workspace "
+                f"{job_id!r} at generation {transaction['generation']}; "
+                "brain and controller state may belong to different "
+                "recommendation decisions"
+            )
+
+        for component, parts in (
+            ("brain", ("brain", f"{job_id}.json")),
+            ("controller", ("controller", f"{job_id}.json")),
+        ):
+            value = self._read_json(*parts)
+            present = value is not None
+            expected_present = transaction.get(f"{component}_present")
+            expected_sha256 = transaction.get(f"{component}_sha256")
+            if expected_present is not present:
+                raise RuntimeError(
+                    "Committed AutoML state transaction component presence "
+                    f"mismatch for {component!r} in workspace {job_id!r}"
+                )
+            actual_sha256 = (
+                self._canonical_sha256(value) if present else None
+            )
+            if expected_sha256 != actual_sha256:
+                raise RuntimeError(
+                    "Committed AutoML state transaction integrity mismatch "
+                    f"for {component!r} in workspace {job_id!r}"
+                )
+
+    def begin_state_transaction(
+        self,
+        job_id: str,
+        *,
+        operation: str,
+    ) -> int:
+        """Mark the start of one compound brain/controller state write."""
+        if not isinstance(operation, str) or not operation.strip():
+            raise ValueError("state transaction operation must be non-empty")
+        previous = self._read_state_transaction(job_id)
+        if previous is None:
+            generation = 1
+        else:
+            self.validate_state_transaction(job_id)
+            generation = int(previous["generation"]) + 1
+        self._write_json(
+            {
+                "schema_version": STATE_TRANSACTION_SCHEMA_VERSION,
+                "generation": generation,
+                "status": "pending",
+                "operation": operation.strip(),
+            },
+            *self._state_transaction_parts(job_id),
+        )
+        return generation
+
+    def commit_state_transaction(self, job_id: str, generation: int) -> None:
+        """Commit a compound write after hashing both persisted components."""
+        transaction = self._read_state_transaction(job_id)
+        self._validate_transaction_record(
+            transaction,
+            job_id=job_id,
+            expected_status="pending",
+        )
+        if (
+            isinstance(generation, bool)
+            or not isinstance(generation, int)
+            or transaction["generation"] != generation
+        ):
+            raise RuntimeError(
+                f"AutoML state transaction generation mismatch for {job_id!r}"
+            )
+
+        components = {}
+        for component, parts in (
+            ("brain", ("brain", f"{job_id}.json")),
+            ("controller", ("controller", f"{job_id}.json")),
+        ):
+            value = self._read_json(*parts)
+            components[f"{component}_present"] = value is not None
+            components[f"{component}_sha256"] = (
+                self._canonical_sha256(value) if value is not None else None
+            )
+        self._write_json(
+            {
+                **transaction,
+                **components,
+                "status": "committed",
+            },
+            *self._state_transaction_parts(job_id),
+        )
+        self.validate_state_transaction(job_id)
+
+    def get_state_transaction(self, job_id: str):
+        """Return a copy of the transaction record for diagnostics/tests."""
+        return self._read_state_transaction(job_id)
+
     # ------------------------------------------------------------------
     # Job specs
     # ------------------------------------------------------------------
@@ -158,12 +333,44 @@ class StateStore:
         """Persist specs for *job_id*."""
         self._write_json(specs, "specs", f"{job_id}.json")
 
+    def list_job_spec_ids(self) -> tuple[str, ...]:
+        """Return persisted job-spec identities in deterministic order.
+
+        AutoML uses this only to resolve an omitted session ID during resume.
+        Lock and temporary files are intentionally excluded.  A caller must
+        still read and validate the selected spec before constructing a brain.
+        """
+        specs_dir = self._path("specs")
+        try:
+            names = os.listdir(specs_dir)
+        except OSError:
+            return ()
+        return tuple(
+            sorted(
+                name[:-5]
+                for name in names
+                if name.endswith(".json")
+                and os.path.isfile(os.path.join(specs_dir, name))
+            )
+        )
+
     # ------------------------------------------------------------------
     # Brain info
     # ------------------------------------------------------------------
 
     def get_brain_info(self, job_id: str):
         """Return brain state for *job_id*, or None."""
+        self.validate_state_transaction(job_id)
+        return self._read_json("brain", f"{job_id}.json")
+
+    def get_brain_info_for_update(self, job_id: str):
+        """Read brain state while constructing the same pending transaction.
+
+        This narrow internal hook supports composite brain implementations
+        whose ``save_state`` extends a base brain payload in place. Resume and
+        all public reads must use :meth:`get_brain_info`, which validates the
+        committed brain/controller generation first.
+        """
         return self._read_json("brain", f"{job_id}.json")
 
     def save_brain_info(self, job_id: str, state: dict) -> None:
@@ -176,6 +383,7 @@ class StateStore:
 
     def get_controller_info(self, job_id: str):
         """Return controller recommendation list for *job_id*, or None."""
+        self.validate_state_transaction(job_id)
         return self._read_json("controller", f"{job_id}.json")
 
     def save_controller_info(self, job_id: str, recs) -> None:

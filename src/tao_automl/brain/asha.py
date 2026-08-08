@@ -33,7 +33,7 @@ class ASHA(AutoMLAlgorithmBase):
         self.max_concurrent = int(max_concurrent)
         self.max_trials = max_trials
         self.min_top_configs = int(min_top_configs)
-        self.metric = metric
+        self._configure_objective(metric)
 
         K = int(math.floor(math.log(max_epochs) / math.log(reduction_factor)))
         r0 = max(1, int(math.floor(max_epochs / (reduction_factor ** K))))
@@ -51,9 +51,7 @@ class ASHA(AutoMLAlgorithmBase):
         self.total_configs_started = 0
         self.complete = False
 
-        self.reverse_sort = True
-        if metric == "loss" or "loss" in metric.lower() or metric.lower() in ("evaluation_cost",):
-            self.reverse_sort = False
+        self.reverse_sort = self.metric_direction == "maximize"
         self.rung_completions = defaultdict(int)
         self.rung_promotions = defaultdict(int)
         self.promoted_from_rung = defaultdict(set)
@@ -275,11 +273,8 @@ class ASHA(AutoMLAlgorithmBase):
         brain.expt_iter = json_loaded.get("expt_iter", 0)
         brain.max_trials = json_loaded.get("max_trials", max_trials)
         brain.min_top_configs = json_loaded.get("min_top_configs", min_top_configs)
-        brain.metric = json_loaded.get("metric", metric)
-
-        brain.reverse_sort = True
-        if brain.metric == "loss" or "loss" in brain.metric.lower() or brain.metric.lower() in ("evaluation_cost",):
-            brain.reverse_sort = False
+        brain._configure_objective(json_loaded.get("metric", metric))
+        brain.reverse_sort = brain.metric_direction == "maximize"
 
         return brain
 

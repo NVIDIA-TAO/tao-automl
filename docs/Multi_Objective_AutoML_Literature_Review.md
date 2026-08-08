@@ -5,18 +5,21 @@
 Multi-objective AutoML is usually framed as finding a set of non-dominated
 solutions rather than a single universally best model. For TAO AutoML, the
 immediate deployment-relevant objective is to trade task quality
-(`loss`, `accuracy`, `mAP`, etc.) against inference latency. The implemented
-feature follows a pragmatic hybrid pattern:
+(`loss`, `accuracy`, `mAP`, etc.) against inference latency. The implementation
+uses a shared measured archive and separates search acquisition from final
+deployment selection:
 
 - Store raw objective values for every recommendation.
-- Maintain and expose the Pareto front.
-- Use a weighted scalar score so the existing single-scalar search algorithms
-  can still rank, promote, and resume configurations.
-- Treat latency as a minimization objective, with optional `scale` and `weight`
-  controls to avoid unit mismatch with accuracy/loss.
+- Reject failed, missing, boolean, NaN, and infinite measurements.
+- Derive latency feasibility from the measured accuracy winner.
+- Maintain non-dominated ranks and explicit dominated-by relationships.
+- Normalize accuracy and latency regret on the feasible rank-zero front.
+- Select a final compromise with augmented Chebyshev regret.
+- Keep normalized acquisition utility separate from the final selector.
 
-This gives users a Pareto archive immediately while preserving the current
-Bayesian, Hyperband, BOHB, ASHA, DEHB, PBT, and runner flows.
+This preserves the current Bayesian, Hyperband, BOHB, ASHA, DEHB, PBT, and
+runner flows while guaranteeing that a dominated candidate cannot be returned
+as the final two-objective compromise.
 
 ## Core Concepts
 
@@ -28,11 +31,11 @@ The returned Pareto front approximates the trade-off curve, for example:
 - lower latency with slightly lower accuracy,
 - lower loss with higher runtime cost.
 
-Scalarization remains useful when existing algorithms need a total ordering.
-The common approaches are weighted sums, constrained optimization, and
-preference-aware scalarizations. Weighted sums are simple and compatible with
-legacy code, but they require sensible weights/scales. Pareto methods preserve
-the trade-off set without forcing one preference too early.
+Scalarization remains useful when existing algorithms need a total ordering,
+but raw accuracy and latency are never added. The acquisition utility is
+archive-normalized and is recomputed as the archive changes. Final selection
+is always performed independently from acquisition and only after feasibility
+and Pareto filtering.
 
 ## Representative Literature
 
@@ -116,6 +119,35 @@ References:
 - HURRICANE: https://arxiv.org/abs/1910.11609
 - HW-PR-NAS: https://research.ibm.com/publications/multi-objective-hardware-aware-neural-architecture-search-with-pareto-rank-preserving-surrogate-models
 
+## Methods Evaluated for the Current Selector
+
+The current problem is a small, already measured, two-objective archive rather
+than a large evolutionary population. The following methods were evaluated
+against that structure:
+
+| Method | Strength | Limitation here | Decision |
+|---|---|---|---|
+| Raw weighted sum | Simple total ordering | Unit- and scale-dependent; can miss non-convex trade-offs; the old implementation mixed mAP and milliseconds | Rejected |
+| Pareto nondominance | Removes objectively inferior choices without preferences | Produces a set rather than one deployment choice | Required first-stage filter |
+| Epsilon constraint | Directly expresses “fastest subject to retained accuracy” | Requires a declared, configurable accuracy rule | Selected for latency feasibility |
+| Normalized ideal-point distance | Scale-independent and intuitive | Fully compensatory: a large regret on one objective can be offset by the other | Retained as a deterministic tie-break |
+| Knee point | Can identify a high marginal-trade-off point | Sparse or nearly linear fronts may have no stable geometric knee; sensitive to endpoints and noise | Rejected as the default |
+| Augmented Chebyshev / achievement scalarization | Minimizes the worst normalized regret and supports non-convex fronts; augmentation makes the ordering strict | Requires explicit weights and normalization bounds | Selected for final compromise |
+| Hypervolume contribution | Valuable for Pareto-set acquisition and archive diversity | Final-point rankings depend on a reference point and often favor endpoints; disproportionate machinery for this archive | Rejected for final selection |
+| NSGA-II rank and crowding | Strong population-based search and diversity preservation | An evolutionary population is unnecessary for three parameters and 30 expensive measured trials | Non-dominated ranking adopted; evolutionary search rejected |
+| qEHVI / qNEHVI | Principled parallel or noisy multi-objective Bayesian acquisition | Adds surrogate and reference-point complexity and does not itself define the final deployment point | Deferred to a larger-budget acquisition upgrade |
+
+The epsilon-constraint choice follows the established formulation of optimizing
+one objective subject to bounds on the others
+(Mavrotas, https://doi.org/10.1016/j.amc.2009.03.037). The selected compromise
+is an achievement-style scalarizing function in the sense of Wierzbicki
+(https://pure.iiasa.ac.at/id/eprint/12466/). Knee behavior and its ambiguity are
+discussed by Deb and Gupta
+(https://doi.org/10.1080/0305215X.2010.548863). For larger future searches,
+BoTorch documents qEHVI/qNEHVI and Chebyshev-based qNParEGO as multi-objective
+acquisition options
+(https://botorch.org/docs/v0.16.0/multi_objective).
+
 ## Implementation Guidance for TAO AutoML
 
 Latency should be a measured objective. The runner now extracts latency-like
@@ -132,36 +164,162 @@ Recommended settings:
 
 ```python
 automl_settings = {
-    "algorithm": "hyperband",
-    "metric": "val_mAP",
-    "direction": "maximize",
-    "multi_objective": True,
-    "latency_metric": "latency",
-    "latency_direction": "minimize",
-    "latency_scale": 100.0,
-    "latency_weight": 1.0,
+    "algorithm": "bayesian",
+    "selection_mode": "multi_objective",
+    "objectives": [
+        {"metric": "val_mAP50", "direction": "maximize", "weight": 1.0},
+        {"metric": "latency_ms", "direction": "minimize", "weight": 1.0},
+    ],
+    "latency_accuracy_retention": {
+        "type": "relative",
+        "retained_fraction": 0.98,
+        "reference": "accuracy_winner",
+    },
+    # Optional and independent of latency_accuracy_retention. None includes
+    # every valid candidate in multi-objective Pareto analysis.
+    "multi_objective_min_accuracy": None,
+    "objective_normalization": "pareto_front",
+    "augmentation_rho": 1.0e-6,
+    "accuracy_tolerance": 1.0e-12,
+    "latency_tolerance": 0.05,
+    "random_seed": 314159,
+    "require_eval_fn_success": True,
 }
 ```
 
-For explicit objective lists:
+An absolute accuracy rule is also supported:
 
 ```python
-automl_settings = {
-    "algorithm": "bayesian",
-    "objectives": [
-        {"metric": "accuracy", "direction": "maximize", "weight": 1.0},
-        {"metric": "latency", "direction": "minimize", "weight": 1.0, "scale": 100.0},
-    ],
+latency_accuracy_retention = {
+    "type": "absolute",
+    "max_absolute_degradation": 0.02,
+    "reference": "accuracy_winner",
 }
 ```
 
-The scalar score used internally is:
+For accuracy \(A\) and latency \(L\), the default latency-mode relative rule is:
 
 ```text
-sum(weight * value / scale) for maximize objectives
-sum(-weight * value / scale) for minimize objectives
+A(x) >= 0.98 * A*
 ```
 
-The Pareto front is exposed in `get_status()` and runner results, so downstream
-selection can choose a model based on the desired latency-quality operating
-point even when the scalar score selects a single default best recommendation.
+where \(A^*\) is the accuracy-mode winner. Latency mode minimizes stabilized
+latency subject to this constraint. It returns an explicit
+`no_accuracy_feasible_candidates` status instead of applying a penalty or
+silently falling back.
+
+The DINO reference validation deliberately overrides that default with an
+explicit relative-retention product profile:
+
+```python
+latency_accuracy_retention = {
+    "type": "relative",
+    "retained_fraction": 0.90,
+    "reference": "accuracy_winner",
+}
+multi_objective_min_accuracy = None
+```
+
+For this profile, latency feasibility is \(A(x) \ge 0.90A^*\). The `0.90`
+factor is relative retention, not a ten-percentage-point subtraction. It affects
+only latency mode; accuracy mode remains an unconstrained accuracy maximum, and
+multi-objective mode continues to use its independently eligible Pareto front.
+The repository default remains `0.98`. See the checked-in
+[`DINO latency policy profile`](../experiments/dino_moo_phase2_20260728/dino_latency_90_policy_profile.v1.json).
+
+Multi-objective eligibility is separate. By default,
+`multi_objective_min_accuracy` is unset and every candidate with finite valid
+measurements is eligible for Pareto analysis. An optional absolute metric floor
+can be written as a number or explicitly:
+
+```python
+multi_objective_min_accuracy = {
+    "type": "absolute",
+    "value": 0.80,
+}
+```
+
+A reference-relative sensitivity policy must be explicit, avoiding ambiguity
+between an absolute `0.90` metric floor and 90% retention:
+
+```python
+multi_objective_min_accuracy = {
+    "type": "relative",
+    "value": 0.90,
+    "reference": "accuracy_winner",
+}
+```
+
+This resolves to \(A(x) \mathrel{\ge} 0.90 A^*\), independently of the
+latency-mode retention fraction. The resolved reference candidate, reference
+accuracy, and threshold are persisted in the selection audit.
+
+The compromise selector orients both objectives as regrets:
+
+```text
+r_accuracy(x) = (A_max - A(x)) / (A_max - A_min)
+r_latency(x)  = (L(x) - L_min) / (L_max - L_min)
+```
+
+The bounds are persisted from the rank-zero front under the configured
+multi-objective eligibility policy. A zero-range objective is inactive and
+contributes zero regret. With normalized non-negative weights \(w_A,w_L\),
+at least one of which must be positive, the selected candidate minimizes:
+
+```text
+max(w_A * r_accuracy, w_L * r_latency)
+  + rho * (w_A * r_accuracy + w_L * r_latency)
+```
+
+Finite dominated outliers cannot affect these bounds because they are removed
+before front normalization. A finite nondominated endpoint is treated as a
+real measured trade-off and therefore does define an ideal or nadir bound; it
+is not silently clipped. Measurement-level latency outliers are controlled
+separately by the median/MAD protocol and quality gates. Product deployments
+that require externally stable normalization across changing archives may
+configure fixed domain bounds in a future extension, but must record those
+bounds rather than deriving them after seeing a desired winner.
+
+The selector first removes dominated points. Score ties use normalized ideal
+distance, balance gap, accuracy-safe regret, canonical SHA-256 configuration
+fingerprint, and candidate ID. Exact duplicate objective points are represented
+by the candidate with the smallest canonical fingerprint, with all aliases
+retained in the audit record.
+
+Accuracy mode selects maximum valid accuracy. Only candidates equivalent within
+`accuracy_tolerance` may use latency as a tie-break. Latency mode anchors its
+equivalent-fastest cohort at the raw minimum median and applies
+`latency_tolerance` as a hard, inclusive practical boundary; higher accuracy
+and then the canonical fingerprint decide only inside that cohort. Confidence
+intervals inform Pareto dominance and validation reporting, but overlap cannot
+expand the practical cohort beyond the configured tolerance.
+For Pareto dominance, "no worse" always follows the observed directions
+exactly: accuracy cannot decrease and median latency cannot increase.
+Tolerance controls whether an accuracy gain is strict, while non-overlapping
+latency confidence intervals are required for a latency-only strict
+improvement. Thus statistical equivalence can withhold a dominance claim but
+can never allow a numerically worse point to dominate.
+
+If no distinct non-dominated point exists between the accuracy and latency
+extremes under the configured multi-objective eligibility policy, the result
+contains:
+
+```text
+No distinct Pareto compromise exists under the configured multi-objective eligibility policy.
+```
+
+The augmented-Chebyshev ordering then supplies the deterministic extreme-point
+fallback. The result does not claim that this fallback is a middle ground.
+
+`get_status()` and runner results expose the constraint reference and threshold,
+normalization bounds, per-candidate validity, latency feasibility,
+multi-objective eligibility, both global and multi-objective Pareto ranks,
+dominated-by IDs, normalized regrets, compromise and acquisition scores,
+confidence bounds, canonical fingerprint, tie-break values, and all three
+mode-winner flags.
+
+For two-objective benchmarking, `eval_fn` is required by default. An exception
+or missing required metric invalidates the trial instead of falling back to a
+training progress-bar rate. Boolean, NaN, infinite, non-positive latency, and
+malformed or incomplete confidence-interval values are also rejected before
+Pareto ranking.

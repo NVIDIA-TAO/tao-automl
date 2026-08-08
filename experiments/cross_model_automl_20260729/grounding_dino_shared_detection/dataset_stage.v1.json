@@ -1,0 +1,72 @@
+{
+  "conversion_manifest": {
+    "path": "/localhome/local-rarunachalam/.tao/worktrees/tao-automl-grounding-dino/experiments/cross_model_automl_20260729/grounding_dino_shared_detection/dataset_conversion.v1.json",
+    "semantic_sha256": "3f78d2b38ea630d9843a5a5d9b82ecf49546c2948de2c829acf7f6ed0521f268",
+    "sha256": "25cf4bcc903d442be6fe3391778f693352a7dd7cac8ee077d4d6dcf1084e3dc4"
+  },
+  "publication": {
+    "all_expected_files_present": true,
+    "all_hashes_and_sizes_match": true,
+    "expected": {
+      "conversion_manifest": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/conversion_manifest.v1.json",
+        "sha256": "25cf4bcc903d442be6fe3391778f693352a7dd7cac8ee077d4d6dcf1084e3dc4",
+        "size_bytes": 7881
+      },
+      "train_label_map": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json",
+        "sha256": "50e203a52565c8c00f41454ad3656662c98cd2902bd6a02d35a2ab3059578d81",
+        "size_bytes": 69
+      },
+      "train_odvg": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+        "sha256": "abf109f0fcbabcbc185942399857582ab1db0b8664c3f166c220b9def936d3df",
+        "size_bytes": 785366
+      },
+      "validation_coco": {
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json",
+        "sha256": "621f89401b4ab219274486b6c392540772707bcc0e5983a40c5c359f7277737b",
+        "size_bytes": 352138
+      }
+    },
+    "inside_existing_source_dataset_tree": true,
+    "lustre_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1",
+    "method": "temporary_sibling_then_target_absent_atomic_rename",
+    "observed": {
+      "conversion_manifest": {
+        "mode": "444",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/conversion_manifest.v1.json",
+        "sha256": "25cf4bcc903d442be6fe3391778f693352a7dd7cac8ee077d4d6dcf1084e3dc4",
+        "size_bytes": 7881
+      },
+      "train_label_map": {
+        "mode": "444",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg_labelmap.json",
+        "sha256": "50e203a52565c8c00f41454ad3656662c98cd2902bd6a02d35a2ab3059578d81",
+        "size_bytes": 69
+      },
+      "train_odvg": {
+        "mode": "444",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/train/annotations_odvg.jsonl",
+        "sha256": "abf109f0fcbabcbc185942399857582ab1db0b8664c3f166c220b9def936d3df",
+        "size_bytes": 785366
+      },
+      "validation_coco": {
+        "mode": "444",
+        "path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/tao_od_synthetic_full_dino_coco/grounding_dino_odvg_v1/validation/annotations_remapped.json",
+        "sha256": "621f89401b4ab219274486b6c392540772707bcc0e5983a40c5c359f7277737b",
+        "size_bytes": 352138
+      }
+    },
+    "published_files_nonwritable": true,
+    "remote_host": "cs-oci-ord-login-01.nvidia.com",
+    "remote_user": "rarunachalam"
+  },
+  "schema_version": 1,
+  "selection_or_execution": {
+    "model_execution_performed": false,
+    "scheduler_jobs_submitted": 0,
+    "selector_invoked": false
+  },
+  "stage_record_sha256": "762ecb5264fddf91f3d0b1aa012ff6e4abb8e3177c81e74d838d94ed6fb5dee0"
+}

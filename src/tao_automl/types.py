@@ -66,6 +66,9 @@ class Recommendation(Mapping):
         self.early_stop_epoch = None  # For PBT/Hyperband: epoch limit when this rec was launched
         self.failure_reason = None
         self.adjustments = []
+        # Frozen when the recommendation is issued. This proves which search
+        # policy, space, observations, and acquisition state produced it.
+        self.recommendation_audit = {}
 
         # Add timestamps for timeout tracking
         current_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
@@ -195,3 +198,4 @@ class AutoMLContext:
     metric: str = "loss"
     handler_id: str = ""  # experiment ID for custom ranges
     num_gpu: int = -1
+    random_seed: int | None = None

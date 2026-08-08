@@ -1,0 +1,58 @@
+{
+  "campaign_id": "dino-voc2007-three-mode-20260729",
+  "dataset": {
+    "image_count": 9963,
+    "image_total_bytes": 875453699,
+    "image_tree_algorithm": "sha256_of_sorted_sha256sum_basename_lines",
+    "image_tree_sha256": "9ad37484afcf88a65378ae7de15cf3993f28ccd3895d8aaa496533a8b4b4b0b5",
+    "integrity_path": "/localhome/local-rarunachalam/.tao/datasets/cross_model_automl_20260729/voc2007/prepared/integrity.v1.json",
+    "integrity_sha256": "cc9b9d450a15358ee8033ea8f8aa9a2fb305b060a133e491b3c5205abb20ec39",
+    "local_image_dir": "/localhome/local-rarunachalam/.tao/datasets/cross_model_automl_20260729/voc2007/prepared/VOCdevkit/VOC2007/JPEGImages",
+    "manifest_path": "/localhome/local-rarunachalam/tao-automl/experiments/cross_model_automl_20260729/datasets/voc2007/manifest.v1.json",
+    "manifest_sha256": "e5bbc132c3f3ab47afefa6c355f970e8c8c092f5d8acc1418e3d7157b8981214",
+    "slurm_root": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/data/pascal_voc_2007_full_detection",
+    "train_annotation_sha256": "fbb0c5e68745eba2ab8e849a17e4eb874a38db891aff731cab3948ed7bf2b6e7",
+    "train_annotation_size_bytes": 2312852,
+    "validation_annotation_sha256": "e984d6481ec999735876b3b608c3e8fa3e61b390e7dae4ee7bc84f8f9d4b95f2",
+    "validation_annotation_size_bytes": 2308053
+  },
+  "ptm_runtime": {
+    "dino.coco.resnet50.trainable.v1.0": {
+      "artifact_sha256": "678064a0706ec778edb17583be78e9a138afac1c48832ba419b8c774ac7d5756",
+      "artifact_size_bytes": 195109331,
+      "slurm_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/ptm/cross_model_automl_20260729/dino/dino.coco.resnet50.trainable.v1.0/tao71_dino_resnet50_ep12.pth"
+    }
+  },
+  "runtime": {
+    "account": "edgeai_tao-ptm_image-foundation-model-clip",
+    "base_results_dir": "/lustre/fsw/portfolios/edgeai/users/rarunachalam",
+    "container_mounts": "/lustre",
+    "image_reference": "nvcr.io/nvstaging/tao/tao-toolkit-pyt:7.1.0-rc-245-multiarch",
+    "partition": "polar3",
+    "sdk_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-sdk-slurm-3d3e1ad",
+    "sdk_revision": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+    "skill_dir": "/localhome/local-rarunachalam/.tao/worktrees/tao-skills-release-7.1.0/skills/models/tao-train-dino",
+    "skill_revision": "2e9c1b25f3c7cb1ae444c75652e36c47eace8229",
+    "sqsh_path": "/lustre/fsw/portfolios/edgeai/users/rarunachalam/nvcr.io_nvstaging_tao_tao-toolkit-pyt_7.1.0-rc-245-multiarch.sqsh",
+    "sqsh_sha256": "e36640f9ae7a03bc80828cf7de93bd6bdbbb0fecf509a71a243be0ab5b497fc2",
+    "sqsh_size_bytes": 28860358656,
+    "tao_version": "7.1.0-rc-245"
+  },
+  "search": {
+    "calibration_points": 8,
+    "candidate_budget_per_mode": 20,
+    "latency_accuracy_retention": 0.9,
+    "latency_practical_tolerance_ms": 0.73553775,
+    "search_seed": 271828,
+    "training_epochs": 10,
+    "training_seed": 1234
+  },
+  "source": {
+    "commit": "HEAD",
+    "dirty": false,
+    "repository": "/localhome/local-rarunachalam/tao-automl",
+    "wheel_path": "/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/wheel/8c50883c2bf4/nvidia_tao_automl-0.1.0-py3-none-any.whl",
+    "wheel_sha256": "f9ab78c92e29d32f41e0909ccc7969b87b0d717b180e560eee754a1879482393",
+    "wheel_source_commit": "8c50883c2bf420602d1830126ea5f1b3b7f9e008"
+  }
+}

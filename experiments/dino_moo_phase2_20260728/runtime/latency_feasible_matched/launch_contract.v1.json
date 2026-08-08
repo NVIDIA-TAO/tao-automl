@@ -1,0 +1,151 @@
+{
+  "algorithm_selected_candidate_overridden": false,
+  "allocation_count": 6,
+  "allocation_ids": [
+    "latency_feasible_allocation_00",
+    "latency_feasible_allocation_01",
+    "latency_feasible_allocation_02",
+    "latency_feasible_allocation_03",
+    "latency_feasible_allocation_04",
+    "latency_feasible_allocation_05"
+  ],
+  "candidate_set_sha256": "143a2cf63b3b6d700cc2cd124f15a12ef6bdf58b85c2a6af5fdc4bcbfc73bce1",
+  "contract_id": "dino_latency_feasible_matched_launch_20260728_v1",
+  "contract_sha256": "9a29cad7a9863b7a5b9c961d62a0761a2462422468499948ff840667a608d94f",
+  "feeds_final_selection": false,
+  "feeds_reselection": false,
+  "manifest_id": "dino_latency_feasible_matched_20260728_v1",
+  "manifest_internal_sha256": "32c268f11742c26bdc47c61272f73a6d9f651317606e9102e75585bc7d2100e9",
+  "manifest_sha256": "f83be40f9e00bcd5fc62959bf5a732327353a91ca12ee2efc118325ded2d0db4",
+  "manual_winner_override_permitted": false,
+  "measurements_feed_reselection": false,
+  "measurements_feed_selection": false,
+  "runtime_path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/runtime/latency_feasible_matched",
+  "schedule_sha256": "19cb88f9a061ab1dc46eb7aa1177fe9a93ae148524850d502d99af98089c4f9d",
+  "schema_version": 1,
+  "selection_time_objective_replacement_permitted": false,
+  "selection_time_objectives_replaced": false,
+  "selector_invoked_on_matched_measurements": false,
+  "source_checks": {
+    "candidate_set_sha256": "143a2cf63b3b6d700cc2cd124f15a12ef6bdf58b85c2a6af5fdc4bcbfc73bce1",
+    "candidate_table_csv_sha256": "0b313942968805879ac0f3bfb386dd45156d4be160c070aedf83bac579df6e5a",
+    "candidate_table_sha256": "5ba323d05d9ec8e3703e636f8b5e2975cc620eeec10df75ec6e792318dc2df03",
+    "checkpoint_overlay": {
+      "internal_sha256": "e2e6446e3dca7f52e7b2bac682c26bc5b711067b0a18dae71cfbb24f5a44402c",
+      "overlay_id": "dino_latency_feasible_rec16_checkpoint_overlay_20260728_v2",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json",
+      "whole_file_sha256": "d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa"
+    },
+    "checkpoint_overlay_execution_tools": {
+      "latency_feasible_checkpoint_overlay.py": "98ea3bf0adafafd09500437ba153174939e597b374f17302d1cfd4fac1920570",
+      "latency_feasible_matched_aggregator_v2.py": "738fc0e6b17cc44b6ca46d69f73a262b515b229e53eedf36dbff3839c15e9ada",
+      "latency_feasible_matched_launcher_v2.py": "ff34ec203f24f936adb0fa39126debc187b06f7c463d5398a30e4209204d7d4b"
+    },
+    "checkpoint_recovery_evidence": {
+      "evidence_id": "dino_rec16_checkpoint_recovery_20260728_v1",
+      "internal_sha256": "01715fecc26c3f2b5085650f3bd17f62a502dfc6a85560f11cfa968d08ac9456",
+      "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/rec16_checkpoint_recovery_evidence.v1.json",
+      "whole_file_sha256": "923284e51f9e41f6954a1615f683ea6221b62fce0f490c3d5252b7c0d67f3e56"
+    },
+    "combined_selection_sha256": "78ab9d2fa83cc3abe9057d137c0b88f120158b6ad77268482d2c18f5a1533af1",
+    "effective_checkpoint": {
+      "epoch": 9,
+      "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/7b585a7b-a291-4473-8bda-8e2b542e3982/results_dir/train/model_epoch_009_step_00440.pth",
+      "sha256": "931bc787eb7b9b1752bd7613558a2e0f1d26ae7cc5a983d8f4333ef59abbd304",
+      "size_bytes": 506687042
+    },
+    "exact_manifest_reconstruction": true,
+    "expanded_archive_candidate_ids_sha256": "7b4de18434ce46fa7f9238a7be2fda4185fbbe68d1046ca9dbb923957bfb6549",
+    "expanded_archive_candidate_table_projection_sha256": "9e00262945d521468b973745a67d8f9c7e3c85c4c7b66712454d2b4f36922551",
+    "expanded_archive_full_record_union_sha256": "a55964fa0c5762c1a8df45dd6b8a55047a68691cdefc5a8764c4426e68c1d365",
+    "expanded_manifest_sha256": "9ac29e1aa07167a040d217fdab2d3cfdea0baad690dc95a70f2fe6715908793a",
+    "expanded_runtime_contract_sha256": "e20294ec4c38fd4e29716dca8a4c3a273f142d002f7958cde9ed8f60fe8a48bd",
+    "historical_byte_match": false,
+    "historical_checkpoint": {
+      "epoch": 9,
+      "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/92d8f699-a780-4229-94ba-3520806d75da/results_dir/train/model_epoch_009_step_00440.pth",
+      "sha256": "4b5ff50181ff919a2796cdd54027fff92eb57c908701a34408d29136d5565b4d",
+      "size_bytes": 506687042
+    },
+    "integrity_audit_sha256": "a11eeeaf77bd2f289c6363133882bb78c6889205d4cb9be5f0dacf79a1bea159",
+    "launch_source_state": {
+      "checkpoint_overlay": {
+        "checkpoint_overlay": {
+          "internal_sha256": "e2e6446e3dca7f52e7b2bac682c26bc5b711067b0a18dae71cfbb24f5a44402c",
+          "overlay_id": "dino_latency_feasible_rec16_checkpoint_overlay_20260728_v2",
+          "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/latency_feasible_rec16_checkpoint_overlay.v2.json",
+          "whole_file_sha256": "d054df9923a717759786628177814d5d531d7af3bf136da7361a4882b83410aa"
+        },
+        "checkpoint_overlay_execution_tools": {
+          "latency_feasible_checkpoint_overlay.py": "98ea3bf0adafafd09500437ba153174939e597b374f17302d1cfd4fac1920570",
+          "latency_feasible_matched_aggregator_v2.py": "738fc0e6b17cc44b6ca46d69f73a262b515b229e53eedf36dbff3839c15e9ada",
+          "latency_feasible_matched_launcher_v2.py": "ff34ec203f24f936adb0fa39126debc187b06f7c463d5398a30e4209204d7d4b"
+        },
+        "checkpoint_recovery_evidence": {
+          "evidence_id": "dino_rec16_checkpoint_recovery_20260728_v1",
+          "internal_sha256": "01715fecc26c3f2b5085650f3bd17f62a502dfc6a85560f11cfa968d08ac9456",
+          "path": "/localhome/local-rarunachalam/tao-automl/experiments/dino_moo_phase2_20260728/rec16_checkpoint_recovery_evidence.v1.json",
+          "whole_file_sha256": "923284e51f9e41f6954a1615f683ea6221b62fce0f490c3d5252b7c0d67f3e56"
+        },
+        "effective_checkpoint": {
+          "epoch": 9,
+          "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/7b585a7b-a291-4473-8bda-8e2b542e3982/results_dir/train/model_epoch_009_step_00440.pth",
+          "sha256": "931bc787eb7b9b1752bd7613558a2e0f1d26ae7cc5a983d8f4333ef59abbd304",
+          "size_bytes": 506687042
+        },
+        "historical_byte_match": false,
+        "historical_checkpoint": {
+          "epoch": 9,
+          "path": "/lustre/fs11/portfolios/edgeai/projects/edgeai_tao-ptm_image-foundation-model-clip/users/rarunachalam/results/92d8f699-a780-4229-94ba-3520806d75da/results_dir/train/model_epoch_009_step_00440.pth",
+          "sha256": "4b5ff50181ff919a2796cdd54027fff92eb57c908701a34408d29136d5565b4d",
+          "size_bytes": 506687042
+        },
+        "measurement_role": "latency_measurement_surrogate_only",
+        "selection_isolation": {
+          "algorithm_selected_candidate_overridden": false,
+          "measurements_feed_reselection": false,
+          "measurements_feed_selection": false,
+          "selection_time_objectives_replaced": false,
+          "selector_invoked_on_matched_measurements": false
+        }
+      },
+      "overlay_wrapper_sources_committed_clean": true,
+      "repository": "/localhome/local-rarunachalam/tao-automl",
+      "source_count": 7,
+      "tao_sdk_branch": "rarunachalam/pre-platform-sdk-removal-20260714",
+      "tao_sdk_commit": "3d3e1adc1849493d29dc926cb99492417e3a9250",
+      "tao_sdk_worktree_clean": true,
+      "tracked_committed_clean": true
+    },
+    "measurement_role": "latency_measurement_surrogate_only",
+    "protocol_erratum_canonical_sha256": "e77b2a4a00cc99c687b3afe832de2295d8ca55a08cb157c0d9e5da7581ebce71",
+    "protocol_erratum_sha256": "95bba65099027459a50b5e74e43a4ab32c56057e534e70aa7f85bdc9246a7d13",
+    "reconstructed_manifest_internal_sha256": "32c268f11742c26bdc47c61272f73a6d9f651317606e9102e75585bc7d2100e9",
+    "seed_archive_internal_sha256": {
+      "161803": "7fe334b80f03cee36a6c5d283574cc36d8ad7ab5d098c9d2f5f1389a94240f34",
+      "271828": "eedaa0a37e49cfa86e54be15a56352e4891044856ad5db782f6a4eed464dfb36",
+      "314159": "45418f66fa435d35427725c64f7e2c58b48dbdd56397c43e3e07575185a5c424"
+    },
+    "seed_archive_whole_file_sha256": {
+      "161803": "0057080db477db3acd544ec360ce08b1c1c902a3d6ae820f52180f8d492109c9",
+      "271828": "a42a989ea27940ea9ae481212a75216c7f23f01602b0c260b6750c9fdb709c9e",
+      "314159": "c8a1f937a6208ba2e9bd305a272b7a94b2269a46ef5e683d67d01596d6d5c044"
+    },
+    "selection_isolation": {
+      "algorithm_selected_candidate_overridden": false,
+      "measurements_feed_reselection": false,
+      "measurements_feed_selection": false,
+      "selection_time_objectives_replaced": false,
+      "selector_invoked_on_matched_measurements": false
+    },
+    "selection_stack_sha256": "f725d92470dc1f5f249bcfbff463c9d1cf49881e0dcf59e42fa6182a00e839b6",
+    "selector_replay_proof_sha256": "ff12dd5e599b8ab9594d75521c069bc54f102f0f3761bbd4c9d9d3c1ce5b507e",
+    "tool_sources": {
+      "latency_feasible_matched_aggregator.py": "254b887d829f7c853510cf34707e782cbbeeea9049777482662f8c9fd2d578fa",
+      "latency_feasible_matched_block_runner.py": "f2ef5f7125a55db408ba27f67d5e81d279c669a24206038c78748f2676fc14bb",
+      "latency_feasible_matched_launcher.py": "b6a9f13476e9287d7b7040f8d289e8210706cedc6746429ba1e89410ed9b0025",
+      "latency_feasible_matched_manifest_generator.py": "3c83f3ea4644efefb9a425facbda358753de9abf78b293405c60799c60abdcb6"
+    }
+  },
+  "status": "reserved_before_sdk_initialization"
+}

@@ -1,0 +1,36 @@
+# Data-contract fragment only. Model execution was not part of dataset staging.
+dataset:
+  segment:
+    root_dir: /lustre/fsw/portfolios/edgeai/users/rarunachalam/data/cross_model_automl_20260729/voc2012_segmentation_v1/prepared
+    dataset: SFDataset
+    num_classes: 21
+    train_split: train
+    validation_split: val
+    test_split: val
+    label_transform: "None"
+    palette:
+      - {seg_class: background, label_id: 0, mapping_class: background, rgb: [0]}
+      - {seg_class: aeroplane, label_id: 1, mapping_class: aeroplane, rgb: [1]}
+      - {seg_class: bicycle, label_id: 2, mapping_class: bicycle, rgb: [2]}
+      - {seg_class: bird, label_id: 3, mapping_class: bird, rgb: [3]}
+      - {seg_class: boat, label_id: 4, mapping_class: boat, rgb: [4]}
+      - {seg_class: bottle, label_id: 5, mapping_class: bottle, rgb: [5]}
+      - {seg_class: bus, label_id: 6, mapping_class: bus, rgb: [6]}
+      - {seg_class: car, label_id: 7, mapping_class: car, rgb: [7]}
+      - {seg_class: cat, label_id: 8, mapping_class: cat, rgb: [8]}
+      - {seg_class: chair, label_id: 9, mapping_class: chair, rgb: [9]}
+      - {seg_class: cow, label_id: 10, mapping_class: cow, rgb: [10]}
+      - {seg_class: diningtable, label_id: 11, mapping_class: diningtable, rgb: [11]}
+      - {seg_class: dog, label_id: 12, mapping_class: dog, rgb: [12]}
+      - {seg_class: horse, label_id: 13, mapping_class: horse, rgb: [13]}
+      - {seg_class: motorbike, label_id: 14, mapping_class: motorbike, rgb: [14]}
+      - {seg_class: person, label_id: 15, mapping_class: person, rgb: [15]}
+      - {seg_class: pottedplant, label_id: 16, mapping_class: pottedplant, rgb: [16]}
+      - {seg_class: sheep, label_id: 17, mapping_class: sheep, rgb: [17]}
+      - {seg_class: sofa, label_id: 18, mapping_class: sofa, rgb: [18]}
+      - {seg_class: train, label_id: 19, mapping_class: train, rgb: [19]}
+      - {seg_class: tvmonitor, label_id: 20, mapping_class: tvmonitor, rgb: [20]}
+      # The loss and IoU implementation use 255 as ignore_index. This entry is
+      # required so the grayscale loader preserves 255 instead of initializing
+      # unmatched pixels to class 0.
+      - {seg_class: ignore, label_id: 255, mapping_class: ignore, rgb: [255]}
