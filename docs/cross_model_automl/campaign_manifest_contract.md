@@ -66,6 +66,16 @@ observation sharing is false and every mode starts with an empty observation
 list. Consequently, the three jobs are independent searches rather than
 three selectors over one shared archive.
 
+This also defines the validation boundary.  Accuracy, latency, and
+multi-objective invariants are evaluated against the terminal archive of the
+mode that made the selection.  Because objective-aware acquisitions may
+discover different finite candidate universes, ordering the three active-mode
+winners by accuracy or latency is observational evidence, not a production
+selector invariant.  A candidate discovered by another mode does not
+retroactively make the accuracy selector incorrect.  A read-only union may be
+used to diagnose acquisition coverage, but it must never become a production
+selection archive or trigger reselection.
+
 PTM identity is not represented as an ordinal or categorical value in the
 inner numerical search space. `ptm_search` records deterministic
 `hierarchical_nonordinal_arms`; each arm binds a checkpoint ID to its

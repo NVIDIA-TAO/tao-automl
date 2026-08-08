@@ -15,8 +15,8 @@ rank-zero MOO front and selector geometry.
 The current replay artifact is:
 
 ```text
-/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_audit_v5/matrix.json
-sha256 7ed30cb0289f2c9e8ca4b328d6dd605e8e7db9a7d469d8c059406df588ea1ee0
+/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_audit_v6_design_b/matrix.json
+sha256 78b7daed210cbb01c3b3e3c9a261abbea97c86e6a7f37bc274f229d39d932963
 ```
 
 The audit also constructs a read-only union of the three independently
@@ -24,16 +24,34 @@ acquired mode archives. That union is diagnostic acquisition-coverage
 evidence, not an input that was available to any production selector. It does
 not replace or reselect a frozen winner.
 
+## Candidate-universe product contract
+
+The implemented and documented product contract is **Design B: three
+independent objective-aware searches**. `campaign_manifest_contract.md`, the
+campaign manifests, and the production runner require a unique job ID and
+observation namespace for each mode, disable cross-mode observation sharing,
+and start every mode from an empty observation history. Accuracy uses expected
+improvement, constrained latency uses constrained expected improvement, and
+MOO uses deterministic ParEGO acquisition before each mode applies its own
+terminal selector to its own terminal archive.
+
+Consequently, accuracy, latency, and Pareto correctness are mode-local
+invariants. Ordering winners from three different finite archives is useful
+coverage evidence, but it is not a selector invariant. A candidate discovered
+by the latency acquisition cannot retroactively make the accuracy selector
+incorrect. The diagnostic union remains read-only and cannot become a
+production selection archive.
+
 ## Machine-derived matrix
 
 | Model | Dataset | Accuracy winner | Latency winner | MOO winner | Accuracy invariant | Latency invariant | Pareto invariant | Middle-ground invariant | Classification |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | DINO | TAO OD synthetic full DINO COCO | `rec_14` | `rec_13` | `rec_5` | true | true | true | true | `PASS_EXPECTED_COMPROMISE` |
-| Deformable DETR | TAO OD synthetic full DINO COCO | `rec_19` | `rec_19` | `rec_5` | true | true | true | false | `INCONCLUSIVE` |
+| Deformable DETR | TAO OD synthetic full DINO COCO | `rec_19` | `rec_19` | `rec_5` | true | true | true | false | `PASS_EXPECTED_COMPROMISE` |
 | RT-DETR | TAO OD synthetic full DINO COCO | `rec_6` | `rec_17` | `rec_6` | true | true | true | false | `PASS_ENDPOINT_COLLAPSE` |
-| Grounding DINO | TAO OD synthetic full DINO COCO (ODVG conversion) | `rec_13` | `rec_18` | `rec_3` | false across independent archives; true within accuracy archive | true | true | false | `FAIL_SEARCH_OR_ARCHIVE` |
-| SegFormer | VOC2012 segmentation | `rec_23` | `rec_12` | `rec_25` | true | true | true | false | `INCONCLUSIVE` |
-| Mask2Former | COCO2017 instance segmentation | `rec_5` | `rec_2` | `rec_4` | noise-limited across independent retraining; true within accuracy archive | true | true | false | `INCONCLUSIVE` |
+| Grounding DINO | TAO OD synthetic full DINO COCO (ODVG conversion) | `rec_13` | `rec_18` | `rec_3` | true | true | true | false | `PASS_EXPECTED_COMPROMISE` |
+| SegFormer | VOC2012 segmentation | `rec_23` | `rec_12` | `rec_25` | true | true | true | false | `PASS_EXPECTED_COMPROMISE` |
+| Mask2Former | COCO2017 instance segmentation | `rec_5` | `rec_2` | `rec_4` | true | true | true | false | `PASS_EXPECTED_COMPROMISE` |
 | OneFormer | COCO2017 panoptic segmentation | `rec_6` | `rec_17` | `rec_16` | true | true | true | true | `PASS_EXPECTED_COMPROMISE` |
 
 Every persisted selector result matches the current production replay and is
@@ -41,20 +59,24 @@ invariant to candidate order. Every listed MOO winner is rank zero and
 nondominated in the independently acquired archive that the selector actually
 received. Multi-objective eligibility is independent: all seven MOO jobs have
 `multi_objective_min_accuracy: null` and do not inherit latency retention.
+The classification column is the machine-derived **mode-local selection-policy
+classification**. The middle-ground column separately records the observed
+ordering of active winners across independent archives; under Design B that
+column is not a selector invariant. Measurement-stability conclusions are
+reported separately below and can remain inconclusive without changing a
+mode-local selection-policy pass.
 
 ## Differential diagnosis
 
 ### Deformable DETR
 
 The MOO winner is a genuine normalized augmented-Chebyshev compromise on its
-six-point rank-zero front, but it is faster and less accurate than the winner
-of the separate constrained-latency job. Offline replay reproduces the frozen
-winner and no candidate in the MOO archive dominates it. The unexpected
-cross-job ordering is caused by different objective-aware acquisitions seeing
-different finite archives, not by objective direction, normalization,
-eligibility, dominance, or finalization. There is no evidence supporting a
-selector change or a result-driven rerun. Classification remains
-`INCONCLUSIVE` rather than manufacturing a pass or fail.
+six-point rank-zero front. It is faster and less accurate than the winner of
+the separate constrained-latency job, but Design B does not require ordering
+across those two finite archives. Offline replay reproduces the frozen winner
+and no candidate in the MOO archive dominates it. The mode-local selection
+policy is `PASS_EXPECTED_COMPROMISE`; the cross-mode endpoint ordering remains
+observational and is not grounds for a selector change or result-driven rerun.
 
 ### RT-DETR
 
@@ -74,33 +96,66 @@ and latency observations visible to the algorithm and all intervention flags
 false. The accuracy job never acquired that fingerprint.
 
 Thus the first divergence is candidate acquisition/archive coverage, not
-metric extraction or selection. The difference (`0.007526`) is also smaller
-than the observed cross-job variation of identical Grounding DINO
-specifications, so its practical direction is not established without matched
-accuracy retraining. No search range, seed, budget, PTM, threshold, or winner
-is changed after the result. The frozen evidence is classified
-`FAIL_SEARCH_OR_ARCHIVE`; there is no demonstrated production-code defect to
-patch.
+metric extraction or selection. The signed recommendation audit verifies all
+60 recommendations, the maximize/minimize directions, complete visible
+history, frozen bounds, canonical fingerprints, unique recommendations,
+mode-aware acquisition routing, and the deterministic 16-candidate common
+calibration prefix. Only four model-based recommendations per mode remained;
+the higher point was the latency job's algorithmic recommendation 18 and was
+reachable but not proposed by the accuracy job. No acquisition implementation
+defect was reproduced.
+
+The difference (`0.007526`) is smaller than the median (`0.0310464`) and
+maximum (`0.0617162`) accuracy ranges observed when the same 16 calibration
+fingerprints were independently trained across jobs. The coverage observation
+therefore remains `INCONCLUSIVE_PENDING_MATCHED_ACCURACY_VALIDATION`, not a
+selector failure. A prospective six-repeat validation contract compares the
+two fingerprints without changing any frozen selection-time value. It is
+gated on successful MGDINO v11 completion and all validation measurements are
+isolated from selection and reselection.
+
+The acquisition audit is:
+
+```text
+/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_validation/grounding_dino/acquisition_audit.json
+sha256 01d51850c34b8e63fb07e8bc771dee1f741f90fbf97d5fd880a63cde9ee01577
+```
 
 ### SegFormer
 
-The selected MOO point is rank zero in its own archive. In the read-only union,
-latency `rec_12` has higher mIoU and a median only `0.034172 ms` lower. That
-difference is far inside the configured `0.73553775 ms` practical tolerance
-and was not measured in a matched-allocation design. The result therefore
-cannot support a stable dominance or direction claim across independent jobs.
-It remains `INCONCLUSIVE`; selector and search settings are unchanged.
+The selected MOO point is a distinct rank-zero compromise in its own archive.
+In the read-only union, latency `rec_12` has higher mIoU and a median only
+`0.034172 ms` lower. That difference is far inside the configured
+`0.73553775 ms` practical tolerance and was not measured in a matched-allocation
+design. Mode-local selection is correct; the cross-job latency direction is
+practically unresolved and no selector or search setting is changed.
 
 ### Mask2Former
 
-All three per-mode selectors replay correctly. The latency distributions have
-large repeatable workload tails (for example the constrained-latency winner
-has median `59.42927925 ms` and p95 `128.8335325 ms`) even though the frozen
-median quality gate passes. No matched-allocation evidence exists for the
-three cross-job endpoints. The selected MOO point is nondominated within its
-archive, but the desired cross-job interval is not established. This is
-latency-evidence-limited `INCONCLUSIVE`, not permission to replace a measured
-objective or winner.
+All three per-mode selectors replay correctly and the selected MOO point is a
+distinct nondominated compromise in its own archive. The complete 24 signed
+rank traces for the three active-mode winners reproduce the production
+device-round-cluster median and raw-sample p95 exactly. They also localize the
+large tails to deterministic positions in the frozen 16-input schedule on all
+eight replicas: latency `rec_2` has one 128.924-ms position and MOO `rec_4` has
+seven roughly 128.4--129.0-ms positions. Their within-position dispersion is
+small; the tail is input-shape-sensitive model-forward behavior, not an
+isolated cold start, missing synchronization, units error, CPU path, or
+selector defect.
+
+The frozen product policy uses the robust median objective, whose round,
+device, confidence, drift, and robust-CV gates passed. p95 remains a reported
+workload diagnostic and is not substituted after observing the result. No
+matched-allocation evidence exists for the cross-job endpoints, so cross-job
+direction remains measurement-limited even though mode-local selection is
+`PASS_EXPECTED_COMPROMISE`.
+
+The trace audit is:
+
+```text
+/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_validation/mask2former_latency_tail_audit.json
+sha256 4b1529ec602274710795b17bad218c61708493e156f161a9f513f4bd346656dc
+```
 
 The apparent cross-archive accuracy violation is the same fingerprint trained
 independently: `0.3092069205` versus the accuracy winner's `0.3088468709`.
