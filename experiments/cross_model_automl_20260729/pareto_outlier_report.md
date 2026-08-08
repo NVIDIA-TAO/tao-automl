@@ -232,9 +232,10 @@ Matched or post-hoc measurements are not used for selection or reselection.
 
 ```text
 production: 985 passed, 1 skipped
-cross-model experiment suite: 544 passed
+cross-model experiment suite: 565 passed
 focused affected-model/replay suite: 235 passed
-frozen audit unit tests: 6 passed
+objective-aware acquisition/resume suite: 66 passed
+outlier audit/finalization regression tests: 27 passed
 ```
 
 The only warnings are the existing sklearn Gaussian-process convergence
