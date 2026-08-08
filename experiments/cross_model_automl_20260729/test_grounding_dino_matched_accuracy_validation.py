@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import sys
 from pathlib import Path
 
@@ -103,3 +104,37 @@ def test_contract_digest_tampering_is_rejected() -> None:
     contract["design"]["repeat_count"] = 5
     with pytest.raises(matched.MatchedAccuracyError, match="digest changed"):
         matched.validate_contract(contract)
+
+
+def test_mgdino_gate_uses_controller_terminal_artifacts(tmp_path: Path) -> None:
+    campaign_path = tmp_path / "campaign.v11.json"
+    campaign_path.write_text("{}")
+    gate_contract = {
+        "prerequisite_gate": {
+            "root": str(tmp_path),
+            "campaign_contract_path": str(campaign_path),
+            "campaign_contract_file_sha256": matched.file_sha256(campaign_path),
+            "required_candidates_per_mode": 24,
+            "required_modes": ["accuracy", "latency", "multi_objective"],
+        }
+    }
+    assert matched._mgdino_terminal(gate_contract) is False
+    (tmp_path / "mode_process_status.json").write_text(
+        json.dumps({
+            "accuracy": 0,
+            "latency": 0,
+            "multi_objective": 0,
+        })
+    )
+    for mode in gate_contract["prerequisite_gate"]["required_modes"]:
+        mode_root = tmp_path / mode
+        mode_root.mkdir()
+        (mode_root / "candidate_evidence.json").write_text(
+            json.dumps({
+                "candidates": {str(index): {} for index in range(24)}
+            })
+        )
+        (mode_root / "result.json").write_text(
+            json.dumps({"mode": mode, "status": "success"})
+        )
+    assert matched._mgdino_terminal(gate_contract) is True

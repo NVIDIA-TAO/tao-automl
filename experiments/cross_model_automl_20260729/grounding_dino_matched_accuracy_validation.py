@@ -299,11 +299,13 @@ def _mgdino_terminal(contract: Mapping[str, Any]) -> bool:
     contract_path = Path(gate["campaign_contract_path"])
     if file_sha256(contract_path) != gate["campaign_contract_file_sha256"]:
         raise MatchedAccuracyError("MGDINO v11 frozen contract changed")
-    completion_path = root / "completion.json"
-    if not completion_path.is_file():
+    process_status_path = root / "mode_process_status.json"
+    if not process_status_path.is_file():
         return False
-    completion = json.loads(completion_path.read_text(encoding="utf-8"))
-    if completion.get("status") != "success" or completion.get("mode_failures"):
+    process_status = json.loads(process_status_path.read_text(encoding="utf-8"))
+    if set(process_status) != set(gate["required_modes"]):
+        raise MatchedAccuracyError("MGDINO v11 terminal mode set changed")
+    if any(value != 0 for value in process_status.values()):
         raise MatchedAccuracyError("MGDINO v11 reached a non-success terminal state")
     for mode in gate["required_modes"]:
         evidence_path = root / mode / "candidate_evidence.json"
@@ -313,6 +315,11 @@ def _mgdino_terminal(contract: Mapping[str, Any]) -> bool:
         evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
         if len(evidence.get("candidates", {})) != gate["required_candidates_per_mode"]:
             return False
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+        if result.get("mode") != mode or result.get("status") != "success":
+            raise MatchedAccuracyError(
+                f"MGDINO v11 {mode} result is not successful"
+            )
     return True
 
 
