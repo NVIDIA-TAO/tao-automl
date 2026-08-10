@@ -42,7 +42,9 @@ def _get_total_epochs_from_specs(specs):
 class Bayesian(AutoMLAlgorithmBase):
     """Bayesian AutoML algorithm class"""
 
-    def __init__(self, context, state_store, network, parameters, metric=""):
+    def __init__(self, context, state_store, network, parameters, metric="",
+                 llm_params=None, enable_llm_range_narrowing=False,
+                 llm_analysis_interval=5):
         """Initialize the Bayesian algorithm class
 
         Args:
@@ -65,6 +67,9 @@ class Bayesian(AutoMLAlgorithmBase):
         # The following 2 need to be stored
         self.Xs = []
         self.ys = []
+        self.init_llm_range_narrowing(
+            llm_params=llm_params, enabled=enable_llm_range_narrowing,
+            analysis_interval=llm_analysis_interval)
         # Direction handling: EI acquisition below is maximize-form. Fit the GP
         # on _y_sign * y so maximize == requested direction ('loss' => minimize).
         self.metric = metric or ""
@@ -363,17 +368,24 @@ class Bayesian(AutoMLAlgorithmBase):
         self.state_store.save_brain_info(self.context.id, state_dict)
 
     @staticmethod
-    def load_state(context, state_store, network, parameters, metric=""):
+    def load_state(context, state_store, network, parameters, metric="",
+                   llm_params=None, enable_llm_range_narrowing=False,
+                   llm_analysis_interval=5):
         """Load the Bayesian algorithm related variables to brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
+        _narrow_kwargs = dict(llm_params=llm_params,
+                              enable_llm_range_narrowing=enable_llm_range_narrowing,
+                              llm_analysis_interval=llm_analysis_interval)
         if not json_loaded:
-            return Bayesian(context, state_store, network, parameters, metric=metric)
+            return Bayesian(context, state_store, network, parameters, metric=metric,
+                            **_narrow_kwargs)
 
         Xs = []
         for x in json_loaded["Xs"]:
             Xs.append(np.array(x))
         ys = json_loaded["ys"]
-        bayesian = Bayesian(context, state_store, network, parameters, metric=metric)
+        bayesian = Bayesian(context, state_store, network, parameters, metric=metric,
+                            **_narrow_kwargs)
         # Load state (Remember everything)
         bayesian.Xs = Xs
         bayesian.ys = ys
@@ -434,6 +446,14 @@ class Bayesian(AutoMLAlgorithmBase):
         else:
             # Update the GP based on results
             self.ys.append(history[-1].result)
+            # LLM-guided range narrowing: renormalize stored design points
+            # into the narrowed coordinate system BEFORE the refit so the GP
+            # keeps every observation at its true real-world location.
+            direction = "minimize" if "loss" in self.metric.lower() else "maximize"
+            narrowed = self.propose_llm_range_narrowing(history, direction)
+            if narrowed:
+                self.renormalize_design_points(self.Xs, narrowed)
+                self.apply_llm_range_narrowing(narrowed)
             self.update_gp()
 
             # Generate one recommendation

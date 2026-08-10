@@ -772,3 +772,155 @@ class AutoMLAlgorithmBase:
             return default_value if default_value is not None else ""
 
         return default_value
+
+    # ------------------------------------------------------------------
+    # LLM-guided range narrowing (shared by Bayesian / BFBO / BOHB)
+    # ------------------------------------------------------------------
+
+    def init_llm_range_narrowing(self, llm_params=None, enabled=False,
+                                 analysis_interval=5):
+        """Enable periodic LLM-guided search-space restriction for this brain.
+
+        Reuses LLMAnalyzer (designed to work with all algorithms but until now
+        only reachable through the hybrid controller). Every
+        *analysis_interval* completed trials the analyzer proposes narrowed
+        [min, max] per numeric parameter; proposals are validated against the
+        base search box captured here (schema bounds merged with any
+        user-supplied custom ranges), so later analyses may re-widen an earlier
+        narrowing but can never escape the original box.
+        """
+        self._narrowing_enabled = bool(enabled) and bool(llm_params)
+        self._llm_analyzer = None
+        if not self._narrowing_enabled:
+            if enabled:
+                logger.warning(
+                    "LLM range narrowing requested but no LLM params provided "
+                    "(llm_endpoint/llm_model/llm_api_key) — narrowing disabled")
+            return
+        from tao_automl.brain.llm_analyzer import LLMAnalyzer
+        self._llm_analyzer = LLMAnalyzer(
+            llm_params=llm_params,
+            analysis_interval=int(analysis_interval),
+            narrow_ranges=True,
+        )
+        # Snapshot the base box BEFORE any recommendation generation mutates
+        # parameter dicts with custom-range overrides.
+        import copy as _copy
+        self._narrowing_base_params = []
+        for p in self.parameters:
+            q = _copy.deepcopy(p)
+            cr = (self.custom_ranges or {}).get(q.get("parameter"), {})
+            for k, v in cr.items():
+                if v is not None:
+                    q[k] = v
+            self._narrowing_base_params.append(q)
+        logger.info(
+            "LLM range narrowing ENABLED for %s (analysis every %d completed "
+            "trials)", type(self).__name__, int(analysis_interval))
+
+    def propose_llm_range_narrowing(self, history, metric_direction):
+        """Return validated narrowed ranges {param: {valid_min, valid_max}}
+        or None. Guarantees the best-observed config stays inside every
+        proposed range."""
+        if not getattr(self, "_narrowing_enabled", False):
+            return None
+        from tao_automl.utils.math_utils import JobStates
+        completed = [r for r in history
+                     if getattr(r, "status", None) == JobStates.success
+                     and getattr(r, "result", None) is not None]
+        if not completed or not self._llm_analyzer.should_analyze(len(completed)):
+            return None
+        pnames = [p.get("parameter") for p in self._narrowing_base_params]
+        experiments = [{
+            "metric": r.result,
+            "status": "success",
+            "config": {k: v for k, v in (getattr(r, "specs", {}) or {}).items()
+                       if k in pnames},
+        } for r in completed]
+        pick = min if metric_direction == "minimize" else max
+        best_rec = pick(completed, key=lambda r: r.result)
+        try:
+            analysis = self._llm_analyzer.analyze(
+                experiments=experiments,
+                parameters=self._narrowing_base_params,
+                network=self.network,
+                metric_name=getattr(self, "metric", "metric"),
+                metric_direction=metric_direction,
+                best_metric=best_rec.result,
+                analysis_type="range_narrowing",
+            )
+        except Exception as e:  # LLM problems must never kill the search
+            logger.warning("LLM range-narrowing analysis failed: %s", e)
+            return None
+        if not analysis:
+            return None
+        validated = self._llm_analyzer.get_validated_range_narrowings(
+            self._narrowing_base_params)
+        if not validated:
+            return None
+        # Hard guardrail: never narrow the best-observed config out of the box.
+        for name, rng in list(validated.items()):
+            bv = (getattr(best_rec, "specs", {}) or {}).get(name)
+            if isinstance(bv, (int, float)):
+                if bv < rng["valid_min"]:
+                    rng["valid_min"] = type(rng["valid_min"])(bv)
+                if bv > rng["valid_max"]:
+                    rng["valid_max"] = type(rng["valid_max"])(bv)
+        return validated
+
+    def apply_llm_range_narrowing(self, validated):
+        """Merge narrowed ranges into custom_ranges and persist for resume."""
+        for name, rng in validated.items():
+            cur = dict((self.custom_ranges or {}).get(name, {}))
+            cur["valid_min"] = rng["valid_min"]
+            cur["valid_max"] = rng["valid_max"]
+            self.custom_ranges[name] = cur
+            logger.info("LLM narrowing APPLIED: %s -> [%s, %s]",
+                        name, rng["valid_min"], rng["valid_max"])
+        try:
+            self.state_store.save_custom_param_ranges(
+                self.context.handler_id, self.custom_ranges)
+        except Exception as e:
+            logger.warning("Could not persist narrowed ranges: %s", e)
+
+    def renormalize_design_points(self, design_points, narrowed):
+        """Re-express stored [0,1]-normalized design vectors in the coordinate
+        system induced by *narrowed* ranges, so a GP/KDE refit keeps every
+        historical observation at its true real-world location.
+
+        MUST be called BEFORE apply_llm_range_narrowing (it reads the current
+        effective box via get_valid_range + current custom_ranges). Returns a
+        list of (dim_index, old_box, new_box) transforms it applied.
+        """
+        import math as _math
+        transforms = []
+        for i, p in enumerate(self.parameters):
+            name = p.get("parameter")
+            if name not in narrowed:
+                continue
+            if p.get("value_type") not in ("float", "int", "integer"):
+                continue
+            try:
+                lo0, hi0 = get_valid_range(p, self.parent_params,
+                                           self.custom_ranges)
+            except Exception:
+                continue
+            if not (isinstance(lo0, (int, float)) and isinstance(hi0, (int, float))):
+                continue
+            lo1 = float(narrowed[name]["valid_min"])
+            hi1 = float(narrowed[name]["valid_max"])
+            lo0, hi0 = float(lo0), float(hi0)
+            if not all(_math.isfinite(v) for v in (lo0, hi0, lo1, hi1)):
+                continue
+            if hi0 <= lo0 or hi1 <= lo1 or (lo0, hi0) == (lo1, hi1):
+                continue
+            for x in design_points:
+                v = x[i] * (hi0 - lo0) + lo0
+                x[i] = (v - lo1) / (hi1 - lo1)
+            transforms.append((i, (lo0, hi0), (lo1, hi1)))
+        if transforms:
+            logger.info(
+                "LLM narrowing: renormalized %d design point(s) across %d "
+                "dimension(s) to the narrowed coordinate system",
+                len(design_points), len(transforms))
+        return transforms

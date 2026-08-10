@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 class BFBO(AutoMLAlgorithmBase):
     """BFBO (Bayesian First-Order Bayesian Optimization) AutoML algorithm class"""
 
-    def __init__(self, context, state_store, network, parameters, metric=""):
+    def __init__(self, context, state_store, network, parameters, metric="",
+                 llm_params=None, enable_llm_range_narrowing=False,
+                 llm_analysis_interval=5):
         """Initialize the BFBO algorithm class"""
         super().__init__(context, state_store, network, parameters)
 
@@ -54,6 +56,9 @@ class BFBO(AutoMLAlgorithmBase):
         self.kappa = 2.0
         self.kappa_decay = 0.95
         self.kappa_min = 0.5
+        self.init_llm_range_narrowing(
+            llm_params=llm_params, enabled=enable_llm_range_narrowing,
+            analysis_interval=llm_analysis_interval)
 
         self.local_penalization = True
         self.penalization_radius = 0.1
@@ -293,17 +298,24 @@ class BFBO(AutoMLAlgorithmBase):
         self.state_store.save_brain_info(self.context.id, state_dict)
 
     @staticmethod
-    def load_state(context, state_store, network, parameters, metric=""):
+    def load_state(context, state_store, network, parameters, metric="",
+                   llm_params=None, enable_llm_range_narrowing=False,
+                   llm_analysis_interval=5):
         """Load the BFBO algorithm related variables from brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
+        _narrow_kwargs = dict(llm_params=llm_params,
+                              enable_llm_range_narrowing=enable_llm_range_narrowing,
+                              llm_analysis_interval=llm_analysis_interval)
         if not json_loaded:
-            return BFBO(context, state_store, network, parameters, metric=metric)
+            return BFBO(context, state_store, network, parameters, metric=metric,
+                        **_narrow_kwargs)
 
         Xs = []
         for x in json_loaded["Xs"]:
             Xs.append(np.array(x))
         ys = json_loaded["ys"]
-        bfbo = BFBO(context, state_store, network, parameters, metric=metric)
+        bfbo = BFBO(context, state_store, network, parameters, metric=metric,
+                    **_narrow_kwargs)
         bfbo.Xs = Xs
         bfbo.ys = ys
         bfbo.kappa = json_loaded.get("kappa", 2.0)
@@ -359,6 +371,13 @@ class BFBO(AutoMLAlgorithmBase):
             return [dict(zip([param["parameter"] for param in self.parameters], recommendations))]
 
         self.ys.append(history[-1].result)
+        # LLM-guided range narrowing: renormalize stored design points into
+        # the narrowed coordinate system BEFORE the refit (mirrors bayesian).
+        direction = "minimize" if "loss" in self.metric.lower() else "maximize"
+        narrowed = self.propose_llm_range_narrowing(history, direction)
+        if narrowed:
+            self.renormalize_design_points(self.Xs, narrowed)
+            self.apply_llm_range_narrowing(narrowed)
         self.update_gp()
 
         self.kappa = max(self.kappa_min, self.kappa * self.kappa_decay)
