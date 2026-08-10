@@ -446,12 +446,14 @@ class BOHB(AutoMLAlgorithmBase):
     ):
         """Load the BOHB algorithm related variables from brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
-        _extra_kwargs = dict(
-            kde_samples=kde_samples, top_n_percent=top_n_percent,
-            min_points_in_model=min_points_in_model,
-            llm_params=llm_params,
-            enable_llm_range_narrowing=enable_llm_range_narrowing,
-            llm_analysis_interval=llm_analysis_interval)
+        _extra_kwargs = {
+            "kde_samples": kde_samples,
+            "top_n_percent": top_n_percent,
+            "min_points_in_model": min_points_in_model,
+            "llm_params": llm_params,
+            "enable_llm_range_narrowing": enable_llm_range_narrowing,
+            "llm_analysis_interval": llm_analysis_interval,
+        }
         if not json_loaded:
             return BOHB(
                 context, state_store, network, parameters, max_epochs,

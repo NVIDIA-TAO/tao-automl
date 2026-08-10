@@ -821,15 +821,16 @@ class AutoMLAlgorithmBase:
     def propose_llm_range_narrowing(self, history, metric_direction):
         """Return validated narrowed ranges {param: {valid_min, valid_max}}
         or None. Guarantees the best-observed config stays inside every
-        proposed range."""
+        proposed range.
+        """
         if not getattr(self, "_narrowing_enabled", False):
             return None
         from tao_automl.utils.math_utils import JobStates
         completed = [
             r for r in history
             if (
-                getattr(r, "status", None) == JobStates.success
-                and getattr(r, "result", None) is not None
+                getattr(r, "status", None) == JobStates.success and
+                getattr(r, "result", None) is not None
             )
         ]
         if not completed or not self._llm_analyzer.should_analyze(len(completed)):
@@ -896,7 +897,6 @@ class AutoMLAlgorithmBase:
         effective box via get_valid_range + current custom_ranges). Returns a
         list of (dim_index, old_box, new_box) transforms it applied.
         """
-        import math as _math
         transforms = []
         for i, p in enumerate(self.parameters):
             name = p.get("parameter")
@@ -914,7 +914,7 @@ class AutoMLAlgorithmBase:
             lo1 = float(narrowed[name]["valid_min"])
             hi1 = float(narrowed[name]["valid_max"])
             lo0, hi0 = float(lo0), float(hi0)
-            if not all(_math.isfinite(v) for v in (lo0, hi0, lo1, hi1)):
+            if not all(math.isfinite(v) for v in (lo0, hi0, lo1, hi1)):
                 continue
             if hi0 <= lo0 or hi1 <= lo1 or (lo0, hi0) == (lo1, hi1):
                 continue

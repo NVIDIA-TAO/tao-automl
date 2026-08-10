@@ -373,9 +373,11 @@ class Bayesian(AutoMLAlgorithmBase):
                    llm_analysis_interval=5):
         """Load the Bayesian algorithm related variables to brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
-        _narrow_kwargs = dict(llm_params=llm_params,
-                              enable_llm_range_narrowing=enable_llm_range_narrowing,
-                              llm_analysis_interval=llm_analysis_interval)
+        _narrow_kwargs = {
+            "llm_params": llm_params,
+            "enable_llm_range_narrowing": enable_llm_range_narrowing,
+            "llm_analysis_interval": llm_analysis_interval,
+        }
         if not json_loaded:
             return Bayesian(context, state_store, network, parameters, metric=metric,
                             **_narrow_kwargs)

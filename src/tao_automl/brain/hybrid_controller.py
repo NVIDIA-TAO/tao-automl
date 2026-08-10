@@ -314,7 +314,7 @@ class HybridStrategist:
         selected = []
         remaining = list(original_options)
         for requested in requested_options:
-            for option in remaining:
+            for option in list(remaining):
                 if cls._option_matches(option, requested):
                     selected.append(option)
                     remaining.remove(option)
