@@ -305,8 +305,10 @@ class HybridStrategist:
                 return {}
             requested_options = [
                 option for option, value in numeric_options
-                if (lower_bound is None or value >= lower_bound)
-                and (upper_bound is None or value <= upper_bound)
+                if (
+                    (lower_bound is None or value >= lower_bound) and
+                    (upper_bound is None or value <= upper_bound)
+                )
             ]
 
         selected = []

@@ -104,9 +104,9 @@ class AutoMLAlgorithmBase:
 
                 if num_epochs is not None:
                     is_epoch_key = (
-                        (child_in_training and key in epoch_names)
-                        or (not prefix and key in epoch_names)
-                        or (key == "max_epochs" and "runner" in prefix_parts)
+                        (child_in_training and key in epoch_names) or
+                        (not prefix and key in epoch_names) or
+                        (key == "max_epochs" and "runner" in prefix_parts)
                     )
                     if is_epoch_key:
                         overrides[full] = num_epochs
@@ -825,9 +825,13 @@ class AutoMLAlgorithmBase:
         if not getattr(self, "_narrowing_enabled", False):
             return None
         from tao_automl.utils.math_utils import JobStates
-        completed = [r for r in history
-                     if getattr(r, "status", None) == JobStates.success
-                     and getattr(r, "result", None) is not None]
+        completed = [
+            r for r in history
+            if (
+                getattr(r, "status", None) == JobStates.success
+                and getattr(r, "result", None) is not None
+            )
+        ]
         if not completed or not self._llm_analyzer.should_analyze(len(completed)):
             return None
         pnames = [p.get("parameter") for p in self._narrowing_base_params]
