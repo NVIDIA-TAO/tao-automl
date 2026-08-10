@@ -1131,8 +1131,8 @@ def test_extract_metric_reads_cosmos_best_score_json(tmp_path):
     from tao_automl.runner import _extract_metric_from_local_results
 
     best_score = (
-        tmp_path / "results" / "job-1" / "train_output_dir" / "best"
-        / "best_score.json"
+        tmp_path / "results" / "job-1" / "train_output_dir" / "best" /
+        "best_score.json"
     )
     best_score.parent.mkdir(parents=True)
     best_score.write_text(
@@ -1212,9 +1212,9 @@ def test_non_streaming_terminal_scan_finds_early_fail_with_cached_metric():
     from tao_automl.runner import _extract_metric_from_logs, _scan_terminal_logs
 
     full_logs = (
-        "Execution status: FAIL\n"
-        + "noise\n" * 10_001
-        + "accuracy: 0.9\n"
+        "Execution status: FAIL\n" +
+        "noise\n" * 10_001 +
+        "accuracy: 0.9\n"
     )
 
     class LegacySDK:
@@ -4495,8 +4495,8 @@ def test_apply_resume_checkpoint_sets_training_checkpoint_path(tmp_path):
     )
 
     assert (
-        updated["train"]["resume_training_checkpoint_path"]
-        == "/results/parent-job/results_dir/train/model_epoch_001.pth"
+        updated["train"]["resume_training_checkpoint_path"] ==
+        "/results/parent-job/results_dir/train/model_epoch_001.pth"
     )
     assert rec.resume_checkpoint_path.endswith("model_epoch_001.pth")
 
@@ -4585,14 +4585,14 @@ def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
 
     results_root = tmp_path / "results"
     checkpoint_dir = (
-        results_root / "parent-job" / "train_output_dir" / "run1"
-        / "checkpoints" / "epoch_1"
+        results_root / "parent-job" / "train_output_dir" / "run1" /
+        "checkpoints" / "epoch_1"
     )
     (checkpoint_dir / "policy").mkdir(parents=True)
     (checkpoint_dir / "policy" / "model_rank_0.pth").write_text("checkpoint")
     safetensor_dir = (
-        results_root / "parent-job" / "train_output_dir" / "run1"
-        / "safetensors" / "epoch_1"
+        results_root / "parent-job" / "train_output_dir" / "run1" /
+        "safetensors" / "epoch_1"
     )
     safetensor_dir.mkdir(parents=True)
     (safetensor_dir / "adapter_model.safetensors").write_text("adapter")
@@ -4607,8 +4607,8 @@ def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
     )
 
     assert (
-        updated["train"]["resume"]
-        == "/results/parent-job/train_output_dir/run1/checkpoints/epoch_1"
+        updated["train"]["resume"] ==
+        "/results/parent-job/train_output_dir/run1/checkpoints/epoch_1"
     )
 
 

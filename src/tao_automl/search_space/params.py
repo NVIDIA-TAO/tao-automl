@@ -125,10 +125,12 @@ def generate_hyperparams_to_search(
     else:
         try:
             json_schema = generate_schema(network_arch, action)
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             logger.info("Error generating schema for network: %s", network_arch)
             logger.info("Network: %s, Action: %s", network, action)
-            raise Exception(e) from e
+            raise RuntimeError(
+                f"Unable to generate schema for {network_arch}/{action}"
+            ) from e
 
     # Flatten original (default) spec from the schema
     original_train_spec = json_schema.get("default", {})
@@ -190,8 +192,8 @@ def generate_hyperparams_to_search(
             )
             logger.info("Excluding %d LoRA parameters: %s", len(params_to_exclude), params_to_exclude)
         if (
-            "custom.vision.nframes" in updated_spec_with_keys_flattened
-            and "custom.vision.fps" not in set(automl_hyperparameters or [])
+            "custom.vision.nframes" in updated_spec_with_keys_flattened and
+            "custom.vision.fps" not in set(automl_hyperparameters or [])
         ):
             params_to_exclude.add("custom.vision.fps")
             logger.info(
@@ -204,7 +206,7 @@ def generate_hyperparams_to_search(
     data_frame = data_frame[data_frame["value_type"].isin(_VALID_TYPES)]
 
     if not override_automl_disabled_params:
-        data_frame = data_frame.loc[data_frame["automl_enabled"] != False]  # noqa: E712
+        data_frame = data_frame.loc[data_frame["automl_enabled"].ne(False)]
 
     if automl_hyperparameters:
         # Caller specified which params to search — enable only those
@@ -221,7 +223,7 @@ def generate_hyperparams_to_search(
         )
 
     # Keep only enabled, non-deleted, non-excluded parameters
-    automl_params = data_frame.loc[data_frame["automl_enabled"] == True]  # noqa: E712
+    automl_params = data_frame.loc[data_frame["automl_enabled"].eq(True)]
     automl_params = automl_params.loc[~automl_params["parameter"].isin(deleted_params)]
     automl_params = automl_params.loc[~automl_params["parameter"].isin(params_to_exclude)]
     automl_params = _filter_quantize_options_for_fixed_backend(

@@ -5,7 +5,11 @@
 import math
 
 # Re-export types that brain algorithms import via math_utils
-from tao_automl.types import Recommendation, ResumeRecommendation, JobStates  # noqa: F401
+from tao_automl.types import (  # noqa: F401  # pylint: disable=unused-import
+    JobStates,
+    Recommendation,
+    ResumeRecommendation,
+)
 
 
 def fix_input_dimension(dimension_value, factor=32):

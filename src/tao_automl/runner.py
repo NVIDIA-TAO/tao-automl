@@ -46,7 +46,6 @@ import re
 import signal
 import sys
 import time
-import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -55,12 +54,12 @@ from typing import Any
 import numpy as np
 import yaml
 from tao_automl.objectives import is_latency_metric, parse_objective_config
+from tao_automl.utils.spec_utils import resolve_schema_leaf
 from tao_sdk.checkpoints import (
     build_checkpoint_candidate,
     checkpoint_epoch as sdk_checkpoint_epoch,
     select_checkpoint_path,
 )
-from tao_automl.utils.spec_utils import resolve_schema_leaf
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +82,7 @@ class SkillContext:
     layout that's documented and validated by tao-skills-external/scripts/
     validate-skills.sh.
     """
+
     skill_dir: Path
     action: str
     skill_info: dict[str, Any] = field(init=False)
@@ -95,6 +95,7 @@ class SkillContext:
     execution: "PythonScriptExecution | None" = field(init=False)
 
     def __post_init__(self):
+        """Load and validate the skill metadata needed by the runner."""
         self.skill_dir = Path(self.skill_dir)
         info_path = self.skill_dir / "references/skill_info.yaml"
         if not info_path.exists():
@@ -120,7 +121,7 @@ class SkillContext:
         ) or {}
         schema_path = self.skill_dir / f"schemas/{self.action}.schema.json"
         if schema_path.exists():
-            with open(schema_path) as f:
+            with open(schema_path, encoding="utf-8") as f:
                 self.schema = json.load(f) or {}
             if not isinstance(self.schema, dict):
                 raise TypeError(f"{schema_path}: schema must be a JSON object")
@@ -159,8 +160,8 @@ class SkillContext:
         # Python-script actions do not require an image, so an omitted image is
         # valid and must not trigger versions.yaml resolution.
         image_ref = (
-            self.action_cfg.get("container_image")
-            or self.skill_info.get("container_image", "")
+            self.action_cfg.get("container_image") or
+            self.skill_info.get("container_image", "")
         )
         if self.execution is None and image_ref:
             from tao_sdk.versions import resolve_container_image
@@ -206,6 +207,7 @@ class PythonScriptExecution:
         skill_dir: Path,
         default_config_format: str,
     ) -> "PythonScriptExecution | None":
+        """Build direct-script execution metadata from a skill config."""
         if config is None:
             return None
         if not isinstance(config, dict):
@@ -263,6 +265,7 @@ class PythonScriptExecution:
 def validate_skill_runtime(skill_dir: str | Path, action: str = "train") -> dict[str, Any]:
     """Load a skill directory and validate its AutoML runtime schema path."""
     return SkillContext(skill_dir=Path(skill_dir), action=action).validate_runtime()
+
 
 _DEFAULT_POLL_INTERVAL = 30
 _POLL_LOG_TAIL_LINES = 10_000
@@ -333,8 +336,8 @@ def _apply_checkpoint_retention_strategy(
     normalized = str(strategy or "auto").strip().lower()
     if normalized not in _CHECKPOINT_RETENTION_STRATEGIES:
         raise ValueError(
-            "automl_checkpoint_retention_strategy must be one of: "
-            + ", ".join(sorted(_CHECKPOINT_RETENTION_STRATEGIES))
+            "automl_checkpoint_retention_strategy must be one of: " +
+            ", ".join(sorted(_CHECKPOINT_RETENTION_STRATEGIES))
         )
     if not isinstance(specs, dict):
         raise TypeError("AutoML trial specs must be a dictionary")
@@ -381,9 +384,9 @@ def _apply_checkpoint_retention_strategy(
     else:
         num_epochs = train.get("num_epochs")
         if (
-            not isinstance(num_epochs, int)
-            or isinstance(num_epochs, bool)
-            or num_epochs < 1
+            not isinstance(num_epochs, int) or
+            isinstance(num_epochs, bool) or
+            num_epochs < 1
         ):
             raise ValueError(
                 "terminal checkpoint retention requires a positive integer "
@@ -581,6 +584,7 @@ def _scan_terminal_metric_values(
     ):
         cached_exec_status = "FAIL"
     return cached_metrics, cached_exec_status, context
+
 
 _COSMOS_RL_SFT_VAL_RE = re.compile(
     rf'\[SFT\]\s+Validation loss:\s*(?P<value>{_METRIC_NUMBER_RE})',
@@ -1006,17 +1010,14 @@ def _extract_metric_values(
     """Extract all requested objective metrics from a log snapshot."""
     values = {}
     for index, name in enumerate(metric_names):
-        try:
-            if extract_fn is _extract_metric_from_logs:
-                value = extract_fn(
-                    logs,
-                    name,
-                    allow_generic=index == 0,
-                )
-            else:
-                value = extract_fn(logs, name)
-        except Exception:
-            raise
+        if extract_fn is _extract_metric_from_logs:
+            value = extract_fn(
+                logs,
+                name,
+                allow_generic=index == 0,
+            )
+        else:
+            value = extract_fn(logs, name)
         value = _callback_metric(value, "metric_extractor")
         if value is not None:
             values[name] = value
@@ -1280,8 +1281,8 @@ def _job_has_checkpoint_artifact(sdk, job_id: str,
             prefer_directory=False,
             model_name="",
             action="best",
-        )
-        or _find_sdk_resume_artifact(sdk, job_id, model_name="", action="best")
+        ) or
+        _find_sdk_resume_artifact(sdk, job_id, model_name="", action="best")
     )
 
 
@@ -1612,9 +1613,9 @@ def _validate_external_automl_schema(schema: Any, schema_path: Path) -> None:
                 raise ValueError(f"{location} cannot declare both 'type' and 'anyOf'")
             if any_of is not None:
                 if (
-                    not isinstance(any_of, list)
-                    or not any_of
-                    or not all(isinstance(option, dict) for option in any_of)
+                    not isinstance(any_of, list) or
+                    not any_of or
+                    not all(isinstance(option, dict) for option in any_of)
                 ):
                     raise ValueError(
                         f"{location} 'anyOf' must be a non-empty list of schema objects"
@@ -1650,9 +1651,9 @@ def _validate_external_automl_schema(schema: Any, schema_path: Path) -> None:
             maximum = metadata.get("maximum")
             for bound_name, bound in (("minimum", minimum), ("maximum", maximum)):
                 if bound is not None and (
-                    isinstance(bound, bool)
-                    or not isinstance(bound, (int, float))
-                    or not math.isfinite(float(bound))
+                    isinstance(bound, bool) or
+                    not isinstance(bound, (int, float)) or
+                    not math.isfinite(float(bound))
                 ):
                     raise ValueError(f"{location} {bound_name} must be a finite number")
             if minimum is not None and maximum is not None and minimum > maximum:
@@ -1687,10 +1688,10 @@ def _validate_external_automl_schema(schema: Any, schema_path: Path) -> None:
                 if options is None or not isinstance(weights, list) or len(weights) != len(options):
                     raise ValueError(f"{location} option_weights must align with enum")
                 if any(
-                    isinstance(weight, bool)
-                    or not isinstance(weight, (int, float))
-                    or not math.isfinite(float(weight))
-                    or weight < 0
+                    isinstance(weight, bool) or
+                    not isinstance(weight, (int, float)) or
+                    not math.isfinite(float(weight)) or
+                    weight < 0
                     for weight in weights
                 ) or not any(weight > 0 for weight in weights):
                     raise ValueError(f"{location} option_weights must be finite and non-negative")
@@ -1723,7 +1724,6 @@ def _validate_keys_against_schema(
     schema keys. Accepts genuinely-new keys (logs a warning) so users who
     intentionally add a new spec field aren't blocked.
     """
-    import difflib
     base_keys = set(schema_keys or ()) | _flatten_keys(base_specs)
     unknown = [k for k in provided_keys if k not in base_keys]
     for k in unknown:
@@ -1942,8 +1942,9 @@ def _maybe_cap_effective_batch(
     )
     capped = int(samples_per_rank)
     mini_batch = _first_positive_int((specs,), _MINI_BATCH_KEYS, default=1) or 1
-    if mini_batch > 1 and capped >= mini_batch:
-        capped = (capped // mini_batch) * mini_batch
+    if mini_batch > 1:
+        if capped >= mini_batch:
+            capped = (capped // mini_batch) * mini_batch
 
     if capped < 1:
         setattr(rec, "failure_reason", f"invalid_configuration: {reason}")
@@ -2163,7 +2164,6 @@ def _merge_metric_payload(target: dict[str, Any], payload) -> bool:
 # ---------------------------------------------------------------------------
 
 def _active_jobs_path(workspace_path: str):
-    from pathlib import Path
     return Path(workspace_path) / "active_jobs.json"
 
 
@@ -2255,14 +2255,16 @@ def _load_artifact_jobs(workspace_path: str) -> dict[str, str]:
     }
 
 
+_runner_state = {"runner": None}
+
+
 def _managed_runner_run(method):
     """Install scoped signal handling and cancel jobs while unwinding a run."""
     @functools.wraps(method)
     def wrapped(self, *args, **kwargs):
-        global _runner
-        previous_runner = _runner
+        previous_runner = _runner_state["runner"]
         previous_signal_handlers = {}
-        _runner = self
+        _runner_state["runner"] = self
         self._signal_cleanup_performed = False
         self._pending_signal = None
         for signum in (signal.SIGINT, signal.SIGTERM):
@@ -2307,8 +2309,8 @@ def _managed_runner_run(method):
                     logger.debug(
                         "Could not restore signal handler outside the main thread"
                     )
-            if _runner is self:
-                _runner = previous_runner
+            if _runner_state["runner"] is self:
+                _runner_state["runner"] = previous_runner
 
     return wrapped
 
@@ -2595,8 +2597,8 @@ class AutoMLRunner:
                         if status in _SUCCESS_REC_STATUSES
                     )
         elif (
-            self._algorithm == "hybrid"
-            and self._verified_hybrid_best_job_id(automl, best) is None
+            self._algorithm == "hybrid" and
+            self._verified_hybrid_best_job_id(automl, best) is None
         ):
             # Hybrid may have delegated different phases to multi-fidelity
             # brains. Its outer get_best() does not prove that the selected
@@ -2840,8 +2842,8 @@ class AutoMLRunner:
         while True:
             if workspace_path:
                 registration_durable = (
-                    self._persist_active_jobs(workspace_path)
-                    or registration_durable
+                    self._persist_active_jobs(workspace_path) or
+                    registration_durable
                 )
             try:
                 self._sdk.cancel_job(job_id)
@@ -2883,8 +2885,8 @@ class AutoMLRunner:
                     previous_active = self._active_jobs.pop(rec_id, None)
                     previous_cancel = self._cancel_requests.pop(rec_id, None)
                     if (
-                        workspace_path
-                        and not self._persist_active_jobs(workspace_path)
+                        workspace_path and
+                        not self._persist_active_jobs(workspace_path)
                     ):
                         if previous_active is not None:
                             self._active_jobs[rec_id] = previous_active
@@ -3062,9 +3064,9 @@ class AutoMLRunner:
         # final-search retention so interrupted multi-fidelity runs do not
         # retain every earlier successful trial checkpoint.
         if (
-            self._automl is not None
-            and not self._active_jobs
-            and self._delete_intermediate_ckpt
+            self._automl is not None and
+            not self._active_jobs and
+            self._delete_intermediate_ckpt
         ):
             self._prune_intermediate_artifacts(self._automl, completed=True)
 
@@ -3391,8 +3393,8 @@ class AutoMLRunner:
         self._automl = automl
         logger.info("Starting AutoML loop: network=%s, algorithm=%s, "
                     "metric=%s, direction=%s",
-                     network_arch, automl_settings.get("algorithm"),
-                     metric_name, _effective_dir)
+                    network_arch, automl_settings.get("algorithm"),
+                    metric_name, _effective_dir)
 
         # --- fix #3: if resuming, recover any jobs that were in flight when
         #              the previous orchestrator died. Poll each to terminal,
@@ -3412,8 +3414,8 @@ class AutoMLRunner:
                         self._cancel_requests[rec_id] = {
                             "requested_at": entry.get("cancel_requested_at"),
                             "reason": (
-                                entry.get("cancel_reason")
-                                or "restored cancellation"
+                                entry.get("cancel_reason") or
+                                "restored cancellation"
                             ),
                         }
                 for entry in pending:
@@ -3465,9 +3467,9 @@ class AutoMLRunner:
                 merged_specs = self._merge_specs(run_base_specs, rec.specs)
                 effective_checkpoint_strategy = None
                 if (
-                    self._delete_intermediate_ckpt
-                    and self.skill_ctx.action == "train"
-                    and isinstance(merged_specs.get("train"), dict)
+                    self._delete_intermediate_ckpt and
+                    self.skill_ctx.action == "train" and
+                    isinstance(merged_specs.get("train"), dict)
                 ):
                     effective_checkpoint_strategy = (
                         _apply_checkpoint_retention_strategy(
@@ -3574,10 +3576,10 @@ class AutoMLRunner:
                     status = "metric_missing"
                 metric_missing = status == "metric_missing"
                 if (
-                    metric_missing
-                    and previous_metric is not None
-                    and getattr(rec, "job_id", None)
-                    and _job_has_checkpoint_artifact(
+                    metric_missing and
+                    previous_metric is not None and
+                    getattr(rec, "job_id", None) and
+                    _job_has_checkpoint_artifact(
                         self._sdk, rec.job_id, job_platform_kwargs
                     )
                 ):
@@ -4030,8 +4032,8 @@ class AutoMLRunner:
             ),
         )
         status = (
-            confirmed_job_status
-            or (job_status.status if job_status is not None else "Error")
+            confirmed_job_status or
+            (job_status.status if job_status is not None else "Error")
         )
 
         if status == "Error" or exec_status == "FAIL":
@@ -4055,7 +4057,7 @@ class AutoMLRunner:
                 )
             except Exception as ex:
                 logger.warning("eval_fn raised for rec %d: %s; falling back "
-                                "to log-extracted metric", rec.id, ex)
+                               "to log-extracted metric", rec.id, ex)
                 eval_metric = None
             if eval_metric is not None:
                 if isinstance(eval_metric, dict):
@@ -4135,9 +4137,9 @@ class AutoMLRunner:
         return True
 
     def _recover_pending_job(self, entry, automl, metric_name,
-                              metric_extractor, eval_fn, workspace_path,
-                              on_result, objective_names=None,
-                              platform_kwargs=None) -> None:
+                             metric_extractor, eval_fn, workspace_path,
+                             on_result, objective_names=None,
+                             platform_kwargs=None) -> None:
         """Poll an in-flight job (recovered on resume), extract its result,
         and report it to the brain. Mirrors the tail of _run_one_job.
         """
@@ -4187,14 +4189,14 @@ class AutoMLRunner:
 
         rec.assign_job_id(job_id)
         if (
-            rec_id in self._cancel_requests
-            and str(getattr(rec, "status", "")) not in _TERMINAL_REC_STATUSES
+            rec_id in self._cancel_requests and
+            str(getattr(rec, "status", "")) not in _TERMINAL_REC_STATUSES
         ):
             terminal_status = self._request_job_cancellation(
                 rec_id,
                 job_id,
-                self._cancel_requests[rec_id].get("reason")
-                or "restored cancellation",
+                self._cancel_requests[rec_id].get("reason") or
+                "restored cancellation",
                 allow_refused_terminal=True,
             )
             if terminal_status is None:
@@ -4261,7 +4263,7 @@ class AutoMLRunner:
                         values = _extract_metric_values(logs, metric_names, extract_fn)
                     except Exception as ex:
                         logger.warning("metric_extractor raised during resume "
-                                        "for rec %d: %s", rec_id, ex)
+                                       "for rec %d: %s", rec_id, ex)
                         values = {}
                     cached_metrics.update(values)
                     es = _check_execution_status(
@@ -4370,8 +4372,8 @@ class AutoMLRunner:
             ),
         )
         status = (
-            confirmed_job_status
-            or (job_status.status if job_status is not None else "Error")
+            confirmed_job_status or
+            (job_status.status if job_status is not None else "Error")
         )
 
         if status == "Error" or exec_status == "FAIL":
@@ -4392,7 +4394,7 @@ class AutoMLRunner:
                     em = _callback_metric_payload(eval_fn(rec, job_id), "eval_fn")
                 except Exception as ex:
                     logger.warning("eval_fn raised during resume for rec %d: %s",
-                                    rec_id, ex)
+                                   rec_id, ex)
                     em = None
                 if em is not None:
                     if isinstance(em, dict):
@@ -4511,8 +4513,8 @@ class AutoMLRunner:
             "resume_training_checkpoint_path",
         ):
             if (
-                candidate in self.skill_ctx.valid_spec_keys
-                or self._get_nested(specs, candidate) is not None
+                candidate in self.skill_ctx.valid_spec_keys or
+                self._get_nested(specs, candidate) is not None
             ):
                 path_key = candidate
                 break
@@ -4520,8 +4522,8 @@ class AutoMLRunner:
         bool_or_path_key = None
         for candidate in ("train.resume", "resume"):
             if (
-                candidate in self.skill_ctx.valid_spec_keys
-                or self._get_nested(specs, candidate) is not None
+                candidate in self.skill_ctx.valid_spec_keys or
+                self._get_nested(specs, candidate) is not None
             ):
                 bool_or_path_key = candidate
                 break
@@ -4546,8 +4548,8 @@ class AutoMLRunner:
                 epoch=resume_epoch,
                 step=resume_step,
                 action="resume",
-            )
-            or _find_sdk_resume_artifact(
+            ) or
+            _find_sdk_resume_artifact(
                 self._sdk,
                 parent_job_id,
                 model_name=self.skill_ctx.network_arch,
@@ -4678,13 +4680,13 @@ class AutoMLRunner:
                 if isinstance(suffix, str) and suffix:
                     chosen = suffix
                 elif isinstance(suffix, list):
-                    tarballs = [s for s in suffix if isinstance(s, str)
-                                and s.endswith(".tar.gz")]
+                    tarballs = [s for s in suffix if isinstance(s, str) and
+                                s.endswith(".tar.gz")]
                     # Prefer videos.tar.gz for video-leaning formats (llava),
                     # otherwise take the last tarball (skills list less-preferred
                     # candidates first).
-                    chosen = (next((s for s in tarballs if "video" in s), None)
-                              or (tarballs[-1] if tarballs else None))
+                    chosen = (next((s for s in tarballs if "video" in s), None) or
+                              (tarballs[-1] if tarballs else None))
                 if chosen:
                     AutoMLRunner._set_nested(specs, spec_key, base_uri + chosen)
                 else:
@@ -4797,16 +4799,15 @@ def run_automl_plan(plan: dict, platform: str) -> dict:
     return result
 
 
-_runner = None
-
 def _signal_handler(signum, frame):
     """Request unwind; cancellation runs after interrupted locks are released."""
-    if _runner:
-        _runner._pending_signal = signum
+    if _runner_state["runner"]:
+        _runner_state["runner"]._pending_signal = signum
     raise SystemExit(1)
 
 
 def main():
+    """Execute an AutoML plan from the command line."""
     parser = argparse.ArgumentParser(
         description="Execute an AutoML plan against a chosen platform SDK.",
     )
@@ -4820,7 +4821,7 @@ def main():
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    with open(args.plan) as f:
+    with open(args.plan, encoding="utf-8") as f:
         plan = json.load(f)
     run_automl_plan(plan, platform=args.platform)
 
