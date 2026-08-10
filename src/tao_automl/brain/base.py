@@ -117,9 +117,9 @@ class AutoMLAlgorithmBase:
 
                 if num_epochs is not None:
                     is_epoch_key = (
-                        (child_in_training and key in epoch_names)
-                        or (not prefix and key in epoch_names)
-                        or (key == "max_epochs" and "runner" in prefix_parts)
+                        (child_in_training and key in epoch_names) or
+                        (not prefix and key in epoch_names) or
+                        (key == "max_epochs" and "runner" in prefix_parts)
                     )
                     if is_epoch_key:
                         overrides[full] = num_epochs

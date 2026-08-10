@@ -282,7 +282,6 @@ class AutoresearchBrain:
         if not self.custom_ranges:
             return self.parameters
 
-        from copy import deepcopy
         params = deepcopy(self.parameters)
         for p in params:
             name = p["parameter"]
@@ -341,8 +340,7 @@ class AutoresearchBrain:
                     hard_max = _finite_numeric_bound(v_max)
                     if hard_max is not None:
                         hard_max_int = int(np.floor(hard_max))
-                        if value > hard_max_int:
-                            value = hard_max_int
+                        value = min(value, hard_max_int)
                 except (ValueError, TypeError, OverflowError):
                     continue
 

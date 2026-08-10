@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import importlib.util
 import io
 import json
@@ -779,8 +782,8 @@ def test_nvdinov2_checkpoint_selection_prefers_latest_student_checkpoint():
     ]
 
     assert (
-        validator._prefer_epoch_or_step_checkpoint(checkpoints, model="nvdinov2")
-        == checkpoints[3]
+        validator._prefer_epoch_or_step_checkpoint(checkpoints, model="nvdinov2") ==
+        checkpoints[3]
     )
 
 

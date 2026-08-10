@@ -215,13 +215,13 @@ def test_run_docstring_schema_matches_result(tmp_path, monkeypatch):
         assert key in result["final_evaluation"]
 
     documented = (
-        set(result.keys())
-        | set(result["best"].keys())
-        | set(result["history"][0].keys())
-        | {"enabled", "metric_name", "comparison_to_best",
-           "comparison_to_baseline", "record_path", "source",
-           "callback_error", "pareto_front", "completed", "total",
-           "best_metric", "best_rec_id", "algorithm"}
+        set(result.keys()) |
+        set(result["best"].keys()) |
+        set(result["history"][0].keys()) |
+        {"enabled", "metric_name", "comparison_to_best",
+         "comparison_to_baseline", "record_path", "source",
+         "callback_error", "pareto_front", "completed", "total",
+         "best_metric", "best_rec_id", "algorithm"}
     )
     for key in documented:
         assert f"``{key}``" in doc, f"run() docstring is missing ``{key}``"

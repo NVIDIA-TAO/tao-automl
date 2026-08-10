@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 """HyperBand with Early Stopping (Learning Curve Prediction) AutoML algorithm modules"""
+# pylint: disable=arguments-renamed
 import numpy as np
 import logging
 from scipy.optimize import curve_fit
@@ -11,7 +12,7 @@ from tao_automl.brain.hyperband import HyperBand
 logger = logging.getLogger(__name__)
 
 
-class HyperBandES(HyperBand):
+class HyperBandES(HyperBand):  # pylint: disable=arguments-renamed
     """HyperBand with Early Stopping via Learning Curve Prediction"""
 
     def __init__(self, context, state_store, network, parameters, max_epochs, reduction_factor, epoch_multiplier,
@@ -183,8 +184,9 @@ class HyperBandES(HyperBand):
         walk(rec.specs)
         return max(budgets, default=int(fallback))
 
-    def on_recommendation_result(self, rec, history):
+    def on_recommendation_result(self, recommendation, history):
         """Observe authoritative rung metrics as soon as the controller records them."""
+        rec = recommendation
         if rec.status not in (JobStates.success, JobStates.done):
             return
         observation_id = f"{rec.id}:{rec.job_id or rec.last_modified}"
@@ -224,7 +226,7 @@ class HyperBandES(HyperBand):
 
     @staticmethod
     def load_state(context, state_store, network, parameters, max_epochs, reduction_factor, epoch_multiplier,
-                   early_stop_threshold=0.8, min_early_stop_epochs=3, metric="loss"):
+                   early_stop_threshold=0.8, min_early_stop_epochs=3, metric="loss"):  # pylint: disable=arguments-renamed
         """Load the HyperBandES algorithm related variables from brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
         if not json_loaded:

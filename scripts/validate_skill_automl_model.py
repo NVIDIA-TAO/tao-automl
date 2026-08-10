@@ -254,8 +254,8 @@ def _resolve_model_dir(skill_bank: Path, requested_model: str) -> Path:
     if not matches:
         raise KeyError(f"No packaged model skill resolves {requested_model!r}")
     raise KeyError(
-        f"Model alias {requested_model!r} is ambiguous: "
-        + ", ".join(path.name for path in matches)
+        f"Model alias {requested_model!r} is ambiguous: " +
+        ", ".join(path.name for path in matches)
     )
 
 
@@ -543,10 +543,10 @@ def _add_data_source_overrides(
             continue
         root = _source_root(profile, row["source"])
         if (
-            row["source"] == "inference_dataset"
-            and not profile.inference_uri
-            and profile.eval_uri
-            and files == "images_test.tar.gz"
+            row["source"] == "inference_dataset" and
+            not profile.inference_uri and
+            profile.eval_uri and
+            files == "images_test.tar.gz"
         ):
             overrides[spec_key] = _join_uri(profile.eval_uri, "images_val.tar.gz")
             continue
@@ -844,16 +844,16 @@ def _automl_settings(
         if not key:
             raise RuntimeError("LLM algorithm requested but no LLM API key is present in the environment")
         endpoint = (
-            os.environ.get("AUTOML_LLM_ENDPOINT")
-            or os.environ.get("base_url")
-            or os.environ.get("BASE_URL")
-            or os.environ.get("NVIDIA_INFERENCE_ENDPOINT")
+            os.environ.get("AUTOML_LLM_ENDPOINT") or
+            os.environ.get("base_url") or
+            os.environ.get("BASE_URL") or
+            os.environ.get("NVIDIA_INFERENCE_ENDPOINT")
         )
         model = (
-            os.environ.get("AUTOML_LLM_MODEL")
-            or os.environ.get("model")
-            or os.environ.get("MODEL")
-            or os.environ.get("NVIDIA_INFERENCE_MODEL")
+            os.environ.get("AUTOML_LLM_MODEL") or
+            os.environ.get("model") or
+            os.environ.get("MODEL") or
+            os.environ.get("NVIDIA_INFERENCE_MODEL")
         )
         if not endpoint or not model:
             raise RuntimeError(
@@ -1026,9 +1026,9 @@ def _cleanup_cosmos_prior_policy_artifacts(train_job_root: Path) -> list[str]:
     removed: list[str] = []
     for policy_dir in list(train_job_root.rglob("policy")):
         if (
-            not policy_dir.is_dir()
-            or policy_dir.is_symlink()
-            or "checkpoints" not in policy_dir.relative_to(train_job_root).parts
+            not policy_dir.is_dir() or
+            policy_dir.is_symlink() or
+            "checkpoints" not in policy_dir.relative_to(train_job_root).parts
         ):
             continue
         _remove_container_owned_directory(policy_dir)
@@ -1794,8 +1794,8 @@ def _resume_record_for_best_job(payload: dict[str, Any]) -> dict[str, Any] | Non
     return next(
         (
             item for item in payload.get("job_runs", [])
-            if item.get("job_id") == best_job_id
-            and item.get("resume_from_job_id")
+            if item.get("job_id") == best_job_id and
+            item.get("resume_from_job_id")
         ),
         None,
     )
@@ -1833,10 +1833,10 @@ def _run_post_checks(
         parent_progress = _checkpoint_progress(parent_path)
         promoted_progress = _checkpoint_progress(checkpoint_path)
         if (
-            parent_progress
-            and promoted_progress
-            and parent_progress[0] == promoted_progress[0]
-            and promoted_progress[1] <= parent_progress[1]
+            parent_progress and
+            promoted_progress and
+            parent_progress[0] == promoted_progress[0] and
+            promoted_progress[1] <= parent_progress[1]
         ):
             payload["checkpoint_validation"] = {
                 "status": "failed",
@@ -1873,9 +1873,9 @@ def _run_post_checks(
             final_evaluation = next(
                 (
                     item for item in payload.get("final_evaluation_jobs", [])
-                    if item.get("action") == "final_evaluate"
-                    and item.get("status") == "success"
-                    and item.get("checkpoint_path") == checkpoint_path
+                    if item.get("action") == "final_evaluate" and
+                    item.get("status") == "success" and
+                    item.get("checkpoint_path") == checkpoint_path
                 ),
                 None,
             )
@@ -1939,10 +1939,10 @@ def _run_post_checks(
         "post_checks": post_checks,
     }
     train_passed = (
-        bool(payload.get("jobs"))
-        and all(data.get("status") == "success" for data in payload.get("jobs", {}).values())
-        and ((payload.get("result") or {}).get("best") or {}).get("metric_value") is not None
-        and bool(payload.get("best_checkpoint_paths"))
+        bool(payload.get("jobs")) and
+        all(data.get("status") == "success" for data in payload.get("jobs", {}).values()) and
+        ((payload.get("result") or {}).get("best") or {}).get("metric_value") is not None and
+        bool(payload.get("best_checkpoint_paths"))
     )
     if train_passed and payload["checkpoint_validation"]["status"] == "success":
         payload["status"] = "passed"
@@ -2004,8 +2004,8 @@ def _pbt_resume_safe_parameters(params: list[str], model: str) -> list[str]:
     """Keep PBT perturbations compatible with checkpoints being resumed."""
     resume_safe = [
         param for param in params
-        if param.startswith(("train.optim.", "train.optimizer."))
-        or param in {"train.optm_lr", "train.lr", "train.learning_rate"}
+        if param.startswith(("train.optim.", "train.optimizer.")) or
+        param in {"train.optm_lr", "train.lr", "train.learning_rate"}
     ]
     # NVDINOv2's generated search surface contains only data-loader controls.
     # Worker count is checkpoint-neutral and therefore safe across generations.
@@ -2017,9 +2017,9 @@ def _pbt_resume_safe_parameters(params: list[str], model: str) -> list[str]:
     # member checkpoint.  Keep only the train split; val/test batch sizes do
     # not exercise the resumed training population.
     if (
-        not resume_safe
-        and model == "bevfusion"
-        and "dataset.train_dataset.batch_size" in params
+        not resume_safe and
+        model == "bevfusion" and
+        "dataset.train_dataset.batch_size" in params
     ):
         return ["dataset.train_dataset.batch_size"]
     return resume_safe
@@ -2043,10 +2043,10 @@ def _minimal_custom_ranges(
         elif model == "ml-recog" and lower == "train.batch_size":
             ranges[param] = {"valid_min": 4, "valid_max": 4}
         elif (
-            "batch_size" in lower
-            or lower.endswith("mini_batch")
-            or ".mini_batch" in lower
-            or lower.endswith("batch_per_replica")
+            "batch_size" in lower or
+            lower.endswith("mini_batch") or
+            ".mini_batch" in lower or
+            lower.endswith("batch_per_replica")
         ):
             ranges[param] = {"valid_min": 1, "valid_max": 2}
         elif model == "nvdinov2" and lower == "dataset.workers":
@@ -2309,8 +2309,8 @@ def _prepare_image_classification_mount(out_dir: Path) -> Path:
             candidates = sorted(
                 item["Key"]
                 for item in objects
-                if item.get("Size", 0) > 0
-                and item["Key"].lower().endswith((".jpg", ".jpeg", ".png"))
+                if item.get("Size", 0) > 0 and
+                item["Key"].lower().endswith((".jpg", ".jpeg", ".png"))
             )
             if not candidates:
                 raise RuntimeError(
@@ -3116,8 +3116,8 @@ def _mounts_for_model(out_dir: Path, model: str, profile: ModelProfile) -> list[
         source_root = os.environ.get("TAO_PYTORCH_SOURCE_ROOT")
         if source_root:
             train_entrypoint = (
-                Path(source_root)
-                / "nvidia_tao_pytorch/cv/sparse4d/scripts/train.py"
+                Path(source_root) /
+                "nvidia_tao_pytorch/cv/sparse4d/scripts/train.py"
             )
             if not train_entrypoint.is_file():
                 raise FileNotFoundError(
@@ -3656,10 +3656,10 @@ def run_model(args: argparse.Namespace) -> int:
     if (
         baseline_result["status"] not in (
             {"success", "skipped"} if selection_uses_training_kpi else {"success"}
-        )
-        or (
-            not selection_uses_training_kpi
-            and baseline_result.get("metric_value") is None
+        ) or
+        (
+            not selection_uses_training_kpi and
+            baseline_result.get("metric_value") is None
         )
     ):
         payload = {
@@ -3930,10 +3930,10 @@ def run_model(args: argparse.Namespace) -> int:
     best_rec_id = best.get("rec_id")
     best_job = _select_best_job(job_runs, best, jobs)
     passed = (
-        bool(job_runs)
-        and all(data.get("status") == "success" for data in job_runs)
-        and best.get("metric_value") is not None
-        and bool(best_job.get("checkpoint_paths"))
+        bool(job_runs) and
+        all(data.get("status") == "success" for data in job_runs) and
+        best.get("metric_value") is not None and
+        bool(best_job.get("checkpoint_paths"))
     )
     payload = {
         "model": model,

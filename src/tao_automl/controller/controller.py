@@ -375,8 +375,8 @@ class Controller:
             latest_window = max(checkpoint_windows)
             required.update(
                 rec.job_id for rec in self.history
-                if getattr(rec, "checkpoint_window", 0) == latest_window
-                and rec.job_id
+                if getattr(rec, "checkpoint_window", 0) == latest_window and
+                rec.job_id
             )
 
         # Fail-closed fallback for workspaces created before decision windows
@@ -385,8 +385,8 @@ class Controller:
         # one, so choosing the globally largest budget could delete a required
         # promotion parent.  New runs use the exact, bounded latest window.
         if (
-            not checkpoint_windows
-            and getattr(self.brain, "last_launched_count", 0)
+            not checkpoint_windows and
+            getattr(self.brain, "last_launched_count", 0)
         ):
             successful = [
                 rec for rec in self.history
@@ -723,7 +723,7 @@ class Controller:
         if rec.early_stop_epoch is not None:
             budgets.append(rec.early_stop_epoch)
         for key, value in rec.specs.items():
-            name = str(key).split(".")[-1]
+            name = str(key).rsplit(".", maxsplit=1)[-1]
             if name not in _BUDGET_KEY_NAMES:
                 continue
             if isinstance(value, bool):

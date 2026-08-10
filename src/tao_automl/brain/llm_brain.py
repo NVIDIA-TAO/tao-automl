@@ -115,9 +115,9 @@ class LLMBrain(AutoMLAlgorithmBase):
                     is_better = False
                     if rec.status == JobStates.success:
                         is_better = (
-                            self.best_metric is None
-                            or (self.reverse_sort and rec.result > self.best_metric)
-                            or (not self.reverse_sort and rec.result < self.best_metric)
+                            self.best_metric is None or
+                            (self.reverse_sort and rec.result > self.best_metric) or
+                            (not self.reverse_sort and rec.result < self.best_metric)
                         )
 
                     entry = {

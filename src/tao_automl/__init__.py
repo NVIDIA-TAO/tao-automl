@@ -93,19 +93,19 @@ def query_status(workspace_path: str) -> dict:
     experiment_id = controller_files[0].replace(".json", "")
 
     controller_path = os.path.join(controller_dir, f"{experiment_id}.json")
-    with open(controller_path) as f:
+    with open(controller_path, encoding="utf-8") as f:
         recs = json.load(f)
 
     best_rec_path = os.path.join(automl_dir, "best_rec", f"{experiment_id}.json")
     best_info = None
     if os.path.exists(best_rec_path):
-        with open(best_rec_path) as f:
+        with open(best_rec_path, encoding="utf-8") as f:
             best_info = json.load(f)
 
     active_jobs_path = os.path.join(workspace_path, "active_jobs.json")
     active_jobs = []
     if os.path.exists(active_jobs_path):
-        with open(active_jobs_path) as f:
+        with open(active_jobs_path, encoding="utf-8") as f:
             active_jobs = json.load(f)
 
     terminal = {JobStates.success, JobStates.done, JobStates.failure, JobStates.error}
@@ -118,7 +118,7 @@ def query_status(workspace_path: str) -> dict:
     algorithm = None
     total = len(recs)
     if os.path.exists(brain_path):
-        with open(brain_path) as f:
+        with open(brain_path, encoding="utf-8") as f:
             brain_info = json.load(f)
         algorithm = brain_info.get("algorithm")
         max_recs = brain_info.get("max_recommendations")
