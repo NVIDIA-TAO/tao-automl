@@ -149,6 +149,12 @@ class HybridStrategist:
         self, plan: Dict[str, Any], available_parameters: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """Validate and sanitize the strategist's plan."""
+        # LLMs occasionally wrap the plan in a JSON list ([{...}]) despite the
+        # prompt asking for an object; unwrap instead of crashing the phase.
+        if isinstance(plan, list):
+            plan = next((x for x in plan if isinstance(x, dict)), {})
+        if not isinstance(plan, dict):
+            plan = {}
         available_names = {p["parameter"] for p in available_parameters}
         available_lookup = {p["parameter"]: p for p in available_parameters}
 
