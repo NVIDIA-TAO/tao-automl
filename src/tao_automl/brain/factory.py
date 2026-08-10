@@ -182,7 +182,8 @@ class BrainFactory:
                 "context": context,
                 "state_store": state_store,
                 "network": network,
-                "parameters": parameters
+                "parameters": parameters,
+                "metric": metric
             }
         elif algo_lower in AlgorithmType.BOHB:
             brain_class = BOHB
@@ -205,7 +206,8 @@ class BrainFactory:
                 "context": context,
                 "state_store": state_store,
                 "network": network,
-                "parameters": parameters
+                "parameters": parameters,
+                "metric": metric
             }
         elif algo_lower in AlgorithmType.ASHA:
             brain_class = ASHA

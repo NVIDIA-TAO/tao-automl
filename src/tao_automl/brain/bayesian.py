@@ -42,7 +42,7 @@ def _get_total_epochs_from_specs(specs):
 class Bayesian(AutoMLAlgorithmBase):
     """Bayesian AutoML algorithm class"""
 
-    def __init__(self, context, state_store, network, parameters):
+    def __init__(self, context, state_store, network, parameters, metric=""):
         """Initialize the Bayesian algorithm class
 
         Args:
@@ -65,6 +65,13 @@ class Bayesian(AutoMLAlgorithmBase):
         # The following 2 need to be stored
         self.Xs = []
         self.ys = []
+        # Direction handling: EI acquisition below is maximize-form. Fit the GP
+        # on _y_sign * y so maximize == requested direction ('loss' => minimize).
+        self.metric = metric or ""
+        self._y_sign = -1.0 if "loss" in self.metric.lower() else 1.0
+        logger.info("Bayesian direction: %s (metric=%r, y_sign=%+d)",
+                    "minimize" if self._y_sign < 0 else "maximize",
+                    self.metric, int(self._y_sign))
 
         self.xi = 0.01
         self.num_restarts = 5
@@ -356,17 +363,17 @@ class Bayesian(AutoMLAlgorithmBase):
         self.state_store.save_brain_info(self.context.id, state_dict)
 
     @staticmethod
-    def load_state(context, state_store, network, parameters):
+    def load_state(context, state_store, network, parameters, metric=""):
         """Load the Bayesian algorithm related variables to brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
         if not json_loaded:
-            return Bayesian(context, state_store, network, parameters)
+            return Bayesian(context, state_store, network, parameters, metric=metric)
 
         Xs = []
         for x in json_loaded["Xs"]:
             Xs.append(np.array(x))
         ys = json_loaded["ys"]
-        bayesian = Bayesian(context, state_store, network, parameters)
+        bayesian = Bayesian(context, state_store, network, parameters, metric=metric)
         # Load state (Remember everything)
         bayesian.Xs = Xs
         bayesian.ys = ys
@@ -386,7 +393,7 @@ class Bayesian(AutoMLAlgorithmBase):
                 # Update the loaded ys with cleaned values
                 bayesian.ys = ys_npy.tolist()
 
-            bayesian.gp.fit(Xs_npy, ys_npy)
+            bayesian.gp.fit(Xs_npy, bayesian._y_sign * ys_npy)
 
         return bayesian
 
@@ -464,7 +471,7 @@ class Bayesian(AutoMLAlgorithmBase):
             logger.info(f"Cleaned ys_npy: {ys_npy}")
 
         if len(Xs_npy) > 0 and len(ys_npy) > 0:
-            self.gp.fit(Xs_npy, ys_npy)
+            self.gp.fit(Xs_npy, self._y_sign * ys_npy)
         else:
             logger.warning("No valid training data available for Gaussian Process")
 

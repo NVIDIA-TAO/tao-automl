@@ -495,17 +495,26 @@ class BOHB(AutoMLAlgorithmBase):
             lower = -1 * self.ni.get(self.bracket, [0])[0]
 
             if self.expt_iter == 0:
+                # Promotion must rank only trials that actually produced a
+                # metric: failed trials carry a runner-synthesized sentinel
+                # (0.0) which, under minimize metrics, would rank as the best
+                # result and be promoted ahead of every real candidate.
+                def _promotable(recs):
+                    ok = [r for r in recs if getattr(r, "status", None) == JobStates.success]
+                    return ok if ok else list(recs)
+
                 if self.sh_iter == 1:
                     self.experiments_considered = sorted(
-                        history[lower:],
+                        _promotable(history[lower:]),
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
                 else:
                     for experiment in self.experiments_considered:
                         experiment.result = history[experiment.id].result
+                        experiment.status = history[experiment.id].status
                     self.experiments_considered = sorted(
-                        self.experiments_considered,
+                        _promotable(self.experiments_considered),
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
