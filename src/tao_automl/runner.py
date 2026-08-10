@@ -2036,6 +2036,7 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "automl_population_size",
     "automl_range_override",
     "automl_reduction_factor",
+    "automl_retain_failed_artifacts",
     "automl_top_n_percent",
     "base_url",
     "baseline_metric",
