@@ -35,7 +35,28 @@ import uuid
 
 from tao_automl.formatting import format_result  # noqa: F401  (public API)
 from tao_automl.objectives import parse_objective_config
+from tao_automl.gepa_autoprompter import (
+    AutoPrompterResult,
+    GEPAutoPrompter,
+    GEPAReflectionLM,
+    RoutedTAOActionBatchRunner,
+    TAOActionBatchRunner,
+    TAOGEPAAdapter,
+)
 from tao_automl.types import AutoMLContext, JobStates
+
+__all__ = [
+    "AutoPrompterResult",
+    "AutoMLContext",
+    "GEPAReflectionLM",
+    "GEPAutoPrompter",
+    "JobStates",
+    "RoutedTAOActionBatchRunner",
+    "TAOActionBatchRunner",
+    "TAOGEPAAdapter",
+    "format_result",
+    "query_status",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -93,19 +114,19 @@ def query_status(workspace_path: str) -> dict:
     experiment_id = controller_files[0].replace(".json", "")
 
     controller_path = os.path.join(controller_dir, f"{experiment_id}.json")
-    with open(controller_path) as f:
+    with open(controller_path, encoding="utf-8") as f:
         recs = json.load(f)
 
     best_rec_path = os.path.join(automl_dir, "best_rec", f"{experiment_id}.json")
     best_info = None
     if os.path.exists(best_rec_path):
-        with open(best_rec_path) as f:
+        with open(best_rec_path, encoding="utf-8") as f:
             best_info = json.load(f)
 
     active_jobs_path = os.path.join(workspace_path, "active_jobs.json")
     active_jobs = []
     if os.path.exists(active_jobs_path):
-        with open(active_jobs_path) as f:
+        with open(active_jobs_path, encoding="utf-8") as f:
             active_jobs = json.load(f)
 
     terminal = {JobStates.success, JobStates.done, JobStates.failure, JobStates.error}
@@ -118,7 +139,7 @@ def query_status(workspace_path: str) -> dict:
     algorithm = None
     total = len(recs)
     if os.path.exists(brain_path):
-        with open(brain_path) as f:
+        with open(brain_path, encoding="utf-8") as f:
             brain_info = json.load(f)
         algorithm = brain_info.get("algorithm")
         max_recs = brain_info.get("max_recommendations")
@@ -410,7 +431,9 @@ class AutoML:
         """
         return self._controller.next_recommendation()
 
-    def report_result(self, rec_id, metric_value, best_epoch=None, status="success"):
+    def report_result(
+        self, rec_id, metric_value, best_epoch=None, status="success", feedback=None
+    ):
         """Report a training result back.
 
         Args:
@@ -419,8 +442,11 @@ class AutoML:
                 metric values for multi-objective sessions.
             best_epoch: Best epoch number (optional).
             status: ``"success"`` or ``"failure"``.
+            feedback: Optional JSON-safe diagnostic details for reflective brains.
         """
-        self._controller.report_result(rec_id, metric_value, best_epoch, status)
+        self._controller.report_result(
+            rec_id, metric_value, best_epoch, status, feedback
+        )
 
     def get_best(self):
         """Get the best Recommendation so far, or None."""

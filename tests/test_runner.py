@@ -600,6 +600,41 @@ def test_non_train_action_defaults_include_action_native_params():
     assert "quantize.backend" not in quantize_names
 
 
+def test_cosmos_evaluate_defaults_include_autoprompt_search_space():
+    from tao_automl.schema.generate_schema import generate_schema
+    from tao_automl.search_space import params
+
+    schema = generate_schema("cosmos-rl", "evaluate")
+    records, names = params.generate_hyperparams_to_search(
+        network="cosmos-rl",
+        action="evaluate",
+        train_specs=schema["default"],
+        automl_hyperparameters=None,
+    )
+    records_by_name = {record["parameter"]: record for record in records}
+
+    expected = {
+        "dataset.system_prompt",
+        "vision.nframes",
+        "generation.max_tokens",
+        "generation.temperature",
+        "generation.repetition_penalty",
+        "generation.presence_penalty",
+        "generation.frequency_penalty",
+    }
+    assert expected.issubset(set(names))
+    assert "vision.fps" not in names
+
+    prompt_record = records_by_name["dataset.system_prompt"]
+    assert prompt_record["value_type"] == "categorical"
+    assert len(prompt_record["valid_options"]) >= 4
+    assert prompt_record["default_value"] in prompt_record["valid_options"]
+
+    assert records_by_name["vision.nframes"]["value_type"] == "ordered_int"
+    assert records_by_name["vision.nframes"]["valid_options"] == [4, 8, 16]
+    assert records_by_name["generation.max_tokens"]["value_type"] == "ordered_int"
+
+
 def test_custom_valid_options_cannot_reopen_schema_excluded_options():
     from tao_automl.utils.math_utils import get_valid_options
 
@@ -4004,6 +4039,85 @@ def test_execution_parameter_is_appended_after_existing_positional_callbacks():
 
     parameters = list(inspect.signature(AutoMLRunner.run).parameters)
     assert parameters.index("execution") > parameters.index("on_result")
+    assert parameters.index("feedback_fn") > parameters.index("execution")
+
+
+def test_runner_passes_diagnostic_feedback_to_automl(tmp_path, monkeypatch):
+    from tao_automl.runner import AutoMLRunner
+    from tao_automl.types import JobStates, Recommendation
+
+    skill_dir = _write_fake_skill(tmp_path)
+    captured = {}
+
+    class FakeAutoML:
+        def __init__(self, *args, **kwargs):
+            self.rec = Recommendation(0, {"train.num_epochs": 2}, "accuracy")
+            self.complete = False
+
+        def is_complete(self):
+            return self.complete
+
+        def next_recommendation(self):
+            return [self.rec]
+
+        def report_result(
+            self, rec_id, metric_value, best_epoch=None, status="success", feedback=None
+        ):
+            captured["feedback"] = feedback
+            self.rec.feedback = feedback
+            self.rec.update_result(metric_value)
+            self.rec.update_status(status)
+            self.complete = True
+
+        def get_best(self):
+            return self.rec if self.rec.status == JobStates.success else None
+
+        def get_progress(self):
+            return {"completed": int(self.complete), "best_metric": self.rec.result}
+
+        def get_history(self):
+            return [self.rec]
+
+    def fake_run_one_job(self, *args, **kwargs):
+        kwargs["rec"].assign_job_id("job-1")
+        return 0.75, "success"
+
+    monkeypatch.setattr("tao_automl.AutoML", FakeAutoML)
+    monkeypatch.setattr(AutoMLRunner, "_run_one_job", fake_run_one_job)
+
+    runner = AutoMLRunner(sdk=MagicMock(), skill_dir=skill_dir, action="train")
+    result = runner.run(
+        image="nvcr.io/test:1",
+        automl_settings={
+            "algorithm": "autoresearch",
+            "metric": "accuracy",
+            "run_baseline": False,
+            "run_final_evaluation": False,
+        },
+        feedback_fn=lambda rec, job_id: {
+            "job_id": job_id,
+            "failures": [{
+                "sample_id": "sample-2",
+                "expected": "yes",
+                "generated_output": "no",
+                "query": "Did the person cross the gate?",
+                "feedback": "The response missed the gate-open interval.",
+            }],
+        },
+        workspace_path=str(tmp_path / "workspace"),
+    )
+
+    expected = {
+        "job_id": "job-1",
+        "failures": [{
+            "generated_output": "no",
+            "query": "Did the person cross the gate?",
+            "feedback": "The response missed the gate-open interval.",
+        }],
+    }
+    assert captured["feedback"] == expected
+    assert result["best"]["feedback"] == expected
+    assert result["history"][0]["feedback"] == expected
 
 
 def test_container_run_prefers_packaged_search_schema(tmp_path, monkeypatch):

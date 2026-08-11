@@ -67,7 +67,7 @@ def flatten_properties(data, parent_key='', sep='.'):
                 # Integer enums are discrete ordered choices. Other scalar
                 # enums are categorical; treating them as their base type
                 # would cause numeric brains to ignore the declared options.
-                integer_choices = dtype in ('int', 'integer') and all(
+                integer_choices = dtype in ('int', 'integer', 'ordered_int') and all(
                     isinstance(option, int) and not isinstance(option, bool)
                     for option in valid_options
                 )

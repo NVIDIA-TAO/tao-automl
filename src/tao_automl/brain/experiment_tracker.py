@@ -28,6 +28,7 @@ class ExperimentEntry:
         vram_gb: Optional[float] = None,
         train_time_seconds: Optional[float] = None,
         job_id: Optional[str] = None,
+        feedback: Any = None,
     ):
         """Initialize an ExperimentEntry."""
         self.experiment_id = experiment_id
@@ -40,6 +41,7 @@ class ExperimentEntry:
         self.vram_gb = vram_gb
         self.train_time_seconds = train_time_seconds
         self.job_id = job_id
+        self.feedback = feedback
         self.timestamp = datetime.now(tz=timezone.utc).isoformat()
 
     def to_dict(self) -> Dict[str, Any]:
@@ -55,6 +57,7 @@ class ExperimentEntry:
             "vram_gb": self.vram_gb,
             "train_time_seconds": self.train_time_seconds,
             "job_id": self.job_id,
+            "feedback": self.feedback,
             "timestamp": self.timestamp,
         }
 
@@ -72,6 +75,7 @@ class ExperimentEntry:
             vram_gb=data.get("vram_gb"),
             train_time_seconds=data.get("train_time_seconds"),
             job_id=data.get("job_id"),
+            feedback=data.get("feedback"),
         )
         entry.timestamp = data.get("timestamp", entry.timestamp)
         return entry
@@ -117,6 +121,7 @@ class ExperimentTracker:
         vram_gb: Optional[float] = None,
         train_time_seconds: Optional[float] = None,
         job_id: Optional[str] = None,
+        feedback: Any = None,
     ) -> ExperimentEntry:
         """Record a completed experiment."""
         entry = ExperimentEntry(
@@ -129,6 +134,7 @@ class ExperimentTracker:
             vram_gb=vram_gb,
             train_time_seconds=train_time_seconds,
             job_id=job_id,
+            feedback=feedback,
         )
         self._next_id += 1
 
@@ -179,6 +185,7 @@ class ExperimentTracker:
                 "status": e.status,
                 "decision": e.decision,
                 "reasoning": e.reasoning,
+                "feedback": e.feedback,
             }
             for e in entries
         ]
