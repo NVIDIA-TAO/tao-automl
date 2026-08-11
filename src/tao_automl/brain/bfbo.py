@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 class BFBO(AutoMLAlgorithmBase):
     """BFBO (Bayesian First-Order Bayesian Optimization) AutoML algorithm class"""
 
-    def __init__(self, context, state_store, network, parameters):
+    def __init__(self, context, state_store, network, parameters, metric="",
+                 llm_params=None, enable_llm_range_narrowing=False,
+                 llm_analysis_interval=5):
         """Initialize the BFBO algorithm class"""
         super().__init__(context, state_store, network, parameters)
 
@@ -42,10 +44,21 @@ class BFBO(AutoMLAlgorithmBase):
 
         self.Xs = []
         self.ys = []
+        # Direction handling: the UCB acquisition below is maximize-form. The
+        # brain-facing metric name encodes direction ('objective_loss' etc. for
+        # minimize). Fit the GP on _y_sign * y so maximize == requested direction.
+        self.metric = metric or ""
+        self._y_sign = -1.0 if "loss" in self.metric.lower() else 1.0
+        logger.info("BFBO direction: %s (metric=%r, y_sign=%+d)",
+                    "minimize" if self._y_sign < 0 else "maximize",
+                    self.metric, int(self._y_sign))
 
         self.kappa = 2.0
         self.kappa_decay = 0.95
         self.kappa_min = 0.5
+        self.init_llm_range_narrowing(
+            llm_params=llm_params, enabled=enable_llm_range_narrowing,
+            analysis_interval=llm_analysis_interval)
 
         self.local_penalization = True
         self.penalization_radius = 0.1
@@ -285,17 +298,26 @@ class BFBO(AutoMLAlgorithmBase):
         self.state_store.save_brain_info(self.context.id, state_dict)
 
     @staticmethod
-    def load_state(context, state_store, network, parameters):
+    def load_state(context, state_store, network, parameters, metric="",
+                   llm_params=None, enable_llm_range_narrowing=False,
+                   llm_analysis_interval=5):
         """Load the BFBO algorithm related variables from brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
+        _narrow_kwargs = {
+            "llm_params": llm_params,
+            "enable_llm_range_narrowing": enable_llm_range_narrowing,
+            "llm_analysis_interval": llm_analysis_interval,
+        }
         if not json_loaded:
-            return BFBO(context, state_store, network, parameters)
+            return BFBO(context, state_store, network, parameters, metric=metric,
+                        **_narrow_kwargs)
 
         Xs = []
         for x in json_loaded["Xs"]:
             Xs.append(np.array(x))
         ys = json_loaded["ys"]
-        bfbo = BFBO(context, state_store, network, parameters)
+        bfbo = BFBO(context, state_store, network, parameters, metric=metric,
+                    **_narrow_kwargs)
         bfbo.Xs = Xs
         bfbo.ys = ys
         bfbo.kappa = json_loaded.get("kappa", 2.0)
@@ -313,7 +335,7 @@ class BFBO(AutoMLAlgorithmBase):
                 ys_npy = np.nan_to_num(ys_npy, nan=0.0, posinf=1e7, neginf=-1e7)
                 bfbo.ys = ys_npy.tolist()
 
-            bfbo.gp.fit(Xs_npy, ys_npy)
+            bfbo.gp.fit(Xs_npy, bfbo._y_sign * ys_npy)
 
         return bfbo
 
@@ -333,7 +355,31 @@ class BFBO(AutoMLAlgorithmBase):
         if history[-1].status not in [JobStates.success, JobStates.failure]:
             return []
 
+        if history[-1].status == JobStates.failure:
+            # A failed trial carries no trustworthy metric — its 0.0 result is
+            # synthesized by the runner, not measured (mirrors bayesian.py).
+            # Drop the pending design point and propose from clean observations.
+            if len(self.Xs) > len(self.ys):
+                self.Xs.pop()
+            if not self.ys:
+                suggestions = np.random.rand(len(self.parameters))
+            else:
+                suggestions = self.optimize_ucb()
+            self.Xs.append(suggestions)
+            recommendations = []
+            for param_dict, suggestion in zip(self.parameters, suggestions):
+                recommendation_value = self.generate_automl_param_rec_value(param_dict, suggestion)
+                recommendations.append(recommendation_value)
+            return [dict(zip([param["parameter"] for param in self.parameters], recommendations))]
+
         self.ys.append(history[-1].result)
+        # LLM-guided range narrowing: renormalize stored design points into
+        # the narrowed coordinate system BEFORE the refit (mirrors bayesian).
+        direction = "minimize" if "loss" in self.metric.lower() else "maximize"
+        narrowed = self.propose_llm_range_narrowing(history, direction)
+        if narrowed:
+            self.renormalize_design_points(self.Xs, narrowed)
+            self.apply_llm_range_narrowing(narrowed)
         self.update_gp()
 
         self.kappa = max(self.kappa_min, self.kappa * self.kappa_decay)
@@ -356,7 +402,7 @@ class BFBO(AutoMLAlgorithmBase):
             ys_npy = np.nan_to_num(ys_npy, nan=0.0, posinf=1e7, neginf=-1e7)
 
         if len(Xs_npy) > 0 and len(ys_npy) > 0:
-            self.gp.fit(Xs_npy, ys_npy)
+            self.gp.fit(Xs_npy, self._y_sign * ys_npy)
 
     def optimize_ucb(self):
         """Optimize Upper Confidence Bound acquisition function"""
@@ -369,7 +415,7 @@ class BFBO(AutoMLAlgorithmBase):
         for i in range(self.num_restarts):
             if i == 0:
                 if len(self.Xs) > 0:
-                    best_idx = np.argmax(self.ys)
+                    best_idx = int(np.argmax(self._y_sign * np.asarray(self.ys, dtype=float)))
                     x0 = self.Xs[best_idx] + np.random.randn(dim) * 0.1
                     x0 = np.clip(x0, 0, 1)
                 else:

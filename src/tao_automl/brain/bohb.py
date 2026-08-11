@@ -28,7 +28,8 @@ class BOHB(AutoMLAlgorithmBase):
     """
 
     def __init__(self, context, state_store, network, parameters, max_epochs, reduction_factor, epoch_multiplier,
-                 kde_samples=64, top_n_percent=15.0, min_points_in_model=10, metric="loss"):
+                 kde_samples=64, top_n_percent=15.0, min_points_in_model=10, metric="loss",
+                 llm_params=None, enable_llm_range_narrowing=False, llm_analysis_interval=5):
         """Initialize the BOHB algorithm class"""
         super().__init__(context, state_store, network, parameters)
         self.epoch_multiplier = int(epoch_multiplier)
@@ -64,6 +65,9 @@ class BOHB(AutoMLAlgorithmBase):
             f"kde_samples={self.num_samples}, top_n_percent={top_n_percent}, "
             f"min_points_in_model={self.min_points_in_model}"
         )
+        self.init_llm_range_narrowing(
+            llm_params=llm_params, enabled=enable_llm_range_narrowing,
+            analysis_interval=llm_analysis_interval)
 
     def brackets_and_sh_sequence(self, max_epochs, reduction_factor):
         """Generate ni,ri arrays based on max_epochs and reduction_factor values"""
@@ -465,20 +469,33 @@ class BOHB(AutoMLAlgorithmBase):
     @staticmethod
     def load_state(
         context, state_store, network, parameters, max_epochs,
-        reduction_factor, epoch_multiplier, metric="loss"
+        reduction_factor, epoch_multiplier, kde_samples=64,
+        top_n_percent=15.0, min_points_in_model=10, metric="loss",
+        llm_params=None, enable_llm_range_narrowing=False,
+        llm_analysis_interval=5
     ):
         """Load the BOHB algorithm related variables from brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
+        _extra_kwargs = {
+            "kde_samples": kde_samples,
+            "top_n_percent": top_n_percent,
+            "min_points_in_model": min_points_in_model,
+            "llm_params": llm_params,
+            "enable_llm_range_narrowing": enable_llm_range_narrowing,
+            "llm_analysis_interval": llm_analysis_interval,
+        }
         if not json_loaded:
             return BOHB(
                 context, state_store, network, parameters, max_epochs,
-                reduction_factor, epoch_multiplier, metric=metric
+                reduction_factor, epoch_multiplier, metric=metric,
+                **_extra_kwargs
             )
 
         loaded_metric = json_loaded.get("metric", metric)
         brain = BOHB(
             context, state_store, network, parameters, max_epochs,
-            reduction_factor, epoch_multiplier, metric=loaded_metric
+            reduction_factor, epoch_multiplier, metric=loaded_metric,
+            **_extra_kwargs
         )
         brain.bracket = json_loaded["bracket"]
         brain.sh_iter = json_loaded["sh_iter"]
@@ -525,17 +542,26 @@ class BOHB(AutoMLAlgorithmBase):
             lower = -1 * self.ni.get(self.bracket, [0])[0]
 
             if self.expt_iter == 0:
+                # Promotion must rank only trials that actually produced a
+                # metric: failed trials carry a runner-synthesized sentinel
+                # (0.0) which, under minimize metrics, would rank as the best
+                # result and be promoted ahead of every real candidate.
+                def _promotable(recs):
+                    ok = [r for r in recs if getattr(r, "status", None) == JobStates.success]
+                    return ok if ok else list(recs)
+
                 if self.sh_iter == 1:
                     self.experiments_considered = sorted(
-                        history[lower:],
+                        _promotable(history[lower:]),
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
                 else:
                     for experiment in self.experiments_considered:
                         experiment.result = history[experiment.id].result
+                        experiment.status = history[experiment.id].status
                     self.experiments_considered = sorted(
-                        self.experiments_considered,
+                        _promotable(self.experiments_considered),
                         key=lambda rec: rec.result,
                         reverse=self.reverse_sort
                     )[0:self.ni[self.bracket][self.sh_iter]]
@@ -646,6 +672,16 @@ class BOHB(AutoMLAlgorithmBase):
                 if not any_running:
                     self.last_launched_count = 0
             return []
+
+        # LLM-guided range narrowing: BOHB re-derives observation coordinates
+        # from raw spec values below, so after narrowing we clear the stored
+        # observations and let this same pass rebuild every completed rec
+        # under the new (narrowed) normalization.
+        direction = "minimize" if not self.reverse_sort else "maximize"
+        narrowed = self.propose_llm_range_narrowing(history, direction)
+        if narrowed:
+            self.apply_llm_range_narrowing(narrowed)
+            self.observations = []
 
         self._update_observations(history)
 
