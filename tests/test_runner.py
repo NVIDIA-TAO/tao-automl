@@ -3808,7 +3808,7 @@ def test_programmatic_run_registers_runner_and_cancels_on_exception(
         rec.assign_job_id("job-interrupted")
         self._active_jobs[rec.id] = rec.job_id
         self._persist_active_jobs(kwargs["workspace_path"])
-        assert runner_module._runner is self
+        assert runner_module._runner_state["runner"] is self
         assert handlers[runner_module.signal.SIGINT] is runner_module._signal_handler
         assert handlers[runner_module.signal.SIGTERM] is runner_module._signal_handler
         raise RuntimeError("orchestrator interrupted")
@@ -3831,7 +3831,7 @@ def test_programmatic_run_registers_runner_and_cancels_on_exception(
     sdk = _ArtifactSDK()
     monkeypatch.setattr("tao_automl.AutoML", InterruptedAutoML)
     monkeypatch.setattr(AutoMLRunner, "_run_one_job", interrupt_job)
-    monkeypatch.setattr(runner_module, "_runner", None)
+    monkeypatch.setitem(runner_module._runner_state, "runner", None)
     monkeypatch.setattr(runner_module.signal, "getsignal", fake_getsignal)
     monkeypatch.setattr(runner_module.signal, "signal", fake_signal)
     runner = AutoMLRunner(sdk=sdk, skill_dir=_write_fake_skill(tmp_path))
@@ -3848,7 +3848,7 @@ def test_programmatic_run_registers_runner_and_cancels_on_exception(
 
     assert sdk.canceled == ["job-interrupted"]
     assert sdk.deleted == ["job-interrupted"]
-    assert runner_module._runner is None
+    assert runner_module._runner_state["runner"] is None
     assert handlers == {
         runner_module.signal.SIGINT: host_sigint,
         runner_module.signal.SIGTERM: host_sigterm,
@@ -3860,7 +3860,7 @@ def test_signal_handler_defers_cleanup_until_interrupted_stack_unwinds(monkeypat
     import tao_automl.runner as runner_module
 
     registered = MagicMock()
-    monkeypatch.setattr(runner_module, "_runner", registered)
+    monkeypatch.setitem(runner_module._runner_state, "runner", registered)
 
     with pytest.raises(SystemExit) as exc_info:
         runner_module._signal_handler(signal.SIGTERM, None)
