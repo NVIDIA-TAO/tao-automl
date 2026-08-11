@@ -46,7 +46,6 @@ import re
 import signal
 import sys
 import time
-import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -55,12 +54,12 @@ from typing import Any
 import numpy as np
 import yaml
 from tao_automl.objectives import is_latency_metric, parse_objective_config
+from tao_automl.utils.spec_utils import resolve_schema_leaf
 from tao_sdk.checkpoints import (
     build_checkpoint_candidate,
     checkpoint_epoch as sdk_checkpoint_epoch,
     select_checkpoint_path,
 )
-from tao_automl.utils.spec_utils import resolve_schema_leaf
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +82,7 @@ class SkillContext:
     layout that's documented and validated by tao-skills-external/scripts/
     validate-skills.sh.
     """
+
     skill_dir: Path
     action: str
     skill_info: dict[str, Any] = field(init=False)
@@ -95,6 +95,7 @@ class SkillContext:
     execution: "PythonScriptExecution | None" = field(init=False)
 
     def __post_init__(self):
+        """Load skill metadata, schemas, and execution configuration."""
         self.skill_dir = Path(self.skill_dir)
         info_path = self.skill_dir / "references/skill_info.yaml"
         if not info_path.exists():
@@ -120,7 +121,7 @@ class SkillContext:
         ) or {}
         schema_path = self.skill_dir / f"schemas/{self.action}.schema.json"
         if schema_path.exists():
-            with open(schema_path) as f:
+            with open(schema_path, encoding="utf-8") as f:
                 self.schema = json.load(f) or {}
             if not isinstance(self.schema, dict):
                 raise TypeError(f"{schema_path}: schema must be a JSON object")
@@ -206,6 +207,7 @@ class PythonScriptExecution:
         skill_dir: Path,
         default_config_format: str,
     ) -> "PythonScriptExecution | None":
+        """Build execution metadata from an action configuration mapping."""
         if config is None:
             return None
         if not isinstance(config, dict):
@@ -263,6 +265,7 @@ class PythonScriptExecution:
 def validate_skill_runtime(skill_dir: str | Path, action: str = "train") -> dict[str, Any]:
     """Load a skill directory and validate its AutoML runtime schema path."""
     return SkillContext(skill_dir=Path(skill_dir), action=action).validate_runtime()
+
 
 _DEFAULT_POLL_INTERVAL = 30
 _POLL_LOG_TAIL_LINES = 10_000
@@ -575,6 +578,7 @@ def _scan_terminal_metric_values(
     ):
         cached_exec_status = "FAIL"
     return cached_metrics, cached_exec_status, context
+
 
 _COSMOS_RL_SFT_VAL_RE = re.compile(
     rf'\[SFT\]\s+Validation loss:\s*(?P<value>{_METRIC_NUMBER_RE})',
@@ -1000,17 +1004,14 @@ def _extract_metric_values(
     """Extract all requested objective metrics from a log snapshot."""
     values = {}
     for index, name in enumerate(metric_names):
-        try:
-            if extract_fn is _extract_metric_from_logs:
-                value = extract_fn(
-                    logs,
-                    name,
-                    allow_generic=index == 0,
-                )
-            else:
-                value = extract_fn(logs, name)
-        except Exception:
-            raise
+        if extract_fn is _extract_metric_from_logs:
+            value = extract_fn(
+                logs,
+                name,
+                allow_generic=index == 0,
+            )
+        else:
+            value = extract_fn(logs, name)
         value = _callback_metric(value, "metric_extractor")
         if value is not None:
             values[name] = value
@@ -1717,7 +1718,6 @@ def _validate_keys_against_schema(
     schema keys. Accepts genuinely-new keys (logs a warning) so users who
     intentionally add a new spec field aren't blocked.
     """
-    import difflib
     base_keys = set(schema_keys or ()) | _flatten_keys(base_specs)
     unknown = [k for k in provided_keys if k not in base_keys]
     for k in unknown:
@@ -1936,7 +1936,7 @@ def _maybe_cap_effective_batch(
     )
     capped = int(samples_per_rank)
     mini_batch = _first_positive_int((specs,), _MINI_BATCH_KEYS, default=1) or 1
-    if mini_batch > 1 and capped >= mini_batch:
+    if 1 < mini_batch <= capped:
         capped = (capped // mini_batch) * mini_batch
 
     if capped < 1:
@@ -2049,6 +2049,7 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "latency_objective",
     "latency_scale",
     "latency_weight",
+    "llm_analysis_interval",
     "llm_api_key",
     "llm_endpoint",
     "llm_max_tokens",
@@ -2156,7 +2157,6 @@ def _merge_metric_payload(target: dict[str, Any], payload) -> bool:
 # ---------------------------------------------------------------------------
 
 def _active_jobs_path(workspace_path: str):
-    from pathlib import Path
     return Path(workspace_path) / "active_jobs.json"
 
 
@@ -2248,11 +2248,14 @@ def _load_artifact_jobs(workspace_path: str) -> dict[str, str]:
     }
 
 
+_runner = None
+
+
 def _managed_runner_run(method):
     """Install scoped signal handling and cancel jobs while unwinding a run."""
     @functools.wraps(method)
     def wrapped(self, *args, **kwargs):
-        global _runner
+        global _runner  # pylint: disable=global-statement
         previous_runner = _runner
         previous_signal_handlers = {}
         _runner = self
@@ -3352,8 +3355,8 @@ class AutoMLRunner:
         self._automl = automl
         logger.info("Starting AutoML loop: network=%s, algorithm=%s, "
                     "metric=%s, direction=%s",
-                     network_arch, automl_settings.get("algorithm"),
-                     metric_name, _effective_dir)
+                    network_arch, automl_settings.get("algorithm"),
+                    metric_name, _effective_dir)
 
         # --- fix #3: if resuming, recover any jobs that were in flight when
         #              the previous orchestrator died. Poll each to terminal,
@@ -4016,7 +4019,7 @@ class AutoMLRunner:
                 )
             except Exception as ex:
                 logger.warning("eval_fn raised for rec %d: %s; falling back "
-                                "to log-extracted metric", rec.id, ex)
+                               "to log-extracted metric", rec.id, ex)
                 eval_metric = None
             if eval_metric is not None:
                 if isinstance(eval_metric, dict):
@@ -4096,9 +4099,9 @@ class AutoMLRunner:
         return True
 
     def _recover_pending_job(self, entry, automl, metric_name,
-                              metric_extractor, eval_fn, workspace_path,
-                              on_result, objective_names=None,
-                              platform_kwargs=None) -> None:
+                             metric_extractor, eval_fn, workspace_path,
+                             on_result, objective_names=None,
+                             platform_kwargs=None) -> None:
         """Poll an in-flight job (recovered on resume), extract its result,
         and report it to the brain. Mirrors the tail of _run_one_job.
         """
@@ -4222,7 +4225,7 @@ class AutoMLRunner:
                         values = _extract_metric_values(logs, metric_names, extract_fn)
                     except Exception as ex:
                         logger.warning("metric_extractor raised during resume "
-                                        "for rec %d: %s", rec_id, ex)
+                                       "for rec %d: %s", rec_id, ex)
                         values = {}
                     cached_metrics.update(values)
                     es = _check_execution_status(
@@ -4353,7 +4356,7 @@ class AutoMLRunner:
                     em = _callback_metric_payload(eval_fn(rec, job_id), "eval_fn")
                 except Exception as ex:
                     logger.warning("eval_fn raised during resume for rec %d: %s",
-                                    rec_id, ex)
+                                   rec_id, ex)
                     em = None
                 if em is not None:
                     if isinstance(em, dict):
@@ -4758,8 +4761,6 @@ def run_automl_plan(plan: dict, platform: str) -> dict:
     return result
 
 
-_runner = None
-
 def _signal_handler(signum, frame):
     """Request unwind; cancellation runs after interrupted locks are released."""
     if _runner:
@@ -4768,6 +4769,7 @@ def _signal_handler(signum, frame):
 
 
 def main():
+    """Execute an AutoML plan from a JSON file."""
     parser = argparse.ArgumentParser(
         description="Execute an AutoML plan against a chosen platform SDK.",
     )
@@ -4781,7 +4783,7 @@ def main():
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    with open(args.plan) as f:
+    with open(args.plan, encoding="utf-8") as f:
         plan = json.load(f)
     run_automl_plan(plan, platform=args.platform)
 

@@ -149,6 +149,12 @@ class HybridStrategist:
         self, plan: Dict[str, Any], available_parameters: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """Validate and sanitize the strategist's plan."""
+        # LLMs occasionally wrap the plan in a JSON list ([{...}]) despite the
+        # prompt asking for an object; unwrap instead of crashing the phase.
+        if isinstance(plan, list):
+            plan = next((x for x in plan if isinstance(x, dict)), {})
+        if not isinstance(plan, dict):
+            plan = {}
         available_names = {p["parameter"] for p in available_parameters}
         available_lookup = {p["parameter"]: p for p in available_parameters}
 
@@ -299,14 +305,16 @@ class HybridStrategist:
                 return {}
             requested_options = [
                 option for option, value in numeric_options
-                if (lower_bound is None or value >= lower_bound)
-                and (upper_bound is None or value <= upper_bound)
+                if (
+                    (lower_bound is None or value >= lower_bound) and
+                    (upper_bound is None or value <= upper_bound)
+                )
             ]
 
         selected = []
         remaining = list(original_options)
         for requested in requested_options:
-            for option in remaining:
+            for option in list(remaining):
                 if cls._option_matches(option, requested):
                     selected.append(option)
                     remaining.remove(option)

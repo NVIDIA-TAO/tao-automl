@@ -78,6 +78,7 @@ class AlgorithmParams:
     automl_max_experiments: int = 50  # autoresearch budget
     research_program: Optional[str] = None
     hybrid_enable_llm_range_narrowing: bool = False
+    llm_analysis_interval: int = 5
     automl_delete_intermediate_ckpt: bool = True
 
     @classmethod
@@ -118,6 +119,7 @@ class AlgorithmParams:
                     params_dict.get("enable_llm_range_narrowing", False),
                 )
             ),
+            llm_analysis_interval=int(params_dict.get("llm_analysis_interval", 5)),
         )
 
     def get_llm_params(self) -> Dict[str, Any]:
@@ -182,7 +184,11 @@ class BrainFactory:
                 "context": context,
                 "state_store": state_store,
                 "network": network,
-                "parameters": parameters
+                "parameters": parameters,
+                "llm_params": params.get_llm_params(),
+                "enable_llm_range_narrowing": params.hybrid_enable_llm_range_narrowing,
+                "llm_analysis_interval": int(params.llm_analysis_interval),
+                "metric": metric
             }
         elif algo_lower in AlgorithmType.BOHB:
             brain_class = BOHB
@@ -197,6 +203,9 @@ class BrainFactory:
                 "kde_samples": int(params.automl_kde_samples),
                 "top_n_percent": float(params.automl_top_n_percent),
                 "min_points_in_model": int(params.automl_min_points_in_model),
+                "llm_params": params.get_llm_params(),
+                "enable_llm_range_narrowing": params.hybrid_enable_llm_range_narrowing,
+                "llm_analysis_interval": int(params.llm_analysis_interval),
                 "metric": metric
             }
         elif algo_lower in AlgorithmType.BFBO:
@@ -205,7 +214,11 @@ class BrainFactory:
                 "context": context,
                 "state_store": state_store,
                 "network": network,
-                "parameters": parameters
+                "parameters": parameters,
+                "llm_params": params.get_llm_params(),
+                "enable_llm_range_narrowing": params.hybrid_enable_llm_range_narrowing,
+                "llm_analysis_interval": int(params.llm_analysis_interval),
+                "metric": metric
             }
         elif algo_lower in AlgorithmType.ASHA:
             brain_class = ASHA

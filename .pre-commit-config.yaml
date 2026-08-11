@@ -57,7 +57,7 @@ repos:
   - id: flake8
     name: flake8
     description: Style and lint checks.
-    entry: flake8 --ignore=E24,W504,E501
+    entry: flake8 --ignore=E24,W503,W504,E501
     language: system
     types:
     - python
