@@ -2057,6 +2057,7 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "latency_objective",
     "latency_scale",
     "latency_weight",
+    "llm_analysis_interval",
     "llm_api_key",
     "llm_endpoint",
     "llm_max_tokens",
