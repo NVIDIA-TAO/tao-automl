@@ -9,7 +9,7 @@ import logging
 import math
 from typing import Any, Dict, List, Optional
 
-from tao_automl.brain.llm_client import LLMClient
+from tao_automl.brain.llm_client import LLMClient, first_json_object
 from tao_automl.brain.prompts.autoresearch_prompts import (
     build_spec_verification_prompt,
     build_result_verification_prompt,
@@ -166,8 +166,8 @@ class MultiStageVerifier:
         """Use LLM for deeper spec verification."""
         messages = build_spec_verification_prompt(changes, schema_summary, network)
         response = self.llm_client.chat(messages, json_mode=True, temperature=0.1)
-        if response.ok and response.json_content:
-            return response.json_content
+        if response.ok:
+            return first_json_object(response.json_content)
         return None
 
     def _llm_verify_result(
@@ -180,6 +180,6 @@ class MultiStageVerifier:
         """Use LLM for deeper result verification."""
         messages = build_result_verification_prompt(result, expected_range, metric_name, network)
         response = self.llm_client.chat(messages, json_mode=True, temperature=0.1)
-        if response.ok and response.json_content:
-            return response.json_content
+        if response.ok:
+            return first_json_object(response.json_content)
         return None

@@ -121,16 +121,20 @@ def build_keep_discard_prompt(
     """Build prompt for the keep/discard decision after an experiment."""
     current_metric = current_result.get("metric", "N/A")
     best_metric = best_result.get("metric", "N/A")
+    has_previous_best = isinstance(best_metric, (int, float))
     improved = (
         (metric_direction == "maximize" and current_metric > best_metric) or
         (metric_direction == "minimize" and current_metric < best_metric)
-    ) if isinstance(current_metric, (int, float)) and isinstance(best_metric, (int, float)) else False
+    ) if isinstance(current_metric, (int, float)) and has_previous_best else False
+    comparison = (
+        "improved" if improved else "did NOT improve"
+    ) if has_previous_best else "is the first measured result (no prior best)"
 
     user_content = f"""## Experiment Result
 - Metric ({metric_name}): **{current_metric}**
 - Previous best: **{best_metric}**
 - Direction: {metric_direction}
-- Numerically {"improved" if improved else "did NOT improve"}
+- Comparison: {comparison}
 - Modifications made: {json.dumps(modifications_made)}
 - VRAM used: {current_result.get("vram_gb", "unknown")} GB
 - Training time: {current_result.get("train_time", "unknown")}
@@ -221,6 +225,9 @@ Plan the next optimization phase. Return JSON with:
      leave budget for at least one result-informed refinement phase.
 5. **"algorithm_params"**: Algorithm-specific settings (e.g., automl_max_recommendations)
 6. **"reasoning"**: Why this strategy
+   - When experiment history is present, explicitly cite the prior
+     `{metric_name}` value used to choose the next algorithm, parameters, or
+     ranges. Do not describe a refinement without naming its measured metric.
 {range_narrowing_instructions}
 """
 

@@ -7,6 +7,14 @@ from tao_automl.state.state_store import StateStore
 from tao_automl.types import AutoMLContext, JobStates, Recommendation
 
 
+class _Response:
+    ok = True
+    error = None
+
+    def __init__(self, content):
+        self.json_content = content
+
+
 def _params(names):
     return [{"parameter": name, "value_type": "float"} for name in names]
 
@@ -46,6 +54,122 @@ def test_hybrid_first_phase_keeps_cosmos_lora_coverage():
         "train.optm_warmup_epochs",
         "policy.lora.lora_dropout",
     ]
+
+
+def test_hybrid_normalizes_list_response_to_first_valid_plan():
+    class Client:
+        @staticmethod
+        def chat(*_args, **_kwargs):
+            return _Response([
+                {"action": "sweep", "algorithm": "bayesian", "parameters": ["train.optim.lr"], "trials": 1},
+                {"action": "stop", "reasoning": "unused"},
+            ])
+
+    strategist = HybridStrategist(llm_client=Client())
+
+    plan = strategist.plan_next_phase(
+        available_parameters=_params(["train.optim.lr"]),
+        network="classification-pyt",
+        metric_name="val_acc_1",
+        metric_direction="maximize",
+    )
+
+    assert plan["action"] == "sweep"
+    assert plan["parameters"] == ["train.optim.lr"]
+
+
+def test_hybrid_falls_back_when_plan_list_has_no_objects():
+    class Client:
+        @staticmethod
+        def chat(*_args, **_kwargs):
+            return _Response(["invalid"])
+
+    strategist = HybridStrategist(llm_client=Client())
+
+    plan = strategist.plan_next_phase(
+        available_parameters=_params(["train.optim.lr"]),
+        network="classification-pyt",
+        metric_name="val_acc_1",
+        metric_direction="maximize",
+    )
+    assert plan["action"] == "sweep"
+    assert plan["algorithm"] == "bayesian"
+    assert plan["parameters"] == ["train.optim.lr"]
+    assert plan["trials"] == 1
+    assert plan["fallback"] is True
+    assert strategist.invalid_plan_responses == 2
+    assert strategist.fallback_plans == 1
+
+
+def test_hybrid_retries_semantically_invalid_plan_response():
+    class Client:
+        def __init__(self):
+            self.responses = iter([
+                _Response(["invalid"]),
+                _Response({
+                    "action": "sweep",
+                    "algorithm": "bayesian",
+                    "parameters": ["train.optim.lr"],
+                    "trials": 1,
+                }),
+            ])
+
+        def chat(self, *_args, **_kwargs):
+            return next(self.responses)
+
+    strategist = HybridStrategist(llm_client=Client())
+
+    plan = strategist.plan_next_phase(
+        available_parameters=_params(["train.optim.lr"]),
+        network="depth-net-stereo",
+        metric_name="val/epe",
+        metric_direction="minimize",
+    )
+
+    assert plan["action"] == "sweep"
+    assert strategist.invalid_plan_responses == 1
+
+
+def test_hybrid_retries_phase_reasoning_without_prior_metric_citation():
+    class Client:
+        def __init__(self):
+            self.responses = iter([
+                _Response({
+                    "action": "sweep",
+                    "algorithm": "bayesian",
+                    "parameters": ["train.optim.lr"],
+                    "trials": 1,
+                    "reasoning": "Run another refinement phase.",
+                }),
+                _Response({
+                    "action": "sweep",
+                    "algorithm": "bayesian",
+                    "parameters": ["train.optim.lr"],
+                    "trials": 1,
+                    "reasoning": (
+                        "The prior val/t2i_mAP was 0.520833, so sample a "
+                        "different learning rate."
+                    ),
+                }),
+            ])
+
+        def chat(self, *_args, **_kwargs):
+            return next(self.responses)
+
+    strategist = HybridStrategist(llm_client=Client())
+    strategist.full_history = [
+        {"rec_id": 0, "metric": 0.520833, "status": "success"}
+    ]
+
+    plan = strategist.plan_next_phase(
+        available_parameters=_params(["train.optim.lr"]),
+        network="clip",
+        metric_name="val/t2i_mAP",
+        metric_direction="maximize",
+    )
+
+    assert "val/t2i_mAP was 0.520833" in plan["reasoning"]
+    assert strategist.invalid_plan_responses == 1
 
 
 def test_hybrid_first_phase_reserves_refinement_budget(tmp_path, monkeypatch):
@@ -92,6 +216,103 @@ def test_hybrid_first_phase_reserves_refinement_budget(tmp_path, monkeypatch):
     assert len(recs) == 8
     assert brain.current_plan["trials"] == 8
     assert brain.current_plan["reserved_refinement_budget"] == 2
+
+
+def test_hybrid_two_trial_budget_reserves_evidence_based_second_phase(tmp_path, monkeypatch):
+    class StaticStrategist:
+        def __init__(self):
+            self.completed_phases = []
+            self.full_history = []
+
+        def plan_next_phase(self, **_kwargs):
+            return {
+                "action": "sweep",
+                "algorithm": "bayesian",
+                "parameters": ["train.optm_lr"],
+                "trials": 10,
+                "algorithm_params": {},
+            }
+
+    class BurstBrain:
+        def generate_recommendations(self, _history):
+            return [{"train.optm_lr": i} for i in range(10)]
+
+    monkeypatch.setattr(
+        "tao_automl.brain.factory.BrainFactory.create_brain",
+        lambda **_kwargs: BurstBrain(),
+    )
+
+    store = StateStore(str(tmp_path))
+    ctx = AutoMLContext(id="hybrid-two-trial", network="cosmos-rl", metric="val/avg_loss")
+    brain = HybridBrain(
+        context=ctx,
+        state_store=store,
+        network="cosmos-rl",
+        parameters=_params(["train.optm_lr"]),
+        metric="val/avg_loss",
+        max_experiments=2,
+    )
+    brain.strategist = StaticStrategist()
+
+    recs = brain.generate_recommendations([])
+
+    assert len(recs) == 1
+    assert brain.current_plan["trials"] == 1
+    assert brain.current_plan["reserved_refinement_budget"] == 1
+
+
+def test_hybrid_persists_llm_usage_and_phase_decisions():
+    class Usage:
+        @staticmethod
+        def to_dict():
+            return {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "num_calls": 1,
+                "total_latency_ms": 12.3,
+                "errors": 0,
+            }
+
+    class Client:
+        usage = Usage()
+
+    strategist = HybridStrategist(llm_client=Client())
+    strategist.record_phase_results(
+        phase_plan={"action": "sweep", "algorithm": "bayesian"},
+        results=[
+            {"rec_id": 0, "metric": 0.5, "status": "success"},
+            {"rec_id": 1, "metric": 0.7, "status": "success"},
+        ],
+        best_metric=0.7,
+        reverse_sort=True,
+    )
+
+    state = strategist.to_dict()
+
+    assert state["llm_usage"]["num_calls"] == 1
+    assert [item["decision"] for item in state["full_history"]] == ["discard", "keep"]
+    assert state["completed_phases"][0]["top_results"][0]["decision"] == "keep"
+
+
+def test_hybrid_discards_phase_winner_when_worse_than_prior_global_best():
+    strategist = HybridStrategist(llm_client=object())
+    plan = {"action": "sweep", "algorithm": "bayesian"}
+    strategist.record_phase_results(
+        phase_plan=plan,
+        results=[{"rec_id": 0, "metric": 0.8, "status": "success"}],
+        best_metric=0.8,
+        reverse_sort=True,
+    )
+    strategist.record_phase_results(
+        phase_plan=plan,
+        results=[{"rec_id": 1, "metric": 0.5, "status": "success"}],
+        best_metric=0.5,
+        reverse_sort=True,
+    )
+
+    assert [item["decision"] for item in strategist.full_history] == ["keep", "discard"]
+    assert strategist.completed_phases[1]["global_best_metric"] == 0.8
 
 
 def test_hybrid_records_phase_when_budget_exhausted(tmp_path):
@@ -244,3 +465,46 @@ def test_hybrid_applies_llm_phase_overrides_to_sub_brain_ranges(tmp_path, monkey
     assert captured["custom_ranges"]["train.train_batch_per_replica"]["valid_options"] == [8]
     assert captured["parameters"][0]["valid_options"] == [8]
     assert brain.base_custom_ranges["train.train_batch_per_replica"]["valid_options"] == [8, 16, 32]
+
+
+def test_hybrid_uses_distinct_sub_brain_seed_context_per_phase(tmp_path, monkeypatch):
+    contexts = []
+
+    class DummyBrain:
+        num_epochs_per_experiment = 0
+
+    def fake_create_brain(**kwargs):
+        context = kwargs["context"]
+        contexts.append((context.id, context.automl_seed_identity))
+        return DummyBrain()
+
+    monkeypatch.setattr(
+        "tao_automl.brain.factory.BrainFactory.create_brain",
+        fake_create_brain,
+    )
+
+    store = StateStore(str(tmp_path))
+    ctx = AutoMLContext(id="hybrid-seeds", network="action-recognition", metric="accuracy")
+    brain = HybridBrain(
+        context=ctx,
+        state_store=store,
+        network="action-recognition",
+        parameters=_params(["train.optim.lr"]),
+        metric="accuracy",
+        max_experiments=2,
+    )
+    plan = {
+        "action": "sweep",
+        "algorithm": "bayesian",
+        "parameters": ["train.optim.lr"],
+        "algorithm_params": {},
+    }
+
+    brain._create_sub_brain(plan)
+    brain.strategist.completed_phases.append({"phase_number": 1})
+    brain._create_sub_brain(plan)
+
+    assert contexts == [
+        ("hybrid-seeds", "hybrid-seeds-hybrid-phase-1"),
+        ("hybrid-seeds", "hybrid-seeds-hybrid-phase-2"),
+    ]

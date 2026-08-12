@@ -1449,6 +1449,7 @@ def test_promoted_metric_missing_checkpoint_carries_forward_prior_metric(
     )
 
     assert result["best"]["metric_value"] == 0.42
+    assert result["history"][0]["job_id"] == "child-job"
     assert result["history"][0]["status"] == JobStates.success
 
 
@@ -2101,6 +2102,40 @@ def test_run_one_job_accepts_multi_objective_eval_callback(tmp_path):
 
     assert status == "success"
     assert metric == {"val_mAP": pytest.approx(0.76), "latency": 20.0}
+
+
+def test_run_one_job_does_not_relabel_training_metric_when_eval_is_missing(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    fake_sdk = MagicMock()
+    fake_sdk.create_job.return_value = MagicMock(
+        id="job-eval-missing", backend_job_id="be-eval-missing",
+    )
+    fake_sdk.get_job_status.return_value = MagicMock(status="Complete")
+    fake_sdk.get_job_logs.return_value = "BERTScore_F1: 0.12\n"
+
+    runner = AutoMLRunner(sdk=fake_sdk, skill_dir=skill_dir, action="train")
+    runner._poll_interval = 0
+    rec = MagicMock(id=5)
+
+    with patch(
+        "tao_sdk.script_runner.build_entrypoint",
+        return_value={"command": "BAKED_HEREDOC_COMMAND", "args_template": ""},
+    ):
+        metric, status = runner._run_one_job(
+            image="nvcr.io/test:1",
+            action_cfg=runner.skill_ctx.action_cfg,
+            specs={"train": {"num_epochs": 1}},
+            rec=rec,
+            metric_name="BERTScore_F1",
+            eval_fn=lambda recommendation, job_id: None,
+            workspace_path=str(tmp_path),
+            platform_kwargs={},
+        )
+
+    assert metric is None
+    assert status == "metric_missing"
 
 
 def test_run_one_job_submits_nested_specs_to_python_script_sdk(tmp_path):
@@ -4548,6 +4583,41 @@ def test_apply_resume_checkpoint_resolves_zero_indexed_bounded_best(tmp_path):
     assert rec.resume_checkpoint_missing is False
 
 
+def test_apply_resume_checkpoint_enables_companion_resume_flag(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    template = skill_dir / "references/spec_template_train.yaml"
+    template.write_text(
+        "train:\n"
+        "  num_epochs: 2\n"
+        "  resume: false\n"
+        "  resume_training_checkpoint_path: null\n"
+    )
+    results_root = tmp_path / "results"
+    checkpoint = (
+        results_root / "parent-job" / "results_dir" / "train" / "epoch_1.pth"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_text("checkpoint")
+
+    runner = AutoMLRunner(sdk=MagicMock(), skill_dir=skill_dir, action="train")
+    rec = MagicMock(id=2, resume_from_job_id="parent-job", resume_from_epoch=1)
+    updated = runner._apply_resume_checkpoint(
+        {
+            "train": {
+                "resume": False,
+                "resume_training_checkpoint_path": None,
+            }
+        },
+        rec,
+        {"mounts": [{"host_path": str(results_root), "container_path": "/results"}]},
+    )
+
+    assert updated["train"]["resume"] is True
+    assert updated["train"]["resume_training_checkpoint_path"].endswith("epoch_1.pth")
+
+
 def test_apply_resume_checkpoint_does_not_use_latest_for_requested_epoch(tmp_path):
     from tao_automl.runner import AutoMLRunner
 
@@ -4576,10 +4646,51 @@ def test_apply_resume_checkpoint_does_not_use_latest_for_requested_epoch(tmp_pat
     assert rec.resume_checkpoint_path is None
 
 
+def test_apply_resume_checkpoint_advances_nvpanoptix3d_terminal_epoch(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    info = skill_dir / "references/skill_info.yaml"
+    info.write_text(info.read_text().replace("network_arch: fake-net", "network_arch: nvpanoptix3d"))
+    (skill_dir / "references/spec_template_train.yaml").write_text(
+        "train:\n"
+        "  num_epochs: 1\n"
+        "  resume_training_checkpoint_path: ''\n"
+    )
+
+    results_root = tmp_path / "results"
+    checkpoint = (
+        results_root / "parent-job" / "results_dir" / "train" /
+        "model_epoch_000_step_00010.pth"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_text("checkpoint")
+
+    runner = AutoMLRunner(sdk=MagicMock(), skill_dir=skill_dir, action="train")
+    rec = MagicMock(id=2, resume_from_job_id="parent-job", resume_from_epoch=1)
+    updated = runner._apply_resume_checkpoint(
+        {
+            "train": {
+                "num_epochs": 2,
+                "resume_training_checkpoint_path": "",
+            }
+        },
+        rec,
+        {"mounts": [{"host_path": str(results_root), "container_path": "/results"}]},
+    )
+
+    assert updated["train"]["num_epochs"] == 3
+    assert updated["train"]["resume_training_checkpoint_path"].endswith(
+        "model_epoch_000_step_00010.pth"
+    )
+
+
 def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
     from tao_automl.runner import AutoMLRunner
 
     skill_dir = _write_fake_skill(tmp_path)
+    info = skill_dir / "references/skill_info.yaml"
+    info.write_text(info.read_text().replace("network_arch: fake-net", "network_arch: cosmos-rl"))
     template = skill_dir / "references/spec_template_train.yaml"
     template.write_text("train:\n  resume: false\n  epoch: 2\n")
 
@@ -4589,6 +4700,7 @@ def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
         "checkpoints" / "epoch_1"
     )
     (checkpoint_dir / "policy").mkdir(parents=True)
+    (checkpoint_dir / "policy" / "cosmos_config").write_text("config")
     (checkpoint_dir / "policy" / "model_rank_0.pth").write_text("checkpoint")
     safetensor_dir = (
         results_root / "parent-job" / "train_output_dir" / "run1" /
@@ -4608,7 +4720,7 @@ def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
 
     assert (
         updated["train"]["resume"] ==
-        "/results/parent-job/train_output_dir/run1/checkpoints/epoch_1"
+        "/results/parent-job/train_output_dir/run1/checkpoints/epoch_1/policy"
     )
 
 

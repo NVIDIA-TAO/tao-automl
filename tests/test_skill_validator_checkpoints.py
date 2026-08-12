@@ -1,0 +1,935 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+import importlib.util
+import io
+import json
+import sys
+import tarfile
+from pathlib import Path
+from types import SimpleNamespace
+
+
+def _load_validator_module():
+    path = Path(__file__).parents[1] / "scripts" / "validate_skill_automl_model.py"
+    spec = importlib.util.spec_from_file_location("skill_automl_validator_for_test", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_checkpoint_selection_prefers_highest_explicit_epoch_and_step():
+    validator = _load_validator_module()
+    checkpoints = [
+        "/results/train/model_epoch_000_step_00010.pth",
+        "/results/train/model_epoch_001_step_00020.pth",
+        "/results/train/model_latest.pth",
+    ]
+
+    assert validator._prefer_epoch_or_step_checkpoint(checkpoints) == checkpoints[1]
+
+
+def test_hyperband_es_minimal_settings_enable_early_stop_prediction():
+    validator = _load_validator_module()
+
+    settings = validator._automl_settings(
+        "hyperband_es", "AP11", "bevfusion", SimpleNamespace()
+    )
+
+    assert settings["automl_max_epochs"] == 2
+    assert settings["automl_min_early_stop_epochs"] == 1
+
+
+def test_checkpoint_progress_detects_non_advancing_sparse4d_promotion():
+    validator = _load_validator_module()
+
+    parent = validator._checkpoint_progress("model_epoch_000_step_00003.pth")
+    promoted = validator._checkpoint_progress("model_epoch_000_step_00003.pth")
+
+    assert parent == ("step", 3)
+    assert promoted == parent
+
+
+def test_checkpoint_progress_accepts_advancing_sparse4d_promotion():
+    validator = _load_validator_module()
+
+    parent = validator._checkpoint_progress("model_epoch_000_step_00003.pth")
+    promoted = validator._checkpoint_progress("model_epoch_001_step_00006.pth")
+
+    assert parent == ("step", 3)
+    assert promoted == ("step", 6)
+
+
+def test_pbt_earlier_generation_winner_is_not_assigned_latest_member_resume():
+    validator = _load_validator_module()
+    payload = {
+        "result": {"best": {"rec_id": 0, "job_id": "generation-0"}},
+        "job_runs": [
+            {
+                "rec_id": 0,
+                "job_id": "generation-0",
+                "resume_from_job_id": None,
+                "resume_checkpoint_path": None,
+            },
+            {
+                "rec_id": 0,
+                "job_id": "generation-1",
+                "resume_from_job_id": "generation-0",
+                "resume_checkpoint_path": "/results/generation-0/model_epoch_000.pth",
+            },
+        ],
+    }
+
+    assert validator._resume_record_for_best_job(payload) is None
+
+
+def test_documented_automl_metric_is_distinct_from_training_monitoring_metric():
+    validator = _load_validator_module()
+    skill_text = """
+- **Training monitoring metrics:** `val_loss`, `val_acc`
+- **AutoML metric contract:** for evaluation-backed selection, use
+  `accuracy` with maximize direction.
+
+### Next section
+"""
+
+    assert validator._monitoring_metric(skill_text) == "val_loss"
+    assert validator._documented_automl_metric(skill_text) == "accuracy"
+
+
+def test_documented_automl_metric_does_not_treat_rejected_proxy_as_contract():
+    validator = _load_validator_module()
+    skill_text = """
+- **Training-only monitoring metrics:** `val/avg_loss`
+- **AutoML metric contract:** do not use `val/avg_loss` as the evaluate metric.
+"""
+
+    assert validator._documented_automl_metric(skill_text) is None
+
+
+def test_pretraining_monitor_is_distinct_from_finetuning_automl_metric():
+    validator = _load_validator_module()
+    skill_text = """
+- **Pretraining monitoring metric:** `train_loss`, minimized.
+- **AutoML metric contract:** for fine-tuning, use `ACC_all` with maximize direction.
+"""
+
+    assert validator._monitoring_metric(skill_text) == "train_loss"
+    assert validator._documented_automl_metric(skill_text) == "ACC_all"
+
+
+def test_classification_dataset_is_recreated_from_real_object_layout(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+
+    class FakeS3Client:
+        def list_objects_v2(self, *, Prefix, Delimiter=None, **_kwargs):
+            if Delimiter == "/":
+                return {
+                    "CommonPrefixes": [
+                        {"Prefix": f"{Prefix}cat/"},
+                        {"Prefix": f"{Prefix}dog/"},
+                    ]
+                }
+            return {
+                "Contents": [
+                    {"Key": f"{Prefix}sample.jpg", "Size": 4},
+                ]
+            }
+
+        def download_fileobj(self, _bucket, _key, stream):
+            stream.write(b"jpeg")
+
+    monkeypatch.setitem(
+        sys.modules,
+        "boto3",
+        SimpleNamespace(client=lambda *_args, **_kwargs: FakeS3Client()),
+    )
+    out_dir = tmp_path / "dehb" / "classification-pyt"
+
+    data_root = validator._prepare_image_classification_mount(out_dir)
+
+    assert (data_root / "train/images_train/cat/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "val/images_val/dog/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "train/classes.txt").read_text() == "cat\ndog\n"
+    assert (data_root / "val/classes.txt").read_text() == "cat\ndog\n"
+
+
+def test_deformable_detr_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            content = "{}" if destination.name == "annotations.json" else "object\n"
+            destination.write_text(content)
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "deformable-detr"
+    data_root = validator._prepare_deformable_detr_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "deformable-detr"
+    assert (data_root / "train/images/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "val/images/sample.jpg").read_bytes() == b"jpeg"
+    assert len(downloaded) == 6
+    assert all("tao_od_synthetic_subset_" in uri for uri in downloaded)
+
+
+def test_grounding_dino_dataset_is_recreated_and_converted_to_odvg(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+
+    def fake_download(_uri, destination):
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text(json.dumps({
+                "images": [{"id": 7, "file_name": "sample.jpg"}],
+                "categories": [{"id": 2, "name": "helmet"}],
+                "annotations": [{
+                    "image_id": 7,
+                    "category_id": 2,
+                    "bbox": [2, 3, 4, 5],
+                }],
+            }))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "grounding-dino"
+    data_root = validator._prepare_grounding_dino_mount(out_dir)
+    record = json.loads(
+        (data_root / "train/annotations_odvg.jsonl").read_text().strip()
+    )
+
+    assert data_root == out_dir / "data_mount" / "grounding-dino-mini"
+    assert record == {
+        "detection": {
+            "instances": [{
+                "bbox": [2, 3, 6, 8],
+                "category": "helmet",
+                "label": 2,
+            }]
+        },
+        "file_name": "sample.jpg",
+    }
+    assert json.loads(
+        (data_root / "train/annotations_odvg_labelmap.json").read_text()
+    ) == {"2": "helmet"}
+    assert (data_root / "val/images/sample.jpg").read_bytes() == b"jpeg"
+    val_payload = json.loads((data_root / "val/annotations.json").read_text())
+    assert val_payload["categories"][0]["id"] == 0
+    assert val_payload["annotations"][0]["category_id"] == 0
+
+
+def test_mal_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text(
+                '{"annotations": [{"segmentation": [[0, 0, 1, 0, 1, 1]]}]}'
+            )
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "mal"
+    data_root = validator._prepare_mal_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "mal-mini"
+    assert (data_root / "train/images/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "val/images/sample.jpg").read_bytes() == b"jpeg"
+    assert json.loads((data_root / "train/annotations.json").read_text())[
+        "annotations"
+    ][0]["segmentation"]
+    assert any("/auto_label_train/" in uri for uri in downloaded)
+    assert any("/auto_label_val/" in uri for uri in downloaded)
+
+
+def test_mal_segmentation_dataset_preserves_default_mask_loading():
+    validator = _load_validator_module()
+
+    overrides = validator._minimal_train_overrides(
+        {}, {"dataset.load_mask"}, None, "mal"
+    )
+
+    assert "dataset.load_mask" not in overrides
+
+
+def test_mask_grounding_dino_dataset_is_recreated_in_current_model_run(
+    tmp_path, monkeypatch
+):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("{}")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "mask-grounding-dino"
+    data_root = validator._prepare_mask_grounding_dino_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "mask-grounding-dino-mini"
+    assert (data_root / "train/images/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "val/images/sample.jpg").read_bytes() == b"jpeg"
+    assert (data_root / "train/annotations_odvg.jsonl").is_file()
+    assert (data_root / "train/annotations_odvg_labelmap.json").is_file()
+    assert (data_root / "val/annotations.json").is_file()
+    assert any("/segmentation_mask_grounding_dino_train/" in uri for uri in downloaded)
+    assert any("/segmentation_mask_grounding_dino_val/" in uri for uri in downloaded)
+
+
+def test_mask2former_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name.endswith(".tar.gz"):
+            directory = (
+                "images_panoptic" if destination.name.startswith("images_panoptic") else "images"
+            )
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"data"
+                info = tarfile.TarInfo(f"{directory}/sample.png")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("{}")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "mask2former"
+    data_root = validator._prepare_mask2former_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "mask2former-mini"
+    for split in ("train", "val"):
+        assert (data_root / split / "images/sample.png").is_file()
+        assert (data_root / split / "images_panoptic/sample.png").is_file()
+        assert (data_root / split / "annotations.json").is_file()
+        assert (data_root / split / "annotations_panoptic.json").is_file()
+        assert (data_root / split / "label_map_panoptic.json").is_file()
+    assert any("/segmentation_mask2former_train/" in uri for uri in downloaded)
+    assert any("/segmentation_mask2former_val/" in uri for uri in downloaded)
+
+
+def test_ml_recog_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        split = destination.name.removesuffix(".tar.gz")
+        with tarfile.open(destination, "w:gz") as archive:
+            payload = b"jpeg"
+            info = tarfile.TarInfo(f"{split}/class_a/sample.jpg")
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "ml-recog"
+    data_root = validator._prepare_ml_recog_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "ml-recog"
+    for scope, splits in (
+        ("known", ("train", "reference", "val")),
+        ("unknown", ("reference", "test")),
+    ):
+        for split in splits:
+            assert (data_root / scope / split / split / "class_a/sample.jpg").is_file()
+    assert all("purpose_built_models_ml_recog_train" in uri for uri in downloaded)
+    assert len(downloaded) == 5
+
+
+def test_nvdinov2_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tarfile.open(destination, "w:gz") as archive:
+            payload = b"jpeg"
+            info = tarfile.TarInfo("images_train/class_a/sample.jpg")
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "nvdinov2"
+    data_root = validator._prepare_nvdinov2_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "nvdinov2-mini"
+    assert (data_root / "images_train/images_train/class_a/sample.jpg").is_file()
+    assert downloaded == [
+        f"{validator.BUCKET_ROOT}/classification_pyt/images_train.tar.gz"
+    ]
+
+
+def test_ocdnet_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        split = destination.name.removesuffix(".tar.gz")
+        with tarfile.open(destination, "w:gz") as archive:
+            for directory, filename, payload in (
+                ("img", "sample.jpg", b"jpeg"),
+                ("gt", "sample.txt", b"text"),
+            ):
+                info = tarfile.TarInfo(f"{split}/{directory}/{filename}")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "ocdnet"
+    data_root = validator._prepare_ocdnet_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "ocdnet"
+    assert (data_root / "train/train/img/sample.jpg").is_file()
+    assert (data_root / "train/train/gt/sample.txt").is_file()
+    assert (data_root / "val/test/img/sample.jpg").is_file()
+    assert (data_root / "val/test/gt/sample.txt").is_file()
+    assert any("purpose_built_models_ocdnet_train/train.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_ocdnet_val/test.tar.gz" in uri for uri in downloaded)
+
+
+def test_ocrnet_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name.endswith(".tar.gz"):
+            split = destination.name.removesuffix(".tar.gz")
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"png"
+                info = tarfile.TarInfo(f"{split}/word_1.png")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("sample\n")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "ocrnet"
+    data_root = validator._prepare_ocrnet_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "ocrnet"
+    assert (data_root / "train/train/word_1.png").is_file()
+    assert (data_root / "train/train/gt_new.txt").is_file()
+    assert (data_root / "val/test/word_1.png").is_file()
+    assert (data_root / "val/test/gt_new.txt").is_file()
+    assert (data_root / "character_list").is_file()
+    assert any("purpose_built_models_ocrnet_train/train.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_ocrnet_val/test/gt_new.txt" in uri for uri in downloaded)
+
+
+def test_oneformer_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name.endswith(".tar.gz"):
+            directory = destination.name.removesuffix(".tar.gz")
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"image"
+                info = tarfile.TarInfo(f"{directory}/sample.png")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("{}\n")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "oneformer"
+    data_root = validator._prepare_oneformer_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "oneformer"
+    for split in ("train", "val"):
+        assert (data_root / split / "images/sample.png").is_file()
+        assert (data_root / split / "images_panoptic/sample.png").is_file()
+        assert (data_root / split / "annotations.json").is_file()
+        assert (data_root / split / "label_map.json").is_file()
+    assert any("segmentation_oneformer_train/images.tar.gz" in uri for uri in downloaded)
+    assert any("segmentation_oneformer_val/label_map.json" in uri for uri in downloaded)
+
+
+def test_optical_inspection_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name.endswith(".tar.gz"):
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/board/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        else:
+            destination.write_text("image,label\nboard/sample.jpg,0\n")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "optical-inspection"
+    data_root = validator._prepare_optical_inspection_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "optical-inspection"
+    for split in ("train", "val"):
+        assert (data_root / split / "images/board/sample.jpg").is_file()
+        assert (data_root / split / "dataset.csv").is_file()
+    assert any("purpose_built_models_optical_inspection_train/images.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_optical_inspection_val/dataset.csv" in uri for uri in downloaded)
+
+
+def test_pointpillars_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        split = destination.name.removesuffix(".tar.gz")
+        with tarfile.open(destination, "w:gz") as archive:
+            for directory, filename, payload in (
+                ("lidar", "sample.bin", b"points"),
+                ("label", "sample.txt", b"Car 0 0 0 0 0 0 0 1 1 1 0 0 0 0"),
+            ):
+                info = tarfile.TarInfo(f"{split}/{directory}/{filename}")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "pointpillars"
+    data_root = validator._prepare_pointpillars_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "pointpillars"
+    for split in ("train", "val"):
+        assert (data_root / split / "lidar/sample.bin").is_file()
+        assert (data_root / split / "label/sample.txt").is_file()
+    assert any("purpose_built_models_pointpillars_train/train.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_pointpillars_train/val.tar.gz" in uri for uri in downloaded)
+
+
+def test_rtdetr_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name.endswith(".tar.gz"):
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"jpeg"
+                info = tarfile.TarInfo("images/sample.jpg")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        elif destination.suffix == ".json":
+            destination.write_text('{"images": [], "annotations": [], "categories": []}\n')
+        else:
+            destination.write_text("class_1\n")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "rtdetr"
+    data_root = validator._prepare_rtdetr_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "rtdetr"
+    for split in ("train", "val"):
+        assert (data_root / split / "images/sample.jpg").is_file()
+        assert (data_root / split / "annotations.json").is_file()
+        assert (data_root / split / "label_map.txt").is_file()
+    assert any("tao_od_synthetic_subset_train_no_convert/images.tar.gz" in uri for uri in downloaded)
+    assert any("tao_od_synthetic_subset_val_no_convert/annotations.json" in uri for uri in downloaded)
+
+
+def test_segformer_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        split = destination.name.removesuffix(".tar.gz")
+        with tarfile.open(destination, "w:gz") as archive:
+            payload = b"png"
+            info = tarfile.TarInfo(f"{split}/sample.png")
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "segformer"
+    data_root = validator._prepare_segformer_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "segformer"
+    for kind, splits in (("images", ("train", "val", "test")), ("masks", ("train", "val"))):
+        for split in splits:
+            assert (data_root / kind / split / "sample.png").is_file()
+    assert any("segmentation_segformer_train/images/train.tar.gz" in uri for uri in downloaded)
+    assert any("segmentation_segformer_val/images/test.tar.gz" in uri for uri in downloaded)
+    assert any("segmentation_segformer_val/masks/val.tar.gz" in uri for uri in downloaded)
+
+
+def test_nvpanoptix3d_dataset_is_recreated_in_current_model_run(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    downloaded = []
+
+    def fake_download(uri, destination):
+        downloaded.append(uri)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "images.tar.gz":
+            split = destination.parent.name
+            with tarfile.open(destination, "w:gz") as archive:
+                payload = b"png"
+                info = tarfile.TarInfo(f"{split}_scene/rgb_0001.png")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        elif destination.suffix == ".json":
+            destination.write_text("{}\n")
+        else:
+            destination.write_bytes(b"npz")
+
+    monkeypatch.setattr(validator, "_download_s3_file", fake_download)
+
+    out_dir = tmp_path / "dehb" / "nvpanoptix3d"
+    data_root = validator._prepare_nvpanoptix3d_mount(out_dir)
+
+    assert data_root == out_dir / "data_mount" / "nvpanoptix3d"
+    assert (data_root / "train/data/train_scene/rgb_0001.png").is_file()
+    assert (data_root / "val/data/val_scene/rgb_0001.png").is_file()
+    assert (data_root / "val/data/test_scene/rgb_0001.png").is_file()
+    assert (data_root / "train/meta/train.json").is_file()
+    assert (data_root / "val/meta/val.json").is_file()
+    assert (data_root / "val/meta/test.json").is_file()
+    assert (data_root / "val/inference_flat/test_scene_rgb_0001.png").is_file()
+    assert any("purpose_built_models_nvpanoptix3d_train/data/images.tar.gz" in uri for uri in downloaded)
+    assert any("purpose_built_models_nvpanoptix3d_test/meta/test.json" in uri for uri in downloaded)
+
+
+def test_cosmos_checkpoint_actions_receive_adapter_directory(tmp_path):
+    validator = _load_validator_module()
+    checkpoint = (
+        tmp_path / "job" / "safetensors" / "epoch_2" / "adapter_model.safetensors"
+    )
+
+    assert validator._checkpoint_action_container_path(
+        str(checkpoint), tmp_path, "cosmos-rl"
+    ) == "/results/job/safetensors/epoch_2"
+    assert validator._checkpoint_action_container_path(
+        str(checkpoint), tmp_path, "dino"
+    ) == "/results/job/safetensors/epoch_2/adapter_model.safetensors"
+
+
+def test_cosmos_inference_uses_referenced_nested_video(tmp_path):
+    validator = _load_validator_module()
+    out_dir = tmp_path / "cosmos-rl"
+    eval_root = tmp_path / "datasets" / "cosmos-rl" / "eval"
+    video = eval_root / "scene" / "clips" / "sample.webm"
+    video.parent.mkdir(parents=True)
+    video.write_bytes(b"video")
+    (eval_root / "annotations.json").write_text(json.dumps([
+        {"video": "scene/clips/sample.webm"}
+    ]))
+
+    assert validator._cosmos_inference_media_path(out_dir) == (
+        "/data/automl_datasets/cosmos-rl/eval/scene/clips/sample.webm"
+    )
+
+
+def test_cosmos_merged_cleanup_retains_policy_and_lora_checkpoints(tmp_path):
+    validator = _load_validator_module()
+    job_root = tmp_path / "results" / "train-job"
+    merged_model = job_root / "train_output_dir" / "timestamp" / "merged" / "epoch_1"
+    policy = job_root / "train_output_dir" / "timestamp" / "checkpoints" / "epoch_1" / "policy"
+    lora = job_root / "train_output_dir" / "timestamp" / "safetensors" / "epoch_1"
+    merged_model.mkdir(parents=True)
+    policy.mkdir(parents=True)
+    lora.mkdir(parents=True)
+    (merged_model / "model.safetensors").write_bytes(b"merged")
+    (policy / "model.safetensors").write_bytes(b"policy")
+    (lora / "adapter_model.safetensors").write_bytes(b"lora")
+
+    removed = validator._cleanup_cosmos_merged_artifacts(job_root)
+
+    assert removed == [str(merged_model.parent)]
+    assert not merged_model.parent.exists()
+    assert (policy / "model.safetensors").read_bytes() == b"policy"
+    assert (lora / "adapter_model.safetensors").read_bytes() == b"lora"
+
+
+def test_cosmos_merged_cleanup_is_noop_when_job_root_is_missing(tmp_path):
+    validator = _load_validator_module()
+
+    assert validator._cleanup_cosmos_merged_artifacts(tmp_path / "missing") == []
+
+
+def test_container_owned_cleanup_falls_back_to_isolated_docker_rm(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    directory = tmp_path / "merged"
+    directory.mkdir()
+    (directory / "root-owned.bin").write_bytes(b"data")
+    original_rmtree = validator.shutil.rmtree
+    calls = []
+
+    def permission_denied(_path):
+        raise PermissionError("container-owned")
+
+    def fake_run(command, **kwargs):
+        calls.append((command, kwargs))
+        original_rmtree(directory)
+
+    monkeypatch.setattr(validator.shutil, "rmtree", permission_denied)
+    monkeypatch.setattr(validator.subprocess, "run", fake_run)
+
+    validator._remove_container_owned_directory(directory)
+
+    command, kwargs = calls[0]
+    assert command[:7] == [
+        "docker", "run", "--rm", "--network", "none", "--pull", "never"
+    ]
+    assert command[-4:] == ["alpine:3.20", "rm", "-rf", "/cleanup/merged"]
+    assert kwargs["check"] is True
+    assert not directory.exists()
+
+
+def test_cosmos_prior_policy_cleanup_retains_lora_adapter(tmp_path):
+    validator = _load_validator_module()
+    job_root = tmp_path / "results" / "prior-rung"
+    policy = job_root / "train_output_dir" / "timestamp" / "checkpoints" / "epoch_1" / "policy"
+    lora = job_root / "train_output_dir" / "timestamp" / "safetensors" / "epoch_1"
+    unrelated = job_root / "metadata" / "policy"
+    policy.mkdir(parents=True)
+    lora.mkdir(parents=True)
+    unrelated.mkdir(parents=True)
+    (policy / "model.safetensors").write_bytes(b"policy")
+    (lora / "adapter_model.safetensors").write_bytes(b"lora")
+    (unrelated / "record.json").write_text("{}")
+
+    removed = validator._cleanup_cosmos_prior_policy_artifacts(job_root)
+
+    assert removed == [str(policy)]
+    assert not policy.exists()
+    assert (lora / "adapter_model.safetensors").read_bytes() == b"lora"
+    assert (unrelated / "record.json").read_text() == "{}"
+
+
+def test_noncompetitive_job_ids_honors_metric_direction_and_stable_ties():
+    validator = _load_validator_module()
+    evaluations = [
+        {"train_job_id": "first", "metric_value": 0.8},
+        {"train_job_id": "second", "metric_value": 0.4},
+    ]
+
+    assert validator._noncompetitive_job_ids(evaluations, "maximize") == ["second"]
+    assert validator._noncompetitive_job_ids(evaluations, "minimize") == ["first"]
+    assert validator._noncompetitive_job_ids([
+        {"train_job_id": "first", "metric_value": 0.8},
+        {"train_job_id": "second", "metric_value": 0.8},
+    ], "maximize") == ["second"]
+
+
+def test_nvdinov2_checkpoint_selection_prefers_latest_student_checkpoint():
+    validator = _load_validator_module()
+    checkpoints = [
+        "/results/train/model_epoch_003_step_00100.pth",
+        "/results/train/teacher_epoch_003_step_00100.pth",
+        "/results/train/student_epoch_002_step_00200.pth",
+        "/results/train/student_epoch_003_step_00100.pth",
+    ]
+
+    assert (
+        validator._prefer_epoch_or_step_checkpoint(checkpoints, model="nvdinov2") ==
+        checkpoints[3]
+    )
+
+
+def test_pbt_best_job_selection_uses_archived_job_id_not_reused_member_id():
+    validator = _load_validator_module()
+    generation_one = {
+        "rec_id": 0,
+        "job_id": "best-generation-one",
+        "checkpoint_paths": ["/results/best-generation-one/model_epoch_000.pth"],
+    }
+    generation_two = {
+        "rec_id": 0,
+        "job_id": "latest-generation-two",
+        "checkpoint_paths": ["/results/latest-generation-two/model_epoch_001.pth"],
+    }
+
+    selected = validator._select_best_job(
+        [generation_one, generation_two],
+        {"rec_id": 0, "job_id": "best-generation-one"},
+        {0: generation_two},
+    )
+
+    assert selected is generation_one
+
+
+def test_depth_d1_direction_is_model_specific():
+    validator = _load_validator_module()
+
+    assert validator._direction("val/d1", model="depth-net-mono") == "maximize"
+    assert validator._direction("val/d1", model="depth-net-stereo") == "minimize"
+    assert validator._direction("val/epe", model="depth-net-stereo") == "minimize"
+
+
+def test_clip_uses_training_metric_for_selection_and_test_metric_for_checkpoint_eval():
+    validator = _load_validator_module()
+
+    assert validator._checkpoint_evaluation_metric("clip", "val/t2i_mAP") == "test/t2i_mAP"
+
+
+def test_nvdinov2_pbt_keeps_checkpoint_neutral_worker_parameter():
+    validator = _load_validator_module()
+
+    assert validator._pbt_resume_safe_parameters(
+        ["dataset.workers", "dataset.batch_size"], "nvdinov2"
+    ) == ["dataset.workers"]
+
+
+def test_cosmos_local_validation_caps_batch_per_replica():
+    validator = _load_validator_module()
+
+    assert validator._minimal_custom_ranges(
+        ["train.train_batch_per_replica"], model="cosmos-rl"
+    ) == {
+        "train.train_batch_per_replica": {"valid_min": 1, "valid_max": 2}
+    }
+
+
+def test_bevfusion_pbt_keeps_checkpoint_neutral_train_batch_size():
+    validator = _load_validator_module()
+
+    assert validator._pbt_resume_safe_parameters(
+        [
+            "dataset.test_dataset.batch_size",
+            "dataset.train_dataset.batch_size",
+            "dataset.val_dataset.batch_size",
+        ],
+        "bevfusion",
+    ) == ["dataset.train_dataset.batch_size"]
+
+
+def test_pbt_rejects_structural_parameters_when_no_safe_fallback_exists():
+    validator = _load_validator_module()
+
+    assert validator._pbt_resume_safe_parameters(
+        ["model.hidden_dim", "dataset.batch_size"], "dino"
+    ) == []
+
+
+def test_sparse4d_conversion_keeps_camera_group_generation_enabled(monkeypatch):
+    validator = _load_validator_module()
+    monkeypatch.setattr(validator, "_read_yaml", lambda _path: {})
+    monkeypatch.setattr(validator, "_model_profile_key", lambda _path: "sparse4d")
+    monkeypatch.setattr(
+        validator,
+        "_schema_keys",
+        lambda _path, _action: {
+            "aicity.num_frames",
+            "aicity.anchor_init_config.num_anchor",
+            "aicity.camera_grouping_mode",
+        },
+    )
+    monkeypatch.setattr(validator, "_add_data_source_overrides", lambda *_args: None)
+
+    specs = validator._build_dataset_convert_specs(
+        model_dir=Path("sparse4d"),
+        skill_text="",
+        profile=validator.MODEL_PROFILES["sparse4d"],
+    )
+
+    assert specs["aicity"]["camera_grouping_mode"] == "random"
+
+
+def test_clip_caption_fallback_uses_sorted_coco_class_labels():
+    validator = _load_validator_module()
+    payload = {
+        "images": [
+            {"id": 7, "file_name": "sample.jpg"},
+            {"id": 8, "file_name": "unannotated.jpg"},
+        ],
+        "categories": [
+            {"id": 2, "name": "helmet"},
+            {"id": 1, "name": "person"},
+        ],
+        "annotations": [
+            {"image_id": 7, "category_id": 1},
+            {"image_id": 7, "category_id": 2},
+            {"image_id": 7, "category_id": 1},
+        ],
+    }
+
+    assert validator._clip_captions_from_coco(payload) == {
+        "sample.jpg": "a photo containing helmet, person",
+    }
+
+
+def test_cosmos_staging_extracts_referenced_video_and_measures_fps(tmp_path, monkeypatch):
+    validator = _load_validator_module()
+    source_video = tmp_path / "source.mp4"
+    source_video.write_bytes(b"real-video-bytes")
+    archive = tmp_path / "videos.tar.gz"
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(source_video, arcname="videos/scene/clips/sample.mp4")
+    annotations = tmp_path / "source_annotations.json"
+    annotations.write_text(json.dumps([
+        {
+            "id": "sample",
+            "video": "scene/clips/sample.mp4",
+            "conversations": [],
+        }
+    ]))
+    monkeypatch.setattr(validator, "_video_fps", lambda _path: 29.97)
+    monkeypatch.setattr(validator, "_ensure_cosmos_video_codec", lambda path: path)
+
+    target = tmp_path / "staged"
+    assert validator._stage_cosmos_split(annotations, archive, target) == 1
+
+    staged = json.loads((target / "annotations.json").read_text())
+    assert staged[0]["video_fps"] == 29.97
+    assert (target / "scene/clips/sample.mp4").read_bytes() == b"real-video-bytes"

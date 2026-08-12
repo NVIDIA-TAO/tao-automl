@@ -63,12 +63,25 @@ class AutoMLAlgorithmBase:
         logger.info(f"Loaded {len(self.custom_ranges)} custom parameter range(s) for experiment {experiment_id}")
 
         # Initialize random seeds to ensure different values across experiments
-        # Using context.id hash to get different seeds for different jobs
-        seed = hash(str(context.id)) % 2**31
+        # Use the job ID by default, while allowing composite algorithms to
+        # vary proposal seeds without changing the state-store job identity.
+        seed_identity = getattr(context, "automl_seed_identity", context.id)
+        seed = hash(str(seed_identity)) % 2**31
         np.random.seed(seed)
         random.seed(seed)
 
-        logger.info(f"Initialized random seed: {seed} for job {context.id}")
+        logger.info(
+            "Initialized random seed: %s for job %s (seed identity: %s)",
+            seed, context.id, seed_identity,
+        )
+
+    def on_recommendation_result(self, recommendation, history):
+        """Observe a controller result before algorithm state is persisted.
+
+        Most algorithms derive their state directly from controller history and
+        do not need a callback. Stateful algorithms may override this hook when
+        their persisted state must include the result that was just reported.
+        """
 
     def _training_budget_spec_overrides(self, num_epochs=None, interval=None):
         """Return dotted spec overrides for train budget keys.

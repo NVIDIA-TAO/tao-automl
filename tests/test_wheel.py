@@ -579,6 +579,16 @@ def test_hyperband_es_uses_metric_direction_for_promotion():
         automl.report_result(first_rung[0].id, 0.1, status="success")
         automl.report_result(first_rung[1].id, 0.9, status="success")
 
+        brain_state = automl._state_store.get_brain_info(automl._context.id)
+        assert [item["decision"] for item in brain_state["early_stop_decisions"]] == [
+            "keep", "keep"
+        ]
+        assert all(
+            item["reason"] == "insufficient_curve_points"
+            for item in brain_state["early_stop_decisions"]
+        )
+        assert all(item["epoch"] == 1 for item in brain_state["early_stop_decisions"])
+
         promoted = automl.next_recommendation()
         assert len(promoted) == 1
         assert promoted[0].id == 1
@@ -676,6 +686,130 @@ def test_pbt_two_generation_budget_and_resume_flow():
         assert automl.next_recommendation() == []
         assert automl.is_complete()
         assert automl.get_best().id == 1
+
+
+def test_pbt_integer_perturbation_supports_unbounded_limits(monkeypatch):
+    """PBT must not cast open-ended integer bounds to int."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={"train": {"epoch": 2, "checkpoint_interval": 1}},
+            settings={
+                "algorithm": "pbt",
+                "metric": "loss",
+                "automl_population_size": 2,
+                "automl_max_generations": 2,
+                "automl_eval_interval": 1,
+            },
+            automl_hyperparameters=["train.epoch"],
+        )
+        brain = automl._controller.brain
+        monkeypatch.setattr("tao_automl.brain.pbt.np.random.rand", lambda: 0.9)
+
+        config = {
+            "parameter": "train.epoch",
+            "value_type": "int",
+            "valid_min": 1,
+            "valid_max": float("inf"),
+        }
+        assert brain._perturb_parameter(config, 10) == 9
+
+
+def test_pbt_retains_best_checkpoint_across_generations():
+    """PBT final selection must include superior earlier generations."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={
+                "train": {
+                    "epoch": 2,
+                    "optm_lr": 1e-6,
+                    "checkpoint_interval": 1,
+                    "validation_interval": 1,
+                }
+            },
+            settings={
+                "algorithm": "pbt",
+                "metric": "accuracy",
+                "automl_population_size": 2,
+                "automl_max_generations": 2,
+                "automl_eval_interval": 1,
+            },
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        first = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        first[0].assign_job_id("best-generation-1")
+        first[1].assign_job_id("other-generation-1")
+        automl.report_result(first[0].id, 0.9, status="success")
+        automl.report_result(first[1].id, 0.8, status="success")
+
+        second = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        second[0].assign_job_id("member-0-generation-2")
+        second[1].assign_job_id("member-1-generation-2")
+        automl.report_result(second[0].id, 0.6, status="success")
+        automl.report_result(second[1].id, 0.7, status="success")
+
+        assert automl.next_recommendation() == []
+        best = automl.get_best()
+        assert best.result == 0.9
+        assert best.job_id == "best-generation-1"
+
+
+def test_pbt_prefers_terminal_generation_checkpoint_on_tie():
+    """Equal PBT scores should select the checkpoint that completed PBT."""
+    from tao_automl import AutoML
+
+    with tempfile.TemporaryDirectory() as d:
+        automl = AutoML(
+            workspace=d,
+            network="cosmos-rl",
+            train_specs={
+                "train": {
+                    "epoch": 2,
+                    "optm_lr": 1e-6,
+                    "checkpoint_interval": 1,
+                    "validation_interval": 1,
+                }
+            },
+            settings={
+                "algorithm": "pbt",
+                "metric": "accuracy",
+                "automl_population_size": 2,
+                "automl_max_generations": 2,
+                "automl_eval_interval": 1,
+            },
+            automl_hyperparameters=["train.optm_lr"],
+            custom_param_ranges={
+                "train.optm_lr": {"valid_min": 5e-7, "valid_max": 2e-6},
+            },
+        )
+
+        first = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        first[0].assign_job_id("member-0-generation-1")
+        first[1].assign_job_id("member-1-generation-1")
+        automl.report_result(first[0].id, 0.9, status="success")
+        automl.report_result(first[1].id, 0.9, status="success")
+
+        second = sorted(automl.next_recommendation(), key=lambda rec: rec.id)
+        second[0].assign_job_id("member-0-generation-2")
+        second[1].assign_job_id("member-1-generation-2")
+        automl.report_result(second[0].id, 0.9, status="success")
+        automl.report_result(second[1].id, 0.9, status="success")
+
+        assert automl.next_recommendation() == []
+        best = automl.get_best()
+        assert best.result == 0.9
+        assert best.job_id == "member-0-generation-2"
 
 
 # ---------------------------------------------------------------
