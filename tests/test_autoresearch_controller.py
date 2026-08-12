@@ -26,6 +26,8 @@ def test_first_json_object_normalizes_supported_shapes():
 def _brain(llm_response):
     brain = AutoresearchBrain.__new__(AutoresearchBrain)
     brain.parameters = [{"parameter": "train.optim.lr"}]
+    brain.custom_ranges = {}
+    brain.evolvable_text_parameters = set()
     brain.metric = "accuracy"
     brain.network = "action_recognition"
     brain.tracker = ExperimentTracker(metric_direction="maximize")

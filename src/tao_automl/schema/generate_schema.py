@@ -51,9 +51,28 @@ def generate_schema(neural_network_name, action=""):
             expConfig = imported_module.ExperimentConfig()
     json_with_meta_config = dataclass2json_converter.dataclass_to_json(expConfig)
     schema = dataclass2json_converter.create_json_schema(json_with_meta_config)
+    if neural_network_name == "cosmos-rl" and action in {"evaluate", "inference"}:
+        schema = _unwrap_cosmos_non_train_action_schema(schema, action)
     # Only keep relevant top-level keys
     valid_actions = enum_constants._get_valid_config_json_param_for_network(neural_network_name, "actions")
     schema = filter_schema(schema, valid_actions, action)
+    return schema
+
+
+def _unwrap_cosmos_non_train_action_schema(schema, action):
+    """Align Cosmos non-train schemas with their flat runtime TOML contracts."""
+    action_properties = schema.get("properties", {}).pop(action, {})
+    action_defaults = schema.get("default", {}).pop(action, {})
+    nested_properties = action_properties.get("properties", {})
+
+    if isinstance(nested_properties, dict):
+        for key, value in nested_properties.items():
+            schema["properties"].setdefault(key, value)
+
+    if isinstance(action_defaults, dict):
+        for key, value in action_defaults.items():
+            schema["default"].setdefault(key, value)
+
     return schema
 
 

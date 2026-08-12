@@ -168,6 +168,19 @@ def test_controller_full_loop():
         assert ctrl.get_progress()["completed"] == 5
 
 
+def test_controller_persists_structured_feedback():
+    with tempfile.TemporaryDirectory() as d:
+        ctrl, store, ctx = _make_ctrl(d, 1)
+        rec = ctrl.next_recommendation()[0]
+        feedback = {"incorrect_sample_ids": ["sample-2"]}
+
+        ctrl.report_result(rec.id, 0.5, feedback=feedback)
+
+        assert ctrl.get_history()[0].feedback == feedback
+        saved = store.get_controller_info(ctx.id)
+        assert saved[0]["feedback"] == feedback
+
+
 def test_controller_persistence():
     from tao_automl.controller.controller import Controller
     with tempfile.TemporaryDirectory() as d:

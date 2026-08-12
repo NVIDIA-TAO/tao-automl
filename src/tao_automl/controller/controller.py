@@ -170,7 +170,9 @@ class Controller:
         self.save_state()
         return recommendations
 
-    def report_result(self, rec_id, metric_value, best_epoch=None, status="success"):
+    def report_result(
+        self, rec_id, metric_value, best_epoch=None, status="success", feedback=None
+    ):
         """Feed back a training result.
 
         Thread/process-safe: acquires the state store's global lock so
@@ -182,6 +184,7 @@ class Controller:
                 sessions, pass a dict keyed by objective metric name.
             best_epoch: Best epoch number (optional).
             status: ``"success"`` or ``"failure"``.
+            feedback: Optional JSON-safe diagnostic details for reflective brains.
         """
         with self.state_store.lock():
             rec = self._find_rec(rec_id)
@@ -213,6 +216,10 @@ class Controller:
                 rec.objective_values = objective_values
                 rec.objective_score = objective_score
             rec.update_status(rec_status)
+            if feedback is not None:
+                rec.feedback = normalize_json_value(
+                    feedback, path="recommendation.feedback"
+                )
             if best_epoch is not None:
                 rec.best_epoch_number = best_epoch
 
@@ -442,6 +449,7 @@ class Controller:
                 "objective_values": dict(r.objective_values),
                 "failure_reason": getattr(r, "failure_reason", None),
                 "adjustments": getattr(r, "adjustments", []),
+                "feedback": getattr(r, "feedback", None),
                 "created_on": r.created_on,
                 "last_modified": r.last_modified,
             })
@@ -688,6 +696,9 @@ class Controller:
                 rec.resume_from_step = rec_dict.get("resume_from_step")
                 rec.checkpoint_window = int(rec_dict.get("checkpoint_window", 0) or 0)
                 rec.early_stop_epoch = rec_dict.get("early_stop_epoch")
+                rec.failure_reason = rec_dict.get("failure_reason")
+                rec.adjustments = rec_dict.get("adjustments", [])
+                rec.feedback = rec_dict.get("feedback")
                 rec.created_on = rec_dict.get("created_on", "")
                 rec.last_modified = rec_dict.get("last_modified", "")
                 controller.history.append(rec)
@@ -802,6 +813,7 @@ class Controller:
             "early_stop_epoch": rec.early_stop_epoch,
             "failure_reason": getattr(rec, "failure_reason", None),
             "adjustments": getattr(rec, "adjustments", []),
+            "feedback": getattr(rec, "feedback", None),
             "created_on": rec.created_on,
             "last_modified": rec.last_modified,
         }
