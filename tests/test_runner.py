@@ -1166,8 +1166,8 @@ def test_extract_metric_reads_cosmos_best_score_json(tmp_path):
     from tao_automl.runner import _extract_metric_from_local_results
 
     best_score = (
-        tmp_path / "results" / "job-1" / "train_output_dir" / "best"
-        / "best_score.json"
+        tmp_path / "results" / "job-1" / "train_output_dir" / "best" /
+        "best_score.json"
     )
     best_score.parent.mkdir(parents=True)
     best_score.write_text(
@@ -1247,9 +1247,9 @@ def test_non_streaming_terminal_scan_finds_early_fail_with_cached_metric():
     from tao_automl.runner import _extract_metric_from_logs, _scan_terminal_logs
 
     full_logs = (
-        "Execution status: FAIL\n"
-        + "noise\n" * 10_001
-        + "accuracy: 0.9\n"
+        "Execution status: FAIL\n" +
+        "noise\n" * 10_001 +
+        "accuracy: 0.9\n"
     )
 
     class LegacySDK:
@@ -1484,6 +1484,7 @@ def test_promoted_metric_missing_checkpoint_carries_forward_prior_metric(
     )
 
     assert result["best"]["metric_value"] == 0.42
+    assert result["history"][0]["job_id"] == "child-job"
     assert result["history"][0]["status"] == JobStates.success
 
 
@@ -2138,6 +2139,40 @@ def test_run_one_job_accepts_multi_objective_eval_callback(tmp_path):
     assert metric == {"val_mAP": pytest.approx(0.76), "latency": 20.0}
 
 
+def test_run_one_job_does_not_relabel_training_metric_when_eval_is_missing(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    fake_sdk = MagicMock()
+    fake_sdk.create_job.return_value = MagicMock(
+        id="job-eval-missing", backend_job_id="be-eval-missing",
+    )
+    fake_sdk.get_job_status.return_value = MagicMock(status="Complete")
+    fake_sdk.get_job_logs.return_value = "BERTScore_F1: 0.12\n"
+
+    runner = AutoMLRunner(sdk=fake_sdk, skill_dir=skill_dir, action="train")
+    runner._poll_interval = 0
+    rec = MagicMock(id=5)
+
+    with patch(
+        "tao_sdk.script_runner.build_entrypoint",
+        return_value={"command": "BAKED_HEREDOC_COMMAND", "args_template": ""},
+    ):
+        metric, status = runner._run_one_job(
+            image="nvcr.io/test:1",
+            action_cfg=runner.skill_ctx.action_cfg,
+            specs={"train": {"num_epochs": 1}},
+            rec=rec,
+            metric_name="BERTScore_F1",
+            eval_fn=lambda recommendation, job_id: None,
+            workspace_path=str(tmp_path),
+            platform_kwargs={},
+        )
+
+    assert metric is None
+    assert status == "metric_missing"
+
+
 def test_run_one_job_submits_nested_specs_to_python_script_sdk(tmp_path):
     """Python actions bypass the container entrypoint and image API."""
     from tao_automl.runner import AutoMLRunner
@@ -2601,14 +2636,40 @@ def test_artifact_cleanup_preserves_best_active_and_resume_dependency(tmp_path):
 
     runner._prune_intermediate_artifacts(automl, completed=False)
 
-    assert sdk.deleted == ["job-failed", "job-loser"]
+    # Failed trials are retained by default: their logs/spec are the only
+    # record of why the recommendation died, and they hold no checkpoint.
+    assert sdk.deleted == ["job-loser"]
+    assert "job-failed" not in sdk.deleted
     assert "job-best" not in sdk.deleted
     assert "job-active" not in sdk.deleted
     assert "job-parent" not in sdk.deleted
 
     runner._active_jobs.clear()
     runner._prune_intermediate_artifacts(automl, completed=True)
-    assert sdk.deleted == ["job-failed", "job-loser", "job-parent"]
+    assert sdk.deleted == ["job-loser", "job-parent"]
+    assert "job-failed" not in sdk.deleted
+    assert "job-best" not in sdk.deleted
+
+
+def test_failed_artifacts_pruned_when_retention_disabled(tmp_path):
+    """automl_retain_failed_artifacts=False restores the prune-everything behaviour."""
+    from tao_automl.runner import AutoMLRunner
+
+    sdk = _ArtifactSDK()
+    runner = AutoMLRunner(sdk=sdk, skill_dir=_write_fake_skill(tmp_path))
+    runner._delete_intermediate_ckpt = True
+    runner._algorithm = "bayesian"
+    runner._retain_failed_artifacts = False
+
+    best = _retention_rec(0, "job-best", "success", 0.9)
+    failed = _retention_rec(2, "job-failed", "failure")
+    automl = _RetentionAutoML([best, failed], best=best)
+    for rec in (best, failed):
+        runner._record_terminal_job(rec.job_id, rec.status)
+
+    runner._prune_intermediate_artifacts(automl, completed=True)
+
+    assert "job-failed" in sdk.deleted
     assert "job-best" not in sdk.deleted
 
 
@@ -2627,11 +2688,15 @@ def test_multifidelity_defers_successful_artifact_cleanup_until_complete(tmp_pat
     for rec in (best, loser, failed):
         runner._record_terminal_job(rec.job_id, rec.status)
 
+    # Mid-search, multi-fidelity defers pruning successful trials (they may be
+    # promotion/resume inputs) and now also retains the failed one, so nothing
+    # is deleted yet.
     runner._prune_intermediate_artifacts(automl, completed=False)
-    assert sdk.deleted == ["job-failed"]
+    assert sdk.deleted == []
 
     runner._prune_intermediate_artifacts(automl, completed=True)
-    assert sdk.deleted == ["job-failed", "job-loser"]
+    assert sdk.deleted == ["job-loser"]
+    assert "job-failed" not in sdk.deleted
     assert "job-best" not in sdk.deleted
 
 
@@ -2808,7 +2873,10 @@ def test_hybrid_retains_all_successes_without_verified_full_fidelity_winner(tmp_
     runner._prune_intermediate_artifacts(automl, completed=False)
     runner._prune_intermediate_artifacts(automl, completed=True)
 
-    assert sdk.deleted == ["job-failed"]
+    # Every success is retained (no verified full-fidelity winner), and the
+    # failed trial is retained for diagnosis -- so nothing is pruned at all.
+    assert sdk.deleted == []
+    assert "job-failed" not in sdk.deleted
     assert "job-low-fidelity-best" not in sdk.deleted
     assert "job-possible-full-fidelity" not in sdk.deleted
 
@@ -3100,6 +3168,9 @@ def test_artifact_cleanup_warns_when_sdk_capability_is_absent(tmp_path, caplog):
 
     runner = AutoMLRunner(sdk=object(), skill_dir=_write_fake_skill(tmp_path))
     runner._delete_intermediate_ckpt = True
+    # This test exercises the missing-capability warning, not retention policy;
+    # opt out of failed-artifact retention so a prune is actually attempted.
+    runner._retain_failed_artifacts = False
     loser = _retention_rec(0, "job-loser", "failure")
     automl = _RetentionAutoML([loser])
     runner._record_terminal_job(loser.job_id, loser.status)
@@ -3808,7 +3879,7 @@ def test_programmatic_run_registers_runner_and_cancels_on_exception(
         rec.assign_job_id("job-interrupted")
         self._active_jobs[rec.id] = rec.job_id
         self._persist_active_jobs(kwargs["workspace_path"])
-        assert runner_module._runner is self
+        assert runner_module._runner_state["runner"] is self
         assert handlers[runner_module.signal.SIGINT] is runner_module._signal_handler
         assert handlers[runner_module.signal.SIGTERM] is runner_module._signal_handler
         raise RuntimeError("orchestrator interrupted")
@@ -3831,7 +3902,7 @@ def test_programmatic_run_registers_runner_and_cancels_on_exception(
     sdk = _ArtifactSDK()
     monkeypatch.setattr("tao_automl.AutoML", InterruptedAutoML)
     monkeypatch.setattr(AutoMLRunner, "_run_one_job", interrupt_job)
-    monkeypatch.setattr(runner_module, "_runner", None)
+    monkeypatch.setitem(runner_module._runner_state, "runner", None)
     monkeypatch.setattr(runner_module.signal, "getsignal", fake_getsignal)
     monkeypatch.setattr(runner_module.signal, "signal", fake_signal)
     runner = AutoMLRunner(sdk=sdk, skill_dir=_write_fake_skill(tmp_path))
@@ -3848,7 +3919,7 @@ def test_programmatic_run_registers_runner_and_cancels_on_exception(
 
     assert sdk.canceled == ["job-interrupted"]
     assert sdk.deleted == ["job-interrupted"]
-    assert runner_module._runner is None
+    assert runner_module._runner_state["runner"] is None
     assert handlers == {
         runner_module.signal.SIGINT: host_sigint,
         runner_module.signal.SIGTERM: host_sigterm,
@@ -3860,7 +3931,7 @@ def test_signal_handler_defers_cleanup_until_interrupted_stack_unwinds(monkeypat
     import tao_automl.runner as runner_module
 
     registered = MagicMock()
-    monkeypatch.setattr(runner_module, "_runner", registered)
+    monkeypatch.setitem(runner_module._runner_state, "runner", registered)
 
     with pytest.raises(SystemExit) as exc_info:
         runner_module._signal_handler(signal.SIGTERM, None)
@@ -4573,8 +4644,8 @@ def test_apply_resume_checkpoint_sets_training_checkpoint_path(tmp_path):
     )
 
     assert (
-        updated["train"]["resume_training_checkpoint_path"]
-        == "/results/parent-job/results_dir/train/model_epoch_001.pth"
+        updated["train"]["resume_training_checkpoint_path"] ==
+        "/results/parent-job/results_dir/train/model_epoch_001.pth"
     )
     assert rec.resume_checkpoint_path.endswith("model_epoch_001.pth")
 
@@ -4626,6 +4697,41 @@ def test_apply_resume_checkpoint_resolves_zero_indexed_bounded_best(tmp_path):
     assert rec.resume_checkpoint_missing is False
 
 
+def test_apply_resume_checkpoint_enables_companion_resume_flag(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    template = skill_dir / "references/spec_template_train.yaml"
+    template.write_text(
+        "train:\n"
+        "  num_epochs: 2\n"
+        "  resume: false\n"
+        "  resume_training_checkpoint_path: null\n"
+    )
+    results_root = tmp_path / "results"
+    checkpoint = (
+        results_root / "parent-job" / "results_dir" / "train" / "epoch_1.pth"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_text("checkpoint")
+
+    runner = AutoMLRunner(sdk=MagicMock(), skill_dir=skill_dir, action="train")
+    rec = MagicMock(id=2, resume_from_job_id="parent-job", resume_from_epoch=1)
+    updated = runner._apply_resume_checkpoint(
+        {
+            "train": {
+                "resume": False,
+                "resume_training_checkpoint_path": None,
+            }
+        },
+        rec,
+        {"mounts": [{"host_path": str(results_root), "container_path": "/results"}]},
+    )
+
+    assert updated["train"]["resume"] is True
+    assert updated["train"]["resume_training_checkpoint_path"].endswith("epoch_1.pth")
+
+
 def test_apply_resume_checkpoint_does_not_use_latest_for_requested_epoch(tmp_path):
     from tao_automl.runner import AutoMLRunner
 
@@ -4654,23 +4760,65 @@ def test_apply_resume_checkpoint_does_not_use_latest_for_requested_epoch(tmp_pat
     assert rec.resume_checkpoint_path is None
 
 
+def test_apply_resume_checkpoint_advances_nvpanoptix3d_terminal_epoch(tmp_path):
+    from tao_automl.runner import AutoMLRunner
+
+    skill_dir = _write_fake_skill(tmp_path)
+    info = skill_dir / "references/skill_info.yaml"
+    info.write_text(info.read_text().replace("network_arch: fake-net", "network_arch: nvpanoptix3d"))
+    (skill_dir / "references/spec_template_train.yaml").write_text(
+        "train:\n"
+        "  num_epochs: 1\n"
+        "  resume_training_checkpoint_path: ''\n"
+    )
+
+    results_root = tmp_path / "results"
+    checkpoint = (
+        results_root / "parent-job" / "results_dir" / "train" /
+        "model_epoch_000_step_00010.pth"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_text("checkpoint")
+
+    runner = AutoMLRunner(sdk=MagicMock(), skill_dir=skill_dir, action="train")
+    rec = MagicMock(id=2, resume_from_job_id="parent-job", resume_from_epoch=1)
+    updated = runner._apply_resume_checkpoint(
+        {
+            "train": {
+                "num_epochs": 2,
+                "resume_training_checkpoint_path": "",
+            }
+        },
+        rec,
+        {"mounts": [{"host_path": str(results_root), "container_path": "/results"}]},
+    )
+
+    assert updated["train"]["num_epochs"] == 3
+    assert updated["train"]["resume_training_checkpoint_path"].endswith(
+        "model_epoch_000_step_00010.pth"
+    )
+
+
 def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
     from tao_automl.runner import AutoMLRunner
 
     skill_dir = _write_fake_skill(tmp_path)
+    info = skill_dir / "references/skill_info.yaml"
+    info.write_text(info.read_text().replace("network_arch: fake-net", "network_arch: cosmos-rl"))
     template = skill_dir / "references/spec_template_train.yaml"
     template.write_text("train:\n  resume: false\n  epoch: 2\n")
 
     results_root = tmp_path / "results"
     checkpoint_dir = (
-        results_root / "parent-job" / "train_output_dir" / "run1"
-        / "checkpoints" / "epoch_1"
+        results_root / "parent-job" / "train_output_dir" / "run1" /
+        "checkpoints" / "epoch_1"
     )
     (checkpoint_dir / "policy").mkdir(parents=True)
+    (checkpoint_dir / "policy" / "cosmos_config").write_text("config")
     (checkpoint_dir / "policy" / "model_rank_0.pth").write_text("checkpoint")
     safetensor_dir = (
-        results_root / "parent-job" / "train_output_dir" / "run1"
-        / "safetensors" / "epoch_1"
+        results_root / "parent-job" / "train_output_dir" / "run1" /
+        "safetensors" / "epoch_1"
     )
     safetensor_dir.mkdir(parents=True)
     (safetensor_dir / "adapter_model.safetensors").write_text("adapter")
@@ -4685,8 +4833,8 @@ def test_apply_resume_checkpoint_sets_cosmos_resume_to_checkpoint_dir(tmp_path):
     )
 
     assert (
-        updated["train"]["resume"]
-        == "/results/parent-job/train_output_dir/run1/checkpoints/epoch_1"
+        updated["train"]["resume"] ==
+        "/results/parent-job/train_output_dir/run1/checkpoints/epoch_1/policy"
     )
 
 

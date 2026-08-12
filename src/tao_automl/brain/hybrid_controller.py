@@ -64,6 +64,9 @@ class HybridStrategist:
         self.enable_range_narrowing = enable_range_narrowing
         self.completed_phases: List[Dict[str, Any]] = []
         self.full_history: List[Dict[str, Any]] = []
+        self._restored_llm_usage: Dict[str, Any] = {}
+        self.invalid_plan_responses = 0
+        self.fallback_plans = 0
 
     def plan_next_phase(
         self,
@@ -84,13 +87,68 @@ class HybridStrategist:
             enable_range_narrowing=self.enable_range_narrowing,
         )
 
-        response = self.llm_client.chat(messages, json_mode=True, temperature=0.5)
-
-        if not response.ok or response.json_content is None:
-            logger.warning("Hybrid strategist LLM call failed: %s", response.error)
-            return None
-
-        plan = response.json_content
+        plan = None
+        for semantic_attempt in range(2):
+            response = self.llm_client.chat(messages, json_mode=True, temperature=0.5)
+            if not response.ok or response.json_content is None:
+                logger.warning("Hybrid strategist LLM call failed: %s", response.error)
+                return None
+            plan = self._normalize_plan_payload(response.json_content)
+            if (
+                plan is not None and
+                self.full_history and
+                not self._reasoning_cites_prior_metric(plan, metric_name)
+            ):
+                self.invalid_plan_responses += 1
+                logger.warning(
+                    "Hybrid strategist reasoning did not cite prior %s metric "
+                    "(semantic attempt %d/2)",
+                    metric_name,
+                    semantic_attempt + 1,
+                )
+                messages = messages + [{
+                    "role": "user",
+                    "content": (
+                        "Your reasoning must explicitly cite the prior "
+                        f"{metric_name} metric name and measured value used to "
+                        "choose this next phase. Return the corrected plan JSON."
+                    ),
+                }]
+                plan = None
+                continue
+            if plan is not None:
+                break
+            self.invalid_plan_responses += 1
+            logger.warning(
+                "Hybrid strategist returned no valid plan object (semantic attempt %d/2)",
+                semantic_attempt + 1,
+            )
+            messages = messages + [{
+                "role": "user",
+                "content": (
+                    "Your previous response was not a usable plan. Return exactly one JSON "
+                    "object with action, algorithm, parameters, trials, and reasoning fields."
+                ),
+            }]
+        if plan is None:
+            self.fallback_plans += 1
+            plan = {
+                "action": "sweep",
+                "algorithm": "bayesian",
+                "parameters": [
+                    parameter["parameter"] for parameter in available_parameters[:5]
+                ],
+                "trials": 1,
+                "reasoning": (
+                    "Deterministic safety fallback after two successful LLM calls "
+                    "returned no usable plan object."
+                ),
+                "fallback": True,
+            }
+            logger.warning(
+                "Hybrid strategist exhausted semantic retries; using a one-trial "
+                "Bayesian safety plan"
+            )
         plan = self._validate_plan(plan, available_parameters)
 
         logger.info(
@@ -104,6 +162,46 @@ class HybridStrategist:
 
         return plan
 
+    @staticmethod
+    def _reasoning_cites_prior_metric(
+        plan: Dict[str, Any], metric_name: str
+    ) -> bool:
+        """Require result-informed phases to expose their metric evidence."""
+        reasoning = str(plan.get("reasoning", "")).lower()
+        return metric_name.lower() in reasoning and any(
+            character.isdigit() for character in reasoning
+        )
+
+    @staticmethod
+    def _normalize_plan_payload(payload: Any) -> Optional[Dict[str, Any]]:
+        """Extract the first plan object from common JSON response wrappers."""
+        if isinstance(payload, dict):
+            for key in ("plan", "phase", "next_phase"):
+                if key in payload and isinstance(payload[key], (dict, list)):
+                    nested = HybridStrategist._normalize_plan_payload(payload[key])
+                    if nested is not None:
+                        return nested
+            for key in ("plans", "phases"):
+                if key in payload and isinstance(payload[key], list):
+                    nested = HybridStrategist._normalize_plan_payload(payload[key])
+                    if nested is not None:
+                        return nested
+            return payload
+        if isinstance(payload, list):
+            valid_plans = []
+            for item in payload:
+                nested = HybridStrategist._normalize_plan_payload(item)
+                if nested is not None:
+                    valid_plans.append(nested)
+            if valid_plans:
+                if len(payload) != 1 or len(valid_plans) != 1:
+                    logger.warning(
+                        "Hybrid strategist returned %d plan entries; using the first valid plan",
+                        len(payload),
+                    )
+                return valid_plans[0]
+        return None
+
     def record_phase_results(
         self,
         phase_plan: Dict[str, Any],
@@ -113,11 +211,38 @@ class HybridStrategist:
         reverse_sort: bool = False,
     ):
         """Record results of a completed phase for history tracking."""
-        successes = [
-            result for result in results
+        prior_metrics = [
+            result["metric"] for result in self.full_history
             if result.get("status") == "success" and result.get("metric") is not None
         ]
-        failures = [result for result in results if result.get("status") == "failure"]
+        current_metrics = [
+            result["metric"] for result in results
+            if result.get("status") == "success" and result.get("metric") is not None
+        ]
+        all_metrics = prior_metrics + current_metrics
+        global_best_metric = None
+        if all_metrics:
+            global_best_metric = (max if reverse_sort else min)(all_metrics)
+
+        annotated_results = []
+        for result in results:
+            annotated = copy.deepcopy(result)
+            if annotated.get("status") == "success" and annotated.get("metric") is not None:
+                annotated["decision"] = (
+                    "keep" if annotated["metric"] == global_best_metric
+                    else "discard"
+                )
+            else:
+                annotated["decision"] = "discard"
+            annotated_results.append(annotated)
+
+        successes = [
+            result for result in annotated_results
+            if result.get("status") == "success" and result.get("metric") is not None
+        ]
+        failures = [
+            result for result in annotated_results if result.get("status") == "failure"
+        ]
         ordered_successes = sorted(
             successes,
             key=lambda result: result["metric"],
@@ -131,12 +256,13 @@ class HybridStrategist:
             "num_failure": len(failures),
             "best_config": best_config,
             "best_metric": best_metric,
+            "global_best_metric": global_best_metric,
             "top_results": ordered_successes[:5],
             "bottom_results": ordered_successes[-5:],
             "failed_results": failures[:5],
         }
         self.completed_phases.append(phase_record)
-        self.full_history.extend(results)
+        self.full_history.extend(annotated_results)
 
     def should_stop(self) -> bool:
         """Check if the strategist recommends stopping."""
@@ -438,7 +564,25 @@ class HybridStrategist:
             "enable_range_narrowing": self.enable_range_narrowing,
             "completed_phases": self.completed_phases,
             "full_history": self.full_history,
+            "llm_usage": self._combined_llm_usage(),
+            "invalid_plan_responses": self.invalid_plan_responses,
+            "fallback_plans": self.fallback_plans,
         }
+
+    def _combined_llm_usage(self) -> Dict[str, Any]:
+        """Return cumulative usage, including calls made before a resume."""
+        usage = getattr(getattr(self, "llm_client", None), "usage", None)
+        current = usage.to_dict() if usage is not None and hasattr(usage, "to_dict") else {}
+        keys = (
+            "prompt_tokens", "completion_tokens", "total_tokens", "num_calls",
+            "total_latency_ms", "errors",
+        )
+        combined = {
+            key: self._restored_llm_usage.get(key, 0) + current.get(key, 0)
+            for key in keys
+        }
+        combined["total_latency_ms"] = round(combined["total_latency_ms"], 1)
+        return combined
 
     @classmethod
     def from_dict(
@@ -456,6 +600,9 @@ class HybridStrategist:
         )
         strategist.completed_phases = data.get("completed_phases", [])
         strategist.full_history = data.get("full_history", [])
+        strategist._restored_llm_usage = data.get("llm_usage", {})
+        strategist.invalid_plan_responses = int(data.get("invalid_plan_responses", 0))
+        strategist.fallback_plans = int(data.get("fallback_plans", 0))
         return strategist
 
 
@@ -678,6 +825,8 @@ class HybridBrain:
             return 2
         if remaining_budget >= 4:
             return 1
+        if remaining_budget >= 2:
+            return 1
         return 0
 
     def _parameters_for_planning(self) -> List[Dict[str, Any]]:
@@ -755,9 +904,17 @@ class HybridBrain:
                         plan["applied_parameter_overrides"],
                     )
             algo_params = AlgorithmParams.from_dict(plan.get("algorithm_params", {}))
+            # A fresh sub-brain with the same seed would replay the same first
+            # proposal in every Hybrid phase. Preserve context.id because it is
+            # also the state-store key, and vary only the explicit seed identity.
+            phase_context = copy.copy(self.context)
+            phase_number = len(self.strategist.completed_phases) + 1
+            phase_context.automl_seed_identity = (
+                f"{self.context.id}-hybrid-phase-{phase_number}"
+            )
             self.current_sub_brain = BrainFactory.create_brain(
                 algorithm=algorithm,
-                context=self.context,
+                context=phase_context,
                 state_store=self.state_store,
                 network=self.network,
                 parameters=phase_params,

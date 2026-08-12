@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from tao_automl.brain.llm_client import LLMClient
+from tao_automl.brain.llm_client import LLMClient, first_json_object
 from tao_automl.brain.prompts.nl_config_prompts import build_nl_config_prompt
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class NLConfigGenerator:
         if not response.ok:
             raise ValueError(f"LLM config generation failed: {response.error}")
 
-        config = response.json_content
+        config = first_json_object(response.json_content)
         if config is None:
             raise ValueError("Could not parse LLM response as JSON")
 

@@ -15,6 +15,15 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 
+def first_json_object(value: Any) -> Optional[Dict[str, Any]]:
+    """Return an object from normal or list-wrapped JSON model output."""
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, list):
+        return next((item for item in value if isinstance(item, dict)), None)
+    return None
+
+
 @dataclass
 class LLMConfig:
     """Configuration for LLM client, resolved from params -> env -> defaults."""

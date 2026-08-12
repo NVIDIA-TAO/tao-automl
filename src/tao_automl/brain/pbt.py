@@ -154,7 +154,13 @@ class PBT(AutoMLAlgorithmBase):
             else:
                 new_value = current_value - delta
 
-            new_value = max(int(v_min), min(int(v_max), new_value))
+            # Integer parameters may legitimately have an open-ended bound (for
+            # example, Grounding DINO's lr_step_size has valid_max=+inf).  Clamp
+            # only against finite limits instead of attempting int(inf).
+            if np.isfinite(float(v_min)):
+                new_value = max(int(v_min), new_value)
+            if np.isfinite(float(v_max)):
+                new_value = min(int(v_max), new_value)
             return new_value
 
         if data_type == "ordered_int":
@@ -211,7 +217,6 @@ class PBT(AutoMLAlgorithmBase):
 
     def _exploit_and_explore(self, member_id, population_results, member_job_id=None):
         """Apply exploit (copy better member) and explore (perturb) to a member"""
-        member_result = self.population[member_id]["result"]
         member_rank = next(
             (i for i, (mid, _) in enumerate(population_results) if mid == member_id),
             len(population_results) - 1
@@ -223,7 +228,7 @@ class PBT(AutoMLAlgorithmBase):
 
         top_rank = int(0.2 * len(population_results))
         top_members = population_results[:max(1, top_rank)]
-        source_id, source_result = top_members[np.random.randint(len(top_members))]
+        source_id, _ = top_members[np.random.randint(len(top_members))]
 
         new_specs = copy.deepcopy(self.population[source_id]["specs"])
 

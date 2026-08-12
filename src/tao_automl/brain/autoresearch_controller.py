@@ -16,7 +16,7 @@ import numpy as np
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
-from tao_automl.brain.llm_client import LLMClient
+from tao_automl.brain.llm_client import LLMClient, first_json_object
 from tao_automl.brain.llm_analyzer import LLMAnalyzer
 from tao_automl.brain.knowledge_retriever import KnowledgeRetriever
 from tao_automl.brain.spec_prescreener import SpecPrescreener
@@ -236,8 +236,8 @@ class AutoresearchBrain:
 
         if len(candidates) > 1:
             logger.info(
-                "Pre-screener selected candidate %d/%d from %d proposals",
-                best_idx + 1, len(recommended), len(candidates),
+                "Pre-screener selected candidate %d of %d proposals (%d recommended)",
+                best_idx + 1, len(candidates), len(recommended),
             )
 
         verification = self.verifier.verify_spec(
@@ -273,6 +273,7 @@ class AutoresearchBrain:
     def record_result(self, spec, metric_value, status, job_id=None, feedback=None):
         """Record an experiment result and make keep/discard decision."""
         modifications = self._extract_modifications(spec)
+        previous_best_metric = self.tracker.best_metric
 
         entry = self.tracker.record_experiment(
             spec=spec,
@@ -292,6 +293,8 @@ class AutoresearchBrain:
                     "feedback": feedback,
                 },
                 modifications=modifications,
+                previous_best_metric=previous_best_metric,
+                expected_decision=entry.decision,
             )
             entry.reasoning = reasoning
 
@@ -419,13 +422,27 @@ class AutoresearchBrain:
         if not response.ok or response.json_content is None:
             return None
 
-        return response.json_content
+        return first_json_object(response.json_content)
 
     def _get_keep_discard_reasoning(
-        self, current_result: Dict[str, Any], modifications: Dict[str, Any]
+        self,
+        current_result: Dict[str, Any],
+        modifications: Dict[str, Any],
+        previous_best_metric: Optional[float],
+        expected_decision: str,
     ) -> str:
         """Get LLM reasoning for keep/discard decision."""
-        best_result = {"metric": self.tracker.best_metric or 0.0}
+        best_result = {"metric": previous_best_metric}
+        if previous_best_metric is None:
+            fallback_reasoning = (
+                f"{expected_decision.title()} as the first measured {self.metric} result; "
+                "there is no previous best."
+            )
+        else:
+            fallback_reasoning = (
+                f"{expected_decision.title()} based on the measured {self.metric} "
+                f"relative to the previous best ({best_result['metric']})."
+            )
         messages = build_keep_discard_prompt(
             current_result=current_result,
             best_result=best_result,
@@ -435,9 +452,18 @@ class AutoresearchBrain:
         )
 
         response = self.llm_client.chat(messages, json_mode=True, temperature=0.2)
-        if response.ok and response.json_content:
-            return response.json_content.get("reasoning", "")
-        return ""
+        response_data = first_json_object(response.json_content) if response.ok else None
+        if response_data:
+            llm_decision = str(response_data.get("decision", "")).lower()
+            if llm_decision and llm_decision != expected_decision:
+                logger.warning(
+                    "Ignoring inconsistent LLM decision %s; tracker decision is %s",
+                    llm_decision,
+                    expected_decision,
+                )
+                return fallback_reasoning
+            return response_data.get("reasoning") or fallback_reasoning
+        return fallback_reasoning
 
     def _extract_modifications(self, spec: Dict[str, Any]) -> Dict[str, Any]:
         """Extract modifications from a spec dict."""
@@ -487,7 +513,12 @@ class AutoresearchBrain:
             v_max = p.get("valid_max", "")
             if name in self.evolvable_text_parameters:
                 lines.append(f"{name} (free-form evolvable text)")
+            elif dtype in ("categorical", "ordered"):
+                options = get_valid_options(p, self.custom_ranges) or []
+                lines.append(f"{name} ({dtype}): {options}")
             else:
+                v_min = p.get("valid_min", "")
+                v_max = p.get("valid_max", "")
                 lines.append(f"{name} ({dtype}): [{v_min}, {v_max}]")
         return "\n".join(lines)
 

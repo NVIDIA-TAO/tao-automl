@@ -146,11 +146,16 @@ class ExperimentTracker:
                 self.best_spec = deepcopy(spec)
                 self.best_metric = metric
                 self.best_experiment_id = entry.experiment_id
-                logger.info(
-                    "Experiment %d: KEEP (metric=%.4f, improved from %.4f)",
-                    entry.experiment_id, metric,
-                    previous_best if previous_best is not None else 0.0,
-                )
+                if previous_best is None:
+                    logger.info(
+                        "Experiment %d: KEEP (metric=%.4f, established initial best)",
+                        entry.experiment_id, metric,
+                    )
+                else:
+                    logger.info(
+                        "Experiment %d: KEEP (metric=%.4f, improved from %.4f)",
+                        entry.experiment_id, metric, previous_best,
+                    )
             else:
                 logger.info(
                     "Experiment %d: DISCARD (metric=%.4f, best=%.4f)",

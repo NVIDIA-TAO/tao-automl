@@ -30,6 +30,33 @@ _VALID_TYPES = [
     "collection", "dict",
 ]
 
+# Top-level spec blocks that belong to a specific action. A network's schema
+# carries every block regardless of which action is being optimized, so a
+# `train` run would otherwise sample parameters out of `distill`, `quantize`,
+# etc. Those leaves are inert for the running action -- they change nothing in
+# the job, but they consume search-budget dimensions and pollute the reported
+# best-recommendation spec. Blocks not listed here (dataset, model, results_dir,
+# wandb, ...) are shared and stay searchable for every action.
+_ACTION_SCOPED_BLOCKS = frozenset({
+    "distill",
+    "evaluate",
+    "export",
+    "gen_trt_engine",
+    "inference",
+    "prune",
+    "quantize",
+    "retrain",
+    "train",
+    "dataset_convert",
+})
+
+# Actions that run an epoch-based training loop and therefore read the shared
+# `train` block (optimizer, epochs, checkpoint interval) in addition to their
+# own. `distill` is the load-bearing case: TAO distillation takes its teacher
+# config from `distill.*` but its optimizer from `train.*`, so `train` must stay
+# searchable there.
+_TRAINING_FAMILY_ACTIONS = frozenset({"train", "distill", "retrain"})
+
 _TORCHAO_SUPPORTED_QUANTIZE_MODES = ["weight_only_ptq"]
 _TORCHAO_SUPPORTED_QUANTIZE_ALGORITHMS = ["minmax"]
 _MODELOPT_PYTORCH_SUPPORTED_QUANTIZE_MODES = ["static_ptq"]
@@ -98,7 +125,7 @@ def generate_hyperparams_to_search(
     else:
         try:
             json_schema = generate_schema(network_arch, action)
-        except (ImportError, KeyError, TypeError, ValueError) as e:
+        except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError) as e:
             logger.info("Error generating schema for network: %s", network_arch)
             logger.info("Network: %s, Action: %s", network, action)
             raise RuntimeError(
@@ -122,8 +149,34 @@ def generate_hyperparams_to_search(
     # Build a flat property map from the schema
     format_json_schema = flatten_properties(json_schema["properties"])
 
-    # ---- Network-specific exclusions ----
+    # ---- Action-scoped exclusions ----
     params_to_exclude = set()
+
+    # Drop leaves that live under a different action's block. Optimizing `train`
+    # must not sample `distill.teacher.backbone.freeze_backbone`: the distill
+    # block is never read by the train job, so those dimensions waste budget and
+    # make the winning spec look like it tuned something it did not.
+    foreign_blocks = _ACTION_SCOPED_BLOCKS - {action}
+    if action in _TRAINING_FAMILY_ACTIONS:
+        foreign_blocks -= {"train"}
+    # Only prune the *default* search space. An explicit automl_hyperparameters
+    # list is the caller stating intent -- e.g. quantize runs that deliberately
+    # search train.optim.lr -- and must never be silently narrowed here.
+    explicitly_requested = set(automl_hyperparameters or ())
+    foreign_params = {
+        p for p in format_json_schema
+        if p.split(".", 1)[0] in foreign_blocks and p not in explicitly_requested
+    }
+    if foreign_params:
+        params_to_exclude.update(foreign_params)
+        logger.info(
+            "Excluding %d parameter(s) belonging to non-'%s' action blocks: %s",
+            len(foreign_params),
+            action,
+            sorted(foreign_blocks & {p.split(".", 1)[0] for p in foreign_params}),
+        )
+
+    # ---- Network-specific exclusions ----
 
     # For cosmos-rl: exclude LoRA parameters when LoRA block is absent
     if network_arch == "cosmos-rl":

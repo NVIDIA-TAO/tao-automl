@@ -46,7 +46,7 @@ import re
 import signal
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -64,6 +64,16 @@ from tao_sdk.checkpoints import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# TAO NV-Panoptix3D Lightning checkpoints store the completed epoch using a
+# one-based internal counter while their filenames remain zero-based.  Passing
+# the next Hyperband-family resource budget verbatim therefore makes Lightning
+# stop immediately after restore (for example, epoch-0 checkpoint +
+# ``num_epochs=2`` executes no epoch-1 batches).  The terminal budget must be
+# advanced by one for resumed jobs so the requested additional epoch actually
+# runs and emits a fresh metric/checkpoint.
+_RESUME_EPOCH_BUDGET_OFFSETS = {"nvpanoptix3d": 1}
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +107,7 @@ class SkillContext:
     execution: "PythonScriptExecution | None" = field(init=False)
 
     def __post_init__(self):
-        """Load skill metadata, schemas, and execution configuration."""
+        """Load and validate the skill metadata needed by the runner."""
         self.skill_dir = Path(self.skill_dir)
         info_path = self.skill_dir / "references/skill_info.yaml"
         if not info_path.exists():
@@ -162,8 +172,8 @@ class SkillContext:
         # Python-script actions do not require an image, so an omitted image is
         # valid and must not trigger versions.yaml resolution.
         image_ref = (
-            self.action_cfg.get("container_image")
-            or self.skill_info.get("container_image", "")
+            self.action_cfg.get("container_image") or
+            self.skill_info.get("container_image", "")
         )
         if self.execution is None and image_ref:
             from tao_sdk.versions import resolve_container_image
@@ -209,7 +219,7 @@ class PythonScriptExecution:
         skill_dir: Path,
         default_config_format: str,
     ) -> "PythonScriptExecution | None":
-        """Build execution metadata from an action configuration mapping."""
+        """Build direct-script execution metadata from a skill config."""
         if config is None:
             return None
         if not isinstance(config, dict):
@@ -285,6 +295,12 @@ _CANCEL_CONFIRM_TIMEOUT_SECONDS = 30.0
 _CANCEL_CONFIRM_POLL_SECONDS = 0.5
 _TERMINAL_REC_STATUSES = {"success", "done", "failure", "error", "canceled"}
 _SUCCESS_REC_STATUSES = {"success", "done"}
+# A failed trial's artifacts are its only diagnostic trail. The runner cancels
+# and removes the backend job on failure, so once these are pruned the container
+# logs, the generated spec, and the partial results dir are all gone and the
+# user is left with "status=failure" and nothing to debug. Retained by default;
+# opt out with automl_settings["automl_retain_failed_artifacts"] = False.
+_FAILURE_REC_STATUSES = {"failure", "error"}
 _DEFER_ARTIFACT_PRUNING_ALGORITHMS = frozenset({
     "hyperband", "h", "bohb", "asha", "dehb", "hyperband_es", "hes", "pbt",
     "hybrid",
@@ -332,8 +348,8 @@ def _apply_checkpoint_retention_strategy(
     normalized = str(strategy or "auto").strip().lower()
     if normalized not in _CHECKPOINT_RETENTION_STRATEGIES:
         raise ValueError(
-            "automl_checkpoint_retention_strategy must be one of: "
-            + ", ".join(sorted(_CHECKPOINT_RETENTION_STRATEGIES))
+            "automl_checkpoint_retention_strategy must be one of: " +
+            ", ".join(sorted(_CHECKPOINT_RETENTION_STRATEGIES))
         )
     if not isinstance(specs, dict):
         raise TypeError("AutoML trial specs must be a dictionary")
@@ -380,9 +396,9 @@ def _apply_checkpoint_retention_strategy(
     else:
         num_epochs = train.get("num_epochs")
         if (
-            not isinstance(num_epochs, int)
-            or isinstance(num_epochs, bool)
-            or num_epochs < 1
+            not isinstance(num_epochs, int) or
+            isinstance(num_epochs, bool) or
+            num_epochs < 1
         ):
             raise ValueError(
                 "terminal checkpoint retention requires a positive integer "
@@ -1170,6 +1186,25 @@ def _checkpoint_epoch(path: Path) -> int:
     return sdk_checkpoint_epoch(path) or 0
 
 
+def _build_resume_checkpoint_candidate(
+    path: Path,
+    *,
+    is_dir: bool,
+    mtime: float,
+):
+    """Parse position metadata, including zero-indexed ``model_best_N`` files."""
+    candidate = build_checkpoint_candidate(path, is_dir=is_dir, mtime=mtime)
+    if candidate.epoch is None and candidate.is_best and not candidate.is_dir:
+        match = re.search(
+            r"(?:^|[_.-])best[_-]?0*(\d+)(?:\D|$)",
+            path.name,
+            re.IGNORECASE,
+        )
+        if match:
+            candidate = replace(candidate, epoch=int(match.group(1)))
+    return candidate
+
+
 def _find_local_resume_artifact(
     job_id: str,
     platform_kwargs: dict | None,
@@ -1212,7 +1247,7 @@ def _find_local_resume_artifact(
             try:
                 if any(root_path.iterdir()):
                     candidates.append(
-                        build_checkpoint_candidate(
+                        _build_resume_checkpoint_candidate(
                             root_path,
                             is_dir=True,
                             mtime=root_path.stat().st_mtime,
@@ -1230,7 +1265,7 @@ def _find_local_resume_artifact(
                 continue
             try:
                 candidates.append(
-                    build_checkpoint_candidate(
+                    _build_resume_checkpoint_candidate(
                         file_path,
                         is_dir=False,
                         mtime=file_path.stat().st_mtime,
@@ -1253,6 +1288,20 @@ def _find_local_resume_artifact(
     if selected is None:
         return None
     selected = Path(selected)
+    # Cosmos-RL stores each epoch as ``checkpoints/epoch_N/policy``.  The
+    # epoch directory is useful grouping metadata, but the trainer's resume
+    # loader expects the policy directory that contains ``cosmos_config`` and
+    # the rank-specific model/optimizer/scheduler state.  Passing epoch_N
+    # makes Cosmos silently fall back to the base Hugging Face model and
+    # restart at epoch 1, which defeats ASHA/Hyperband promotion semantics.
+    if (
+        model_name.replace("_", "-") == "cosmos-rl" and
+        action in {"resume", "train"} and
+        selected.is_dir()
+    ):
+        policy_dir = selected / "policy"
+        if (policy_dir / "cosmos_config").is_file():
+            selected = policy_dir
     return _as_container_path(selected, host_root, container_root)
 
 
@@ -1305,8 +1354,8 @@ def _job_has_checkpoint_artifact(sdk, job_id: str,
             prefer_directory=False,
             model_name="",
             action="best",
-        )
-        or _find_sdk_resume_artifact(sdk, job_id, model_name="", action="best")
+        ) or
+        _find_sdk_resume_artifact(sdk, job_id, model_name="", action="best")
     )
 
 
@@ -1645,9 +1694,9 @@ def _validate_external_automl_schema(schema: Any, schema_path: Path) -> None:
                 raise ValueError(f"{location} cannot declare both 'type' and 'anyOf'")
             if any_of is not None:
                 if (
-                    not isinstance(any_of, list)
-                    or not any_of
-                    or not all(isinstance(option, dict) for option in any_of)
+                    not isinstance(any_of, list) or
+                    not any_of or
+                    not all(isinstance(option, dict) for option in any_of)
                 ):
                     raise ValueError(
                         f"{location} 'anyOf' must be a non-empty list of schema objects"
@@ -1683,9 +1732,9 @@ def _validate_external_automl_schema(schema: Any, schema_path: Path) -> None:
             maximum = metadata.get("maximum")
             for bound_name, bound in (("minimum", minimum), ("maximum", maximum)):
                 if bound is not None and (
-                    isinstance(bound, bool)
-                    or not isinstance(bound, (int, float))
-                    or not math.isfinite(float(bound))
+                    isinstance(bound, bool) or
+                    not isinstance(bound, (int, float)) or
+                    not math.isfinite(float(bound))
                 ):
                     raise ValueError(f"{location} {bound_name} must be a finite number")
             if minimum is not None and maximum is not None and minimum > maximum:
@@ -1720,10 +1769,10 @@ def _validate_external_automl_schema(schema: Any, schema_path: Path) -> None:
                 if options is None or not isinstance(weights, list) or len(weights) != len(options):
                     raise ValueError(f"{location} option_weights must align with enum")
                 if any(
-                    isinstance(weight, bool)
-                    or not isinstance(weight, (int, float))
-                    or not math.isfinite(float(weight))
-                    or weight < 0
+                    isinstance(weight, bool) or
+                    not isinstance(weight, (int, float)) or
+                    not math.isfinite(float(weight)) or
+                    weight < 0
                     for weight in weights
                 ) or not any(weight > 0 for weight in weights):
                     raise ValueError(f"{location} option_weights must be finite and non-negative")
@@ -1974,8 +2023,9 @@ def _maybe_cap_effective_batch(
     )
     capped = int(samples_per_rank)
     mini_batch = _first_positive_int((specs,), _MINI_BATCH_KEYS, default=1) or 1
-    if 1 < mini_batch <= capped:
-        capped = (capped // mini_batch) * mini_batch
+    if mini_batch > 1:
+        if capped >= mini_batch:
+            capped = (capped // mini_batch) * mini_batch
 
     if capped < 1:
         setattr(rec, "failure_reason", f"invalid_configuration: {reason}")
@@ -2068,6 +2118,7 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "automl_population_size",
     "automl_range_override",
     "automl_reduction_factor",
+    "automl_retain_failed_artifacts",
     "automl_top_n_percent",
     "base_url",
     "baseline_metric",
@@ -2287,17 +2338,16 @@ def _load_artifact_jobs(workspace_path: str) -> dict[str, str]:
     }
 
 
-_runner = None
+_runner_state = {"runner": None}
 
 
 def _managed_runner_run(method):
     """Install scoped signal handling and cancel jobs while unwinding a run."""
     @functools.wraps(method)
     def wrapped(self, *args, **kwargs):
-        global _runner  # pylint: disable=global-statement
-        previous_runner = _runner
+        previous_runner = _runner_state["runner"]
         previous_signal_handlers = {}
-        _runner = self
+        _runner_state["runner"] = self
         self._signal_cleanup_performed = False
         self._pending_signal = None
         for signum in (signal.SIGINT, signal.SIGTERM):
@@ -2342,8 +2392,8 @@ def _managed_runner_run(method):
                     logger.debug(
                         "Could not restore signal handler outside the main thread"
                     )
-            if _runner is self:
-                _runner = previous_runner
+            if _runner_state["runner"] is self:
+                _runner_state["runner"] = previous_runner
 
     return wrapped
 
@@ -2376,6 +2426,7 @@ class AutoMLRunner:
         self._delete_intermediate_ckpt = False
         self._algorithm = ""
         self._retain_pareto_front = False
+        self._retain_failed_artifacts = True
         self._terminal_job_ids = {}
         self._deleted_job_ids = set()
         self._cleanup_capability_warned = False
@@ -2520,6 +2571,34 @@ class AutoMLRunner:
             job_id for job_id in self._active_jobs.values()
             if isinstance(job_id, str) and job_id
         }
+
+        # Keep failed trials' artifacts. They are the only record of *why* a
+        # recommendation died -- the backend job is canceled and removed on
+        # failure, so pruning here leaves the user with a bare "status=failure".
+        # Their checkpoints are also the cheapest thing in the workspace: a
+        # trial that failed during setup rarely wrote one at all.
+        if self._retain_failed_artifacts:
+            # Cancellation is also recorded as status="failure" (with
+            # failure_reason="job_canceled"). A cancelled job is not a defect to
+            # diagnose and the caller asked for its resources back, so only
+            # genuine trial failures are retained.
+            cancelled_jobs = {
+                job_id
+                for rec in history
+                for job_id in [getattr(rec, "job_id", None)]
+                if job_id and str(getattr(rec, "failure_reason", "")) == "job_canceled"
+            }
+            failed_jobs = {
+                job_id for job_id, status in self._terminal_job_ids.items()
+                if status in _FAILURE_REC_STATUSES
+            } - cancelled_jobs
+            if failed_jobs:
+                protected.update(failed_jobs)
+                logger.info(
+                    "Retaining artifacts for %d failed job(s) for diagnosis "
+                    "(set automl_retain_failed_artifacts=False to prune them)",
+                    len(failed_jobs),
+                )
         try:
             best = automl.get_best()
         except Exception as ex:
@@ -2601,8 +2680,8 @@ class AutoMLRunner:
                         if status in _SUCCESS_REC_STATUSES
                     )
         elif (
-            self._algorithm == "hybrid"
-            and self._verified_hybrid_best_job_id(automl, best) is None
+            self._algorithm == "hybrid" and
+            self._verified_hybrid_best_job_id(automl, best) is None
         ):
             # Hybrid may have delegated different phases to multi-fidelity
             # brains. Its outer get_best() does not prove that the selected
@@ -2850,8 +2929,8 @@ class AutoMLRunner:
         while True:
             if workspace_path:
                 registration_durable = (
-                    self._persist_active_jobs(workspace_path)
-                    or registration_durable
+                    self._persist_active_jobs(workspace_path) or
+                    registration_durable
                 )
             try:
                 self._sdk.cancel_job(job_id)
@@ -2893,8 +2972,8 @@ class AutoMLRunner:
                     previous_active = self._active_jobs.pop(rec_id, None)
                     previous_cancel = self._cancel_requests.pop(rec_id, None)
                     if (
-                        workspace_path
-                        and not self._persist_active_jobs(workspace_path)
+                        workspace_path and
+                        not self._persist_active_jobs(workspace_path)
                     ):
                         if previous_active is not None:
                             self._active_jobs[rec_id] = previous_active
@@ -3072,9 +3151,9 @@ class AutoMLRunner:
         # final-search retention so interrupted multi-fidelity runs do not
         # retain every earlier successful trial checkpoint.
         if (
-            self._automl is not None
-            and not self._active_jobs
-            and self._delete_intermediate_ckpt
+            self._automl is not None and
+            not self._active_jobs and
+            self._delete_intermediate_ckpt
         ):
             self._prune_intermediate_artifacts(self._automl, completed=True)
 
@@ -3207,7 +3286,7 @@ class AutoMLRunner:
             new keys may be added, but existing ones will not be renamed or
             removed.
 
-            - ``best``: ``rec_id``, ``specs``, ``metric_value``,
+            - ``best``: ``rec_id``, ``job_id``, ``specs``, ``metric_value``,
               ``objective_score``, ``objective_values``, ``adjustments``,
               ``feedback``
             - ``progress``: ``completed``, ``total``, ``best_metric``,
@@ -3223,8 +3302,10 @@ class AutoMLRunner:
               (final_eval_fn raised), ``unavailable``, ``skipped``,
               ``not_run``.
             - ``history``: list of per-recommendation dicts with ``rec_id``,
-              ``metric``, ``objective_score``, ``objective_values``,
+              ``job_id``, ``metric``, ``objective_score``, ``objective_values``,
               ``status``, ``failure_reason``, ``adjustments``, ``feedback``
+            - ``algorithm_state``: algorithm-specific decision and reasoning
+              state, or ``None`` when the selected algorithm exposes none
             - ``pareto_front``: present for multi-objective sessions only
         """
         from tao_automl import AutoML
@@ -3235,6 +3316,9 @@ class AutoMLRunner:
             automl_settings.get("automl_delete_intermediate_ckpt", True)
         )
         self._algorithm = str(automl_settings.get("algorithm", "")).lower()
+        self._retain_failed_artifacts = _bool_setting(
+            automl_settings.get("automl_retain_failed_artifacts", True)
+        )
         self._terminal_job_ids = {}
         self._deleted_job_ids = set()
         self._cleanup_capability_warned = False
@@ -3430,8 +3514,8 @@ class AutoMLRunner:
                         self._cancel_requests[rec_id] = {
                             "requested_at": entry.get("cancel_requested_at"),
                             "reason": (
-                                entry.get("cancel_reason")
-                                or "restored cancellation"
+                                entry.get("cancel_reason") or
+                                "restored cancellation"
                             ),
                         }
                 for entry in pending:
@@ -3484,9 +3568,9 @@ class AutoMLRunner:
                 merged_specs = self._merge_specs(run_base_specs, rec.specs)
                 effective_checkpoint_strategy = None
                 if (
-                    self._delete_intermediate_ckpt
-                    and self.skill_ctx.action == "train"
-                    and isinstance(merged_specs.get("train"), dict)
+                    self._delete_intermediate_ckpt and
+                    self.skill_ctx.action == "train" and
+                    isinstance(merged_specs.get("train"), dict)
                 ):
                     effective_checkpoint_strategy = (
                         _apply_checkpoint_retention_strategy(
@@ -3596,10 +3680,10 @@ class AutoMLRunner:
                     status = "metric_missing"
                 metric_missing = status == "metric_missing"
                 if (
-                    metric_missing
-                    and previous_metric is not None
-                    and getattr(rec, "job_id", None)
-                    and _job_has_checkpoint_artifact(
+                    metric_missing and
+                    previous_metric is not None and
+                    getattr(rec, "job_id", None) and
+                    _job_has_checkpoint_artifact(
                         self._sdk, rec.job_id, job_platform_kwargs
                     )
                 ):
@@ -3744,6 +3828,7 @@ class AutoMLRunner:
         result = {
             "best": {
                 "rec_id": best.id if best else None,
+                "job_id": getattr(best, "job_id", None) if best else None,
                 "specs": best.specs if best else {},
                 "metric_value": best_metric,
                 "objective_score": getattr(best, "objective_score", None),
@@ -3757,6 +3842,7 @@ class AutoMLRunner:
             "history": [
                 {
                     "rec_id": r.id,
+                    "job_id": getattr(r, "job_id", None),
                     "metric": _recommendation_primary_metric(r, metric_name),
                     "objective_score": getattr(r, "objective_score", None),
                     "objective_values": _recommendation_objective_values(r),
@@ -3767,6 +3853,11 @@ class AutoMLRunner:
                 }
                 for r in history
             ],
+            "algorithm_state": (
+                automl.get_algorithm_state()
+                if hasattr(automl, "get_algorithm_state")
+                else {}
+            ),
         }
         baseline["comparison_to_best"] = _compare_to_baseline(
             baseline.get("metric_value"),
@@ -4061,8 +4152,8 @@ class AutoMLRunner:
             ),
         )
         status = (
-            confirmed_job_status
-            or (job_status.status if job_status is not None else "Error")
+            confirmed_job_status or
+            (job_status.status if job_status is not None else "Error")
         )
 
         if status == "Error" or exec_status == "FAIL":
@@ -4077,7 +4168,10 @@ class AutoMLRunner:
 
         # fix #4: if an eval_fn is provided, run it post-training and let its
         # return override the log-extracted metric. Errors are isolated.
-        metric_values = dict(cached_metrics)
+        # An explicit evaluator is authoritative for checkpoint selection.
+        # Never relabel a training KPI as an evaluation metric when evaluation
+        # fails or returns no value.
+        metric_values = {} if eval_fn is not None else dict(cached_metrics)
         eval_metric_used = False
         if eval_fn is not None:
             try:
@@ -4085,8 +4179,8 @@ class AutoMLRunner:
                     eval_fn(rec, job.id), "eval_fn"
                 )
             except Exception as ex:
-                logger.warning("eval_fn raised for rec %d: %s; falling back "
-                               "to log-extracted metric", rec.id, ex)
+                logger.warning("eval_fn raised for rec %d: %s; evaluation "
+                               "metric is unavailable", rec.id, ex)
                 eval_metric = None
             if eval_metric is not None:
                 if isinstance(eval_metric, dict):
@@ -4110,6 +4204,12 @@ class AutoMLRunner:
                                 )
                             ))
                 eval_metric_used = True
+        if eval_fn is not None and not eval_metric_used:
+            logger.warning(
+                "Rec %d: eval_fn produced no metric; refusing training-metric fallback",
+                rec.id,
+            )
+            return None, "metric_missing"
         if not eval_metric_used:
             local_metrics = {}
             for index, name in enumerate(metric_names):
@@ -4218,14 +4318,14 @@ class AutoMLRunner:
 
         rec.assign_job_id(job_id)
         if (
-            rec_id in self._cancel_requests
-            and str(getattr(rec, "status", "")) not in _TERMINAL_REC_STATUSES
+            rec_id in self._cancel_requests and
+            str(getattr(rec, "status", "")) not in _TERMINAL_REC_STATUSES
         ):
             terminal_status = self._request_job_cancellation(
                 rec_id,
                 job_id,
-                self._cancel_requests[rec_id].get("reason")
-                or "restored cancellation",
+                self._cancel_requests[rec_id].get("reason") or
+                "restored cancellation",
                 allow_refused_terminal=True,
             )
             if terminal_status is None:
@@ -4401,8 +4501,8 @@ class AutoMLRunner:
             ),
         )
         status = (
-            confirmed_job_status
-            or (job_status.status if job_status is not None else "Error")
+            confirmed_job_status or
+            (job_status.status if job_status is not None else "Error")
         )
 
         if status == "Error" or exec_status == "FAIL":
@@ -4416,7 +4516,7 @@ class AutoMLRunner:
             report_status = "failure"
             rec.failure_reason = "job_canceled"
         else:
-            metric_values = dict(cached_metrics)
+            metric_values = {} if eval_fn is not None else dict(cached_metrics)
             eval_metric_used = False
             if eval_fn is not None:
                 try:
@@ -4434,6 +4534,21 @@ class AutoMLRunner:
                     else:
                         metric_values[metric_name] = float(em)
                     eval_metric_used = True
+            if eval_fn is not None and not eval_metric_used:
+                metric_value = None
+                report_status = "failure"
+                rec.failure_reason = "evaluation_metric_missing"
+                automl.report_result(
+                    rec_id=rec_id,
+                    metric_value=0.0,
+                    status=report_status,
+                )
+                if on_result:
+                    try:
+                        on_result(rec, metric_value, report_status)
+                    except Exception as ex:
+                        logger.warning("on_result callback failed for rec %d: %s", rec_id, ex)
+                return
             if not eval_metric_used:
                 local_metrics = {}
                 for index, name in enumerate(metric_names):
@@ -4546,8 +4661,8 @@ class AutoMLRunner:
             "resume_training_checkpoint_path",
         ):
             if (
-                candidate in self.skill_ctx.valid_spec_keys
-                or self._get_nested(specs, candidate) is not None
+                candidate in self.skill_ctx.valid_spec_keys or
+                self._get_nested(specs, candidate) is not None
             ):
                 path_key = candidate
                 break
@@ -4555,8 +4670,8 @@ class AutoMLRunner:
         bool_or_path_key = None
         for candidate in ("train.resume", "resume"):
             if (
-                candidate in self.skill_ctx.valid_spec_keys
-                or self._get_nested(specs, candidate) is not None
+                candidate in self.skill_ctx.valid_spec_keys or
+                self._get_nested(specs, candidate) is not None
             ):
                 bool_or_path_key = candidate
                 break
@@ -4581,8 +4696,8 @@ class AutoMLRunner:
                 epoch=resume_epoch,
                 step=resume_step,
                 action="resume",
-            )
-            or _find_sdk_resume_artifact(
+            ) or
+            _find_sdk_resume_artifact(
                 self._sdk,
                 parent_job_id,
                 model_name=self.skill_ctx.network_arch,
@@ -4606,6 +4721,12 @@ class AutoMLRunner:
 
         if path_key:
             self._set_nested(specs, path_key, artifact)
+            if bool_or_path_key:
+                # Models such as BEVFusion expose both the checkpoint path and
+                # an explicit resume switch. Supplying only the path makes
+                # MMEngine load weights as initialization and restart epoch 1
+                # instead of restoring optimizer/epoch state.
+                self._set_nested(specs, bool_or_path_key, True)
             logger.info(
                 "Rec %d will resume from parent job %s via %s=%s "
                 "(epoch=%s step=%s)",
@@ -4621,6 +4742,22 @@ class AutoMLRunner:
                 "(epoch=%s step=%s)",
                 rec.id, parent_job_id, bool_or_path_key, artifact,
                 resume_epoch, resume_step,
+            )
+
+        epoch_offset = _RESUME_EPOCH_BUDGET_OFFSETS.get(
+            self.skill_ctx.network_arch, 0
+        )
+        requested_epochs = self._get_nested(specs, "train.num_epochs")
+        if epoch_offset and isinstance(requested_epochs, int):
+            effective_epochs = requested_epochs + epoch_offset
+            self._set_nested(specs, "train.num_epochs", effective_epochs)
+            logger.info(
+                "Rec %d adjusted resumed %s epoch budget from %d to %d so "
+                "the requested terminal epoch executes",
+                rec.id,
+                self.skill_ctx.network_arch,
+                requested_epochs,
+                effective_epochs,
             )
         return specs
 
@@ -4713,13 +4850,13 @@ class AutoMLRunner:
                 if isinstance(suffix, str) and suffix:
                     chosen = suffix
                 elif isinstance(suffix, list):
-                    tarballs = [s for s in suffix if isinstance(s, str)
-                                and s.endswith(".tar.gz")]
+                    tarballs = [s for s in suffix if isinstance(s, str) and
+                                s.endswith(".tar.gz")]
                     # Prefer videos.tar.gz for video-leaning formats (llava),
                     # otherwise take the last tarball (skills list less-preferred
                     # candidates first).
-                    chosen = (next((s for s in tarballs if "video" in s), None)
-                              or (tarballs[-1] if tarballs else None))
+                    chosen = (next((s for s in tarballs if "video" in s), None) or
+                              (tarballs[-1] if tarballs else None))
                 if chosen:
                     AutoMLRunner._set_nested(specs, spec_key, base_uri + chosen)
                 else:
@@ -4834,13 +4971,13 @@ def run_automl_plan(plan: dict, platform: str) -> dict:
 
 def _signal_handler(signum, frame):
     """Request unwind; cancellation runs after interrupted locks are released."""
-    if _runner:
-        _runner._pending_signal = signum
+    if _runner_state["runner"]:
+        _runner_state["runner"]._pending_signal = signum
     raise SystemExit(1)
 
 
 def main():
-    """Execute an AutoML plan from a JSON file."""
+    """Execute an AutoML plan from the command line."""
     parser = argparse.ArgumentParser(
         description="Execute an AutoML plan against a chosen platform SDK.",
     )

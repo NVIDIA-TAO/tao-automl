@@ -8,7 +8,7 @@ BEFORE spending GPU-hours on actual training.
 import logging
 from typing import Any, Dict, List, Optional
 
-from tao_automl.brain.llm_client import LLMClient
+from tao_automl.brain.llm_client import LLMClient, first_json_object
 from tao_automl.brain.prompts.autoresearch_prompts import (
     build_prescreen_prompt,
 )
@@ -62,7 +62,12 @@ class SpecPrescreener:
             logger.warning("Pre-screening failed: %s. Returning all candidates.", response.error)
             return candidates
 
-        data = response.json_content
+        data = first_json_object(response.json_content)
+        if data is None:
+            logger.warning(
+                "Pre-screening returned an unsupported JSON shape. Returning all candidates."
+            )
+            return candidates
         recommended_indices = data.get("recommended_to_run", [])
         confidence = data.get("confidence", "low")
         reasoning = data.get("reasoning", "")
