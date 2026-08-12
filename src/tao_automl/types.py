@@ -66,6 +66,7 @@ class Recommendation(Mapping):
         self.early_stop_epoch = None  # For PBT/Hyperband: epoch limit when this rec was launched
         self.failure_reason = None
         self.adjustments = []
+        self.feedback = None
 
         # Add timestamps for timeout tracking
         current_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
@@ -81,15 +82,19 @@ class Recommendation(Mapping):
         return self.specs.get(key, default)
 
     def __getitem__(self, key):
+        """Return a specification value by key."""
         return self.specs[key]
 
     def __iter__(self):
+        """Iterate over specification keys."""
         return iter(self.specs)
 
     def __len__(self):
+        """Return the number of specification keys."""
         return len(self.specs)
 
     def __bool__(self):
+        """Recommendations remain truthy even when their specs are empty."""
         # Mapping would make a rec with empty specs falsy; recommendations
         # are objects with identity and callers rely on `best if best else …`.
         return True

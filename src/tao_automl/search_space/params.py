@@ -125,11 +125,11 @@ def generate_hyperparams_to_search(
     else:
         try:
             json_schema = generate_schema(network_arch, action)
-        except (OSError, RuntimeError, ValueError) as e:
+        except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError) as e:
             logger.info("Error generating schema for network: %s", network_arch)
             logger.info("Network: %s, Action: %s", network, action)
             raise RuntimeError(
-                f"Unable to generate schema for {network_arch}/{action}"
+                f"Unable to generate schema for {network_arch!r} action {action!r}"
             ) from e
 
     # Flatten original (default) spec from the schema
@@ -191,15 +191,19 @@ def generate_hyperparams_to_search(
                 p for p in format_json_schema.keys() if p.startswith("policy.lora.")
             )
             logger.info("Excluding %d LoRA parameters: %s", len(params_to_exclude), params_to_exclude)
-        if (
-            "custom.vision.nframes" in updated_spec_with_keys_flattened and
-            "custom.vision.fps" not in set(automl_hyperparameters or [])
-        ):
-            params_to_exclude.add("custom.vision.fps")
-            logger.info(
-                "custom.vision.nframes is present - excluding custom.vision.fps "
-                "from default Cosmos-RL AutoML search"
-            )
+        explicit_params = set(automl_hyperparameters or [])
+        for key in updated_spec_with_keys_flattened:
+            if key != "vision.nframes" and not key.endswith(".vision.nframes"):
+                continue
+            fps_key = f"{key[:-len('.nframes')]}.fps"
+            if fps_key in format_json_schema and fps_key not in explicit_params:
+                params_to_exclude.add(fps_key)
+                logger.info(
+                    "%s is present - excluding %s from default Cosmos-RL "
+                    "AutoML search",
+                    key,
+                    fps_key,
+                )
 
     # ---- Build DataFrame and filter ----
     data_frame = pd.DataFrame.from_dict(format_json_schema, orient="index").reset_index()
