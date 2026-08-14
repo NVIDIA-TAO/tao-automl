@@ -12,6 +12,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mask_grounding_dino_v11_finalizer as finalizer  # noqa: E402
 
 
+def _successful_candidate(rec_id: int) -> dict:
+    return {
+        "candidate_id": f"accuracy_rec_{rec_id}",
+        "rec_id": str(rec_id),
+        "status": "success",
+        "automl_status": "success",
+        "objective_values": {
+            "segm_val_mAP50_95": 0.5,
+            "latency_ms": 10.0,
+            "latency_p95_ms": 11.0,
+            "latency_ci95_low_ms": 9.5,
+            "latency_ci95_high_ms": 10.5,
+        },
+        "selection_time_latency": {"quality_gate_passed": True},
+        "agent_intervention_flags": {},
+        "selection_isolation_flags": {},
+    }
+
+
 def test_terminal_requires_all_successful_mode_processes(tmp_path: Path) -> None:
     assert finalizer.terminal(tmp_path) is False
     (tmp_path / "mode_process_status.json").write_text(
@@ -31,6 +50,82 @@ def test_terminal_rejects_failed_mode(tmp_path: Path) -> None:
     )
     with pytest.raises(finalizer.FinalizationError, match="controller failed"):
         finalizer.terminal(tmp_path)
+
+
+def test_load_mode_preserves_terminal_failure_and_excludes_it_from_selector(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(finalizer, "REQUIRED_CANDIDATES", 2)
+    mode_root = tmp_path / "accuracy"
+    mode_root.mkdir()
+    successful = _successful_candidate(0)
+    failed = {
+        "candidate_id": "accuracy_rec_1",
+        "rec_id": "1",
+        "status": "terminal_failure",
+        "automl_status": "failure",
+        "failure_reason": "job_canceled",
+        "candidate_fingerprint": "failed-fingerprint",
+        "agent_intervention_flags": {},
+        "selection_isolation_flags": {},
+    }
+    evidence = {
+        "mode": "accuracy",
+        "contract_sha256": "contract",
+        "candidates": {"accuracy_rec_0": successful, "accuracy_rec_1": failed},
+    }
+    result = {
+        "mode": "accuracy",
+        "status": "success",
+        "contract_sha256": "contract",
+        "result": {
+            "selection_analysis": {"candidates": [{"candidate_id": "0"}]}
+        },
+    }
+    (mode_root / "candidate_evidence.json").write_text(json.dumps(evidence))
+    (mode_root / "result.json").write_text(json.dumps(result))
+
+    loaded_evidence, _ = finalizer._load_mode(tmp_path, "accuracy")
+
+    assert loaded_evidence["candidates"]["accuracy_rec_1"] == failed
+
+
+def test_load_mode_rejects_failed_candidate_in_selector_population(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(finalizer, "REQUIRED_CANDIDATES", 2)
+    mode_root = tmp_path / "accuracy"
+    mode_root.mkdir()
+    successful = _successful_candidate(0)
+    failed = {
+        "candidate_id": "accuracy_rec_1",
+        "rec_id": "1",
+        "status": "terminal_failure",
+        "automl_status": "failure",
+        "failure_reason": "job_canceled",
+        "agent_intervention_flags": {},
+        "selection_isolation_flags": {},
+    }
+    evidence = {
+        "mode": "accuracy",
+        "contract_sha256": "contract",
+        "candidates": {"accuracy_rec_0": successful, "accuracy_rec_1": failed},
+    }
+    result = {
+        "mode": "accuracy",
+        "status": "success",
+        "contract_sha256": "contract",
+        "result": {
+            "selection_analysis": {
+                "candidates": [{"candidate_id": "0"}, {"candidate_id": "1"}]
+            }
+        },
+    }
+    (mode_root / "candidate_evidence.json").write_text(json.dumps(evidence))
+    (mode_root / "result.json").write_text(json.dumps(result))
+
+    with pytest.raises(finalizer.FinalizationError, match="selector population"):
+        finalizer._load_mode(tmp_path, "accuracy")
 
 
 def test_winner_row_preserves_production_geometry() -> None:

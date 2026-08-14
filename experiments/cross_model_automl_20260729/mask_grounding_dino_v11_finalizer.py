@@ -109,9 +109,26 @@ def _load_mode(root: Path, mode: str) -> tuple[dict[str, Any], dict[str, Any]]:
     candidates = evidence.get("candidates")
     if not isinstance(candidates, Mapping) or len(candidates) != REQUIRED_CANDIDATES:
         raise FinalizationError(f"{mode} does not contain 24 candidates")
+    successful_rec_ids: set[str] = set()
     for candidate_id, candidate in candidates.items():
-        if candidate.get("status") != "success":
-            raise FinalizationError(f"{candidate_id} is not successful")
+        status = candidate.get("status")
+        if status not in {"success", "terminal_failure"}:
+            raise FinalizationError(f"{candidate_id} is not terminal")
+        if any(candidate.get("agent_intervention_flags", {}).values()):
+            raise FinalizationError(f"{candidate_id} has agent intervention")
+        if any(candidate.get("selection_isolation_flags", {}).values()):
+            raise FinalizationError(f"{candidate_id} violated selection isolation")
+        if status == "terminal_failure":
+            if candidate.get("automl_status") != "failure":
+                raise FinalizationError(
+                    f"{candidate_id} terminal failure status is inconsistent"
+                )
+            if not candidate.get("failure_reason"):
+                raise FinalizationError(
+                    f"{candidate_id} terminal failure has no reason"
+                )
+            continue
+        successful_rec_ids.add(str(candidate.get("rec_id")))
         values = candidate.get("objective_values")
         if not isinstance(values, Mapping):
             raise FinalizationError(f"{candidate_id} has no objective vector")
@@ -131,10 +148,15 @@ def _load_mode(root: Path, mode: str) -> tuple[dict[str, Any], dict[str, Any]]:
             "quality_gate_passed"
         ) is not True:
             raise FinalizationError(f"{candidate_id} failed latency quality")
-        if any(candidate.get("agent_intervention_flags", {}).values()):
-            raise FinalizationError(f"{candidate_id} has agent intervention")
-        if any(candidate.get("selection_isolation_flags", {}).values()):
-            raise FinalizationError(f"{candidate_id} violated selection isolation")
+    analysis = result_document.get("result", {}).get("selection_analysis", {})
+    analyzed_rec_ids = {
+        str(candidate.get("candidate_id"))
+        for candidate in analysis.get("candidates", [])
+    }
+    if analyzed_rec_ids != successful_rec_ids:
+        raise FinalizationError(
+            f"{mode} selector population does not equal successful candidates"
+        )
     return evidence, result_document["result"]
 
 
@@ -264,6 +286,32 @@ def finalize(root: Path, base_source: Path, output_root: Path) -> dict[str, Any]
         _winner_row(mode, model["modes"][mode], mode_results[mode])
         for mode in MODES
     ]
+    candidate_outcomes = {
+        mode: {
+            "total": len(mode_evidence[mode]["candidates"]),
+            "success": sum(
+                candidate.get("status") == "success"
+                for candidate in mode_evidence[mode]["candidates"].values()
+            ),
+            "terminal_failure": sum(
+                candidate.get("status") == "terminal_failure"
+                for candidate in mode_evidence[mode]["candidates"].values()
+            ),
+        }
+        for mode in MODES
+    }
+    failed_candidates = {
+        mode: [
+            {
+                "candidate_id": candidate["candidate_id"],
+                "candidate_fingerprint": candidate["candidate_fingerprint"],
+                "failure_reason": candidate["failure_reason"],
+            }
+            for candidate in mode_evidence[mode]["candidates"].values()
+            if candidate.get("status") == "terminal_failure"
+        ]
+        for mode in MODES
+    }
     audit = {
         "schema_version": 1,
         "kind": "mask_grounding_dino_v11_terminal_pareto_audit",
@@ -275,6 +323,9 @@ def finalize(root: Path, base_source: Path, output_root: Path) -> dict[str, Any]
         "candidate_counts": {
             mode: len(mode_evidence[mode]["candidates"]) for mode in MODES
         },
+        "candidate_outcomes": candidate_outcomes,
+        "failed_candidates": failed_candidates,
+        "failed_recommendations_preserved": True,
         "result_file_sha256": {
             mode: file_sha256(root / mode / "result.json") for mode in MODES
         },
@@ -305,8 +356,8 @@ def finalize(root: Path, base_source: Path, output_root: Path) -> dict[str, Any]
             mode: model["modes"][mode]["archive_fingerprint_sha256"]
             for mode in MODES
         },
-        "all_objective_vectors_complete": True,
-        "all_latency_quality_gates_passed": True,
+        "all_successful_objective_vectors_complete": True,
+        "all_successful_latency_quality_gates_passed": True,
         "all_production_replays_match": all(
             row["replay_matches"] for row in winner_table
         ),
@@ -345,7 +396,26 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.wait:
         wait_for_terminal(args.root, args.poll_seconds, args.timeout_seconds)
-    audit = finalize(args.root, args.base_sources, args.output_root)
+    try:
+        audit = finalize(args.root, args.base_sources, args.output_root)
+    except Exception as exc:
+        atomic_json(
+            args.output_root / "finalization_status.json",
+            {
+                "status": "failed",
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+            },
+        )
+        raise
+    atomic_json(
+        args.output_root / "finalization_status.json",
+        {
+            "status": "complete",
+            "audit_sha256": audit["audit_sha256"],
+            "classification": audit["classification"],
+        },
+    )
     print(json.dumps({
         "audit_sha256": audit["audit_sha256"],
         "classification": audit["classification"],
