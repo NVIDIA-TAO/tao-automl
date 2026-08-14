@@ -12,11 +12,11 @@ artifact, invokes the production selector on the unchanged per-mode archive,
 repeats the replay under ten shuffled candidate orders, and records the full
 rank-zero MOO front and selector geometry.
 
-The current replay artifact is:
+The terminal replay artifact, including Mask Grounding DINO v11, is:
 
 ```text
-/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_audit_v6_design_b/matrix.json
-sha256 78b7daed210cbb01c3b3e3c9a261abbea97c86e6a7f37bc274f229d39d932963
+/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_validation/mgdino_v11/matrix.json
+sha256 7625986066f6edd08d53e3a8bcd6bce01b8b95571d448b9b56655da549e598f8
 ```
 
 The audit also constructs a read-only union of the three independently
@@ -53,6 +53,7 @@ production selection archive.
 | SegFormer | VOC2012 segmentation | `rec_23` | `rec_12` | `rec_25` | true | true | true | false | `PASS_EXPECTED_COMPROMISE` |
 | Mask2Former | COCO2017 instance segmentation | `rec_5` | `rec_2` | `rec_4` | true | true | true | false | `PASS_EXPECTED_COMPROMISE` |
 | OneFormer | COCO2017 panoptic segmentation | `rec_6` | `rec_17` | `rec_16` | true | true | true | true | `PASS_EXPECTED_COMPROMISE` |
+| Mask Grounding DINO | COCO2017 category-prompted instance segmentation | `rec_16` | `rec_14` | `rec_19` | true | true | true | true | `PASS_EXPECTED_COMPROMISE` |
 
 Every persisted selector result matches the current production replay and is
 invariant to candidate order. Every listed MOO winner is rank zero and
@@ -107,12 +108,28 @@ defect was reproduced.
 
 The difference (`0.007526`) is smaller than the median (`0.0310464`) and
 maximum (`0.0617162`) accuracy ranges observed when the same 16 calibration
-fingerprints were independently trained across jobs. The coverage observation
-therefore remains `INCONCLUSIVE_PENDING_MATCHED_ACCURACY_VALIDATION`, not a
-selector failure. A prospective six-repeat validation contract compares the
-two fingerprints without changing any frozen selection-time value. It is
-gated on successful MGDINO v11 completion and all validation measurements are
-isolated from selection and reselection.
+fingerprints were independently trained across jobs. A preregistered
+six-repeat matched validation therefore compared the two frozen fingerprints
+without changing any selection-time value. All 12 training/evaluation cells
+completed successfully.
+
+| Repeat | Accuracy-archive winner | Higher external fingerprint | Paired difference |
+| ---: | ---: | ---: | ---: |
+| 0 | 0.7535306551 | 0.7574336039 | +0.0039029487 |
+| 1 | 0.7378166318 | 0.7466457950 | +0.0088291633 |
+| 2 | 0.7764560807 | 0.6749889587 | -0.1014671220 |
+| 3 | 0.7684152840 | 0.7578483290 | -0.0105669549 |
+| 4 | 0.7683333918 | 0.7565038404 | -0.0118295514 |
+| 5 | 0.7537537553 | 0.7516969656 | -0.0020567897 |
+
+The median paired difference is `-0.0063118723`, paired-difference MAD is
+`0.0078662500`, and the descriptive paired-bootstrap 95% interval is
+`[-0.0566483367, 0.0063660560]`. Direction changes across repeats and the
+interval crosses zero. The preregistered classification is therefore
+`DIRECTION_UNRESOLVED_OR_TRAINING_NOISE`. The apparent cross-archive advantage
+is not reproducibly established; no acquisition implementation defect and no
+selector defect were demonstrated. The original archive winners and objective
+values remain unchanged.
 
 ```text
 matched validation contract:
@@ -120,6 +137,8 @@ matched validation contract:
 file sha256 58210a8e483bf88720fd2a48ff4f2347f12ed79991452658b39d4e025f9402c9
 canonical contract sha256 6abfa3181c649b2e43647296b212bae704030106c7afe37f82849317e48fa902
 implementation commit 3b23e2dc76e15315e2cb48c57db83bcaca8cd3f2
+matched result sha256 ac14324309a447f1d4c03e0a38b4e3776e27007aa685937f7815197fef7dd361
+execution state sha256 c9d9006c6021dff11d9a19fed626bbb6462cf23c1c790aa26a5da0d20dc8c48c
 ```
 
 The acquisition audit is:
@@ -188,6 +207,35 @@ candidate budget, search spaces, PTMs, training budget, seeds, objectives,
 latency protocol, SQSH identity, and eight-GPU resource contract. Its source
 is the immutable GitHub-backed worktree at commit `8cdcd36`.
 
+MGDINO v11 completed all 24 algorithm-generated recommendations per mode.
+Accuracy produced 23 valid objective vectors and one preserved terminal
+failure; latency and MOO each produced 22 valid vectors and two preserved
+terminal failures. Failed records were excluded from selection but retained
+in the audit.
+
+| Mode | Candidate | Accuracy | Median latency | Pareto rank | Compromise score | Selection reason |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Accuracy | `accuracy_rec_16` | 0.3062185856 | 207.434521 ms | 0 | 0.5000005 | Maximum valid accuracy |
+| Latency | `latency_rec_14` | 0.3019983359 | 204.706699 ms | 0 | 0.1029697379 | Highest-accuracy member of the raw-minimum-anchored equivalent-fastest feasible cohort |
+| Multi-objective | `multi_objective_rec_19` | 0.3035605194 | 204.449796 ms | 0 | 0.1399983584 | Minimum normalized augmented-Chebyshev regret on the eligible rank-zero front |
+
+The complete MOO rank-zero front is `rec_13`, `rec_11`, `rec_19`, `rec_10`,
+and `rec_9`. Its accuracy bounds are `[0.2893246404, 0.3090965905]`; latency
+bounds are `[203.60024475, 207.35517325]` ms. `rec_19` is a distinct
+nondominated compromise. Its latency and the independently acquired latency
+winner differ by only `0.2569035 ms`, inside the frozen `0.73553775 ms`
+tolerance; Design B does not impose a raw cross-archive total order.
+
+Persisted winners match production replay and ten candidate-order
+permutations. All intervention and post-hoc selection flags are false. The
+terminal audit is:
+
+```text
+/localhome/local-rarunachalam/.tao/artifacts/cross_model_automl_20260729/pareto_outlier_validation/mgdino_v11/mgdino_v11_final_audit.json
+file sha256 71accf1d5a58c54746b434e94af0569cc98eccc93880bcc375fe024f8d37b5eb
+canonical audit sha256 e0033201c0ba18eef212afe4c56c93b41ed1afea53cb41e85d1bbb8b0161b5de
+```
+
 ## Production selector review
 
 No selector correctness defect was found.
@@ -232,10 +280,10 @@ Matched or post-hoc measurements are not used for selection or reselection.
 
 ```text
 production: 985 passed, 1 skipped
-cross-model experiment suite: 565 passed
+cross-model experiment suite: 567 passed
 focused affected-model/replay suite: 235 passed
 objective-aware acquisition/resume suite: 66 passed
-outlier audit/finalization regression tests: 27 passed
+outlier audit/finalization regression tests: 31 passed
 ```
 
 The only warnings are the existing sklearn Gaussian-process convergence
@@ -243,9 +291,24 @@ warnings. Historical experiment checks now use separate immutable
 GitHub-backed worktrees at each originally frozen SDK/source revision, avoiding
 the former shared-path commit collision without regenerating evidence.
 
-## Rerun status
+## Final status
 
-Mask Grounding DINO v11 is the only campaign being rerun. Final winners,
-complete candidate evidence, the final rank-zero front, and the after
-classification must be appended from that algorithm-generated completion;
-they must not be inferred or selected manually while the campaign is active.
+The eight completed model campaigns satisfy their independently defined
+mode-local selection policies. Seven are `PASS_EXPECTED_COMPROMISE`; RT-DETR
+is a valid `PASS_ENDPOINT_COLLAPSE`. Cross-archive ordering remains
+observational under Design B. Grounding DINO is training-noise-limited under
+matched validation, SegFormer is latency-tolerance-limited, and Mask2Former is
+latency-tail/matched-allocation-limited; none demonstrates a selector defect.
+
+```text
+Passing before: 7 completed model campaigns with valid mode-local selectors
+True outliers investigated: 5
+Generic AutoML bugs fixed: 0 selector bugs; 1 finalization automation bug
+Model-specific bugs fixed: 1 MGDINO runtime/objective-packaging integration bug
+Valid no-compromise cases: 1 endpoint collapse (RT-DETR)
+Inconclusive/noise-limited cases: 3 validation qualifiers (Grounding DINO, SegFormer, Mask2Former)
+Affected campaigns rerun: 1 full three-mode campaign plus 1 matched validation
+Passing after: 8 model campaigns
+Remaining failures: 0 selector or model-integration failures
+Algorithm-selected winners overridden by agent: 0
+```
