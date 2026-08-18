@@ -332,7 +332,8 @@ def _apply_checkpoint_retention_strategy(
     * ``best`` asks compatible trainers to keep one monitored checkpoint and
       replace periodic saving.
     * ``terminal`` makes the periodic interval equal the recommendation's
-      effective ``train.num_epochs`` so only its terminal epoch is saved.
+      effective epoch budget so only its terminal epoch is saved. Cosmos-RL
+      uses ``train.epoch`` plus a native ``train.ckpt.max_keep`` contract.
     * ``auto`` uses ``best`` only when the merged spec already exposes a
       ``train.checkpointer`` mapping; otherwise it uses the portable terminal
       fallback.
@@ -392,7 +393,8 @@ def _apply_checkpoint_retention_strategy(
         })
         train["checkpointer"] = checkpointer
     else:
-        num_epochs = train.get("num_epochs")
+        epoch_key = "num_epochs" if "num_epochs" in train else "epoch"
+        num_epochs = train.get(epoch_key)
         if (
             not isinstance(num_epochs, int) or
             isinstance(num_epochs, bool) or
@@ -400,10 +402,17 @@ def _apply_checkpoint_retention_strategy(
         ):
             raise ValueError(
                 "terminal checkpoint retention requires a positive integer "
-                "train.num_epochs"
+                "train.num_epochs or train.epoch"
             )
-        train["checkpoint_interval_unit"] = "epoch"
-        train["checkpoint_interval"] = num_epochs
+        native_ckpt = train.get("ckpt")
+        if epoch_key == "epoch" and isinstance(native_ckpt, dict):
+            # Cosmos-RL owns epoch-based synchronous saving. Keep the trainer's
+            # requested save cadence so every rung can export its terminal
+            # promotion checkpoint, but bound retained checkpoints natively.
+            native_ckpt["max_keep"] = 1
+        else:
+            train["checkpoint_interval_unit"] = "epoch"
+            train["checkpoint_interval"] = num_epochs
 
     return effective
 
@@ -1302,7 +1311,18 @@ def _find_sdk_resume_artifact(
             return path
         return f"{results_dir}/{path}" if results_dir else path
 
-    candidates = [build_checkpoint_candidate(normalize(path)) for path in checkpoints]
+    candidates = []
+    for path in checkpoints:
+        normalized = normalize(path)
+        # Remote SDK listings may contain checkpoint directories (notably
+        # Cosmos-RL's epoch_N/policy resume artifact).  Path.is_dir() cannot
+        # inspect a remote Lustre path from the controller host, so preserve
+        # the directory shape exposed by the SDK using the extension-free
+        # path contract.
+        remote_is_dir = not Path(normalized).suffix
+        candidates.append(
+            build_checkpoint_candidate(normalized, is_dir=remote_is_dir)
+        )
     return select_checkpoint_path(
         candidates,
         model_name=model_name,
@@ -2068,6 +2088,7 @@ KNOWN_AUTOML_SETTINGS = frozenset({
     "automl_kde_samples",
     "automl_max_concurrent",
     "automl_max_epochs",
+    "automl_min_epochs",
     "automl_max_experiments",
     "automl_max_generations",
     "automl_max_recommendations",

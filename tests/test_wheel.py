@@ -821,6 +821,9 @@ def test_algorithm_params():
     p = AlgorithmParams.from_dict({"automl_max_recommendations": 15})
     assert p.automl_max_recommendations == 15
     assert p.automl_reduction_factor == 3  # default
+    assert p.automl_min_epochs == 1
+    bounded = AlgorithmParams.from_dict({"automl_min_epochs": 5})
+    assert bounded.automl_min_epochs == 5
 
 
 # ---------------------------------------------------------------

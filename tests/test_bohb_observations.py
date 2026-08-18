@@ -93,3 +93,26 @@ def test_successful_zero_metrics_are_recorded_as_observations():
 
     assert len(brain.observations) == 2
     assert [observation[1] for observation in brain.observations] == [0.0, 0.0]
+
+
+def test_bohb_rungs_honor_nondefault_minimum_epoch():
+    brain = BOHB.__new__(BOHB)
+    brain.min_epochs = 5
+    brain.ni = {}
+    brain.ri = {}
+
+    brain.brackets_and_sh_sequence(max_epochs=15, reduction_factor=3)
+
+    assert brain.ri == {"0": [5, 9, 15], "1": [5, 15]}
+    assert sum(sum(values) for values in brain.ni.values()) == 17
+
+
+def test_bohb_default_minimum_preserves_legacy_rungs():
+    brain = BOHB.__new__(BOHB)
+    brain.min_epochs = 1
+    brain.ni = {}
+    brain.ri = {}
+
+    brain.brackets_and_sh_sequence(max_epochs=8, reduction_factor=2)
+
+    assert brain.ri["0"] == [1, 2, 4, 8]

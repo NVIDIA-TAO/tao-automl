@@ -4239,6 +4239,36 @@ def test_auto_terminal_retention_preserves_effective_epoch_budget(
     assert specs["train"]["checkpoint_interval_unit"] == "epoch"
 
 
+def test_terminal_retention_uses_native_cosmos_epoch_and_ckpt_contract():
+    from tao_automl.runner import _apply_checkpoint_retention_strategy
+
+    specs = {
+        "train": {
+            "epoch": 8,
+            "ckpt": {
+                "enable_checkpoint": True,
+                "export_safetensors": True,
+                "max_keep": 2,
+                "save_freq_in_epoch": 1,
+            },
+        }
+    }
+
+    effective = _apply_checkpoint_retention_strategy(
+        specs,
+        enabled=True,
+        strategy="terminal",
+        metric="balanced_accuracy",
+        direction="maximize",
+    )
+
+    assert effective == "terminal"
+    assert specs["train"]["epoch"] == 8
+    assert specs["train"]["ckpt"]["max_keep"] == 1
+    assert specs["train"]["ckpt"]["save_freq_in_epoch"] == 1
+    assert "checkpoint_interval" not in specs["train"]
+
+
 def test_auto_best_retention_injects_single_monitored_checkpoint():
     from tao_automl.runner import _apply_checkpoint_retention_strategy
 
@@ -4496,6 +4526,28 @@ def test_merge_specs_does_not_mutate_base():
 # ---------------------------------------------------------------------------
 # Resume checkpoint handoff
 # ---------------------------------------------------------------------------
+
+def test_sdk_resume_prefers_remote_cosmos_policy_directory():
+    from tao_automl.runner import _find_sdk_resume_artifact
+
+    class SDK:
+        def get_checkpoints(self, job_id):
+            return [
+                "/lustre/results/job/checkpoints/epoch_1/policy/model_rank_0.pth",
+                "/lustre/results/job/checkpoints/epoch_1/policy",
+            ]
+
+        def get_job_results_dir(self, job_id):
+            return "lustre:///lustre/results/job"
+
+    assert _find_sdk_resume_artifact(
+        SDK(),
+        "parent-job",
+        model_name="cosmos-rl",
+        epoch=1,
+        action="resume",
+        prefer_directory=True,
+    ) == "/lustre/results/job/checkpoints/epoch_1/policy"
 
 def test_apply_resume_checkpoint_sets_training_checkpoint_path(tmp_path):
     from tao_automl.runner import AutoMLRunner

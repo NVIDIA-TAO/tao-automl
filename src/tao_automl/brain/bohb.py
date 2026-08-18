@@ -29,10 +29,14 @@ class BOHB(AutoMLAlgorithmBase):
 
     def __init__(self, context, state_store, network, parameters, max_epochs, reduction_factor, epoch_multiplier,
                  kde_samples=64, top_n_percent=15.0, min_points_in_model=10, metric="loss",
-                 llm_params=None, enable_llm_range_narrowing=False, llm_analysis_interval=5):
+                 llm_params=None, enable_llm_range_narrowing=False, llm_analysis_interval=5,
+                 min_epochs=1):
         """Initialize the BOHB algorithm class"""
         super().__init__(context, state_store, network, parameters)
         self.epoch_multiplier = int(epoch_multiplier)
+        self.min_epochs = int(min_epochs)
+        if self.min_epochs < 1 or self.min_epochs > int(max_epochs):
+            raise ValueError("min_epochs must satisfy 1 <= min_epochs <= max_epochs")
         self.metric = metric
         self.ni = {}
         self.ri = {}
@@ -82,6 +86,18 @@ class BOHB(AutoMLAlgorithmBase):
                 ri = int(r * (reduction_factor**s_idx))
                 self.ni[str(itr)].append(ni)
                 self.ri[str(itr)].append(ri)
+            if self.min_epochs > 1:
+                levels = np.geomspace(self.min_epochs, int(max_epochs), s + 1)
+                bounded = [int(round(value)) for value in levels]
+                bounded[0] = self.min_epochs
+                bounded[-1] = int(max_epochs)
+                for index in range(1, len(bounded)):
+                    bounded[index] = max(bounded[index], bounded[index - 1] + 1)
+                if bounded[-1] > int(max_epochs):
+                    raise ValueError(
+                        "min_epochs/max_epochs cannot form strictly increasing BOHB rungs"
+                    )
+                self.ri[str(itr)] = bounded
 
     def override_num_epochs(self, num_epochs):
         """Override num epochs parameter in train spec file"""
@@ -456,6 +472,7 @@ class BOHB(AutoMLAlgorithmBase):
         state_dict["complete"] = self.complete
         state_dict["epoch_number"] = self.epoch_number
         state_dict["epoch_multiplier"] = self.epoch_multiplier
+        state_dict["min_epochs"] = self.min_epochs
         state_dict["ni"] = self.ni
         state_dict["ri"] = self.ri
         state_dict["last_launched_count"] = self.last_launched_count
@@ -472,7 +489,7 @@ class BOHB(AutoMLAlgorithmBase):
         reduction_factor, epoch_multiplier, kde_samples=64,
         top_n_percent=15.0, min_points_in_model=10, metric="loss",
         llm_params=None, enable_llm_range_narrowing=False,
-        llm_analysis_interval=5
+        llm_analysis_interval=5, min_epochs=1
     ):
         """Load the BOHB algorithm related variables from brain metadata"""
         json_loaded = state_store.get_brain_info(context.id)
@@ -483,6 +500,7 @@ class BOHB(AutoMLAlgorithmBase):
             "llm_params": llm_params,
             "enable_llm_range_narrowing": enable_llm_range_narrowing,
             "llm_analysis_interval": llm_analysis_interval,
+            "min_epochs": min_epochs,
         }
         if not json_loaded:
             return BOHB(

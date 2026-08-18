@@ -52,6 +52,7 @@ class AlgorithmParams:
 
     automl_max_recommendations: int = 20
     automl_max_epochs: int = 27
+    automl_min_epochs: int = 1
     automl_reduction_factor: int = 3
     epoch_multiplier: int = 1
     automl_max_concurrent: int = 4
@@ -87,6 +88,7 @@ class AlgorithmParams:
         return cls(
             automl_max_recommendations=params_dict.get("automl_max_recommendations", 20),
             automl_max_epochs=params_dict.get("automl_max_epochs", 27),
+            automl_min_epochs=params_dict.get("automl_min_epochs", 1),
             automl_reduction_factor=params_dict.get("automl_reduction_factor", 3),
             epoch_multiplier=params_dict.get("epoch_multiplier", 1),
             automl_max_concurrent=params_dict.get("automl_max_concurrent", 4),
@@ -198,6 +200,7 @@ class BrainFactory:
                 "network": network,
                 "parameters": parameters,
                 "max_epochs": int(params.automl_max_epochs),
+                "min_epochs": int(params.automl_min_epochs),
                 "reduction_factor": int(params.automl_reduction_factor),
                 "epoch_multiplier": int(params.epoch_multiplier),
                 "kde_samples": int(params.automl_kde_samples),
