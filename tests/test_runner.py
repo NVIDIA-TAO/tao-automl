@@ -4523,6 +4523,27 @@ def test_merge_specs_does_not_mutate_base():
     assert base["train"]["num_epochs"] == 12  # base stayed pristine
 
 
+def test_merge_specs_switches_cosmos_video_sampling_mode_without_mutating_base():
+    from tao_automl.runner import AutoMLRunner
+
+    base = {"custom": {"vision": {"nframes": 8, "max_pixels": 186625}}}
+    merged = AutoMLRunner._merge_specs(base, {"custom.vision.fps": 2})
+
+    assert merged["custom"]["vision"] == {"fps": 2, "max_pixels": 186625}
+    assert base["custom"]["vision"] == {"nframes": 8, "max_pixels": 186625}
+
+
+def test_merge_specs_switches_cosmos_video_sampling_mode_from_nested_override():
+    from tao_automl.runner import AutoMLRunner
+
+    base = {"custom": {"vision": {"fps": 2, "max_frames": 128}}}
+    merged = AutoMLRunner._merge_specs(
+        base, {"custom": {"vision": {"nframes": 8}}}
+    )
+
+    assert merged["custom"]["vision"] == {"nframes": 8, "max_frames": 128}
+
+
 # ---------------------------------------------------------------------------
 # Resume checkpoint handoff
 # ---------------------------------------------------------------------------

@@ -4832,6 +4832,21 @@ class AutoMLRunner:
                     target[key] = copy.deepcopy(value)
 
         merge_mapping(merged, rec_specs)
+
+        # Cosmos video sampling accepts exactly one of uniform ``nframes`` or
+        # rate-based ``fps``.  The packaged base template intentionally uses
+        # nframes, while an AutoML search may explicitly tune fps.  A deep
+        # merge must remove the inactive sibling rather than leaving both and
+        # triggering qwen-vl-utils' CPU fallback (which strict GPU profiles
+        # correctly reject).
+        requested_fps = _get_dotted_value(rec_specs, "custom.vision.fps")
+        requested_nframes = _get_dotted_value(rec_specs, "custom.vision.nframes")
+        vision = _get_dotted_value(merged, "custom.vision")
+        if isinstance(vision, dict):
+            if requested_fps is not None:
+                vision.pop("nframes", None)
+            elif requested_nframes is not None:
+                vision.pop("fps", None)
         return merged
 
 
