@@ -26,6 +26,11 @@ def fix_power_of_factor(value, factor=2):
 
 def clamp_value(value, v_min, v_max):
     """Clamps value within the given range"""
+    # A zero-width custom range represents an intentionally fixed parameter.
+    # The boundary nudges below would otherwise move it twice (for example,
+    # 0.3 -> 0.27 -> 0.33), violating the caller's exact range contract.
+    if v_min == v_max:
+        return v_min
     if value >= v_max:
         epsilon = v_max / 10
         if epsilon == 0.0:
