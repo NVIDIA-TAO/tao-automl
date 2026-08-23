@@ -210,6 +210,18 @@ class StateStore:
         self._write_json(ranges, "custom_ranges", f"{experiment_id}.json")
 
     # ------------------------------------------------------------------
+    # LLM analyzer state
+    # ------------------------------------------------------------------
+
+    def get_llm_analyzer_info(self, job_id: str):
+        """Return persisted generic LLM-analyzer state, or None."""
+        return self._read_json("llm_analyzer", f"{job_id}.json")
+
+    def save_llm_analyzer_info(self, job_id: str, state: dict) -> None:
+        """Persist generic LLM-analyzer state for deterministic resume."""
+        self._write_json(state, "llm_analyzer", f"{job_id}.json")
+
+    # ------------------------------------------------------------------
     # Best recommendation info
     # ------------------------------------------------------------------
 

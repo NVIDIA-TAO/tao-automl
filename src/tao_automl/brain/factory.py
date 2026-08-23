@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """AutoML brain factory"""
 import logging
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -78,6 +79,10 @@ class AlgorithmParams:
     automl_max_experiments: int = 50  # autoresearch budget
     research_program: Optional[str] = None
     hybrid_enable_llm_range_narrowing: bool = False
+    llm_analyzer_enabled: bool = False
+    llm_analyzer_interval: int = 5
+    llm_analyzer_narrow_ranges: bool = False
+    llm_analyzer_strict: bool = True
     automl_delete_intermediate_ckpt: bool = True
 
     @classmethod
@@ -117,6 +122,36 @@ class AlgorithmParams:
                     "hybrid_enable_llm_range_narrowing",
                     params_dict.get("enable_llm_range_narrowing", False),
                 )
+            ),
+            llm_analyzer_enabled=_as_bool(
+                params_dict.get(
+                    "llm_analyzer_enabled",
+                    params_dict.get(
+                        "enable_llm_range_narrowing",
+                        os.getenv("AUTOML_LLM_ANALYZER_ENABLED", False),
+                    ),
+                )
+            ),
+            llm_analyzer_interval=int(
+                params_dict.get(
+                    "llm_analyzer_interval",
+                    params_dict.get(
+                        "llm_analysis_interval",
+                        os.getenv("AUTOML_LLM_ANALYZER_INTERVAL", "5"),
+                    ),
+                )
+            ),
+            llm_analyzer_narrow_ranges=_as_bool(
+                params_dict.get(
+                    "llm_analyzer_narrow_ranges",
+                    params_dict.get(
+                        "enable_llm_range_narrowing",
+                        os.getenv("AUTOML_LLM_ANALYZER_NARROW_RANGES", False),
+                    ),
+                )
+            ),
+            llm_analyzer_strict=_as_bool(
+                params_dict.get("llm_analyzer_strict", True)
             ),
         )
 

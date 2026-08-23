@@ -33,6 +33,10 @@ _MULTI_FIDELITY_ALGORITHMS = frozenset({
 # Algorithms whose completion is determined by max recommendations count
 _MAX_REC_ALGORITHMS = frozenset({"bayesian", "b", "bfbo", "llm"})
 
+# Classical algorithms that can optionally use the generic LLM analyzer after
+# each completed recommendation. Hybrid/autoresearch own their LLM lifecycle.
+_LLM_ANALYZER_ALGORITHMS = frozenset({"bayesian", "b", "bfbo"})
+
 _BUDGET_KEY_NAMES = frozenset({
     "num_epochs",
     "epochs",
@@ -86,6 +90,36 @@ class Controller:
         self.history = []  # list of Recommendation objects
         self._next_id = 0
         self._checkpoint_window = 0
+        self._llm_analyzer = None
+
+        if (
+            self.algorithm in _LLM_ANALYZER_ALGORITHMS
+            and getattr(settings, "llm_analyzer_enabled", False)
+        ):
+            llm_params = settings.get_llm_params()
+            missing = [
+                name
+                for name in ("llm_endpoint", "llm_model", "llm_api_key")
+                if not (llm_params or {}).get(name)
+            ]
+            if missing:
+                raise ValueError(
+                    "LLM analyzer is enabled but required settings are missing: "
+                    + ", ".join(missing)
+                )
+            interval = int(getattr(settings, "llm_analyzer_interval", 5))
+            if interval < 1:
+                raise ValueError("llm_analyzer_interval must be at least 1")
+            from tao_automl.brain.llm_analyzer import LLMAnalyzer
+
+            self._llm_analyzer = LLMAnalyzer(
+                llm_params=llm_params,
+                analysis_interval=interval,
+                narrow_ranges=bool(
+                    getattr(settings, "llm_analyzer_narrow_ranges", False)
+                ),
+            )
+            self._restore_llm_analyzer_state()
 
         # WandB integration (optional)
         self._wandb_config = wandb_config or {}
@@ -166,7 +200,12 @@ class Controller:
             for rec in recommendations:
                 rec.checkpoint_window = self._checkpoint_window
 
-        # Persist after generating new recommendations
+        # Persist the brain before the controller publishes the matching
+        # pending recommendations.  Bayesian/BFBO mutate their normalized
+        # design vectors while generating a recommendation; if the process
+        # dies after controller state is written but before a result arrives,
+        # resume must still have the corresponding X value.
+        self.brain.save_state()
         self.save_state()
         return recommendations
 
@@ -226,6 +265,103 @@ class Controller:
         )
 
         self._update_wandb_table()
+        self._maybe_run_llm_analysis()
+
+    def _restore_llm_analyzer_state(self):
+        """Restore analyzer cadence/history so resumed searches do not drift."""
+        if self._llm_analyzer is None:
+            return
+        saved = self.state_store.get_llm_analyzer_info(self.context.id) or {}
+        self._llm_analyzer._last_analysis_count = int(
+            saved.get("last_analysis_count", 0) or 0
+        )
+        self._llm_analyzer._analyses = list(saved.get("analyses", []))
+        self._llm_analyzer._applied_narrowings = list(
+            saved.get("applied_narrowings", [])
+        )
+
+    def _save_llm_analyzer_state(self):
+        if self._llm_analyzer is None:
+            return
+        self.state_store.save_llm_analyzer_info(
+            self.context.id,
+            {
+                "last_analysis_count": self._llm_analyzer._last_analysis_count,
+                "analyses": self._llm_analyzer.get_all_analyses(),
+                "applied_narrowings": list(
+                    self._llm_analyzer._applied_narrowings
+                ),
+                "metadata": self._llm_analyzer.format_for_metadata(),
+            },
+        )
+
+    def _effective_analyzer_parameters(self):
+        """Overlay current narrowed bounds onto the schema sent to the LLM."""
+        parameters = []
+        custom_ranges = getattr(self.brain, "custom_ranges", {}) or {}
+        for original in getattr(self.brain, "parameters", []) or []:
+            parameter = dict(original)
+            parameter.update(custom_ranges.get(parameter.get("parameter"), {}))
+            parameters.append(parameter)
+        return parameters
+
+    def _maybe_run_llm_analysis(self):
+        """Analyze completed classical trials and apply validated narrowings."""
+        analyzer = self._llm_analyzer
+        if analyzer is None:
+            return
+        completed = [
+            rec
+            for rec in self.history
+            if rec.status
+            in (
+                JobStates.success,
+                JobStates.done,
+                JobStates.failure,
+                JobStates.error,
+            )
+        ]
+        if not analyzer.should_analyze(len(completed)):
+            return
+
+        experiments = []
+        for rec in completed:
+            succeeded = rec.status in (JobStates.success, JobStates.done)
+            experiments.append(
+                {
+                    "metric": rec.primary_metric_value() if succeeded else None,
+                    "status": rec.status,
+                    "config": dict(rec.specs),
+                }
+            )
+        best = self.get_best()
+        parameters = self._effective_analyzer_parameters()
+        analysis = analyzer.analyze(
+            experiments=experiments,
+            parameters=parameters,
+            network=self.context.network,
+            metric_name=self.metric,
+            metric_direction=self.objective_config.primary_direction,
+            best_metric=best.primary_metric_value() if best is not None else None,
+        )
+        if analysis is None:
+            if getattr(self.settings, "llm_analyzer_strict", True):
+                raise RuntimeError(
+                    "LLM analyzer failed; refusing to launch an unguided "
+                    f"{self.algorithm}+LLM recommendation"
+                )
+            return
+
+        narrowings = analyzer.get_validated_range_narrowings(parameters)
+        if narrowings:
+            merged = dict(getattr(self.brain, "custom_ranges", {}) or {})
+            for name, bounds in narrowings.items():
+                merged[name] = {**merged.get(name, {}), **bounds}
+            self.state_store.save_custom_param_ranges(
+                self.context.handler_id, merged
+            )
+            self.brain.custom_ranges = merged
+        self._save_llm_analyzer_state()
 
     def get_best(self):
         """Return the best Recommendation so far, or None.
