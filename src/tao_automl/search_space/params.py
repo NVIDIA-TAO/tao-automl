@@ -50,6 +50,11 @@ _ACTION_SCOPED_BLOCKS = frozenset({
     "dataset_convert",
 })
 
+# Some orchestration actions optimize a differently named spec block.
+_ACTION_SPEC_BLOCK_ALIASES = {
+    "inference_hpo": "inference",
+}
+
 # Actions that run an epoch-based training loop and therefore read the shared
 # `train` block (optimizer, epochs, checkpoint interval) in addition to their
 # own. `distill` is the load-bearing case: TAO distillation takes its teacher
@@ -156,7 +161,8 @@ def generate_hyperparams_to_search(
     # must not sample `distill.teacher.backbone.freeze_backbone`: the distill
     # block is never read by the train job, so those dimensions waste budget and
     # make the winning spec look like it tuned something it did not.
-    foreign_blocks = _ACTION_SCOPED_BLOCKS - {action}
+    action_spec_block = _ACTION_SPEC_BLOCK_ALIASES.get(action, action)
+    foreign_blocks = _ACTION_SCOPED_BLOCKS - {action_spec_block}
     if action in _TRAINING_FAMILY_ACTIONS:
         foreign_blocks -= {"train"}
     # Only prune the *default* search space. An explicit automl_hyperparameters
