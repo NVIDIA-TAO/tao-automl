@@ -38,7 +38,7 @@ llm = [
     "openai>=1.0",
 ]
 autoprompter = [
-    "gepa @ git+https://github.com/gepa-ai/gepa@d750388c99a455f48aa3f3fcf4a6a28650f6dc38",
+    "gepa==0.1.2",
 ]
 wandb = [
     "wandb>=0.15",
