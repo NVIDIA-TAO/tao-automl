@@ -2,14 +2,28 @@ name: Cherry-pick to release
 
 # Thin caller for the org-wide cherry-pick bot (logic in NVIDIA-TAO/.github).
 # Requires org-level secrets TAO_CHERRY_PICK_BOT_APP_ID / TAO_CHERRY_PICK_BOT_PRIVATE_KEY.
+#
+# Triggers:
+#   - closed        : backport when a PR merges to main
+#   - labeled       : backport when a release/* label is added AFTER merge (forgot-the-label recovery)
+#   - workflow_dispatch(pr_number) : manual retrigger of a merged PR's backport, by number
+# The bot reads labels live and is idempotent, so re-triggers never duplicate a cherry-pick.
 on:
   pull_request_target:
-    types: [closed]
+    types: [closed, labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Merged PR number to (re)backport to its release/* labeled branches'
+        required: true
+        type: string
 
 jobs:
   cherry-pick:
     if: >-
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.base.ref == 'main'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     uses: NVIDIA-TAO/.github/.github/workflows/cherry-pick.yml@main
+    with:
+      pr_number: ${{ github.event.inputs.pr_number || '' }}
     secrets: inherit
