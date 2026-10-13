@@ -53,15 +53,52 @@ def stop_child(child):
         child.wait(timeout=2)
     except subprocess.TimeoutExpired:
         os.killpg(child.pid, signal.SIGKILL)
-        child.wait()
+        try:
+            child.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            return False  # An uninterruptible child needs native reconciliation.
     except ProcessLookupError:
         pass
+    return True
+
+
+def progress(root, names):
+    """Small structured files only; no raw log/error text enters receipts."""
+    tokens, failed = [], False
+    for name in names:
+        path = root / name
+        if not path.resolve().is_relative_to(root.resolve()):
+            raise ValueError("Progress path escaped the attempt directory")
+        try:
+            stat = path.stat()
+            tokens.append((name, stat.st_size, stat.st_mtime_ns))
+            with path.open("rb") as stream:
+                stream.seek(max(0, stat.st_size - 16384))
+                lines = stream.read(16384).splitlines()
+            # An incomplete last line must not hide the last complete event.
+            for line in reversed(lines):
+                try:
+                    event = json.loads(line)
+                except (ValueError, UnicodeDecodeError):
+                    continue
+                if isinstance(event, dict):
+                    failed |= event.get("status") in {"FAILURE", "ERROR"}
+                    break
+        except FileNotFoundError:
+            tokens.append((name, None, None))
+    return tokens, failed
 
 
 def main():
     plan_path = Path(sys.argv[1])
     root = plan_path.parent
     plan = json.loads(plan_path.read_text())
+    if "runtime_timeout_seconds" in plan:
+        # SLURM queue/startup time is separate from the workload runtime budget.
+        plan["deadline"] = min(
+            plan["deadline"], time.time() + plan["runtime_timeout_seconds"]
+        )
+    os.environ.update(plan.get("environment", {}))
     canceled = False
 
     def request_stop(signum, frame):
@@ -75,12 +112,16 @@ def main():
         "pid": os.getpid(),
         "token": process_token(os.getpid()),
         "state": "RUNNING",
+        "started_at": time.time(),
+        "heartbeat_at": time.time(),
     }
+    if "slurm_job_id" in plan:
+        receipt["slurm_job_id"] = plan["slurm_job_id"]
     atomic(root / "_receipt.json", receipt)
     child = None
     try:
         with (root / "trial.log").open("ab", buffering=0) as log:
-            for command in plan["commands"]:
+            for index, command in enumerate(plan["commands"]):
                 canceled = (
                     canceled
                     or (root / "_cancel.json").exists()
@@ -98,17 +139,32 @@ def main():
                     start_new_session=True,
                 )
                 receipt.update(
-                    child_pid=child.pid, child_token=process_token(child.pid)
+                    child_pid=child.pid,
+                    child_token=process_token(child.pid),
+                    command_index=index,
+                    progress_at=time.time(),
+                    heartbeat_at=time.time(),
                 )
+                names = plan.get("progress_files", {}).get(str(index), [])
+                receipt["progress_watched"] = bool(names)
+                previous = None
                 atomic(root / "_receipt.json", receipt)
                 while child.poll() is None:
+                    if time.time() - receipt["heartbeat_at"] >= 5:
+                        token, failed = progress(root, names)
+                        if token != previous:
+                            receipt["progress_at"] = time.time()
+                            previous = token
+                        receipt["heartbeat_at"] = time.time()
+                        receipt["workload_failed"] = failed
+                        atomic(root / "_receipt.json", receipt)
                     canceled = (
                         canceled
                         or (root / "_cancel.json").exists()
                         or (root.parent / "cancel.json").exists()
                     )
                     if canceled or time.time() >= plan["deadline"]:
-                        stop_child(child)
+                        receipt["cleanup_confirmed"] = stop_child(child)
                         receipt["state"] = "CANCELED" if canceled else "ERROR"
                         receipt["reason"] = (
                             "cancel requested" if canceled else "timeout"
@@ -128,7 +184,7 @@ def main():
                 receipt.update(state="COMPLETE", exit_code=0)
     except BaseException as exc:  # noqa: BLE001 -- persist terminal evidence even for worker interruption
         if child and child.poll() is None:
-            stop_child(child)
+            receipt["cleanup_confirmed"] = stop_child(child)
         # Exception text could contain credentials supplied by a user command.
         receipt.update(state="ERROR", reason=type(exc).__name__)
     finally:

@@ -1,5 +1,11 @@
 # TAO GEPA Auto-Prompter
 
+The reusable implementation now lives in the independently distributed
+`nvidia-automl-core[prompts]` wheel. `tao_automl.gepa_autoprompter` preserves the
+public TAO names as imports of that implementation; other repositories do not
+need TAO or its SDK. The packaged optional dependency pins GEPA 0.1.2. Existing
+TAO callback examples below continue to use the same public API.
+
 TAO owns the integration layer for reflective prompt optimization. The upstream
 Auto-Tuner and VLMEvalKit repositories are read-only references and metric
 providers; TAO does not require feature changes in either repository.
@@ -49,7 +55,7 @@ a bounded substitute for frame-count sampling on variable-duration videos.
 pip install 'nvidia-tao-automl[autoprompter]'
 ```
 
-The extra pins GEPA to the exact validated upstream commit, `d750388`.
+The extra pins GEPA to release `0.1.2`.
 
 ## Action integration
 

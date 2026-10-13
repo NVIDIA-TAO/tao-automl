@@ -16,6 +16,23 @@ from automl_core.contracts import fingerprint
 
 
 class Executor:
+    def __new__(cls, spec):
+        if cls is Executor and spec.kind in {"kubernetes", "brev", "lepton"}:
+            from automl_core.brev import BrevExecutor
+            from automl_core.kubernetes import KubernetesExecutor
+            from automl_core.lepton import LeptonExecutor
+
+            return {
+                "kubernetes": KubernetesExecutor,
+                "brev": BrevExecutor,
+                "lepton": LeptonExecutor,
+            }[spec.kind](spec)
+        if cls is Executor and spec.kind == "slurm":
+            from automl_core.slurm import SlurmExecutor
+
+            return SlurmExecutor(spec)
+        return super().__new__(cls)
+
     def __init__(self, spec):
         self.spec = spec
         self.children = {}
@@ -89,7 +106,7 @@ class Executor:
         ]
         mounts = {
             plan.cwd.resolve(): "ro",
-            **{p.resolve(): "ro" for p in self.spec.mounts},
+            **{p.absolute(): "ro" for p in [*self.spec.mounts, *plan.read_only_mounts]},
             trial: "rw",
         }
         for path, mode in mounts.items():
@@ -116,6 +133,13 @@ class Executor:
         ]
 
     def submit(self, trial, plan, deadline):
+        if any(
+            not p.is_absolute() or not p.exists() or p.resolve() == trial.resolve()
+            for p in plan.read_only_mounts
+        ):
+            raise ValueError(
+                "Stage input mounts must be existing absolute read-only paths outside the new trial"
+            )
         if (trial / "_execution.json").exists():
             raise ValueError(
                 "A launch intent already exists; reconcile it instead of resubmitting"
@@ -131,6 +155,7 @@ class Executor:
             "commands": plan.commands,
             "cwd": str(plan.cwd),
             "deadline": deadline,
+            "progress_files": plan.progress_files,
         }
         _worker.atomic(trial / "_execution.json", payload)  # Intent precedes launch.
         if self.spec.kind == "docker":
@@ -202,6 +227,8 @@ class Executor:
             child.poll()  # Reap exited local children.
         receipt_path = trial / "_receipt.json"
         receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
+        if self.spec.kind == "venv" and receipt.get("cleanup_confirmed") is False:
+            return "UNKNOWN"
         if self.spec.kind == "docker":
             native = self._container(trial)
             if native is None:
