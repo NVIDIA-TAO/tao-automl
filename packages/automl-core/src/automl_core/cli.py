@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 
 from automl_core.contracts import Contract, Execution, Search
+from automl_core.controller import Session, review
 from automl_core.runner import Experiment, manage
 from automl_core.workload import CommandWorkload, read_manifest
 
@@ -16,6 +17,18 @@ class Manifest(Contract):
     search: Search
     workload: CommandWorkload
     execution: Execution
+
+
+def log_paths(result):
+    if "batches" in result:
+        return {
+            batch["id"]: {
+                trial["id"]: trial["log"]
+                for trial in batch.get("native", {}).get("trials", [])
+            }
+            for batch in result["batches"]
+        }
+    return {trial["id"]: trial["log"] for trial in result["trials"]}
 
 
 def load(path, workspace):
@@ -27,9 +40,12 @@ def load(path, workspace):
     return Experiment(manifest.search, manifest.workload, manifest.execution, workspace)
 
 
-def main(loader=load):
+def main(loader=load, *, prog=None, description=None, epilog=None):
     parser = argparse.ArgumentParser(
-        description="Bounded AutoML: explicit workload, objective and execution"
+        prog=prog,
+        description=description
+        or "Bounded AutoML: explicit workload, objective and execution",
+        epilog=epilog,
     )
     parser.add_argument(
         "action", choices=["plan", "run", "resume", "status", "logs", "cancel"]
@@ -39,6 +55,22 @@ def main(loader=load):
         "--experiment-id", help="Manage an existing run without its source manifest"
     )
     parser.add_argument("--workspace", type=Path, required=True)
+    parser.add_argument(
+        "--controller-max-allocations",
+        type=int,
+        help="Opt in to bounded SLURM CPU handoff; includes initial allocation",
+    )
+    parser.add_argument(
+        "--controller-allocation-seconds",
+        type=int,
+        help="Reviewed maximum wall time for each CPU controller allocation",
+    )
+    parser.add_argument(
+        "--controller-grace-seconds",
+        type=int,
+        default=None,
+        help="Checkpoint/requeue allowance before CPU wall time (default: 300)",
+    )
     parser.add_argument(
         "--approve",
         action="store_true",
@@ -53,26 +85,70 @@ def main(loader=load):
         parser.error("plan/run/resume require --manifest, not --experiment-id")
     if bool(args.manifest) == bool(args.experiment_id):
         parser.error("Provide exactly one of --manifest or --experiment-id")
+    if bool(args.controller_max_allocations is not None) != bool(
+        args.controller_allocation_seconds is not None
+    ):
+        parser.error("Controller handoff needs both allocation count and seconds")
+    if (
+        args.controller_grace_seconds is not None
+        and args.controller_max_allocations is None
+    ):
+        parser.error(
+            "Controller grace requires an explicit allocation count and seconds"
+        )
+    if args.controller_max_allocations is not None and args.action not in {
+        "plan",
+        "run",
+        "resume",
+    }:
+        parser.error("Controller allocation options apply only to plan/run/resume")
     try:
         experiment = (
             loader(args.manifest.resolve(), args.workspace) if args.manifest else None
         )
+        policy = None
+        if args.controller_max_allocations is not None:
+            policy = review(
+                args.controller_max_allocations,
+                args.controller_allocation_seconds,
+                args.controller_grace_seconds
+                if args.controller_grace_seconds is not None
+                else 300,
+            )
+            if experiment.execution.kind != "slurm":
+                raise ValueError("Controller handoff requires SLURM execution")
+            settings = (
+                experiment.search
+                if hasattr(experiment, "search")
+                else experiment.settings
+            )
+            if (
+                settings.llm
+                and policy["grace_seconds"] < settings.llm.timeout_seconds + 60
+            ):
+                raise ValueError(
+                    "Controller grace must cover an in-flight LLM request plus 60 seconds"
+                )
         if args.experiment_id:
             result = manage(
                 args.workspace, args.experiment_id, cancel=args.action == "cancel"
             )
             if args.action == "logs":
-                result = {trial["id"]: trial["log"] for trial in result["trials"]}
+                result = log_paths(result)
         elif args.action == "plan":
             result = experiment.plan()
+            if policy:
+                result["controller_review"] = policy
         elif args.action in {"run", "resume"}:
-            result = experiment.run(resume=args.action == "resume")
+            result = (Session(experiment, policy) if policy else experiment).run(
+                resume=args.action == "resume"
+            )
         elif args.action == "cancel":
             result = experiment.cancel()
         else:
             result = experiment.status()
             if args.action == "logs":
-                result = {trial["id"]: trial["log"] for trial in result["trials"]}
+                result = log_paths(result)
         print(json.dumps(result, indent=2, allow_nan=False))
         if args.action in {"run", "resume"} and result["state"] == "ERROR":
             raise SystemExit(1)

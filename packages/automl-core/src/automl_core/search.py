@@ -38,7 +38,11 @@ def ask(spec, history):
     rng = np.random.default_rng(np.random.SeedSequence([spec.seed, len(history)]))
     successful = [trial for trial in history if trial["state"] == "COMPLETE"]
     dimensions = len(spec.parameters)
-    if spec.algorithm == "bayesian" and len(successful) >= 3:
+    if spec.algorithm == "bfbo" and successful:
+        from automl_core.samplers import bfbo
+
+        point = bfbo(spec, successful, rng)
+    elif spec.algorithm == "bayesian" and len(successful) >= 3:
         samples = np.asarray([features(spec, trial["point"]) for trial in successful])
         sign = 1 if spec.objective.direction == "maximize" else -1
         scores = sign * np.asarray([trial["result"]["metric"] for trial in successful])
@@ -75,6 +79,10 @@ def tell(trial, state, result=None):
 
 def best(spec, history):
     successful = [trial for trial in history if trial["state"] == "COMPLETE"]
+    if spec.fidelity:
+        successful = [
+            t for t in successful if t.get("resource") == spec.fidelity.maximum
+        ]
     if not successful:
         return None
     return sorted(
