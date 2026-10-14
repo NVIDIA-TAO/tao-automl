@@ -76,6 +76,12 @@ JSON/YAML/TOML configuration plus argv templates (`{python}`, `{config}`,
   and `@@EXTRA_ENV@@` slots. A native CPU workload needs no image/template.
   No site-specific queue, registry pull, SSH tunnel or GPU-job scheduler requeue.
   Automatic infrastructure retries require explicit `search.recovery` caps.
+  Optional `slurm.exclude_nodes` contains unique, explicit node names from the
+  user's private operational review. Preflight verifies that all still exist;
+  every trial/retry renders `#SBATCH --exclude` and records the list in its
+  intent. An empty list leaves placement unchanged. No historical blacklist is
+  bundled or inferred automatically. Keep fault history and node identities out
+  of public manifests; review repaired/retired nodes against live inventory.
 - Kubernetes, Brev and Lepton implement the same four verbs for single-node
   containers. All algorithms and prompt batches use these executors unchanged;
   live cloud/GPU verification is still required. Declare `execution.kind` and a
@@ -208,8 +214,17 @@ identify a stalled owned allocation on a confirmed DOWN/NOT_RESPONDING node,
 but must cancel and confirm terminal scheduler state before replacing it.
 DRAIN alone, NCCL text, program/config failures, OOM and timeouts are not inferred
 to be transient. Scheduler observation outages and ambiguous submissions never
-authorize new work. Unconfirmed recovery cancellation produces an explicit
-blocked-recovery error, not an overlapping replacement or indefinite wait.
+authorize new work. After `cancellation_timeout_seconds`, watchdog cancellation
+switches to read-only reconciliation instead of terminating the brain. The
+trial retains its native identity and records `cancellation_reconciliation` as
+`WAITING`; no replacement, proposal or retry budget is consumed while waiting.
+The original experiment deadline, user cancellation and CPU allocation/handoff
+limits still apply. Native termination changes this to `CONFIRMED`, after which
+retry caps and `stop_on_failure` decide whether to retry, continue or stop.
+Node evidence is refreshed only while the owned allocation remains active;
+a later fault on an already-released node does not make the old job retryable.
+Unresolved identity or expiry/cancellation without terminal proof remains an
+explicit error, never an overlapping replacement or an unbounded wait.
 Automatic infrastructure classification currently supports SLURM only.
 
 ### Lost submission replies

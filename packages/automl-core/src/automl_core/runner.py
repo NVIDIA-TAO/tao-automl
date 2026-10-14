@@ -509,6 +509,7 @@ class Experiment:
             "recovery",
             "termination_started_at",
             "submission_reconciliation",
+            "cancellation_reconciliation",
         ):
             trial.pop(key, None)
         ledger["state"] = "RUNNING"
@@ -578,8 +579,7 @@ class Experiment:
                         >= recovery["cancel_requested_at"]
                         + self.search.recovery.cancellation_timeout_seconds
                     ):
-                        self._recovery_blocked(ledger, trial)
-                        return False
+                        self._reconciling_cancellation(ledger, trial, recovery)
                     if (self.root / "cancel.json").exists() or time.time() >= deadline:
                         self._unconfirmed_cancel(ledger, trial, root)
                         return False
@@ -590,12 +590,6 @@ class Experiment:
                         self.execution.poll_seconds * 2 ** min(failures - 1, 8),
                     )
                     until = min(deadline, time.time() + delay)
-                    if recovery:
-                        until = min(
-                            until,
-                            recovery["cancel_requested_at"]
-                            + self.search.recovery.cancellation_timeout_seconds,
-                        )
                     while (
                         time.time() < until and not (self.root / "cancel.json").exists()
                     ):
@@ -652,22 +646,34 @@ class Experiment:
                         recovery = {**issue, "cancel_requested_at": time.time()}
                         atomic(root / "_recovery.json", recovery)
                 if recovery:
+                    # The scheduler can discover a node failure after the initial
+                    # watchdog. Refresh only against this still-owned allocation;
+                    # never infer retryability from a stale heartbeat alone.
+                    if self.execution.kind == "slurm" and hasattr(
+                        self.executor, "refresh_recovery"
+                    ):
+                        recovery = self.executor.refresh_recovery(root, recovery)
+                        atomic(root / "_recovery.json", recovery)
                     trial["recovery"] = recovery
                     self._save(ledger)
-                    try:
-                        self.executor.cancel(root)
-                    except (
-                        SchedulerUnavailable,
-                        subprocess.SubprocessError,
-                        ValueError,
-                    ):
-                        pass  # The next native observation, not scancel's exit, is proof.
                     if (
                         time.time() - recovery["cancel_requested_at"]
                         >= self.search.recovery.cancellation_timeout_seconds
+                        and (root / "_cancel.json").exists()
                     ):
-                        self._recovery_blocked(ledger, trial)
-                        return False
+                        # Slow epilog/unkillable tasks can outlive the cancellation
+                        # RPC window. Keep the brain and its handoff checkpoints
+                        # alive, but do not resubmit or repeatedly send scancel.
+                        self._reconciling_cancellation(ledger, trial, recovery)
+                    else:
+                        try:
+                            self.executor.cancel(root)
+                        except (
+                            SchedulerUnavailable,
+                            subprocess.SubprocessError,
+                            ValueError,
+                        ):
+                            pass  # A successful RPC is not termination evidence.
                 if self.execution.managed and trial["state"] != state:
                     trial["state"] = state
                     self._save(ledger)
@@ -697,6 +703,11 @@ class Experiment:
                 self.cancel()
             raise
         result = None
+        if "cancellation_reconciliation" in trial:
+            trial["cancellation_reconciliation"].update(
+                state="CONFIRMED", confirmed_at=time.time(), terminal_state=state
+            )
+            trial["observed_state"] = state
         recovery = read_receipt(root / "_recovery.json")
         if recovery and state != "COMPLETE":
             state = "ERROR"  # Recovery cancellation is not a user cancellation.
@@ -730,14 +741,17 @@ class Experiment:
         if hasattr(self.executor, "finalize"):
             self.executor.finalize(root, state)
 
-    def _recovery_blocked(self, ledger, trial):
-        trial["observed_state"] = "UNKNOWN"
-        trial["reason"] = (
-            "Recovery cancellation unconfirmed; native reconciliation required"
-        )
-        ledger.update(
-            state="ERROR",
-            stop_reason="recovery blocked: old allocation termination unconfirmed",
+    def _reconciling_cancellation(self, ledger, trial, recovery):
+        """Waiting is not failure or permission for a replacement allocation."""
+        trial.setdefault(
+            "cancellation_reconciliation",
+            {
+                "state": "WAITING",
+                "started_at": time.time(),
+                "cancel_requested_at": recovery["cancel_requested_at"],
+                "deadline": self._deadline(ledger),
+                "reason": "awaiting native termination after cancellation window",
+            },
         )
         self._save(ledger)
 

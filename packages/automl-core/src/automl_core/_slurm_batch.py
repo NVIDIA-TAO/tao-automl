@@ -128,6 +128,8 @@ def main():
         if child and child.poll() is None:
             receipt["cleanup_confirmed"] = stop_child(child)
         receipt.update(state="ERROR", reason=type(exc).__name__)
+        if isinstance(exc, OSError):
+            receipt["error_errno"] = exc.errno
     finally:
         receipt["finished_at"] = time.time()
         atomic(root / "_batch_receipt.json", receipt)
