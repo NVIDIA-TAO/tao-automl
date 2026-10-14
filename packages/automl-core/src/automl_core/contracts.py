@@ -259,7 +259,12 @@ class RecoveryPolicy(Contract):
     max_retries_per_trial: int = Field(default=0, ge=0, le=10, strict=True)
     max_retries_total: int = Field(default=0, ge=0, strict=True)
     backoff_seconds: float = Field(default=30, ge=0, le=300)
-    cancellation_timeout_seconds: float = Field(default=120, gt=0, le=600)
+    cancellation_timeout_seconds: float = Field(
+        default=120,
+        gt=0,
+        le=600,
+        description="Active cancellation window; watchdog recovery then observes until the original deadline",
+    )
     heartbeat_timeout_seconds: float | None = Field(default=None, ge=15)
     progress_timeout_seconds: float | None = Field(default=None, ge=15)
 
@@ -373,6 +378,7 @@ class SlurmSettings(Contract):
     gpus: int = Field(ge=0, strict=True)
     memory_mb: int | None = Field(default=None, gt=0, strict=True)
     exclusive: bool = False
+    exclude_nodes: list[str] = Field(default_factory=list)
     startup_timeout_seconds: int = Field(gt=0, strict=True)
     cleanup_seconds: int = Field(gt=0, strict=True)
     poll_seconds: float = Field(default=30, ge=1, le=300)
@@ -390,6 +396,14 @@ class SlurmSettings(Contract):
 
     @model_validator(mode="after")
     def valid_slurm(self):
+        if any(
+            not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", node)
+            for node in self.exclude_nodes
+        ) or len(set(self.exclude_nodes)) != len(self.exclude_nodes):
+            raise ValueError(
+                "SLURM exclude_nodes must be unique, explicit node names; "
+                "expand hostlists against live inventory before planning"
+            )
         if self.time_limit_seconds % 60:
             raise ValueError(
                 "SLURM time_limit_seconds must be a whole number of minutes"

@@ -143,6 +143,16 @@ class SlurmExecutor:
         cluster = re.search(r"^\s*ClusterName\s*=\s*(\S+)", config, re.MULTILINE)
         if not cluster:
             raise ValueError("Unable to identify the SLURM cluster")
+        if self.settings.exclude_nodes:
+            inventory = self._call(["scontrol", "show", "nodes", "-o"]).stdout
+            nodes = set(re.findall(r"(?:^|\s)NodeName=([^\s]+)", inventory))
+            missing = sorted(set(self.settings.exclude_nodes) - nodes)
+            if missing:
+                raise ValueError(
+                    "Excluded SLURM nodes are absent from live inventory: "
+                    + ", ".join(missing)
+                    + "; reconcile the private launch configuration before running"
+                )
         for partition in self.settings.partition.split(","):
             output = self._call(
                 ["scontrol", "show", "partition", partition, "-o"]
@@ -215,6 +225,8 @@ class SlurmExecutor:
         ]
         if settings.qos:
             extra.append(f"#SBATCH --qos={settings.qos}")
+        if settings.exclude_nodes:
+            extra.append("#SBATCH --exclude=" + ",".join(settings.exclude_nodes))
         if settings.exclusive:
             extra.append("#SBATCH --exclusive")
         if settings.memory_mb:
@@ -345,6 +357,7 @@ ulimit -n 65536"""
             "submission_guard": True,
             "owner_uid": os.getuid(),
             "supporting_files": settings.supporting_files,
+            "exclude_nodes": settings.exclude_nodes,
             "retry_of": previous["name"] if previous else None,
             "retry_of_job_id": previous.get("job_id") if previous else None,
         }
@@ -719,27 +732,50 @@ ulimit -n 65536"""
             }
         if issue:
             issue["job_id"] = job_id
-            # DRAIN alone (maintenance, job error, etc.) is not infrastructure proof.
-            errors = {}
-            job = self._query(["scontrol", "show", "job", job_id, "-o"], errors)
-            fields = dict(re.findall(r"(\w+)=([^\s]+)", job.stdout)) if job else {}
-            node = fields.get("NodeList", "")
-            if fields.get("JobId") == job_id and re.fullmatch(r"[A-Za-z0-9_.-]+", node):
-                reply = self._query(["scontrol", "show", "node", node, "-o"], errors)
-                values = (
-                    dict(re.findall(r"(\w+)=([^\s]+)", reply.stdout)) if reply else {}
+            return self._node_health(job_id, issue)
+        return issue
+
+    def refresh_recovery(self, trial, recovery):
+        """Retain later native infrastructure evidence while cleanup is pending."""
+        observation = read_receipt(trial / "_scheduler_status.json")
+        intent = self._intent(trial)
+        job_id = recovery.get("job_id")
+        if (
+            recovery.get("retryable")
+            or not job_id
+            or not intent
+            or intent.get("job_id") != job_id
+            or observation.get("job_id") != job_id
+            or observation.get("native_state")
+            not in ACTIVE - {"PENDING", "CONFIGURING"}
+        ):
+            return recovery
+        return self._node_health(job_id, dict(recovery))
+
+    def _node_health(self, job_id, issue):
+        # DRAIN alone (maintenance, job error, etc.) is not infrastructure proof.
+        # A fresh job query prevents attributing a later fault on a reused node
+        # to an allocation that has already terminated.
+        errors = {}
+        job = self._query(["scontrol", "show", "job", job_id, "-o"], errors)
+        fields = dict(re.findall(r"(\w+)=([^\s]+)", job.stdout)) if job else {}
+        node = fields.get("NodeList", "")
+        if (
+            fields.get("JobId") == job_id
+            and fields.get("JobState") in ACTIVE - {"PENDING", "CONFIGURING"}
+            and re.fullmatch(r"[A-Za-z0-9_.-]+", node)
+        ):
+            reply = self._query(["scontrol", "show", "node", node, "-o"], errors)
+            values = dict(re.findall(r"(\w+)=([^\s]+)", reply.stdout)) if reply else {}
+            flags = set(values.get("State", "").split("+"))
+            if values.get("NodeName") == node and flags & {"DOWN", "NOT_RESPONDING"}:
+                issue.update(
+                    retryable=True,
+                    node=node,
+                    reason="node_unresponsive",
+                    health_reason=issue["reason"],
+                    node_evidence_at=time.time(),
                 )
-                flags = set(values.get("State", "").split("+"))
-                if values.get("NodeName") == node and flags & {
-                    "DOWN",
-                    "NOT_RESPONDING",
-                }:
-                    issue.update(
-                        retryable=True,
-                        node=node,
-                        reason="node_unresponsive",
-                        health_reason=issue["reason"],
-                    )
         return issue
 
     def failure(self, trial):

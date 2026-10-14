@@ -68,6 +68,13 @@ SLURM execution uses native CLIs from a controller on the cluster and shared
 storage. Collect partition/account and check live limits; never substitute a
 site-specific queue. Containers require a prebuilt, hashed squashfs image and
 a sealed consumer template. Do not pull an image inside a GPU allocation.
+Consult the user's private node-fault history and current scheduler inventory
+before new launches. Put reviewed, explicit names in `execution.slurm.exclude_nodes`;
+the executor validates their existence and emits `--exclude` for every attempt.
+Keep node identities/evidence in private run configuration, not packaged skills.
+Closed historical incidents are not permanent quarantines; do not blacklist a
+whole block or every member of a failed multi-node job without supporting evidence.
+Missing nodes require a fresh reviewed configuration, not editing a live manifest.
 Review startup, workload, cleanup, queue and total elapsed budgets separately.
 Treat `PENDING` as nonterminal and unresolved `UNKNOWN` as an investigation gate. Keep
 receipts and native job identity together; local PID checks do not establish
@@ -92,6 +99,12 @@ Choose heartbeat/progress watchdogs to accommodate loading and reporting gaps;
 progress timeouts require command-indexed structured `progress_files` watches.
 NODE_FAIL/BOOT_FAIL/PREEMPTED can retry; DRAIN alone, NCCL text, OOM and program
 errors cannot. Recovery cancellation must be confirmed before replacement.
+After the cancellation window, the brain records `cancellation_reconciliation:
+WAITING` and keeps observing within the original deadline and CPU handoff caps.
+Do not restart it or submit a replacement during slow native cleanup. Once
+termination is confirmed, existing retry caps and `stop_on_failure` govern
+continuation. A heartbeat is shared-storage liveness, not GPU progress or proof
+of a faulty node; inspect both publishers, native node events and job logs.
 Preserve `attempts` and resolve artifacts/promotions using the successful
 `attempt_id`. Retries reuse candidates, not new LLM calls or partial checkpoints.
 Record hooks need `record_retry_open` with `{retry_of}`. Never retrofit a live

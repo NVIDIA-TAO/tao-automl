@@ -78,5 +78,21 @@ def health(root, policy, job_id=None):
     ):
         issue = "progress_stalled"
     if issue:
-        return {"reason": issue, "retryable": False, "observed_at": now}
+        evidence = {"reason": issue, "retryable": False, "observed_at": now}
+        if issue == "heartbeat_stale":
+            evidence["stale_heartbeats"] = [
+                {
+                    "publisher": name,
+                    "heartbeat_at": receipt.get(
+                        "heartbeat_at", receipt.get("started_at")
+                    ),
+                    "age_seconds": now
+                    - receipt.get("heartbeat_at", receipt.get("started_at", now)),
+                }
+                for name, receipt in (("worker", worker), ("batch", batch))
+                if receipt.get("state") == "RUNNING"
+                and now - receipt.get("heartbeat_at", receipt.get("started_at", now))
+                >= policy.heartbeat_timeout_seconds
+            ]
+        return evidence
     return None

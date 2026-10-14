@@ -187,6 +187,8 @@ def main():
             receipt["cleanup_confirmed"] = stop_child(child)
         # Exception text could contain credentials supplied by a user command.
         receipt.update(state="ERROR", reason=type(exc).__name__)
+        if isinstance(exc, OSError):
+            receipt["error_errno"] = exc.errno  # Numeric only; never exception text.
     finally:
         receipt["finished_at"] = time.time()
         atomic(root / "_receipt.json", receipt)
