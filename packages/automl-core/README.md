@@ -280,8 +280,8 @@ consumer records and fresh writable paths.
 `PromptSettings.recovery` applies to GEPA evaluation batches through this same
 controller. Its total retry cap spans batches; attempted examples, including
 retries, consume `max_evaluated_examples` conservatively. Reflection calls are
-never automatically repeated. Existing ledgers/environments are not migrated;
-the unchanged `1.0.0.dev0` version still requires exact build selection.
+never automatically repeated. Existing ledgers/environments are not automatically
+migrated; the unchanged `1.0.0.dev0` version still requires exact build selection.
 
 ## Resource and proposal contracts
 
@@ -371,6 +371,41 @@ and prevents a changed runtime from resuming a same-version ledger. It is not
 an authenticity signature or dependency inventory. Existing environment and
 consumer provenance checks still apply. Restore exact old wheels for old runs;
 no automatic ledger migration is provided.
+
+### Explicit cold recovery migration
+
+For a stopped SLURM SFT search, `automl migrate --manifest <continuation.yaml>
+--workspace <original-workspace> --from-wheel <exact-original.whl>` reviews a
+narrow recovery migration; add `--approve` only after reviewing its output.
+It launches no jobs. GEPA and other executors are not supported by this migration.
+Use a separate controller environment, never overwrite one used by active jobs.
+
+The original wheel must match the sealed engine fingerprint. Python changes are
+limited to the explicitly listed recovery/execution/controller modules; search,
+proposal and workload modules must be byte-identical. Review changes inside the
+allowed modules too: a file allowlist is not a semantic compatibility proof.
+Only the recovery build and additive explicit node exclusions may change in the
+manifest identity. Data, workload, objective, search space, resources, budgets,
+environment and original deadline remain bound. Native ownership and termination
+must be established for the old CPU and trial allocations. Previously failed,
+fenced uncertain submissions retain their fences and consumed attempts; they
+cannot be reopened. Unresolved paid requests or native identities block migration.
+
+The transaction preserves completed trials, proposals, retry histories and LLM
+receipts. Failed/reserved trial slots remain consumed; partial checkpoints are
+not promoted or replayed. It archives the old ledger/controller/stop marker in
+`migrations/recovery-v1.json`, and records `migration.json`. Archiving a root stop
+marker additionally needs `--acknowledge-cancel`; attempt fences and cancellation
+markers are never cleared. Interrupted transactions block resume and must be
+finished by rerunning the same migration, not by editing the ledger.
+
+After approval, the ledger is `SUSPENDED`. Review the new plan, then use ordinary
+`resume --approve` with the same new build/manifest. When the original search had
+bounded CPU handoff, a new CPU job must use that same resource shape, wall limit
+and grace, with `--controller-max-allocations` no greater than the reported
+remaining count. Consumed CPU allocations are deducted; direct unsupervised
+resume is rejected. Ordinary resume identity checks remain unchanged. This is
+not a general engine-upgrade facility, and migrations cannot be chained.
 
 ## Packaged skill and validation
 

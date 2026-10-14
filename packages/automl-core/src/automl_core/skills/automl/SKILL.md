@@ -110,6 +110,19 @@ Preserve `attempts` and resolve artifacts/promotions using the successful
 Record hooks need `record_retry_open` with `{retry_of}`. Never retrofit a live
 controller or change an old manifest to bypass engine identity checks.
 
+If an approved recovery fix is needed for a stopped SLURM SFT search, use the
+README's explicit cold recovery migration, not manual identity edits. Review
+`migrate --manifest <yaml> --workspace <original> --from-wheel <original.whl>`
+before adding `--approve`. Require the exact old wheel, resolved native ownership
+and terminal evidence, and complete paid receipts. Only the reviewed recovery
+build and additive node exclusions may change; inspect allowed-module diffs too.
+Keep results, failed slots, retry/LLM receipts and the original deadline. A root
+stop marker requires explicit acknowledgement and archival, not silent deletion.
+Use an isolated environment and a fresh bounded CPU job with the reported
+remaining allocation count; never reset its cap. An interrupted migration must
+be completed before resume. GEPA/other executors and chained migrations are not
+supported; ordinary resume still requires identical build and manifest.
+
 For SLURM CPU-controller wall limits, the shared CLI offers opt-in bounded
 handoff via `--controller-max-allocations`, `--controller-allocation-seconds`
 and `--controller-grace-seconds` on both plan and run. Review CPU resources as

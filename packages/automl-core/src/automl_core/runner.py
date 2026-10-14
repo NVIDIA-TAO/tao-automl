@@ -262,6 +262,14 @@ class Experiment:
         )
 
     def _run(self, resume=False):
+        from automl_core.controller import _session
+        from automl_core.migration import continuation
+
+        migration = continuation(self.root)
+        if migration and migration.get("controller") and _session.get() is None:
+            raise ValueError(
+                "Migrated search requires its bounded CPU controller session"
+            )
         plan = self.plan()
         environment = self.executor.preflight(Path(plan["example_trial"]["cwd"]))
         with self._lock():

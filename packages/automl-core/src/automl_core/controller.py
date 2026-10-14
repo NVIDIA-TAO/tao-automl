@@ -177,6 +177,9 @@ class Session:
                 "Experiment identity changed; do not retrofit a different controller build"
             )
         native = _native(self.job_id)
+        from automl_core.migration import validate_controller
+
+        validate_controller(self.root, self.policy, native)
         seconds = duration(native["TimeLimit"])
         if (
             not math.isfinite(seconds)
