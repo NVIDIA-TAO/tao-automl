@@ -48,9 +48,18 @@ def main(loader=load, *, prog=None, description=None, epilog=None):
         epilog=epilog,
     )
     parser.add_argument(
-        "action", choices=["plan", "run", "resume", "status", "logs", "cancel"]
+        "action",
+        choices=["plan", "run", "resume", "migrate", "status", "logs", "cancel"],
     )
     parser.add_argument("--manifest", type=Path)
+    parser.add_argument(
+        "--from-wheel", type=Path, help="Original exact wheel for cold migration review"
+    )
+    parser.add_argument(
+        "--acknowledge-cancel",
+        action="store_true",
+        help="Explicitly archive the old stop marker during migration",
+    )
     parser.add_argument(
         "--experiment-id", help="Manage an existing run without its source manifest"
     )
@@ -79,10 +88,14 @@ def main(loader=load, *, prog=None, description=None, epilog=None):
     args = parser.parse_args()
     if args.action in {"run", "resume", "cancel"} and not args.approve:
         parser.error("Review plan and supply --approve for this side-effecting action")
-    if args.action in {"plan", "run", "resume"} and (
+    if args.action in {"plan", "run", "resume", "migrate"} and (
         not args.manifest or args.experiment_id
     ):
-        parser.error("plan/run/resume require --manifest, not --experiment-id")
+        parser.error("plan/run/resume/migrate require --manifest, not --experiment-id")
+    if (args.action == "migrate") != bool(args.from_wheel):
+        parser.error("migrate requires --from-wheel; other actions do not accept it")
+    if args.acknowledge_cancel and args.action != "migrate":
+        parser.error("--acknowledge-cancel applies only to migrate")
     if bool(args.manifest) == bool(args.experiment_id):
         parser.error("Provide exactly one of --manifest or --experiment-id")
     if bool(args.controller_max_allocations is not None) != bool(
@@ -135,6 +148,15 @@ def main(loader=load, *, prog=None, description=None, epilog=None):
             )
             if args.action == "logs":
                 result = log_paths(result)
+        elif args.action == "migrate":
+            from automl_core.migration import migrate
+
+            result = migrate(
+                experiment,
+                args.from_wheel,
+                approve=args.approve,
+                acknowledge_cancel=args.acknowledge_cancel,
+            )
         elif args.action == "plan":
             result = experiment.plan()
             if policy:
