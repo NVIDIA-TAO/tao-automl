@@ -7,22 +7,35 @@ numerical kernel. Algorithm/controller modes use explicit workload contracts;
 GEPA is shared through this package. Consumer schemas and checkpoint logic stay
 in adapters.
 The package is maintained in this repository under `packages/automl-core` and
-distributed independently as a wheel. Consumers need the wheel, not this source
-checkout. The current delivery is a local wheelhouse; no package index or new
-repository is created by this change.
+installed independently from source or a wheel. Consumers do not need a
+persistent source checkout or the TAO application. No package-index publication
+is required for source installation.
 
 ## Install and try it
 
-The 1.0.0.dev0 wheel is **not published by this change**. Build/release it before
-resolving a consumer's new dependency from a package index:
+Install `packages/automl-core` from this repository's `main`, or explicitly select
+a development branch. The source subdirectory builds **`nvidia-automl-core==0.1.0`**;
+the root `nvidia-tao-automl` application is a different distribution. Configure
+Git access separately; never embed credentials in the URL.
+
+```bash
+AUTOML_CORE_REF=main  # Or your explicitly selected development branch / full commit SHA.
+python -m pip install "nvidia-automl-core @ git+https://github.com/NVIDIA-TAO/tao-automl.git@${AUTOML_CORE_REF}#subdirectory=packages/automl-core"
+```
+
+Alternatively, build from a reviewed checkout and retain the wheel for offline
+installation and exact-build recovery:
 
 ```bash
 python -m build packages/automl-core
-python -m pip install packages/automl-core/dist/nvidia_automl_core-1.0.0.dev0-py3-none-any.whl
+python -m pip install packages/automl-core/dist/nvidia_automl_core-0.1.0-py3-none-any.whl
 # Existing TAO source development: install this wheel before pip install -e .
 ```
 
-A consumer only needs the wheel, never this checkout. For a small real CPU
+A source install builds the same independent package. Record the resolved commit,
+package inventory and `engine_build`; a moving branch name is not reproducible.
+Do not update an existing experiment's environment to the latest branch head.
+For a small real CPU
 example, copy `examples/random_forest.yaml`, set `execution.python` to an
 absolute interpreter with scikit-learn installed, and run from this directory:
 
@@ -348,7 +361,11 @@ Validate a bounded controller-only request before allocating training GPUs.
 Keep 0.2.0 wheels/receipts for old experiments; 0.2.1 changes engine/request
 identity and does not resume ambiguous paid requests from the old client.
 
-`nvidia-automl-core[prompts]` pins GEPA 0.1.2. `PromptExperiment` composes the
+GEPA integration requires GEPA 0.1.2 in the controller environment. Framework's
+`cosmos-framework[automl-prompts]` extra declares it directly; the core's current
+distribution does not declare a `prompts` extra. Use the consumer's installation
+instructions rather than assuming an undeclared extra installs GEPA.
+`PromptExperiment` composes the
 same executor with a batch workload implementing `identity`,
 `validate_candidate`, `plan_batch`, `collect_batch`, `per_item`, `aggregate`
 and `metric_key`. It needs explicit reflection/validation/optional-test data,
@@ -372,7 +389,7 @@ experiments: engine version and runtime-build fingerprint are part of resume ide
 
 ## Development version policy
 
-Keep the initial v1 port at **`1.0.0.dev0`** until an explicitly approved release.
+Keep the initial port's distribution version at **`0.1.0`** until an explicitly approved release.
 Do not increment package versions or development counters for bug fixes or local
 validation wheel builds. The earlier 0.1.x/0.2.x artifacts were experimental
 builds, not releases; preserve their original labels and hashes.

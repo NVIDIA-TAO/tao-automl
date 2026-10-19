@@ -15,6 +15,13 @@ Use the installed `automl` CLI's declarative manifest, or the repository's
 random, bayesian, bfbo, hyperband, hyperband_es, bohb, asha, dehb, pbt, llm,
 hybrid and autoresearch. All execution is sequential, including ASHA.
 
+For a new installation, use the consumer's setup instructions and ask whether to
+use this repository's `main` or a user-selected development branch. Install the
+independent `packages/automl-core` subdirectory, not the root TAO application.
+Source installation needs no published wheel or persistent checkout. Record the
+resolved commit, installed inventory and `engine_build`; retain exact wheels for
+recovery and never replace a live/resumable environment with a newer branch head.
+
 Resource-allocation modes require cumulative fidelity and an explicit native
 checkpoint/resume contract, not weights-only warm starts. A command workload
 must bind existing resource/resume/resume-mode fields and a checkpoint artifact
@@ -33,8 +40,10 @@ reason and usage before reviewing a new bounded call. Structured modes request
 JSON output; GEPA reflection requests text. Do not infer structured compatibility
 from a successful text call. Diagnose on the CPU controller before allocating GPUs.
 
-GEPA uses the optional prompts extra and `PromptExperiment` with a consumer's
-batch evaluator/manifest loader. Do not invent a generic prompt CLI schema.
+GEPA requires GEPA 0.1.2 and `PromptExperiment` with a consumer's batch
+evaluator/manifest loader. Framework's `automl-prompts` extra supplies this
+dependency; the core currently has no `prompts` extra. Follow the consumer's
+installation instructions. Do not invent a generic prompt CLI schema.
 Separate reflection/validation/test roles and review disclosure before setting
 `allow_reflection_data`. Budget final aggregate reranking and optional winner-only
 test as well as GEPA metric calls. Lower-level visual/cost callbacks require the
@@ -130,6 +139,16 @@ history; numbered archives retain prior transitions without resetting caps.
 GEPA/other executors are unsupported; ordinary resume still requires identical
 build and manifest.
 
+Same-host venv SFT recovery is a separate cold-migration path: every worker and
+command process must already be terminal on the recorded host/boot, and the
+original build must reconcile completed results before changing it. Preserve the
+interpreter, inventory, remaining trial slots and original deadline. Do not
+overwrite an environment used by active workers or generalize this path to
+Docker, cloud or GEPA. Receipt/ledger reads retry transient network-filesystem
+errors briefly; persistent errors still require investigation. Prefer local
+POSIX workspaces, and verify concurrent atomic reads/replacements and locks on
+shared storage rather than relying on a single-write probe.
+
 For SLURM CPU-controller wall limits, the shared CLI offers opt-in bounded
 handoff via `--controller-max-allocations`, `--controller-allocation-seconds`
 and `--controller-grace-seconds` on both plan and run. Review CPU resources as
@@ -168,7 +187,7 @@ Use `search.stop_on_failure` for fail-fast runs and `pause_after_trials: [1]`
 when the first trial requires review. `PAUSED` is an experiment state with no
 active trial, not a native job state. An approved resume acknowledges that
 boundary without resetting elapsed time or restarting completed trials.
-Keep the initial port at `1.0.0.dev0` until an explicitly approved release; local
+Keep the initial distribution version at `0.1.0` until an explicitly approved release; local
 wheel builds do not increment versions. Preserve exact wheel artifacts/hashes for
 paused experiments: `engine_build` detects runtime changes even when package
 versions match. New algorithms and GEPA have CPU operational coverage, not a
