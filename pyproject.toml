@@ -10,7 +10,13 @@ requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 
 dependencies = [
-    "nvidia-automl-core>=0.1.0,<0.2",
+    # `nvidia-automl-core` is maintained in THIS repository under
+    # `packages/automl-core` and is not published to any package index, so a
+    # bare version specifier is unresolvable ("No matching distribution
+    # found"). Point at the in-repo source with a PEP 508 direct reference
+    # whose path is relative to this file, so `pip install .` and
+    # `pip install -e .[dev]` both work from a plain checkout.
+    "nvidia-automl-core @ file:packages/automl-core",
     "numpy",
     "scikit-learn",
     "scipy",
