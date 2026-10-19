@@ -13,6 +13,7 @@ from pathlib import Path
 
 from automl_core import _worker
 from automl_core.contracts import fingerprint
+from automl_core.recovery import read_receipt
 
 
 class Executor:
@@ -226,7 +227,7 @@ class Executor:
         if child:
             child.poll()  # Reap exited local children.
         receipt_path = trial / "_receipt.json"
-        receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
+        receipt = read_receipt(receipt_path)
         if self.spec.kind == "venv" and receipt.get("cleanup_confirmed") is False:
             return "UNKNOWN"
         if self.spec.kind == "docker":
@@ -271,7 +272,7 @@ class Executor:
         receipt_path = trial / "_receipt.json"
         if not receipt_path.exists():
             return  # Queued for the worker; status remains UNKNOWN until acknowledged.
-        receipt = json.loads(receipt_path.read_text())
+        receipt = read_receipt(receipt_path, missing_ok=False)
         if receipt.get("state") != "RUNNING":
             return
         if receipt.get("host") != _worker.host_identity():
@@ -279,7 +280,7 @@ class Executor:
                 "Local receipt belongs to a different host/boot; cancel on the recorded host"
             )
         if _worker.process_token(receipt["pid"]) != receipt["token"]:
-            if json.loads(receipt_path.read_text()).get("state") in {
+            if read_receipt(receipt_path, missing_ok=False).get("state") in {
                 "COMPLETE",
                 "ERROR",
                 "CANCELED",
@@ -295,7 +296,7 @@ class Executor:
         try:
             os.kill(receipt["pid"], signal.SIGTERM)
         except ProcessLookupError:
-            if json.loads(receipt_path.read_text()).get("state") not in {
+            if read_receipt(receipt_path, missing_ok=False).get("state") not in {
                 "COMPLETE",
                 "ERROR",
                 "CANCELED",

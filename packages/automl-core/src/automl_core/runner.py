@@ -4,7 +4,6 @@
 
 import copy
 import fcntl
-import json
 import re
 import subprocess
 import time
@@ -37,7 +36,7 @@ def manage(workspace, experiment_id, cancel=False):
         from automl_core.prompt_runner import manage_prompt
 
         return manage_prompt(root, cancel=cancel)
-    ledger = json.loads((root / "experiment.json").read_text())
+    ledger = read_receipt(root / "experiment.json", missing_ok=False)
     executor = Executor(Execution.model_validate(ledger["identity"]["execution"]))
     if cancel:
         atomic(root / "cancel.json", {"requested_at": time.time()})
@@ -225,7 +224,7 @@ class Experiment:
                 fcntl.flock(handle, fcntl.LOCK_UN)
 
     def _read(self):
-        ledger = json.loads((self.root / "experiment.json").read_text())
+        ledger = read_receipt(self.root / "experiment.json", missing_ok=False)
         if ledger["fingerprint"] != fingerprint(self.identity):
             raise ValueError(
                 "Experiment identity changed; use the original manifest or a new experiment ID"

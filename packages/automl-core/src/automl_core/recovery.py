@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Conservative execution health and attempt bookkeeping, independent of samplers."""
 
+import errno
 import json
 import time
 
@@ -37,11 +38,29 @@ def attempt_root(root, trial):
     return path
 
 
-def read_receipt(path):
-    try:
-        return json.loads(path.read_text())
-    except FileNotFoundError:
-        return {}
+def read_receipt(path, *, missing_ok=True):
+    """Read fresh JSON, tolerating bounded transient filesystem read failures.
+
+    Some network filesystems invalidate an open reader when an atomic writer
+    replaces the pathname. Reopen on each retry; never reuse the failed handle,
+    cached state, or an empty receipt as a substitute for unavailable evidence.
+    Only reads repeat, with at most five attempts and 0.75 seconds of backoff.
+    Persistent I/O failures, permissions and malformed JSON still fail closed.
+    """
+    for attempt in range(5):
+        try:
+            return json.loads(path.read_text())
+        except FileNotFoundError:
+            if missing_ok:
+                return {}
+            raise
+        except OSError as exc:
+            if (
+                exc.errno not in {errno.EIO, errno.ESTALE, errno.ETIMEDOUT}
+                or attempt == 4
+            ):
+                raise
+            time.sleep(0.05 * 2**attempt)
 
 
 def health(root, policy, job_id=None):

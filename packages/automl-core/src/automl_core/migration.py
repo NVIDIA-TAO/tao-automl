@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Explicit cold SLURM recovery migration, not an unrestricted resume override."""
+"""Explicit cold recovery migration, not an unrestricted resume override."""
 
 import copy
 import fcntl
 import hashlib
-import json
 import os
 import time
 import zipfile
@@ -13,7 +12,7 @@ from contextlib import ExitStack
 from pathlib import Path
 
 from automl_core._submission import gate
-from automl_core._worker import atomic
+from automl_core._worker import atomic, host_identity, process_token
 from automl_core.contracts import fingerprint
 from automl_core.recovery import attempt_root, read_receipt
 from automl_core.slurm import CANCELED, ERROR, timestamp
@@ -24,6 +23,7 @@ RECOVERY_FILES = {
     "_slurm_batch.py",
     "contracts.py",
     "recovery.py",
+    "execution.py",
     "runner.py",
     "slurm.py",
     "controller.py",
@@ -134,6 +134,53 @@ def terminal_cpu(executor, controller, created):
     }
 
 
+def terminal_local_trials(root, trials):
+    """Require same-host terminal workers; never migrate a live venv workload."""
+    observations = []
+    for trial in trials:
+        for attempt in [*trial.get("attempts", []), trial]:
+            folder = attempt_root(root, attempt)
+            intent = read_receipt(folder / "_execution.json", missing_ok=False)
+            receipt = read_receipt(folder / "_receipt.json", missing_ok=False)
+            state = receipt.get("state")
+            if (
+                not intent.get("commands")
+                or receipt.get("host") != host_identity()
+                or state not in {"COMPLETE", "ERROR", "CANCELED"}
+                or not receipt.get("finished_at")
+                or receipt.get("cleanup_confirmed") is False
+                or (state == "COMPLETE" and receipt.get("exit_code") != 0)
+            ):
+                raise ValueError("Local worker termination/host identity is unresolved")
+            for pid_key, token_key in (("pid", "token"), ("child_pid", "child_token")):
+                pid, token = receipt.get(pid_key), receipt.get(token_key)
+                if pid_key == "child_pid" and pid is None:
+                    continue
+                if type(pid) is not int or pid <= 0 or not isinstance(token, str):
+                    raise ValueError("Local worker process identity is incomplete")
+                if process_token(pid) == token:
+                    raise ValueError("An old local worker or command is still active")
+            if attempt["state"] == "COMPLETE" and state != "COMPLETE":
+                raise ValueError(
+                    "Completed result disagrees with local worker evidence"
+                )
+            if attempt is trial and trial["state"] in {"PENDING", "RUNNING"}:
+                # The original build must collect results, not the new build's
+                # migration path. This also prevents silently spending a retry.
+                raise ValueError(
+                    "Reconcile terminal local trial with original build first"
+                )
+            observations.append(
+                {
+                    "attempt": folder.name,
+                    "state": state,
+                    "host": receipt["host"],
+                    "pid": receipt["pid"],
+                }
+            )
+    return observations
+
+
 def migrate(
     experiment,
     wheel,
@@ -143,8 +190,14 @@ def migrate(
     continue_migration=False,
 ):
     """Review by default; --approve commits a backed-up, restartable transaction."""
-    if not hasattr(experiment, "search") or experiment.execution.kind != "slurm":
-        raise ValueError("Cold migration currently supports SLURM SFT searches only")
+    if not hasattr(experiment, "search") or experiment.execution.kind not in {
+        "slurm",
+        "venv",
+    }:
+        raise ValueError(
+            "Cold migration supports SLURM and same-host venv searches only"
+        )
+    local = experiment.execution.kind == "venv"
     root = experiment.root
     old_build, changed = source_build(wheel)
     with ExitStack() as stack:
@@ -199,7 +252,7 @@ def migrate(
         old = ledger["identity"]
         if previous_migration and (
             previous_migration["review"]["to_identity"] != ledger["fingerprint"]
-            or not before["controller"]
+            or (not local and not before["controller"])
         ):
             raise ValueError("Previous continuation identity/CPU history unresolved")
         if (
@@ -213,15 +266,23 @@ def migrate(
             "CANCELED",
             "RUNNING",
             "SUSPENDED",
-        } or (ledger["state"] in {"RUNNING", "SUSPENDED"} and not before["controller"]):
+        } or (
+            not local
+            and ledger["state"] in {"RUNNING", "SUSPENDED"}
+            and not before["controller"]
+        ):
             raise ValueError("Only stopped, incomplete searches may migrate")
+        if local and before["controller"]:
+            raise ValueError("Local migration cannot discard a scheduler controller")
         expected = copy.deepcopy(old)
         expected["engine_build"] = experiment.identity["engine_build"]
-        exclusions = expected["execution"]["slurm"].get("exclude_nodes", [])
-        selected = experiment.execution.slurm.exclude_nodes
-        if not set(exclusions) <= set(selected):
-            raise ValueError("Migration cannot remove existing node exclusions")
-        expected["execution"]["slurm"]["exclude_nodes"] = selected
+        selected = []
+        if not local:
+            exclusions = expected["execution"]["slurm"].get("exclude_nodes", [])
+            selected = experiment.execution.slurm.exclude_nodes
+            if not set(exclusions) <= set(selected):
+                raise ValueError("Migration cannot remove existing node exclusions")
+            expected["execution"]["slurm"]["exclude_nodes"] = selected
         if expected != experiment.identity:
             raise ValueError(
                 "Migration may change only the recovery build and add node exclusions"
@@ -231,12 +292,18 @@ def migrate(
                 "Explicit --acknowledge-cancel required to archive the old stop request"
             )
         deadline = experiment._deadline(ledger)
-        if time.time() + experiment.execution.slurm.time_limit_seconds > deadline:
+        required = (
+            experiment.search.budget.trial_timeout_seconds
+            if local
+            else experiment.execution.slurm.time_limit_seconds
+        )
+        if time.time() + required > deadline:
             raise ValueError("Insufficient original experiment time for continuation")
         plan = experiment.plan()
         environment = experiment.executor.preflight(Path(plan["example_trial"]["cwd"]))
         previous_environment = dict(ledger["environment"])
-        previous_environment["batch_python"] = environment["batch_python"]
+        if not local:
+            previous_environment["batch_python"] = environment["batch_python"]
         if previous_environment != environment:
             raise ValueError("Cluster/image/supporting-file identity changed")
         controller = before["controller"]
@@ -247,7 +314,7 @@ def migrate(
         )
         if controller and controller["identity"]["experiment"] != ledger["fingerprint"]:
             raise ValueError("Old CPU controller experiment identity mismatch")
-        if previous_migration:
+        if previous_migration and not local:
             prior = previous_migration["review"].get("controller")
             if not prior or (
                 cpu["policy"]["max_allocations"] > prior["remaining_allocations"]
@@ -268,13 +335,13 @@ def migrate(
         # Paid requests must be resolved. Receipts and counters stay in place.
         advice = {}
         for receipt in sorted((root / "advice").glob("*.json")):
-            value = json.loads(receipt.read_text())
+            value = read_receipt(receipt, missing_ok=False)
             if "state" in value and value["state"] != "COMPLETE":
                 raise ValueError("Unresolved LLM receipt; never replay a paid request")
             advice[receipt.name] = hashlib.sha256(receipt.read_bytes()).hexdigest()
         after = copy.deepcopy(ledger)
-        observations = []
-        for trial in after["trials"]:
+        observations = terminal_local_trials(root, after["trials"]) if local else []
+        for trial in [] if local else after["trials"]:
             for attempt in [*trial.get("attempts", []), trial]:
                 folder = attempt_root(root, attempt)
                 intent = read_receipt(folder / "_slurm.json")
@@ -377,6 +444,7 @@ def migrate(
             "changed_runtime_files": changed,
             "original_deadline": deadline,
             "controller": cpu,
+            "execution_kind": experiment.execution.kind,
             "trials": len(ledger["trials"]),
             "completed_trials": sum(t["state"] == "COMPLETE" for t in ledger["trials"]),
             "consumed_retries": sum(

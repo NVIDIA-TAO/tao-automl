@@ -162,6 +162,14 @@ JSON/YAML/TOML configuration plus argv templates (`{python}`, `{config}`,
   adapter version, recipe/evaluation content, and environment inventory/image
   ID. Supply immutable data/code revisions in `search.provenance`; the engine
   does not hash datasets or guarantee reproducibility of mutable external files.
+- Receipt and ledger reads reopen after transient `EIO`, `ESTALE` or
+  `ETIMEDOUT`, with at most five attempts and 0.75 seconds of backoff. This
+  handles network-filesystem read/atomic-replacement races without replaying a
+  submission, training or paid request. Persistent errors and malformed JSON
+  still fail closed; unavailable evidence is never replaced with cached state.
+  Prefer a local POSIX filesystem for local-run workspaces. When using shared
+  storage, test concurrent atomic replacement and reads as well as locks and
+  fsync; a successful single-write probe is insufficient.
 - Workers enforce timeout even if the controller dies. Resume reconciles native
   process/container state and collects completed results without relaunching.
   `UNKNOWN` stops the controller: inspect the receipt, logs, PID/start token or
@@ -385,11 +393,22 @@ no automatic ledger migration is provided.
 
 ### Explicit cold recovery migration
 
-For a stopped SLURM SFT search, `automl migrate --manifest <continuation.yaml>
+For a stopped SLURM SFT or same-host venv search, `automl migrate --manifest <continuation.yaml>
 --workspace <original-workspace> --from-wheel <exact-original.whl>` reviews a
 narrow recovery migration; add `--approve` only after reviewing its output.
-It launches no jobs. GEPA and other executors are not supported by this migration.
-Use a separate controller environment, never overwrite one used by active jobs.
+It launches no jobs. GEPA, Docker and cloud executors are not supported by this
+migration. For SLURM, use a separate controller environment. Never overwrite an
+environment used by active jobs.
+
+For venv execution, all workers and their command processes must already be
+terminal on the recorded host/boot, with matching process start tokens and
+complete terminal receipts. Reconcile completed-but-unrecorded trials using the
+original build first. The controller lock must be available; a live worker,
+ambiguous receipt or missing process identity blocks migration. Interpreter and
+package inventory stay unchanged, and only the reviewed recovery build may
+change. Install a corrected same-version wheel only once no worker uses that
+environment. The full remaining per-trial timeout must fit the original elapsed
+deadline. No slots, training attempts or elapsed time are reset.
 
 The original wheel must match the sealed engine fingerprint. Python changes are
 limited to the explicitly listed recovery/execution/controller modules; search,
