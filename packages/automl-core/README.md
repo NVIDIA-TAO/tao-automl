@@ -361,12 +361,20 @@ Validate a bounded controller-only request before allocating training GPUs.
 Keep 0.2.0 wheels/receipts for old experiments; 0.2.1 changes engine/request
 identity and does not resume ambiguous paid requests from the old client.
 
-GEPA integration requires GEPA 0.1.2 in the controller environment. Framework's
-`cosmos-framework[automl-prompts]` extra declares it directly; the core's current
-distribution does not declare a `prompts` extra. Use the consumer's installation
-instructions rather than assuming an undeclared extra installs GEPA.
-`PromptExperiment` composes the
-same executor with a batch workload implementing `identity`,
+The optional `nvidia-automl-core[prompts]` extra pins GEPA 0.1.2 in the controller
+environment. For source installation, select the extra in the requirement:
+
+```bash
+python -m pip install "nvidia-automl-core[prompts] @ git+https://github.com/NVIDIA-TAO/tao-automl.git@${AUTOML_CORE_REF}#subdirectory=packages/automl-core"
+```
+
+Use the `AUTOML_CORE_REF` selected in the installation section (`main` by default,
+or an explicitly selected branch/commit). For an existing run, preserve its exact
+build instead of reinstalling a moving branch. Framework's
+`cosmos-framework[automl-prompts]` extra also declares GEPA directly; its existing
+installation path is unchanged. Base core installs do not require GEPA.
+
+`PromptExperiment` composes the same executor with a batch workload implementing `identity`,
 `validate_candidate`, `plan_batch`, `collect_batch`, `per_item`, `aggregate`
 and `metric_key`. It needs explicit reflection/validation/optional-test data,
 candidate choices, LLM disclosure approval, request/token limits, metric-call,

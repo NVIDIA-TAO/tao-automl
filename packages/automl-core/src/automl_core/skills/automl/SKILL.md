@@ -40,10 +40,11 @@ reason and usage before reviewing a new bounded call. Structured modes request
 JSON output; GEPA reflection requests text. Do not infer structured compatibility
 from a successful text call. Diagnose on the CPU controller before allocating GPUs.
 
-GEPA requires GEPA 0.1.2 and `PromptExperiment` with a consumer's batch
-evaluator/manifest loader. Framework's `automl-prompts` extra supplies this
-dependency; the core currently has no `prompts` extra. Follow the consumer's
-installation instructions. Do not invent a generic prompt CLI schema.
+GEPA uses the optional `nvidia-automl-core[prompts]` extra (GEPA 0.1.2) and
+`PromptExperiment` with a consumer's batch evaluator/manifest loader.
+Framework's `automl-prompts` extra also supplies this dependency. Follow the
+consumer's installation instructions; base core installs do not need GEPA.
+Do not invent a generic prompt CLI schema.
 Separate reflection/validation/test roles and review disclosure before setting
 `allow_reflection_data`. Budget final aggregate reranking and optional winner-only
 test as well as GEPA metric calls. Lower-level visual/cost callbacks require the

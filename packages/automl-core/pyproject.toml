@@ -12,6 +12,9 @@ license-files = ["LICENSE"]
 readme = "README.md"
 dependencies = ["numpy", "scipy", "scikit-learn", "pydantic>=2", "PyYAML", "tomli-w", "tomli; python_version < '3.11'"]
 
+[project.optional-dependencies]
+prompts = ["gepa==0.1.2"]
+
 [project.scripts]
 automl = "automl_core.cli:main"
 
