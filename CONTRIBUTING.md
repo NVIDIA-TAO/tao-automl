@@ -142,7 +142,7 @@ git config --unset core.hooksPath
 | Check | Blocks on |
 |-------|-----------|
 | TruffleHog | a credential in the staged changes |
-| dependency guard | any change to a dependency manifest, lockfile or Dockerfile |
+| dependency guard | a dependency manifest, lockfile or Dockerfile change without an `OSRB-Approved` trailer |
 | license header | a `.py` or `.sh` file without an SPDX header |
 | pylint, pydocstyle, flake8 | lint and docstring violations |
 | DCO sign-off | a commit message without a `Signed-off-by` trailer |
@@ -160,8 +160,10 @@ pre-commit run --all-files
 
 ## Dependency changes
 
-Changes to dependency manifests, lockfiles and Dockerfiles are blocked at commit
-time, in every language:
+Changes to dependency manifests, lockfiles and Dockerfiles need Open Source
+Review Board (OSRB) approval before they land, in every language. Raise the
+dependency with the TAO Infra team first. Until the commit carries an approval,
+it is blocked:
 
 ```
 Dependency change blocked. This commit modifies:
@@ -170,5 +172,15 @@ Dependency change blocked. This commit modifies:
 Please reach out to TAO Infra team for dependency change
 ```
 
-This is deliberate. Raise the change with the TAO Infra team rather than working
-around the hook.
+Once the TAO Infra team confirms the dependency is OSRB approved, record that
+approval as a trailer in the commit message and the same commit goes through:
+
+```bash
+git commit --trailer "OSRB-Approved: NVBug 1234567"
+# or
+git commit --trailer "OSRB-Approved: <link to the TAO Infra approval>"
+```
+
+The trailer is kept in git history, so reviewers can see which approval covers
+which dependency change. Do not add it for dependencies that have not been
+approved, and do not use `--no-verify` to get around the check.
