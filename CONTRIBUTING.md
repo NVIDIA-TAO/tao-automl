@@ -120,6 +120,35 @@ Files that legitimately cannot carry a header (e.g. generated files or data) may
 
 ## Development setup
 
+In a fresh virtual environment, install the application and its independent core
+from the same checkout:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+bash scripts/install_dev.sh
+```
+
+The installer supplies `packages/automl-core` and the editable application with
+its `dev` extra to the same pip resolution, then runs `pip check`. Git and access
+to the declared SDK repository and package dependencies are required. It does
+not install into a different interpreter, suppress dependency resolution, or
+fetch AutoML core from a moving branch or package index.
+
+Blossom/Jenkins setup must also invoke `bash scripts/install_dev.sh` after
+checkout instead of `pip install -e '.[dev]'` alone. The latter searches the
+package index for `nvidia-automl-core`, which is maintained in this checkout and
+need not be published. Run both existing suites explicitly:
+
+```bash
+python -m pytest tests packages/automl-core/tests
+```
+
+Framework consumers install only the independent core as described in
+[`packages/automl-core/README.md`](packages/automl-core/README.md); they do not
+need the TAO development extra or SDK.
+
 Install the git hooks once per clone:
 
 ```bash
