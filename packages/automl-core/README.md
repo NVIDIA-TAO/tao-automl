@@ -136,6 +136,17 @@ JSON/YAML/TOML configuration plus argv templates (`{python}`, `{config}`,
   bound workers; the controller returns `ERROR` requiring reconciliation, not
   false terminal success. Missing/conflicting identities and invalid completion
   receipts still stop at the ambiguity gate. No resubmission or paid API retry.
+- Timed-out read-only preparation checks (cluster, inventory, partitions, shell
+  syntax and `sbatch --test-only`) also back off within the original elapsed
+  deadline and CPU handoff envelope. `_scheduler_check.json` identifies the
+  operation without raw argv/stderr. Nonzero exits and record-hook failures
+  remain errors, not guessed transient failures. The preflight clock is durable
+  before ledger creation. A fully staged, hashed, unsubmitted attempt can
+  continue across a handoff without reserving another candidate; owner, gate,
+  files and absence of stop/worker receipts are rechecked. Once the submit intent
+  is marked attempted, only the existing ambiguity reconciliation path applies.
+  Scheduler outages during failure classification/retry checks likewise wait
+  read-only rather than consuming the retry as an ineligible failure.
 - `search.stop_on_failure: true` stops on the first unsuccessful logical trial
   after approved infrastructure attempts are exhausted or inapplicable.
   `pause_after_trials: [1]` returns `PAUSED` after one completed trial for
@@ -405,7 +416,13 @@ bounded CPU handoff, a new CPU job must use that same resource shape, wall limit
 and grace, with `--controller-max-allocations` no greater than the reported
 remaining count. Consumed CPU allocations are deducted; direct unsupervised
 resume is rejected. Ordinary resume identity checks remain unchanged. This is
-not a general engine-upgrade facility, and migrations cannot be chained.
+not a general engine-upgrade facility. A subsequent cold migration requires
+`--continue-migration` and the current exact wheel. Each numbered archive retains
+its predecessor; the current controller's consumed allocations are deducted from
+the previous remaining cap, with the same CPU shape, wall limit and grace.
+Unacknowledged handoffs, unresolved paid requests and changed search/workload
+code still block migration. Account for native generations that failed before
+Python started; a missing ledger entry is not free CPU allocation allowance.
 
 ## Packaged skill and validation
 

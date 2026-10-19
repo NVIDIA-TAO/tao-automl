@@ -134,7 +134,14 @@ def terminal_cpu(executor, controller, created):
     }
 
 
-def migrate(experiment, wheel, *, approve=False, acknowledge_cancel=False):
+def migrate(
+    experiment,
+    wheel,
+    *,
+    approve=False,
+    acknowledge_cancel=False,
+    continue_migration=False,
+):
     """Review by default; --approve commits a backed-up, restartable transaction."""
     if not hasattr(experiment, "search") or experiment.execution.kind != "slurm":
         raise ValueError("Cold migration currently supports SLURM SFT searches only")
@@ -145,17 +152,38 @@ def migrate(experiment, wheel, *, approve=False, acknowledge_cancel=False):
             handle = stack.enter_context((root / name).open("a"))
             fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
         marker = read_receipt(root / "migration.json")
+        previous_migration = None
+        generation = 1
         if marker and marker.get("state") == "COMMITTED":
             if (
                 marker["review"]["to_identity"] == fingerprint(experiment.identity)
                 and marker["review"]["from_build"] == old_build
             ):
                 return marker["review"]  # Idempotent, never reset later progress.
+            if not continue_migration:
+                raise ValueError(
+                    "A different migration exists; review with --continue-migration"
+                )
+            previous_migration = marker
+            generation = marker.get("generation", 1) + 1
+        elif marker:
+            generation = marker.get("generation", 1)
+        elif continue_migration:
+            raise ValueError("No previous migration to continue")
+        path = root / "migrations" / f"recovery-v{generation}.json"
+        transaction = read_receipt(path)
+        if marker and marker.get("state") == "PREPARED" and not transaction:
+            raise ValueError("Missing prepared migration transaction")
+        if transaction:
+            if (not marker or marker.get("state") == "COMMITTED") and transaction.get(
+                "previous_migration"
+            ) != (marker or None):
+                raise ValueError("Orphan migration archive has conflicting predecessor")
+            previous_migration = transaction.get("previous_migration")
+        if previous_migration and not continue_migration:
             raise ValueError(
-                "A different migration already exists; chaining is not supported"
+                "Continuing this transaction requires --continue-migration"
             )
-        path = root / "migrations" / "recovery-v1.json"
-        transaction = read_receipt(path) if marker else None
         before = (
             transaction["before"]
             if transaction
@@ -169,14 +197,23 @@ def migrate(experiment, wheel, *, approve=False, acknowledge_cancel=False):
         )
         ledger = before["ledger"]
         old = ledger["identity"]
+        if previous_migration and (
+            previous_migration["review"]["to_identity"] != ledger["fingerprint"]
+            or not before["controller"]
+        ):
+            raise ValueError("Previous continuation identity/CPU history unresolved")
         if (
             ledger["fingerprint"] != fingerprint(old)
             or old["engine_build"] != old_build
         ):
             raise ValueError("Source wheel does not match the sealed experiment")
-        if ledger["state"] not in {"ERROR", "PAUSED", "CANCELED", "RUNNING"} or (
-            ledger["state"] == "RUNNING" and not before["controller"]
-        ):
+        if ledger["state"] not in {
+            "ERROR",
+            "PAUSED",
+            "CANCELED",
+            "RUNNING",
+            "SUSPENDED",
+        } or (ledger["state"] in {"RUNNING", "SUSPENDED"} and not before["controller"]):
             raise ValueError("Only stopped, incomplete searches may migrate")
         expected = copy.deepcopy(old)
         expected["engine_build"] = experiment.identity["engine_build"]
@@ -210,6 +247,24 @@ def migrate(experiment, wheel, *, approve=False, acknowledge_cancel=False):
         )
         if controller and controller["identity"]["experiment"] != ledger["fingerprint"]:
             raise ValueError("Old CPU controller experiment identity mismatch")
+        if previous_migration:
+            prior = previous_migration["review"].get("controller")
+            if not prior or (
+                cpu["policy"]["max_allocations"] > prior["remaining_allocations"]
+                or cpu["policy"]["allocation_seconds"]
+                > prior["policy"]["allocation_seconds"]
+                or cpu["policy"]["grace_seconds"] < prior["policy"]["grace_seconds"]
+                or any(
+                    cpu["native"].get(k) != v
+                    for k, v in prior["native"].items()
+                    if k not in {"JobId", "UserId"}
+                )
+            ):
+                raise ValueError("Previous continuation exceeded original CPU envelope")
+            cpu["consumed_allocations_total"] = (
+                prior.get("consumed_allocations_total", prior["consumed_allocations"])
+                + cpu["consumed_allocations"]
+            )
         # Paid requests must be resolved. Receipts and counters stay in place.
         advice = {}
         for receipt in sorted((root / "advice").glob("*.json")):
@@ -350,26 +405,46 @@ def migrate(experiment, wheel, *, approve=False, acknowledge_cancel=False):
                 )
         else:
             path.parent.mkdir(exist_ok=True)
+            if path.exists():
+                raise ValueError(
+                    "Migration archive already exists; reconcile before proceeding"
+                )
             transaction = {
                 "before": before,
                 "after": after,
                 "review": review,
                 "prepared_at": time.time(),
+                "previous_migration": previous_migration,
             }
             atomic(path, transaction)
-            atomic(root / "migration.json", {"state": "PREPARED", "review": review})
+        atomic(
+            root / "migration.json",
+            {"state": "PREPARED", "review": review, "generation": generation},
+        )
         current = read_receipt(root / "experiment.json")
         if current not in (before["ledger"], after):
             raise ValueError("Experiment changed during migration")
         current_controller = read_receipt(root / "controller.json")
         if current_controller and current_controller != before["controller"]:
             raise ValueError("Controller changed during migration")
+        current_cancel = (
+            read_receipt(root / "cancel.json")
+            if (root / "cancel.json").exists()
+            else None
+        )
+        if current_cancel not in (None, before["cancel"]):
+            raise ValueError("Stop request changed during migration")
         atomic(root / "experiment.json", after)
         # Recoverable originals are retained verbatim in the transaction archive.
         (root / "controller.json").unlink(missing_ok=True)
         (root / "cancel.json").unlink(missing_ok=True)
         atomic(
             root / "migration.json",
-            {"state": "COMMITTED", "review": review, "committed_at": time.time()},
+            {
+                "state": "COMMITTED",
+                "review": review,
+                "committed_at": time.time(),
+                "generation": generation,
+            },
         )
         return review

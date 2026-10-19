@@ -91,6 +91,10 @@ attempt from starting before it can use the approved retry caps. A late rejected
 allocation still counts against those caps. Conflicts, unavailable evidence or
 an unavailable fence block replacement. Do not wrap blocked results or submission
 timeouts in blanket cancellation; preserve the ledger and original deadline.
+Read-only preflight timeouts also retry within that deadline; inspect
+`_scheduler_check.json` for the exact operation. A sealed, unsubmitted candidate
+can continue across CPU handoff, but an attempted submission always requires
+reconciliation. Nonzero configuration errors and unsealed staging fail closed.
 
 For bounded SLURM infrastructure recovery, review `search.recovery` (or GEPA's
 `PromptSettings.recovery`) and `plan.recovery_review`: both per-trial and global
@@ -120,8 +124,11 @@ Keep results, failed slots, retry/LLM receipts and the original deadline. A root
 stop marker requires explicit acknowledgement and archival, not silent deletion.
 Use an isolated environment and a fresh bounded CPU job with the reported
 remaining allocation count; never reset its cap. An interrupted migration must
-be completed before resume. GEPA/other executors and chained migrations are not
-supported; ordinary resume still requires identical build and manifest.
+be completed before resume. A subsequent reviewed migration requires
+`--continue-migration`, the current exact wheel and validated remaining CPU
+history; numbered archives retain prior transitions without resetting caps.
+GEPA/other executors are unsupported; ordinary resume still requires identical
+build and manifest.
 
 For SLURM CPU-controller wall limits, the shared CLI offers opt-in bounded
 handoff via `--controller-max-allocations`, `--controller-allocation-seconds`
@@ -136,6 +143,11 @@ existing GPU jobs; it never creates new candidates or resets spend limits.
 search and requests cancellation; unconfirmed cancellation stays an error.
 Keep credentials available across handoffs and clean them up only after the
 experiment terminates. No unconditional cancel/secret-delete EXIT traps.
+If the consumer uses a cross-node startup observer, run it as an independently
+supervised service for the entire experiment, including every requeue generation.
+Readiness must prove a live observer, not just an old successful handshake or
+occasional chat-driven polling. The consumer owns native-ID registration and
+startup recovery; never launch a second brain to bypass a missing observer.
 Never replay an unconfirmed requeue RPC. Check site requeue permissions and
 cross-node filesystem locks separately; CPU fixtures are not live rollover
 verification. Do not retrofit an installed controller or existing matrix.

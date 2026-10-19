@@ -207,6 +207,20 @@ class Experiment:
                     stop_experiment(self, "Controller interrupted")
                     self._active_ledger_ready = False
                 raise
+            except Exception as exc:
+                if (
+                    getattr(self, "_active_ledger_ready", False)
+                    and self.execution.managed
+                ):
+                    # Persist cleanup under the same lock, rather than leaving a
+                    # stale RUNNING ledger and canceling after releasing ownership.
+                    stopped = stop_experiment(
+                        self, "Controller failed: " + type(exc).__name__
+                    )
+                    stopped["state"] = "ERROR"
+                    self._save(stopped)
+                    self._active_ledger_ready = False
+                raise
             finally:
                 fcntl.flock(handle, fcntl.LOCK_UN)
 
@@ -271,7 +285,6 @@ class Experiment:
                 "Migrated search requires its bounded CPU controller session"
             )
         plan = self.plan()
-        environment = self.executor.preflight(Path(plan["example_trial"]["cwd"]))
         with self._lock():
             path = self.root / "experiment.json"
             if path.exists() != resume:
@@ -280,6 +293,41 @@ class Experiment:
                 )
             if resume:
                 ledger = self._read()
+            if self.execution.kind == "slurm":
+                # Persist the clock before a possibly long read-only preflight.
+                # A restart must not receive a new elapsed-time allowance.
+                preparation = read_receipt(self.root / "_preflight.json")
+                if (
+                    preparation
+                    and not resume
+                    and preparation["fingerprint"] != fingerprint(self.identity)
+                ):
+                    raise ValueError(
+                        "Preflight identity changed; use the reviewed manifest/build"
+                    )
+                created = (
+                    ledger["created_at"]
+                    if resume
+                    else preparation.get("created_at", time.time())
+                )
+                deadline = bounded_deadline(
+                    self._deadline(ledger)
+                    if resume
+                    else self.search.budget.deadline(created)
+                )
+                if preparation:
+                    deadline = min(deadline, preparation["deadline"])
+                atomic(
+                    self.root / "_preflight.json",
+                    {
+                        "fingerprint": fingerprint(self.identity),
+                        "created_at": created,
+                        "deadline": deadline,
+                    },
+                )
+                self.executor.configure_checks(self.root, deadline)
+            environment = self.executor.preflight(Path(plan["example_trial"]["cwd"]))
+            if resume:
                 if ledger["environment"] != environment:
                     raise ValueError(
                         "Execution environment changed; restore it or use a new experiment ID"
@@ -299,7 +347,9 @@ class Experiment:
                     "environment": environment,
                     "identity": self.identity,
                     "fingerprint": fingerprint(self.identity),
-                    "created_at": time.time(),
+                    "created_at": created
+                    if self.execution.kind == "slurm"
+                    else time.time(),
                     "trials": [],
                     "state": "RUNNING",
                 }
@@ -484,10 +534,9 @@ class Experiment:
                 return False
             time.sleep(max(0, min(1, ready - time.time())))
         previous = attempt_root(self.root, trial)
-        try:
-            evidence = self.executor.failure(previous)
-        except SchedulerUnavailable:
-            evidence = {"reason": "scheduler_unavailable", "retryable": False}
+        evidence = self._read_failure(ledger, trial, previous)
+        if evidence is None:
+            return False
         if (
             not evidence["retryable"]
             or time.time() + allocation > deadline
@@ -526,6 +575,38 @@ class Experiment:
         self._submit_trial(ledger, trial, deadline, retry_of=previous)
         return True
 
+    def _read_failure(self, ledger, trial, root):
+        """An outage while classifying/rechecking a failure is not retry denial."""
+        failures = 0
+        while True:
+            checkpoint()
+            try:
+                evidence = self.executor.failure(root)
+                trial.pop("observation_error", None)
+                return evidence
+            except SchedulerUnavailable as exc:
+                failures += 1
+                trial["observation_error"] = {
+                    "reason": "scheduler_unavailable",
+                    "operation": "failure_reconciliation",
+                    "queries": exc.errors,
+                    "consecutive_failures": failures,
+                    "observed_at": time.time(),
+                }
+                self._save(ledger)
+                deadline = self._deadline(ledger)
+                if (self.root / "cancel.json").exists() or time.time() >= deadline:
+                    self._unconfirmed_cancel(ledger, trial, root, request=False)
+                    return None
+                wake = min(
+                    deadline,
+                    time.time()
+                    + min(300, self.execution.poll_seconds * 2 ** min(failures - 1, 8)),
+                )
+                while time.time() < wake and not (self.root / "cancel.json").exists():
+                    checkpoint()
+                    time.sleep(max(0, min(1, wake - time.time())))
+
     def _wait(self, ledger, trial):
         root = attempt_root(self.root, trial)
         failures = 0
@@ -533,6 +614,8 @@ class Experiment:
         try:
             while True:
                 checkpoint()
+                if self.execution.kind == "slurm":
+                    self.executor.continue_submission(root)
                 if self.execution.kind == "slurm" and hasattr(
                     self.executor, "reconcile_submission"
                 ):
@@ -720,13 +803,10 @@ class Experiment:
         if recovery and state != "COMPLETE":
             state = "ERROR"  # Recovery cancellation is not a user cancellation.
         if state in {"ERROR", "CANCELED"} and self.execution.kind == "slurm":
-            try:
-                trial["failure"] = self.executor.failure(root)
-            except SchedulerUnavailable:
-                trial["failure"] = {
-                    "reason": "scheduler_unavailable",
-                    "retryable": False,
-                }
+            evidence = self._read_failure(ledger, trial, root)
+            if evidence is None:
+                return False
+            trial["failure"] = evidence
         if state == "COMPLETE":
             try:
                 result = self.workload.collect(root, self.search.objective)

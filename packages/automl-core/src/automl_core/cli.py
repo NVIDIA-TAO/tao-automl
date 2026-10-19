@@ -61,6 +61,11 @@ def main(loader=load, *, prog=None, description=None, epilog=None):
         help="Explicitly archive the old stop marker during migration",
     )
     parser.add_argument(
+        "--continue-migration",
+        action="store_true",
+        help="Explicitly review another cold migration, preserving prior archives and remaining CPU budget",
+    )
+    parser.add_argument(
         "--experiment-id", help="Manage an existing run without its source manifest"
     )
     parser.add_argument("--workspace", type=Path, required=True)
@@ -96,6 +101,8 @@ def main(loader=load, *, prog=None, description=None, epilog=None):
         parser.error("migrate requires --from-wheel; other actions do not accept it")
     if args.acknowledge_cancel and args.action != "migrate":
         parser.error("--acknowledge-cancel applies only to migrate")
+    if args.continue_migration and args.action != "migrate":
+        parser.error("--continue-migration applies only to migrate")
     if bool(args.manifest) == bool(args.experiment_id):
         parser.error("Provide exactly one of --manifest or --experiment-id")
     if bool(args.controller_max_allocations is not None) != bool(
@@ -156,6 +163,7 @@ def main(loader=load, *, prog=None, description=None, epilog=None):
                 args.from_wheel,
                 approve=args.approve,
                 acknowledge_cancel=args.acknowledge_cancel,
+                continue_migration=args.continue_migration,
             )
         elif args.action == "plan":
             result = experiment.plan()

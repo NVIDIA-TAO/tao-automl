@@ -176,7 +176,67 @@ class Session:
             raise ValueError(
                 "Experiment identity changed; do not retrofit a different controller build"
             )
-        native = _native(self.job_id)
+        # Native identity is read-only but was another unhandled 30s timeout
+        # before the search could even install its observation recovery loop.
+        preparation_path = self.root / "_controller_preflight.json"
+        preparation = (
+            json.loads(preparation_path.read_text())
+            if preparation_path.exists()
+            else {}
+        )
+        generation = os.environ.get("SLURM_RESTART_COUNT", "0")
+        key = {
+            "job_id": self.job_id,
+            "generation": generation,
+            "experiment": fingerprint(self.experiment.identity),
+        }
+        if preparation.get("identity") != key:
+            preparation = {"identity": key, "started_at": time.time()}
+        created = ledger["created_at"] if ledger else preparation["started_at"]
+        original = (
+            self.experiment.search.budget.deadline(created)
+            if hasattr(self.experiment, "search")
+            else created + self.experiment.settings.total_timeout_seconds
+        )
+        if ledger:
+            original = min(original, ledger.get("controller_deadline", original))
+        until = min(
+            original,
+            preparation["started_at"]
+            + self.policy["allocation_seconds"]
+            - self.policy["grace_seconds"],
+        )
+        atomic(preparation_path, preparation)
+
+        def read_native():
+            while True:
+                if (
+                    time.time() >= until
+                    or self.requested
+                    or (self.root / "cancel.json").exists()
+                ):
+                    preparation.update(state="STOPPED", updated_at=time.time())
+                    atomic(preparation_path, preparation)
+                    raise ValueError(
+                        "CPU identity verification exhausted its original time budget or was stopped"
+                    )
+                try:
+                    native = _native(self.job_id)
+                    preparation.update(state="COMPLETE", updated_at=time.time())
+                    atomic(preparation_path, preparation)
+                    return native
+                except subprocess.TimeoutExpired:
+                    preparation.update(
+                        state="WAITING",
+                        operation="cpu_native_identity",
+                        updated_at=time.time(),
+                    )
+                    atomic(preparation_path, preparation)
+                    wake = min(until, time.time() + 5)
+                    while time.time() < wake and not self.requested:
+                        time.sleep(max(0, min(1, wake - time.time())))
+
+        native = read_native()
         from automl_core.migration import validate_controller
 
         validate_controller(self.root, self.policy, native)
@@ -234,10 +294,10 @@ class Session:
                     "Untracked controller restart; use a fresh reviewed CPU job"
                 )
             if hasattr(self.experiment, "search"):
-                created = ledger["created_at"] if ledger else time.time()
+                created = ledger["created_at"] if ledger else preparation["started_at"]
                 deadline = self.experiment.search.budget.deadline(created)
             else:
-                created = ledger["created_at"] if ledger else time.time()
+                created = ledger["created_at"] if ledger else preparation["started_at"]
                 deadline = created + self.experiment.settings.total_timeout_seconds
             if ledger:
                 deadline = min(deadline, ledger.get("controller_deadline", deadline))
@@ -252,13 +312,16 @@ class Session:
             # On the last permitted allocation, disable scheduler/node-failure
             # requeue as well as our own handoff. Site/admin overrides cannot
             # be bounded by an unprivileged controller.
-            subprocess.run(
-                ["scontrol", "update", f"JobId={self.job_id}", "Requeue=0"],
-                capture_output=True,
-                timeout=30,
-                check=True,
-            )
-            if _native(self.job_id).get("Requeue") != "0":
+            try:
+                subprocess.run(
+                    ["scontrol", "update", f"JobId={self.job_id}", "Requeue=0"],
+                    capture_output=True,
+                    timeout=30,
+                    check=True,
+                )
+            except subprocess.TimeoutExpired:
+                pass  # Lost acknowledgement: verify the effect; do not repeat the RPC.
+            if read_native().get("Requeue") != "0":
                 raise ValueError("Could not disable requeue on final CPU allocation")
         self.saved.update(generation=self.generation, state="RUNNING")
         self.saved["allocations"].append(
@@ -338,16 +401,19 @@ class Session:
         self.root.mkdir(parents=True, exist_ok=True)
         with (self.root / ".supervisor.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            self.prepare()
-            if self.generation >= self.policy["max_allocations"]:
-                return self._stop(
-                    "Native CPU restarts exceeded the approved allocation cap"
-                )
-            token = _session.set(self)
             previous = signal.signal(
                 signal.SIGUSR1, lambda *args: setattr(self, "requested", True)
             )
+            token = None
+            prepared = False
             try:
+                self.prepare()
+                prepared = True
+                if self.generation >= self.policy["max_allocations"]:
+                    return self._stop(
+                        "Native CPU restarts exceeded the approved allocation cap"
+                    )
+                token = _session.set(self)
                 ledger = self.root / (
                     "experiment.json"
                     if hasattr(self.experiment, "search")
@@ -363,12 +429,14 @@ class Session:
             except ControllerHandoff:
                 return self.handoff()
             except BaseException:
-                self.saved.update(
-                    state="ERROR",
-                    stop_reason="Controller interrupted or failed; inspect experiment and native receipts",
-                )
-                atomic(self.path, self.saved)
+                if prepared:
+                    self.saved.update(
+                        state="ERROR",
+                        stop_reason="Controller interrupted or failed; inspect experiment and native receipts",
+                    )
+                    atomic(self.path, self.saved)
                 raise
             finally:
                 signal.signal(signal.SIGUSR1, previous)
-                _session.reset(token)
+                if token is not None:
+                    _session.reset(token)

@@ -110,6 +110,84 @@ class SlurmExecutor:
             env=self._env(),
         )
 
+    def configure_checks(self, root, deadline):
+        """Bound repeatable checks to the caller's original experiment clock."""
+        self.check_root, self.check_deadline = Path(root), deadline
+
+    def _checked_call(self, args, operation, *, root=None, deadline=None):
+        """Retry timed-out *read-only* checks, never a submit/cancel/record hook.
+
+        Nonzero exits remain actionable configuration errors. Persist only the
+        operation name and numeric diagnostics, not argv, stderr or environment.
+        A plain preflight outside a running experiment remains a one-shot check.
+        """
+        from automl_core.controller import checkpoint
+
+        root = root or getattr(self, "check_root", None)
+        until = min(
+            deadline if deadline is not None else float("inf"),
+            getattr(self, "check_deadline", float("inf")),
+        )
+        started, failures = time.time(), 0
+
+        def save(state, **details):
+            if root is not None:
+                atomic(
+                    root / "_scheduler_check.json",
+                    dict(
+                        operation=operation,
+                        state=state,
+                        started_at=started,
+                        updated_at=time.time(),
+                        failures=failures,
+                        deadline=until if until != float("inf") else None,
+                        **details,
+                    ),
+                )
+
+        while True:
+            checkpoint()  # No uncommitted submission or paid request here.
+            if (
+                hasattr(self, "check_root")
+                and (self.check_root / "cancel.json").exists()
+            ):
+                save("STOPPED", reason="cancellation_requested")
+                raise InterruptedError("Read-only scheduler check canceled")
+            if time.time() >= until:
+                save("STOPPED", reason="original_time_budget_exhausted")
+                raise TimeoutError(
+                    "Original time budget exhausted during scheduler check"
+                )
+            try:
+                result = self._call(args)
+            except subprocess.TimeoutExpired as exc:
+                failures += 1
+                save(
+                    "WAITING",
+                    error_type=type(exc).__name__,
+                    timeout_seconds=exc.timeout,
+                )
+                if not hasattr(self, "check_deadline"):
+                    raise
+                delay = min(300, self.settings.poll_seconds * 2 ** min(failures - 1, 8))
+                wake = min(until, time.time() + delay)
+                while time.time() < wake:
+                    checkpoint()
+                    if (self.check_root / "cancel.json").exists():
+                        break
+                    time.sleep(max(0, min(1, wake - time.time())))
+                continue
+            except (OSError, subprocess.CalledProcessError) as exc:
+                save(
+                    "ERROR",
+                    error_type=type(exc).__name__,
+                    returncode=getattr(exc, "returncode", None),
+                    errno=getattr(exc, "errno", None),
+                )
+                raise
+            save("COMPLETE")
+            return result
+
     def preflight(self, cwd):
         for name in ("sbatch", "squeue", "sacct", "scancel", "scontrol", "srun"):
             if not shutil.which(name):
@@ -139,12 +217,16 @@ class SlurmExecutor:
             for path in self.spec.mounts:
                 if not path.is_absolute() or not path.exists():
                     raise ValueError("SLURM mounts must be existing absolute paths")
-        config = self._call(["scontrol", "show", "config"]).stdout
+        config = self._checked_call(
+            ["scontrol", "show", "config"], "cluster_identity"
+        ).stdout
         cluster = re.search(r"^\s*ClusterName\s*=\s*(\S+)", config, re.MULTILINE)
         if not cluster:
             raise ValueError("Unable to identify the SLURM cluster")
         if self.settings.exclude_nodes:
-            inventory = self._call(["scontrol", "show", "nodes", "-o"]).stdout
+            inventory = self._checked_call(
+                ["scontrol", "show", "nodes", "-o"], "node_inventory"
+            ).stdout
             nodes = set(re.findall(r"(?:^|\s)NodeName=([^\s]+)", inventory))
             missing = sorted(set(self.settings.exclude_nodes) - nodes)
             if missing:
@@ -154,8 +236,8 @@ class SlurmExecutor:
                     + "; reconcile the private launch configuration before running"
                 )
         for partition in self.settings.partition.split(","):
-            output = self._call(
-                ["scontrol", "show", "partition", partition, "-o"]
+            output = self._checked_call(
+                ["scontrol", "show", "partition", partition, "-o"], "partition_limits"
             ).stdout
             fields = dict(re.findall(r"(\w+)=([^\s]+)", output))
             if fields.get("State") != "UP":
@@ -388,7 +470,63 @@ ulimit -n 65536"""
         for name, content in (("_slurm_step.sh", step), ("_slurm.sbatch", batch)):
             path = trial / name
             path.write_text(content)
-            self._call(["/bin/bash", "-n", str(path)])
+        # Only a completely staged, hashed intent is restartable before sbatch.
+        # Never overwrite execution files after the submit boundary is crossed.
+        intent["staged_files"] = {
+            str(path.relative_to(trial)): digest(path)
+            for path in (
+                *(trial / name for name in plan.files),
+                *(
+                    trial / Path(module.__file__).name
+                    for module in (_worker, _slurm_batch, _submission)
+                ),
+                trial / "_execution.json",
+                trial / "_slurm_step.sh",
+                trial / "_slurm.sbatch",
+            )
+        }
+        atomic(trial / "_slurm.json", intent)
+        self.continue_submission(trial)
+
+    def continue_submission(self, trial):
+        """Continue the SAME reserved, provably unsubmitted staged attempt.
+
+        Actual sbatch uncertainty still goes exclusively through reconciliation.
+        Missing/old/incomplete staging, stop markers and closed/claimed gates
+        cannot be turned into a fresh submission by restarting the controller.
+        """
+        intent = self._intent(trial)
+        if not intent or intent.get("submission_attempted") or intent.get("job_id"):
+            return
+        files = intent.get("staged_files")
+        if (
+            not files
+            or intent.get("owner_uid") != os.getuid()
+            or not intent.get("submission_guard")
+            or (trial / "_cancel.json").exists()
+            or (trial / "_receipt.json").exists()
+            or (trial / "_batch_receipt.json").exists()
+            or _submission.gate(trial)["state"] != "open"
+        ):
+            raise ValueError(
+                "Unsubmitted intent is not safe to continue; reconcile staging"
+            )
+        for name, expected in files.items():
+            path = trial / name
+            if (
+                not path.resolve().is_relative_to(trial.resolve())
+                or digest(path) != expected
+            ):
+                raise ValueError("Staged submission identity changed")
+        deadline = intent["deadline"]
+        latest = deadline - self.settings.time_limit_seconds
+        for name in ("_slurm_step.sh", "_slurm.sbatch"):
+            self._checked_call(
+                ["/bin/bash", "-n", str(trial / name)],
+                "batch_syntax",
+                root=trial,
+                deadline=latest,
+            )
         argv = [
             "sbatch",
             "--parsable",
@@ -396,7 +534,19 @@ ulimit -n 65536"""
             "--deadline=" + timestamp(deadline),
             str(trial / "_slurm.sbatch"),
         ]
-        self._call(["sbatch", "--test-only", *argv[2:]])
+        self._checked_call(
+            ["sbatch", "--test-only", *argv[2:]],
+            "submission_preflight",
+            root=trial,
+            deadline=latest,
+        )
+        if (
+            time.time() >= latest
+            or (getattr(self, "check_root", trial.parent) / "cancel.json").exists()
+        ):
+            raise TimeoutError(
+                "No approved time remains for submission, or cancellation requested"
+            )
         intent["submission_attempted"] = True
         atomic(trial / "_slurm.json", intent)  # Durable reservation precedes the RPC.
         try:
