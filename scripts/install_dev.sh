@@ -6,7 +6,8 @@
 set -euo pipefail
 automl_repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Supplying both projects in one resolution keeps the app's version constraint
-# enforced without requiring an independently published core distribution.
-python -m pip install "${automl_repo_root}/packages/automl-core" -e "${automl_repo_root}[dev]"
+# The application's own metadata points at the in-tree core, so a single
+# editable install resolves both projects without an independently published
+# core distribution.
+python -m pip install -e "${automl_repo_root}[dev]"
 python -m pip check
