@@ -4,10 +4,7 @@
 import numpy as np
 import math
 import logging
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import ConstantKernel, Matern
-from scipy.stats import norm
-from scipy.optimize import minimize
+from tao_automl._shared.bayesian import make_gp, negative_expected_improvement, optimize_acquisition
 
 from tao_automl.brain import network_utils
 from tao_automl.utils.math_utils import (
@@ -54,16 +51,7 @@ class Bayesian(AutoMLAlgorithmBase):
             parameters: automl sweepable parameters
         """
         super().__init__(context, state_store, network, parameters)
-        length_scale = [1.0] * len(self.parameters)
-        m52 = ConstantKernel(1.0) * Matern(length_scale=length_scale, nu=2.5)
-        # m52 = ConstantKernel(1.0) * Matern(length_scale=1.0, nu=2.5) # is another option
-        self.gp = GaussianProcessRegressor(
-            kernel=m52,
-            alpha=1e-10,
-            optimizer="fmin_l_bfgs_b",
-            n_restarts_optimizer=10,
-            random_state=95051
-        )
+        self.gp = make_gp(len(self.parameters))
         # The following 2 need to be stored
         self.Xs = []
         self.ys = []
@@ -498,20 +486,10 @@ class Bayesian(AutoMLAlgorithmBase):
             logger.warning("No valid training data available for Gaussian Process")
 
     def optimize_ei(self):
-        """Optmize expected improvement functions"""
-        best_ei = 1.0
-        best_x = None
-
-        dim = len(self.Xs[0])
-        bounds = [(0, 1)] * len(self.parameters)
-
-        for _ in range(self.num_restarts):
-            x0 = np.random.rand(dim)
-            res = minimize(self._expected_improvement, x0=x0, bounds=bounds, method='L-BFGS-B')
-            if res.fun < best_ei:
-                best_ei = res.fun
-                best_x = res.x
-        return best_x.reshape(-1)
+        """Optimize the shared numerical acquisition with TAO's parameter mapping."""
+        return optimize_acquisition(
+            self._expected_improvement, len(self.parameters), np.random.rand, self.num_restarts
+        )
 
     """
     Used from:
@@ -527,21 +505,4 @@ class Bayesian(AutoMLAlgorithmBase):
         Returns:
             float: Expected improvements at points X
         """
-        X = X.reshape(1, -1)
-
-        mu, sigma = self.gp.predict(X, return_std=True)
-        mu_sample = self.gp.predict(np.array(self.Xs))
-
-        sigma = sigma.reshape(-1, 1)
-        # Needed for noise-based model,
-        # otherwise use np.max(Y_sample).
-        # See also section 2.4 in [1]
-        mu_sample_opt = np.max(mu_sample)
-
-        with np.errstate(divide='warn'):
-            imp = mu - mu_sample_opt - self.xi
-            Z = imp / sigma
-            ei = imp * norm.cdf(Z) + sigma * norm.pdf(Z)
-            ei[sigma == 0.0] = 0.0
-
-        return -1 * ei[0, 0]
+        return negative_expected_improvement(self.gp, self.Xs, X, self.xi)

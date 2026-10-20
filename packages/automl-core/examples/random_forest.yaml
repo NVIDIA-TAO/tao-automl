@@ -1,0 +1,22 @@
+# Set python to an installed venv/interpreter with scikit-learn; no activation needed.
+execution:
+  kind: venv
+  python: /path/to/venv/bin/python
+workload:
+  cwd: .
+  commands:
+    - ['{python}', train.py, --config, '{config}', --output, '{trial}']
+  config_format: json
+  metrics_file: metrics.json
+search:
+  experiment_id: iris-demo
+  algorithm: bayesian
+  seed: 11
+  objective: {metric: accuracy, direction: maximize}
+  budget: {max_trials: 4, trial_timeout_seconds: 30, total_timeout_seconds: 180}
+  provenance: {dataset: sklearn-iris, split: stratified-25-percent-seed-11}
+  base_config:
+    model: {n_estimators: 20, max_depth: 3, random_state: 11, n_jobs: 1}
+  parameters:
+    model.n_estimators: {kind: int, low: 5, high: 40}
+    model.max_depth: {kind: int, low: 1, high: 6}
