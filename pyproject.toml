@@ -10,7 +10,6 @@ requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 
 dependencies = [
-    "nvidia-automl-core>=0.1.0,<0.2",
     "numpy",
     "scikit-learn",
     "scipy",
@@ -55,6 +54,20 @@ dev = [
 
 [project.urls]
 Repository = "https://github.com/NVIDIA-TAO/tao-automl"
+
+[tool.setuptools]
+# Ship only TAO's shared primitives, from their canonical core source files.
+# A private namespace avoids file ownership conflicts with nvidia-automl-core.
+py-modules = [
+    "tao_automl._shared.bayesian",
+    "tao_automl._shared.prompts",
+    "tao_automl._shared.reflection",
+    "tao_automl._shared._worker",
+]
+
+[tool.setuptools.package-dir]
+"" = "src"
+"tao_automl._shared" = "packages/automl-core/src/automl_core"
 
 [tool.setuptools.packages.find]
 where = ["src"]

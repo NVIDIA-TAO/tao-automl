@@ -1,10 +1,11 @@
 # TAO GEPA Auto-Prompter
 
-The reusable implementation now lives in the independently distributed
-`nvidia-automl-core[prompts]` wheel. `tao_automl.gepa_autoprompter` preserves the
-public TAO names as imports of that implementation; other repositories do not
-need TAO or its SDK. The packaged optional dependency pins GEPA 0.1.2. Existing
-TAO callback examples below continue to use the same public API.
+The reusable implementation lives in `packages/automl-core`. Other repositories
+install `nvidia-automl-core[prompts]` without TAO or its SDK. The TAO distribution
+packages the same source files privately, so it does not require a separately
+installed core wheel. `tao_automl.gepa_autoprompter` preserves the public TAO
+names, and existing callback examples below continue to use the same API.
+The packaged optional dependency pins GEPA 0.1.2.
 
 TAO owns the integration layer for reflective prompt optimization. The upstream
 Auto-Tuner and VLMEvalKit repositories are read-only references and metric

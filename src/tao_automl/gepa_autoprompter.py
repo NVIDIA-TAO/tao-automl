@@ -2,22 +2,22 @@
 # SPDX-License-Identifier: Apache-2.0
 """TAO public names for the shared repository-neutral prompt optimizer.
 
-The implementation is maintained in automl_core; these aliases preserve this
-consumer's existing API without requiring TAO in other consumers.
+The implementation is maintained in packages/automl-core and packaged privately
+for TAO; these aliases preserve this consumer's existing API.
 """
 
-from automl_core.prompts import (
+from tao_automl._shared.prompts import (
     ActionBatchRunner as TAOActionBatchRunner,
 )
-from automl_core.prompts import (
+from tao_automl._shared.prompts import (
     AutoPrompterResult,
     GEPAReflectionLM,
     GEPAutoPrompter,
 )
-from automl_core.prompts import (
+from tao_automl._shared.prompts import (
     GEPAAdapter as TAOGEPAAdapter,
 )
-from automl_core.prompts import (
+from tao_automl._shared.prompts import (
     RoutedActionBatchRunner as RoutedTAOActionBatchRunner,
 )
 

@@ -4,7 +4,7 @@
 import numpy as np
 import math
 import logging
-from automl_core.bayesian import make_gp, negative_expected_improvement, optimize_acquisition
+from tao_automl._shared.bayesian import make_gp, negative_expected_improvement, optimize_acquisition
 
 from tao_automl.brain import network_utils
 from tao_automl.utils.math_utils import (

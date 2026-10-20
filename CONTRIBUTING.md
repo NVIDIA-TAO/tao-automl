@@ -120,28 +120,42 @@ Files that legitimately cannot carry a header (e.g. generated files or data) may
 
 ## Development setup
 
-In a fresh virtual environment, install the application and its independent core
-from the same checkout:
+In a fresh virtual environment, install the application from the checkout:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-bash scripts/install_dev.sh
+python -m pip install -e '.[dev]'
+python -m pip check
+python -m pytest tests
 ```
 
-The installer supplies `packages/automl-core` and the editable application with
-its `dev` extra to the same pip resolution, then runs `pip check`. Git and access
-to the declared SDK repository and package dependencies are required. It does
-not install into a different interpreter, suppress dependency resolution, or
-fetch AutoML core from a moving branch or package index.
+This is also the existing Blossom/Jenkins setup command; no job configuration
+change or published AutoML core wheel is required. Git and access to the declared
+SDK repository and package dependencies are still required.
 
-Blossom/Jenkins setup must also invoke `bash scripts/install_dev.sh` after
-checkout instead of `pip install -e '.[dev]'` alone. The latter searches the
-package index for `nvidia-automl-core`, which is maintained in this checkout and
-need not be published. Run both existing suites explicitly:
+TAO packages the shared Bayesian, prompt-optimization, reflection, and atomic-I/O
+modules directly from their canonical files in
+`packages/automl-core/src/automl_core`. The setuptools mapping installs them under
+the private `tao_automl._shared` namespace. Do not maintain a second source copy.
+Their dependencies are already declared by TAO (GEPA remains optional through
+`autoprompter`, included in `dev`). The full controller is not bundled, and TAO
+does not own files in the independently installable `automl_core` namespace.
+
+For packaging changes, run the setup above in a fresh environment **before**
+installing the independent core. Also run `python -m build` (with the `build`
+tool installed), which builds a wheel from the source distribution. Install
+`'dist/nvidia_tao_automl-0.1.0-py3-none-any.whl[dev]'` into a second fresh
+environment and rerun `python -m pytest tests` there. This checks that both
+editable and wheel installs carry the shared modules, without an ambient core
+installation hiding missing files.
+
+To develop both packages or run both existing suites, install the independent
+core as well. The convenience script performs this setup and runs `pip check`:
 
 ```bash
+bash scripts/install_dev.sh
 python -m pytest tests packages/automl-core/tests
 ```
 

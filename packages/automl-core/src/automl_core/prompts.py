@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from automl_core.reflection import sanitize_reflective_feedback
+from .reflection import sanitize_reflective_feedback
 
 try:
     from gepa.core.adapter import EvaluationBatch
@@ -359,7 +359,7 @@ class GEPAAdapter:
                     }
                 )
                 if self.config_history_path:
-                    from automl_core._worker import atomic
+                    from ._worker import atomic
 
                     atomic(self.config_history_path, self._config_log)
         return EvaluationBatch(
@@ -574,7 +574,8 @@ class GEPAutoPrompter:
             import gepa
         except ImportError as exc:  # pragma: no cover - depends on optional environment
             raise RuntimeError(
-                "GEPA Auto-Prompter requires the nvidia-automl-core[prompts] extra"
+                "GEPA Auto-Prompter requires GEPA: install "
+                "nvidia-automl-core[prompts] or nvidia-tao-automl[autoprompter]"
             ) from exc
 
         train_items, val_items = list(trainset), list(valset)

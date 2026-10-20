@@ -6,7 +6,7 @@
 set -euo pipefail
 automl_repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Supplying both projects in one resolution keeps the app's version constraint
-# enforced without requiring an independently published core distribution.
+# Install the independent controller too, for its CLI and the core test suite.
+# TAO itself also supports plain pip install -e '.[dev]' without this helper.
 python -m pip install "${automl_repo_root}/packages/automl-core" -e "${automl_repo_root}[dev]"
 python -m pip check

@@ -6,6 +6,10 @@ The existing TAO Bayesian implementation and this controller share the GP/EI
 numerical kernel. Algorithm/controller modes use explicit workload contracts;
 GEPA is shared through this package. Consumer schemas and checkpoint logic stay
 in adapters.
+TAO's distribution packages the shared primitive modules from these same source
+files under its private `tao_automl._shared` namespace. This preserves standalone
+TAO installation without a published core dependency or overlapping installed
+files; it does not bundle the core controller or maintain duplicate source files.
 The package is maintained in this repository under `packages/automl-core` and
 installed independently from source or a wheel. Consumers do not need a
 persistent source checkout or the TAO application. No package-index publication
@@ -29,7 +33,7 @@ installation and exact-build recovery:
 ```bash
 python -m build packages/automl-core
 python -m pip install packages/automl-core/dist/nvidia_automl_core-0.1.0-py3-none-any.whl
-# Existing TAO source development: install this wheel before pip install -e .
+# TAO source development itself only requires: python -m pip install -e '.[dev]'
 ```
 
 A source install builds the same independent package. Record the resolved commit,
