@@ -167,6 +167,9 @@ class Controller:
                 rec.checkpoint_window = self._checkpoint_window
 
         # Persist after generating new recommendations
+        # The generated design points / scheduler state must survive a runner
+        # SIGKILL while a trial is active, not only after a result is reported.
+        self.brain.save_state()
         self.save_state()
         return recommendations
 

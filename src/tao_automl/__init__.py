@@ -31,7 +31,6 @@ import copy
 import json
 import logging
 import os
-import uuid
 
 from tao_automl.formatting import format_result  # noqa: F401  (public API)
 from tao_automl.objectives import parse_objective_config
@@ -290,7 +289,10 @@ class AutoML:
                 custom range overrides (e.g.
                 ``{"train.optim.lr": {"valid_min": 1e-5, "valid_max": 1e-2}}``).
             resume: Whether to resume from previously persisted state in
-                *workspace*.
+                *workspace*. Uses settings["session_id"] when supplied;
+                otherwise requires exactly one existing controller. Missing,
+                ambiguous, or unreadable controller state raises ValueError
+                rather than starting a new search.
             wandb_config: Optional dict for WandB integration. Keys:
                 ``enabled`` (bool), ``project``, ``entity``, ``api_key``,
                 ``group``. Pass ``{"enabled": True}`` to activate; the
@@ -307,6 +309,7 @@ class AutoML:
         from tao_automl.controller.controller import Controller
         from tao_automl.search_space.params import generate_hyperparams_to_search
         from tao_automl.state.state_store import StateStore
+        from tao_automl.state.session import resolve_session_id
 
         if not settings or "algorithm" not in settings:
             raise ValueError("settings must include at least an 'algorithm' key")
@@ -316,11 +319,15 @@ class AutoML:
         metric = objective_config.primary_metric
         brain_metric = objective_config.brain_metric
 
+        # Bind resume to existing state before any writes (including specs).
+        session_id = resolve_session_id(
+            workspace, settings.get("session_id"), resume=resume
+        )
+
         # 1. State store
         self._state_store = StateStore(workspace)
 
         # 2. Context
-        session_id = settings.get("session_id", uuid.uuid4().hex[:12])
         self._context = AutoMLContext(
             id=session_id,
             network=network,

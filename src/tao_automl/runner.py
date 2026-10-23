@@ -3334,6 +3334,15 @@ class AutoMLRunner:
         if not resume:
             ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             workspace_path = os.path.join(workspace_path, f"run_{ts}")
+        else:
+            # Reject missing/ambiguous identity before baseline callbacks,
+            # artifact-ledger mutation, or backend recovery/cancellation.
+            from tao_automl.state.session import resolve_session_id
+
+            automl_settings = dict(automl_settings)
+            automl_settings["session_id"] = resolve_session_id(
+                workspace_path, automl_settings.get("session_id"), resume=True
+            )
         os.makedirs(workspace_path, exist_ok=True)
         self._workspace_path = workspace_path
         if resume:
