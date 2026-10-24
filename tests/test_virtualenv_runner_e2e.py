@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
+import time
 import venv
 from pathlib import Path
 
@@ -121,6 +123,78 @@ def test_automl_runs_stdlib_script_in_isolated_virtualenv(tmp_path):
         (Path(job["local_results_dir"]) / "results_dir/metrics.json").read_text()
     )
     assert Path(metrics["python_prefix"]).resolve() == venv_path.resolve()
+
+
+@pytest.mark.parametrize("exit_code", [0, 7])
+def test_sigkill_runner_recovers_finished_orphan_without_session_id(tmp_path, exit_code):
+    """Use real runner/SDK processes; kill only the runner, then finish its trial."""
+    from tao_sdk.platforms.virtualenv import VirtualEnvSDK
+
+    venv_path = tmp_path / "venv"
+    venv.EnvBuilder(with_pip=False).create(venv_path)
+    skill = _write_stdlib_skill(tmp_path)
+    script = skill / "scripts/train.py"
+    started, release = tmp_path / "started", tmp_path / "release"
+    payload = script.read_text()
+    script.write_text(
+        "import time\nfrom pathlib import Path\n"
+        f"first_trial = not Path({str(started)!r}).exists()\n"
+        f"Path({str(started)!r}).touch()\n"
+        f"while not Path({str(release)!r}).exists(): time.sleep(0.02)\n"
+        + payload + f"\nraise SystemExit({exit_code} if first_trial else 0)\n"
+    )
+    sdk = VirtualEnvSDK(venv_path=venv_path, work_dir=tmp_path / "jobs",
+                        state_file=tmp_path / "sdk.db")
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        "import json,sys\nfrom pathlib import Path\n"
+        "from tao_automl.runner import AutoMLRunner\n"
+        "from tao_sdk.platforms.virtualenv import VirtualEnvSDK\n"
+        f"root=Path({str(tmp_path)!r})\n"
+        "sdk=VirtualEnvSDK(venv_path=root/'venv',work_dir=root/'jobs',state_file=root/'sdk.db')\n"
+        f"runner=AutoMLRunner(sdk=sdk,skill_dir={str(skill)!r},poll_interval=0.01)\n"
+        "resume=sys.argv[1]=='resume'\n"
+        "workspace=next((root/'search').glob('run_*')) if resume else root/'search'\n"
+        "result=runner.run(workspace_path=str(workspace),resume=resume,gpu_count=0,\n"
+        " automl_settings={'algorithm':'bayesian','metric':'accuracy',\n"
+        " 'automl_max_recommendations':2,'run_baseline':False,'run_final_evaluation':False})\n"
+        "(root/'result.json').write_text(json.dumps(result))\n"
+    )
+    with (tmp_path / "fresh.log").open("w") as log:
+        proc = subprocess.Popen([sys.executable, str(driver), "fresh"], stdout=log, stderr=log)
+        try:
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                ledgers = list((tmp_path / "search").glob("run_*/active_jobs.json"))
+                if started.exists() and ledgers and json.loads(ledgers[0].read_text()):
+                    break
+                assert proc.poll() is None, (tmp_path / "fresh.log").read_text()
+                time.sleep(0.02)
+            else:
+                pytest.fail("Trial did not start")
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait(timeout=10)
+            release.touch()  # Let only our orphaned trial finish naturally.
+    original_job = json.loads(ledgers[0].read_text())[0]["job_id"]
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        if sdk.get_job_status(original_job).status in {"Complete", "Error"}:
+            break
+        time.sleep(0.02)
+    else:
+        pytest.fail("Orphaned trial did not finish")
+    for _ in range(2):
+        result = subprocess.run([sys.executable, str(driver), "resume"],
+                                capture_output=True, text=True, timeout=30)
+        assert result.returncode == 0, result.stdout + result.stderr
+        history = json.loads((tmp_path / "result.json").read_text())["history"]
+        assert len(history) == 2
+        assert history[0]["job_id"] == original_job
+        assert history[0]["status"] == ("failure" if exit_code else "success")
+        assert history[1]["status"] == "success"
+        assert len(sdk.list_jobs()) == 2  # No duplicate submission on second resume.
 
 
 @pytest.mark.skipif(
