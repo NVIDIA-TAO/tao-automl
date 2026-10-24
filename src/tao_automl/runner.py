@@ -3189,7 +3189,12 @@ class AutoMLRunner:
             spec_overrides: Dict of spec overrides applied to base specs before
                 AutoML starts. Dotted keys supported (e.g.
                 {"train.epoch": 5, "policy.model_max_length": 40960}).
-            resume: If True, resume from persisted state in workspace_path.
+            resume: If True, workspace_path must be the full existing
+                run_<timestamp> directory, not its parent. Missing state raises
+                ValueError; resume never creates a new session. Supply the
+                existing session_id, or omit it only when that run contains
+                exactly one controller. Fresh session IDs must match
+                [A-Za-z0-9][A-Za-z0-9._-]{0,127}.
             execution: Optional ``python_script`` action mapping. This
                 overrides ``actions.<action>.execution`` from skill metadata.
                 Example: ``{"type": "python_script", "script":
