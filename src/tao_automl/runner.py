@@ -3189,7 +3189,12 @@ class AutoMLRunner:
             spec_overrides: Dict of spec overrides applied to base specs before
                 AutoML starts. Dotted keys supported (e.g.
                 {"train.epoch": 5, "policy.model_max_length": 40960}).
-            resume: If True, resume from persisted state in workspace_path.
+            resume: If True, workspace_path must be the full existing
+                run_<timestamp> directory, not its parent. Missing state raises
+                ValueError; resume never creates a new session. Supply the
+                existing session_id, or omit it only when that run contains
+                exactly one controller. Fresh session IDs must match
+                [A-Za-z0-9][A-Za-z0-9._-]{0,127}.
             execution: Optional ``python_script`` action mapping. This
                 overrides ``actions.<action>.execution`` from skill metadata.
                 Example: ``{"type": "python_script", "script":
@@ -3334,6 +3339,15 @@ class AutoMLRunner:
         if not resume:
             ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             workspace_path = os.path.join(workspace_path, f"run_{ts}")
+        else:
+            # Reject missing/ambiguous identity before baseline callbacks,
+            # artifact-ledger mutation, or backend recovery/cancellation.
+            from tao_automl.state.session import resolve_session_id
+
+            automl_settings = dict(automl_settings)
+            automl_settings["session_id"] = resolve_session_id(
+                workspace_path, automl_settings.get("session_id"), resume=True
+            )
         os.makedirs(workspace_path, exist_ok=True)
         self._workspace_path = workspace_path
         if resume:

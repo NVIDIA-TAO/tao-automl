@@ -167,6 +167,15 @@ class Controller:
                 rec.checkpoint_window = self._checkpoint_window
 
         # Persist after generating new recommendations
+        # The generated design points / scheduler state must survive a runner
+        # SIGKILL while a trial is active, not only after a result is reported.
+        # Deliberately write the brain first: published recommendations must
+        # not precede their optimizer state. These separate file replacements
+        # are NOT a transaction: SIGKILL between them can still leave the brain
+        # ahead of history. Do not truncate Xs to len(history) on recovery:
+        # failed trials stay in history but are removed from optimizer Xs.
+        # Closing this residual window requires a joint atomic checkpoint.
+        self.brain.save_state()
         self.save_state()
         return recommendations
 
