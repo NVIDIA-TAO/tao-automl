@@ -44,6 +44,42 @@ def _external_model_schema():
     }
 
 
+def _inference_hpo_schema():
+    return {
+        "type": "object",
+        "default": {
+            "inference": {"alpha": 0.01},
+            "train": {"learning_rate": 0.001},
+        },
+        "properties": {
+            "inference": {
+                "type": "object",
+                "properties": {
+                    "alpha": {
+                        "type": "number",
+                        "default": 0.01,
+                        "minimum": 0.001,
+                        "maximum": 0.1,
+                        "automl_enabled": True,
+                    },
+                },
+            },
+            "train": {
+                "type": "object",
+                "properties": {
+                    "learning_rate": {
+                        "type": "number",
+                        "default": 0.001,
+                        "minimum": 0.0001,
+                        "maximum": 0.01,
+                        "automl_enabled": True,
+                    },
+                },
+            },
+        },
+    }
+
+
 def test_cosmos_default_search_excludes_fps_when_nframes_is_active():
     specs = generate_schema("cosmos-rl", "train")["default"]
 
@@ -118,6 +154,27 @@ def test_automl_tunes_arbitrary_network_from_external_schema(tmp_path):
     assert set(specs) == {"model.n_estimators", "model.max_depth"}
     assert 2 <= specs["model.n_estimators"] <= 20
     assert 1 <= specs["model.max_depth"] <= 6
+
+
+def test_inference_hpo_uses_inference_search_space(tmp_path):
+    schema = _inference_hpo_schema()
+
+    automl = AutoML(
+        workspace=str(tmp_path),
+        network="nv_tesseract_forecasting",
+        action="inference_hpo",
+        train_specs=schema["default"],
+        settings={
+            "algorithm": "bayesian",
+            "metric": "accuracy",
+            "automl_max_recommendations": 1,
+        },
+        search_schema=schema,
+    )
+    recommendations = automl.next_recommendation()
+
+    assert len(recommendations) == 1
+    assert set(recommendations[0].specs) == {"inference.alpha"}
 
 
 def test_external_schema_preserves_standard_scalar_enums():
