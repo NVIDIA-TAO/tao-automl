@@ -88,3 +88,35 @@ def test_runner_rejects_missing_resume_before_baseline_or_backend_actions(tmp_pa
     sdk.create_job.assert_not_called()
     sdk.cancel_job.assert_not_called()
     assert not workspace.exists()
+
+
+@pytest.mark.parametrize("identity", ["", "../escape", "white space", 42, "a" * 129])
+@pytest.mark.parametrize("existing_workspace", [False, True])
+def test_runner_rejects_invalid_fresh_identity_before_side_effects(
+    tmp_path, identity, existing_workspace
+):
+    from unittest.mock import MagicMock
+    from tao_automl.runner import AutoMLRunner
+    from test_runner import _write_fake_skill
+
+    sdk, baseline = MagicMock(), MagicMock()
+    runner = AutoMLRunner(sdk=sdk, skill_dir=_write_fake_skill(tmp_path))
+    workspace = tmp_path / "fresh-run"
+    if existing_workspace:
+        workspace.mkdir()
+        (workspace / "existing.txt").write_text("preserve me")
+    before = set(workspace.rglob("*"))
+    with pytest.raises(ValueError, match="session_id"):
+        runner.run(
+            workspace_path=str(workspace), baseline_fn=baseline,
+            automl_settings={
+                "algorithm": "bayesian", "metric": "accuracy", "session_id": identity,
+            },
+        )
+    assert workspace.exists() == existing_workspace
+    assert set(workspace.rglob("*")) == before
+    if existing_workspace:
+        assert (workspace / "existing.txt").read_text() == "preserve me"
+    baseline.assert_not_called()
+    sdk.create_job.assert_not_called()
+    sdk.cancel_job.assert_not_called()
